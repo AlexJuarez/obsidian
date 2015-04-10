@@ -1,0 +1,128 @@
+@font-face {
+  font-family: 'Helvetica';
+  font-weight: normal;
+  font-style: normal;
+  src: url('/font/Helvetica.ttf');
+}
+@font-face {
+  font-family: 'Helvetica';
+  font-weight: bold;
+  font-style: normal;
+  src: url('/font/Helvetica-Bold.ttf');
+}
+@font-face {
+  font-family: 'Myriad Pro';
+  font-weight: normal;
+  font-style: normal;
+  src: url('/font/MyriadPro-Regular.otf');
+}
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: 'Helvetica', sans-serif;
+  background: #7f8c8d;
+}
+.card {
+  width: 330px;
+  height: 204px;
+  float: left;
+  background: #fff;
+  box-sizing: border-box;
+  border: 5px solid black;
+  border-radius: 10px;
+  margin: 26px 0 0 31px;
+  padding: 10px 15px;
+  position: relative;
+}
+.card .avatar {
+  float: left;
+  height: 80px;
+  width: 80px;
+  overflow: hidden;
+  background: #3498db;
+  border-radius: 40px;
+  margin-right: 10px;
+}
+.card .avatar .loader {
+  width: 32px;
+  height: 32px;
+}
+.card .avatar .letter {
+  color: #fff;
+  font-size: 36px;
+  line-height: 80px;
+  text-align: center;
+}
+.card .avatar img {
+  max-width: 80px;
+  height: 80px;
+}
+.card h1 {
+  margin: 15px 0 0 0;
+  font-size: 20px;
+  white-space: nowrap;
+  color: #2c3e50;
+  max-width: 199px;
+  display: inline-block;
+}
+.card h2 {
+  margin-top: 2px;
+  display: inline-block;
+  margin-left: 9px;
+  font-size: 14px;
+  max-width: 190px;
+  color: #7f8c8d;
+}
+.card .chart {
+  position: absolute;
+  bottom: 19px;
+  height: 69px;
+}
+.card .chart .line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+.card .chart text {
+  font-size: 13px;
+}
+.card .info {
+  position: absolute;
+  bottom: 19px;
+  right: 29px;
+  color: #bdc3c7;
+  font-size: 13px;
+}
+.card .info .conversions,
+.card .info .impressions {
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 12px;
+}
+.card .info .conversions {
+  margin-top: 4px;
+  color: #2980b9;
+}
+.card .info .impressions {
+  color: #e67e22;
+}
+.card .info .currency {
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #27ae60;
+}
+.card .info dl,
+.card .info dd {
+  margin: 0;
+  text-align: right;
+}
+@media (max-width: 420px) {
+  .card {
+    float: none;
+    margin: 20px auto;
+  }
+}
