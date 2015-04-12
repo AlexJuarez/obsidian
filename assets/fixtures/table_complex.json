@@ -18,34 +18,34 @@
         }
     ],
     "headers": [
-        "Publishers",
-        "Impressions",
-        "View Rate",
-        "CTR",
-        "Minutes Watched",
-        "Average % Viewed",
-        "Quartiles",
-        "Total Social User Actions",
-        "Facebook",
-        "Twitter",
-        "Pinterest",
-        "Tumblr"
+        {"value": "Publishers"},
+        {"value": "Impressions"},
+        {"value": "View Rate", "group": "overview"},
+        {"value": "CTR", "group": "overview"},
+        {"value": "Minutes Watched"},
+        {"value": "Average % Viewed", "group": "video"},
+        {"value": "Quartiles", "group": "video"},
+        {"value": "Social Actions"},
+        {"value": "Facebook", "group": "social"},
+        {"value": "Twitter", "group": "social"},
+        {"value": "Pinterest", "group": "social"},
+        {"value": "Tumblr", "group": "social"}
     ],
     "data": [
         {
             "row": {
-                "publisher": "CNN",
-                "impressions": 423123,
-                "viewRate": 22,
-                "ctr": 5,
-                "watched": 50234,
-                "avg_viewed": 24,
-                "quartiles": [10, 4, 3.5, 2.1],
-                "social": 3256,
-                "facebook": 1685,
-                "twitter": 1685,
-                "pininterst": 1685,
-                "tumblr": 1685
+                "publisher": {"value": "CNN"},
+                "impressions": {"value": 423123},
+                "viewRate": {"value": 22, "group": "overview"},
+                "ctr": {"value": 5, "group": "overview"},
+                "watched": {"value": 50234},
+                "avg_viewed": {"value": 24, "group": "video"},
+                "quartiles": {"value": [10, 4, 3.5, 2.1], "group": "video"},
+                "social": {"value": 3256},
+                "facebook": {"value": 1685, "group": "social"},
+                "twitter": {"value": 1685, "group": "social"},
+                "pininterst": {"value": 1685, "group": "social"},
+                "tumblr": {"value": 1685, "group": "social"}
             },
             "placements": [
                 {

@@ -14,35 +14,45 @@
             <tbody>
             <tr ng-repeat="row in table.data track by $index">
                 <td ng-repeat="(key, value) in row">
-                    {{value}}
+                    <div class="cell">
+                        {{value}}
+                    </div>
                 </td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
-
-<table class="table table-row-collapse table-hover">
+<hr />
+<table class="table table-row-collapse table-hover" ng-class="{'video': 'video', 'social': 'social'}[state]">
     <thead>
+    <tr class="table-row-collapse-header">
+        <th></th>
+        <th ng-click="state = ''" ng-attr-colspan="{{{'video': '1', 'social': '1', '':'3'}[state]}}">Overview</th>
+        <th ng-click="state = 'video'" ng-attr-colspan="{{{'video': '3', 'social': '1', '':'1'}[state]}}">Video Performance</th>
+        <th ng-click="state = 'social'" ng-attr-colspan="{{{'video': '1', 'social': '5', '':'1'}[state]}}">Social</th>
+    </tr>
     <tr>
-        <th ng-repeat="header in tableComplex.headers track by $index">
-            {{header}}
+        <th ng-repeat="header in tableComplex.headers track by $index" ng-class="{overview: 'overview', 'video': 'video', 'social': 'social'}[header.group]">
+            {{header.value}}
         </th>
     </tr>
     </thead>
     <tbody>
     <tr toggle-class="open" ng-repeat="row in tableComplex.data track by $index">
-        <td ng-repeat="(key, value) in row.row">
-            <div class="header">
-                {{value}}
+        <td ng-repeat="(key, value) in row.row" ng-class="{overview: 'overview', 'video': 'video', 'social': 'social'}[value.group]">
+            <div class="cell">
+                <div class="header">
+                    {{value.value}}
                 <span ng-if="$index == 0" class="placements" ng-pluralize count="row.placements.length"
                       when="{'0': 'No placements',
                        'one': '1 placement',
                        'other': '{} placements'}"></span>
-            </div>
-            <div class="content">
-                <div ng-repeat="placement in row.placements" class="table-cell">
-                    {{placement[key]}}
+                </div>
+                <div class="content">
+                    <div ng-repeat="placement in row.placements" class="table-cell">
+                        {{placement[key]}}
+                    </div>
                 </div>
             </div>
         </td>

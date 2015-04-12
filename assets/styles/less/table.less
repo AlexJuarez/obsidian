@@ -8,12 +8,11 @@
 table {
     max-width: 100%;
     background: transparent;
-    border-collapse: separate;
+    border-collapse: collapse;
     border-spacing: 0;
 }
 
 .table {
-    table-layout: fixed;
     width: 100%;
     margin-bottom: 3rem;
     > thead {
@@ -39,7 +38,6 @@ table {
             }
             > td {
                 vertical-align: top;
-                border-left: 0.5rem solid transparent;
                 padding: 2.2rem 2rem 2.2rem 1.5rem;
             }
         }
@@ -47,24 +45,74 @@ table {
     &.table-hover {
         > tbody > tr:hover {
             background: @table-hover-bg;
-            > td:first-child {
-                border-left: 0.5rem solid @table-hover-accent;
+            > td:first-child > .cell:before {
+                position: absolute;
+                content: '';
+                width: 5px;
+                background: @brand-color;
+                top: 0;
+                left: 0;
+                bottom: 0;
+            }
+        }
+        > tbody > tr > td {
+            padding: 0;
+            > .cell {
+                padding: 2.2rem 2rem 2.2rem 1.5rem;
+                position: relative;
             }
         }
     }
     &.table-row-collapse {
-        th:first-child {
-            width: 25%;
+        .table-row-collapse-header {
+            background: transparent;
+            color: #3c3c3c;
+            font-weight: bold;
+            .font-size(1.2);
+            text-transform: none;
+            border: 1px solid #b7b7b7;
+            border-bottom: none;
+            > th + th {
+                border-left: 1px solid #b7b7b7;
+            }
+        }
+        &.social {
+            .overview, .video {
+                display: none;
+            }
+            .social {
+                display: table-cell;
+            }
+        }
+        &.video {
+            .overview, .social {
+                display: none;
+            }
+            .video {
+                display: table-cell;
+            }
+        }
+        th {
+            white-space:nowrap;
+            &:first-child {
+                width: 33%;
+            }
+        }
+        .video, .social {
+            display: none;
         }
         td {
-            > .header {
+            + td {
+                border-left: 1px solid #b7b7b7;
+            }
+
+            .header {
                 text-overflow: ellipsis;
                 overflow: hidden;
             }
-            > .content {
+            .content {
                 display: none;
             }
-            border-right: 1px solid #b7b7b7;
             &:first-child {
                 color: @brand-color;
             }
@@ -73,14 +121,17 @@ table {
             }
         }
         tr.open {
-            td > .header {
-                padding-bottom: 2.2rem;
-            }
             background: @table-hover-bg;
-            > td:first-child {
-                border-left: 0.5rem solid @table-hover-accent;
+            > td:first-child > .cell:before {
+                position: absolute;
+                content: '';
+                width: 5px;
+                background: @brand-color;
+                top: 0;
+                left: 0;
+                bottom: 0;
             }
-            td > .content {
+            .content {
                 display: block;
             }
         }
@@ -94,9 +145,6 @@ table {
             overflow: hidden;
             text-overflow: ellipsis;
             color: @dark-gray;
-            &:first-child {
-                margin-top: 0;
-            }
             &:last-child {
                 margin-bottom: 0;
             }
@@ -114,10 +162,10 @@ table {
         cursor: pointer;
         box-sizing: border-box;
         border: 1px solid @table-collapse-border;
+        border-radius: 0.2rem;
         font-weight: bold;
         .font-size(1.4);
         padding: 1.3rem 2rem;
-        border-bottom: none;
     }
     > .content {
         max-height: 0;
@@ -127,12 +175,13 @@ table {
             margin-bottom: 0;
         }
     }
-    &:first-child {
+    &.group:first-child {
         > .header {
             border-radius: 0.2rem 0.2rem 0 0;
+            border-bottom: none;
         }
     }
-    &:last-child {
+    &.group:last-child {
         > .header {
             border-bottom: 1px solid @table-collapse-border;
             border-radius: 0 0 0.2rem 0.2rem;

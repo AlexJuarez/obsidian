@@ -19,6 +19,8 @@ define(function (require) {
         $http.get('fixtures/table_complex.json').then(function(res){
             $scope.tableComplex = res.data;
         });
+
+        $scope.state = '';
     }]);
 
 });
