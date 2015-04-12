@@ -21,3 +21,31 @@
         </table>
     </div>
 </div>
+
+<table class="table table-row-collapse table-hover">
+    <thead>
+    <tr>
+        <th ng-repeat="header in tableComplex.headers track by $index">
+            {{header}}
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr toggle-class="open" ng-repeat="row in tableComplex.data track by $index">
+        <td ng-repeat="(key, value) in row.row">
+            <div class="header">
+                {{value}}
+                <span ng-if="$index == 0" class="placements" ng-pluralize count="row.placements.length"
+                      when="{'0': 'No placements',
+                       'one': '1 placement',
+                       'other': '{} placements'}"></span>
+            </div>
+            <div class="content">
+                <div ng-repeat="placement in row.placements" class="table-cell">
+                    {{placement[key]}}
+                </div>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>

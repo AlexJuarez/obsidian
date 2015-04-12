@@ -260,6 +260,7 @@ table {
   border-spacing: 0;
 }
 .table {
+  table-layout: fixed;
   width: 100%;
   margin-bottom: 3rem;
 }
@@ -289,6 +290,7 @@ table {
   background: #ebebeb;
 }
 .table > tbody > tr > td {
+  vertical-align: top;
   border-left: 0.5rem solid transparent;
   padding: 2.2rem 2rem 2.2rem 1.5rem;
 }
@@ -297,6 +299,54 @@ table {
 }
 .table.table-hover > tbody > tr:hover > td:first-child {
   border-left: 0.5rem solid #0378bd;
+}
+.table.table-row-collapse th:first-child {
+  width: 25%;
+}
+.table.table-row-collapse td {
+  border-right: 1px solid #b7b7b7;
+}
+.table.table-row-collapse td > .header {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.table.table-row-collapse td > .content {
+  display: none;
+}
+.table.table-row-collapse td:first-child {
+  color: #0378bd;
+}
+.table.table-row-collapse td:last-child {
+  border-right: none;
+}
+.table.table-row-collapse tr.open {
+  background: #cde4f2;
+}
+.table.table-row-collapse tr.open td > .header {
+  padding-bottom: 2.2rem;
+}
+.table.table-row-collapse tr.open > td:first-child {
+  border-left: 0.5rem solid #0378bd;
+}
+.table.table-row-collapse tr.open td > .content {
+  display: block;
+}
+.table.table-row-collapse td:first-child .table-cell {
+  margin-left: 2rem;
+}
+.table.table-row-collapse .table-cell {
+  font-weight: normal;
+  margin: 2.2rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #3f403f;
+}
+.table.table-row-collapse .table-cell:first-child {
+  margin-top: 0;
+}
+.table.table-row-collapse .table-cell:last-child {
+  margin-bottom: 0;
 }
 .table-collapse.open > .content {
   max-height: 300px;
