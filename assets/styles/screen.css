@@ -322,6 +322,7 @@ table {
   border-bottom: none;
 }
 .table.table-row-collapse .table-row-collapse-header > th + th {
+  cursor: pointer;
   border-left: 1px solid #b7b7b7;
 }
 .table.table-row-collapse.social .overview,
@@ -347,6 +348,10 @@ table {
 .table.table-row-collapse .video,
 .table.table-row-collapse .social {
   display: none;
+}
+.table.table-row-collapse td .bar-chart {
+  margin-left: 1rem;
+  vertical-align: middle;
 }
 .table.table-row-collapse td + td {
   border-left: 1px solid #b7b7b7;
@@ -438,4 +443,11 @@ table {
 }
 .icon-status.pending {
   background: #99d2f3;
+}
+.bar-chart {
+  display: inline-block;
+}
+.bar-chart div {
+  display: inline-block;
+  background-color: #0378bd;
 }

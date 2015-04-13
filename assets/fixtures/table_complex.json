@@ -18,25 +18,85 @@
         }
     ],
     "headers": [
-        {"value": "Publishers"},
-        {"value": "Impressions"},
-        {"value": "View Rate", "group": "overview"},
-        {"value": "CTR", "group": "overview"},
-        {"value": "Minutes Watched"},
-        {"value": "Average % Viewed", "group": "video"},
-        {"value": "Quartiles", "group": "video"},
-        {"value": "Social Actions"},
-        {"value": "Facebook", "group": "social"},
-        {"value": "Twitter", "group": "social"},
-        {"value": "Pinterest", "group": "social"},
-        {"value": "Tumblr", "group": "social"}
+        {"value": "Publishers", "column": "publisher"},
+        {"value": "Impressions", "column": "impressions"},
+        {"value": "View Rate", "column": "viewRate", "group": "overview"},
+        {"value": "CTR", "column": "ctr", "group": "overview"},
+        {"value": "Minutes Watched",  "column": "watched"},
+        {"value": "Average % Viewed", "column": "avg_viewed", "group": "video"},
+        {"value": "Quartiles", "column": "quartiles", "group": "video"},
+        {"value": "Social Actions", "column": "social"},
+        {"value": "Facebook", "column": "facebook", "group": "social"},
+        {"value": "Twitter",  "column": "twitter", "group": "social"},
+        {"value": "Pinterest", "column": "pininterst", "group": "social"},
+        {"value": "Tumblr", "column": "tumblr", "group": "social"}
     ],
     "data": [
         {
             "row": {
                 "publisher": {"value": "CNN"},
-                "impressions": {"value": 423123},
+                "impressions": {"value": 423123, "action": "bar"},
                 "viewRate": {"value": 22, "group": "overview"},
+                "ctr": {"value": 5, "group": "overview"},
+                "watched": {"value": 50234, "action": "bar"},
+                "avg_viewed": {"value": 24, "group": "video"},
+                "quartiles": {"value": [10, 4, 3.5, 2.1], "group": "video"},
+                "social": {"value": 3256, "action": "bar"},
+                "facebook": {"value": 1685, "group": "social"},
+                "twitter": {"value": 1685, "group": "social"},
+                "pininterst": {"value": 1685, "group": "social"},
+                "tumblr": {"value": 1685, "group": "social"}
+            },
+            "placements": [
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 123542,
+                    "viewRate": 12,
+                    "ctr": 1,
+                    "watched": 14324,
+                    "avg_viewed": 23,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 1234,
+                    "facebook": 323,
+                    "twitter": 323,
+                    "pininterst": 323,
+                    "tumblr": 323
+                },
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 234320,
+                    "viewRate": 21,
+                    "ctr": 4,
+                    "watched": 23523,
+                    "avg_viewed": 12,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 899,
+                    "facebook": 629,
+                    "twitter": 629,
+                    "pininterst": 629,
+                    "tumblr": 629
+                },
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 13349,
+                    "viewRate": 28,
+                    "ctr": 8,
+                    "watched": 15349,
+                    "avg_viewed": 33,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 2834,
+                    "facebook": 239,
+                    "twitter": 239,
+                    "pininterst": 239,
+                    "tumblr": 239
+                }
+            ]
+        },
+        {
+            "row": {
+                "publisher": {"value": "Google"},
+                "impressions": {"value": 125312, "action": "bar"},
+                "viewRate": {"value": 18, "group": "overview"},
                 "ctr": {"value": 5, "group": "overview"},
                 "watched": {"value": 50234},
                 "avg_viewed": {"value": 24, "group": "video"},

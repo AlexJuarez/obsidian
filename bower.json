@@ -7,7 +7,8 @@
     "angular-ui-router": "~0.2.13",
     "domReady": "~2.0.1",
     "requirejs-tpl-angular": "https://github.com/AlexJuarez/requirejs-tpl-angular.git#~1.0.1",
-    "almond": "~0.3.0"
+    "almond": "~0.3.0",
+    "d3": "~3.5.5"
   },
   "devDependencies": {}
 }

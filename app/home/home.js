@@ -21,6 +21,21 @@ define(function (require) {
         });
 
         $scope.state = '';
+        $scope.sort = sort;
+
+        function sort (column){
+            $scope.tableComplex.data.sort(function(a, b){
+                a = a.row[column].value;
+                b = b.row[column].value;
+
+                if(typeof a === "number"){
+                    console.log(a, b);
+                    return a - b;
+                } else if (typeof a === "string") {
+                    return b.localeCompare(a);
+                }
+            });
+        }
     }]);
 
 });
