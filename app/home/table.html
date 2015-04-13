@@ -33,7 +33,7 @@
         <th ng-click="state = 'social'" ng-attr-colspan="{{{'video': '1', 'social': '5', '':'1'}[state]}}">Social</th>
     </tr>
     <tr>
-        <th ng-repeat="header in tableComplex.headers track by $index" ng-click="sort(header.column)" ng-class="{overview: 'overview', 'video': 'video', 'social': 'social'}[header.group]">
+        <th ng-repeat="header in tableComplex.headers track by $index" ng-click="sort(header.column, $event)" ng-class="{overview: 'overview', 'video': 'video', 'social': 'social'}[header.group]">
             {{header.value}}
         </th>
     </tr>
@@ -44,7 +44,7 @@
             <div class="cell">
                 <div class="header">
                     {{value.value}}
-                    <div ng-if="value.action == 'bar'" class="bar-chart" bar-chart="value.value"></div>
+                    <div ng-if="value.action == 'bar'" class="bar-chart" bar-chart="value"></div>
                     <span ng-if="$index == 0" class="placements" ng-pluralize count="row.placements.length"
                       when="{'0': 'No placements',
                        'one': '1 placement',

@@ -35,13 +35,13 @@
         {
             "row": {
                 "publisher": {"value": "CNN"},
-                "impressions": {"value": 423123, "action": "bar"},
+                "impressions": {"value": 423123, "action": "bar", "max": 423123},
                 "viewRate": {"value": 22, "group": "overview"},
                 "ctr": {"value": 5, "group": "overview"},
-                "watched": {"value": 50234, "action": "bar"},
+                "watched": {"value": 50234, "action": "bar", "max": 502340},
                 "avg_viewed": {"value": 24, "group": "video"},
                 "quartiles": {"value": [10, 4, 3.5, 2.1], "group": "video"},
-                "social": {"value": 3256, "action": "bar"},
+                "social": {"value": 3256, "action": "bar", "max": 3256},
                 "facebook": {"value": 1685, "group": "social"},
                 "twitter": {"value": 1685, "group": "social"},
                 "pininterst": {"value": 1685, "group": "social"},
@@ -95,13 +95,13 @@
         {
             "row": {
                 "publisher": {"value": "Google"},
-                "impressions": {"value": 125312, "action": "bar"},
+                "impressions": {"value": 125312, "action": "bar", "max": 423123},
                 "viewRate": {"value": 18, "group": "overview"},
                 "ctr": {"value": 5, "group": "overview"},
-                "watched": {"value": 50234},
+                "watched": {"value": 502340, "action": "bar", "max": 502340},
                 "avg_viewed": {"value": 24, "group": "video"},
                 "quartiles": {"value": [10, 4, 3.5, 2.1], "group": "video"},
-                "social": {"value": 3256},
+                "social": {"value": 1286, "action": "bar", "max": 3256},
                 "facebook": {"value": 1685, "group": "social"},
                 "twitter": {"value": 1685, "group": "social"},
                 "pininterst": {"value": 1685, "group": "social"},

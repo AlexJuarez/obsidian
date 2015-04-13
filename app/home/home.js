@@ -23,16 +23,36 @@ define(function (require) {
         $scope.state = '';
         $scope.sort = sort;
 
-        function sort (column){
+        function sort (column, event){
+            var $elem = ng.element(event.currentTarget);
+            var isSelected = $elem.hasClass('selected');
+
+            if(isSelected) {
+                $elem.removeClass('selected');
+                $elem.removeClass('desc');
+                $elem.addClass('asc');
+            } else {
+                $elem.addClass('selected');
+                $elem.removeClass('asc');
+                $elem.addClass('desc');
+            }
+
             $scope.tableComplex.data.sort(function(a, b){
                 a = a.row[column].value;
                 b = b.row[column].value;
 
                 if(typeof a === "number"){
-                    console.log(a, b);
-                    return a - b;
+                    if(isSelected){
+                        return b - a;
+                    } else {
+                        return a - b;
+                    }
                 } else if (typeof a === "string") {
-                    return b.localeCompare(a);
+                    if(isSelected){
+                        return b.localeCompare(a);
+                    } else {
+                        return a.localeCompare(b);
+                    }
                 }
             });
         }
