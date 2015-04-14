@@ -273,7 +273,7 @@ module.exports = function (grunt) {
     grunt.registerTask('workon', 'Start working on this project.', [
         'jshint',
         'less:dev',
-        'express:prod',
+        'express:dev',
         //'open:site',
         //'open:editor',
         'watch'

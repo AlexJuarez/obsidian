@@ -1,0 +1,123 @@
+@import "brand";
+
+.btn, button, input[type="submit"], input[type="reset"], input[type="button"] {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: normal;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    padding: 6px 12px;
+    .font-size(1.4);
+    line-height: 1.42857;
+    border-radius: .2rem;
+    box-sizing: border-box;
+    user-select: none;
+    outline: none;
+
+    &:disabled, &.disabled {
+        cursor: not-allowed;
+    }
+}
+
+.btn {
+    border: none;
+    padding-left: 1.8rem;
+    padding-right: 1.8rem;
+    font-family: 'Lato', sans-serif;
+    font-weight: bold;
+    letter-spacing: .1rem;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-lg {
+    padding: 1rem 1.6rem;
+    .font-size(1.8);
+    line-height: 1.33;
+    border-radius: .2rem;
+}
+
+.btn-sm {
+    padding: .5rem 1rem;
+    .font-size(1.2);
+    line-height: 1.5;
+    border-radius: .2rem;
+}
+
+.btn-xs {
+    padding: .1rem .5rem;
+    .font-size(1.2);
+    line-height: 1.5;
+    border-radius: .2rem;
+}
+
+.btn-default {
+    box-shadow: inset 0 0 0 1px @dark-gray;
+    background: transparent;
+    color: @dark-gray;
+    &:hover {
+        background: @light-gray;
+    }
+    &:active {
+        background: @dark-gray;
+        color: #fff;
+    }
+    &:disabled, &.disabled {
+        background: transparent;
+        color: @light-gray;
+        box-shadow: inset 0 0 0 1px @light-gray;
+    }
+    &.solid {
+        background: @dark-gray;
+        color: #fff;
+        box-shadow: none;
+        &:hover {
+            background: @gray;
+        }
+        &:active {
+            background: @black;
+        }
+        &:disabled {
+            background: @gray;
+        }
+    }
+}
+
+.btn-primary {
+    box-shadow: inset 0 0 0 1px @light-blue;
+    color: @light-blue;
+    background: @dark-blue;
+    &:hover {
+        background: lighten(@dark-blue, 10);
+    }
+    &:active {
+        background: @light-blue;
+        color: @dark-blue;
+    }
+    &:disabled, &.disabled {
+        background: @dark-blue;
+        color: rgba(0, 60, 96, 0.50);
+        box-shadow: inset 0 0 0 1px rgba(0, 60, 96, 0.50);
+    }
+    &.solid {
+        background: lighten(@dark-blue, 5);
+        color: #fff;
+        box-shadow: none;
+        &:hover {
+            background: @brand-color;
+        }
+        &:active {
+            background: @dark-blue;
+        }
+        &:disabled {
+            opacity: .5;
+        }
+    }
+}

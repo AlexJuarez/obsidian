@@ -1,0 +1,64 @@
+/* for IE8 support */
+.font-size(@size) {
+    @remValue: @size;
+    @pxValue: @size*10;
+    font-size: ~"@{pxValue}px";
+    font-size: ~"@{remValue}rem";
+}
+.line-height(@size){
+    @remValue: @size;
+    @pxValue: @size*10;
+    line-height: ~"@{pxValue}px";
+    line-height: ~"@{remValue}rem";
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-weight: normal;
+    color: @dark-gray;
+    & + hr {
+        margin-top: -2rem;
+        border-top-color: #3c3c3c;
+    }
+}
+
+h1 {
+    .font-size(3);
+    font-family: 'Oswald', sans-serif;
+}
+h2 {
+    .font-size(2.6);
+    font-family: 'Oswald', sans-serif;
+}
+h3 {
+    .font-size(2);
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+}
+h4 {
+    .font-size(2);
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+}
+h5 {
+    .font-size(1.6);
+    font-family: 'Lato', sans-serif;
+}
+h6 {
+    .font-size(1.2);
+    font-family: 'Lato', sans-serif;
+}
+p {
+    margin-top: 0;
+    font-family: 'Lato', sans-serif;
+    .font-size(1.4);
+    .line-height(2);
+}
+
+.small, small {
+    .font-size(1.1);
+}
+.muted {
+    color: @gray;
+}

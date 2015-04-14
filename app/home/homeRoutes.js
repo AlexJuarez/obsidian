@@ -8,6 +8,9 @@ define(function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
+    require('tpl!./typography.html');
+    require('tpl!./button.html');
+
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

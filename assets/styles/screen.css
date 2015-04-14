@@ -1,128 +1,255 @@
-@font-face {
-  font-family: 'Helvetica';
-  font-weight: normal;
-  font-style: normal;
-  src: url('/font/Helvetica.ttf');
+/* these are the brand colors */
+/* primary colors */
+/* secondary colors */
+/* tertiary colors */
+html {
+  font-size: 62.5%;
 }
-@font-face {
-  font-family: 'Helvetica';
-  font-weight: bold;
-  font-style: normal;
-  src: url('/font/Helvetica-Bold.ttf');
-}
-@font-face {
-  font-family: 'Myriad Pro';
-  font-weight: normal;
-  font-style: normal;
-  src: url('/font/MyriadPro-Regular.otf');
-}
-html,
 body {
-  height: 100%;
-  min-height: 100%;
-  padding: 0;
-  margin: 0;
-  font-family: 'Helvetica', sans-serif;
-  background: #7f8c8d;
+  line-height: 1.6;
+  font-size: 1.6rem;
+  color: #3f403f;
+  font-family: 'Lato', sans-serif;
 }
-.card {
-  width: 330px;
-  height: 204px;
-  float: left;
-  background: #fff;
-  box-sizing: border-box;
-  border: 5px solid black;
-  border-radius: 10px;
-  margin: 26px 0 0 31px;
-  padding: 10px 15px;
-  position: relative;
+hr {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+  border-width: 0;
+  border-top: 1px solid #E1E1E1;
 }
-.card .avatar {
-  float: left;
-  height: 80px;
-  width: 80px;
-  overflow: hidden;
-  background: #3498db;
-  border-radius: 40px;
-  margin-right: 10px;
+/* Spacing
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+button,
+.button {
+  margin-bottom: 1rem;
 }
-.card .avatar .loader {
-  width: 32px;
-  height: 32px;
+input,
+textarea,
+select,
+fieldset {
+  margin-bottom: 1.5rem;
 }
-.card .avatar .letter {
-  color: #fff;
-  font-size: 36px;
-  line-height: 80px;
-  text-align: center;
+pre,
+blockquote,
+dl,
+figure,
+table,
+p,
+ul,
+ol,
+form {
+  margin-bottom: 2.5rem;
 }
-.card .avatar img {
-  max-width: 80px;
-  height: 80px;
+/* for IE8 support */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  font-weight: normal;
+  color: #3f403f;
 }
-.card h1 {
-  margin: 15px 0 0 0;
+h1 + hr,
+h2 + hr,
+h3 + hr,
+h4 + hr,
+h5 + hr,
+h6 + hr {
+  margin-top: -2rem;
+  border-top-color: #3c3c3c;
+}
+h1 {
+  font-size: 30px;
+  font-size: 3rem;
+  font-family: 'Oswald', sans-serif;
+}
+h2 {
+  font-size: 26px;
+  font-size: 2.6rem;
+  font-family: 'Oswald', sans-serif;
+}
+h3 {
   font-size: 20px;
-  white-space: nowrap;
-  color: #2c3e50;
-  max-width: 199px;
-  display: inline-block;
+  font-size: 2rem;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
 }
-.card h2 {
-  margin-top: 2px;
-  display: inline-block;
-  margin-left: 9px;
+h4 {
+  font-size: 20px;
+  font-size: 2rem;
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+}
+h5 {
+  font-size: 16px;
+  font-size: 1.6rem;
+  font-family: 'Lato', sans-serif;
+}
+h6 {
+  font-size: 12px;
+  font-size: 1.2rem;
+  font-family: 'Lato', sans-serif;
+}
+p {
+  margin-top: 0;
+  font-family: 'Lato', sans-serif;
   font-size: 14px;
-  max-width: 190px;
-  color: #7f8c8d;
+  font-size: 1.4rem;
+  line-height: 20px;
+  line-height: 2rem;
 }
-.card .chart {
-  position: absolute;
-  bottom: 19px;
-  height: 69px;
+.small,
+small {
+  font-size: 11px;
+  font-size: 1.1rem;
 }
-.card .chart .line {
-  fill: none;
-  stroke: #000;
-  stroke-width: 1.5px;
+.muted {
+  color: #707274;
 }
-.card .chart text {
-  font-size: 13px;
+a {
+  color: #0378bd;
 }
-.card .info {
-  position: absolute;
-  bottom: 19px;
-  right: 29px;
-  color: #bdc3c7;
-  font-size: 13px;
+a:hover {
+  color: #9bd2f1;
 }
-.card .info .conversions,
-.card .info .impressions {
+a:active {
+  color: #003c60;
+}
+a:visited {
+  color: #0378bd;
+}
+.btn,
+button,
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-size: 1.4rem;
+  line-height: 1.42857;
+  border-radius: .2rem;
+  box-sizing: border-box;
+  user-select: none;
+  outline: none;
+}
+.btn:disabled,
+button:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled,
+input[type="button"]:disabled,
+.btn.disabled,
+button.disabled,
+input[type="submit"].disabled,
+input[type="reset"].disabled,
+input[type="button"].disabled {
+  cursor: not-allowed;
+}
+.btn {
+  border: none;
+  padding-left: 1.8rem;
+  padding-right: 1.8rem;
+  font-family: 'Lato', sans-serif;
+  font-weight: bold;
+  letter-spacing: .1rem;
+}
+.btn-block {
+  display: block;
+  width: 100%;
+}
+.btn-lg {
+  padding: 1rem 1.6rem;
   font-size: 18px;
-  font-weight: bold;
-  line-height: 12px;
+  font-size: 1.8rem;
+  line-height: 1.33;
+  border-radius: .2rem;
 }
-.card .info .conversions {
-  margin-top: 4px;
-  color: #2980b9;
+.btn-sm {
+  padding: .5rem 1rem;
+  font-size: 12px;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  border-radius: .2rem;
 }
-.card .info .impressions {
-  color: #e67e22;
+.btn-xs {
+  padding: .1rem .5rem;
+  font-size: 12px;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  border-radius: .2rem;
 }
-.card .info .currency {
-  margin-top: 8px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #27ae60;
+.btn-default {
+  box-shadow: inset 0 0 0 1px #3f403f;
+  background: transparent;
+  color: #3f403f;
 }
-.card .info dl,
-.card .info dd {
-  margin: 0;
-  text-align: right;
+.btn-default:hover {
+  background: #cccccc;
 }
-@media (max-width: 420px) {
-  .card {
-    float: none;
-    margin: 20px auto;
-  }
+.btn-default:active {
+  background: #3f403f;
+  color: #fff;
+}
+.btn-default:disabled,
+.btn-default.disabled {
+  background: transparent;
+  color: #cccccc;
+  box-shadow: inset 0 0 0 1px #cccccc;
+}
+.btn-default.solid {
+  background: #3f403f;
+  color: #fff;
+  box-shadow: none;
+}
+.btn-default.solid:hover {
+  background: #707274;
+}
+.btn-default.solid:active {
+  background: #1c1c1c;
+}
+.btn-default.solid:disabled {
+  background: #707274;
+}
+.btn-primary {
+  box-shadow: inset 0 0 0 1px #9bd2f1;
+  color: #9bd2f1;
+  background: #003c60;
+}
+.btn-primary:hover {
+  background: #005c93;
+}
+.btn-primary:active {
+  background: #9bd2f1;
+  color: #003c60;
+}
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background: #003c60;
+  color: rgba(0, 60, 96, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(0, 60, 96, 0.5);
+}
+.btn-primary.solid {
+  background: #004c7a;
+  color: #fff;
+  box-shadow: none;
+}
+.btn-primary.solid:hover {
+  background: #0378bd;
+}
+.btn-primary.solid:active {
+  background: #003c60;
+}
+.btn-primary.solid:disabled {
+  opacity: .5;
 }
