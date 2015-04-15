@@ -1,0 +1,22 @@
+@status-bg: #b7b7b7;
+@success-status-bg: #00a651;
+@pending-status-bg: #99d2f3;
+
+[class*="icon-"] {
+    display: inline-block;
+    margin-right: 0.6rem;
+    vertical-align: inherit;
+}
+
+.icon-status {
+    height: 1.4rem;
+    width: 1.4rem;
+    border-radius: 0.7rem;
+    background: @status-bg;
+    &.success {
+        background: @success-status-bg;
+    }
+    &.pending {
+        background: @pending-status-bg;
+    }
+}

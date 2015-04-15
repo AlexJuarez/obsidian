@@ -1,0 +1,23 @@
+<div class="table-collapse" toggle-class="open">
+    <div class="header">
+        <span class="icon-status success"></span> Work in Progress
+    </div>
+    <div class="content">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th ng-repeat="header in table.headers track by $index">
+                    {{header.main}}
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="row in table.data track by $index">
+                <td ng-repeat="(key, value) in row">
+                    {{value}}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

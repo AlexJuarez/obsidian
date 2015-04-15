@@ -12,6 +12,9 @@ define(function (require) {
 
     app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
 
+        $http.get('fixtures/table.json').then(function(res){
+            $scope.table = res.data;
+        });
 
     }]);
 

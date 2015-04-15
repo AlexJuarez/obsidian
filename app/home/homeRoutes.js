@@ -10,7 +10,7 @@ define(function (require) {
     require('tpl!./index.html');
     require('tpl!./typography.html');
     require('tpl!./button.html');
-
+    require('tpl!./table.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

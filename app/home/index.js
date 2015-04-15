@@ -6,4 +6,5 @@ define(function (require) {
 
     require('./home');
     require('./homeRoutes');
+    require('./toggleClass');
 });

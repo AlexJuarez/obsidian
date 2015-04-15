@@ -1,11 +1,89 @@
+@table-header-bg: @dark-gray;
+@table-striping: @white;
+@table-bg: #fff;
+@table-hover-bg: #cde4f2;
+@table-hover-accent: @brand-color;
+@table-collapse-border: #707274;
+
 table {
     max-width: 100%;
     background: transparent;
-    border-collapse: collapse;
+    border-collapse: separate;
     border-spacing: 0;
 }
 
 .table {
     width: 100%;
     margin-bottom: 3rem;
+    > thead {
+        .font-size(1);
+        text-transform: uppercase;
+        text-align: left;
+        > tr {
+            background: @table-header-bg;
+            color: #fff;
+            > th {
+                padding: 1.2rem 2rem;
+            }
+        }
+    }
+    > tbody {
+        .font-size(1.2);
+        font-weight: bold;
+        color: @dark-gray;
+        > tr {
+            background: @table-bg;
+            &:nth-child(2n+1) {
+                background: @table-striping;
+            }
+            > td {
+                border-left: 0.5rem solid transparent;
+                padding: 2.2rem 2rem 2.2rem 1.5rem;
+            }
+        }
+    }
+    &.table-hover {
+        > tbody > tr:hover {
+            background: @table-hover-bg;
+            > td:first-child {
+                border-left: 0.5rem solid @table-hover-accent;
+            }
+        }
+    }
+}
+
+.table-collapse {
+    &.open {
+        > .content {
+            max-height: 300px;
+        }
+    }
+    > .header {
+        cursor: pointer;
+        box-sizing: border-box;
+        border: 1px solid @table-collapse-border;
+        font-weight: bold;
+        .font-size(1.4);
+        padding: 1.3rem 2rem;
+        border-bottom: none;
+    }
+    > .content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height .6s;
+        > .table {
+            margin-bottom: 0;
+        }
+    }
+    &:first-child {
+        > .header {
+            border-radius: 0.2rem 0.2rem 0 0;
+        }
+    }
+    &:last-child {
+        > .header {
+            border-bottom: 1px solid @table-collapse-border;
+            border-radius: 0 0 0.2rem 0.2rem;
+        }
+    }
 }
