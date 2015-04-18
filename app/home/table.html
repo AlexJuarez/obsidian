@@ -43,7 +43,7 @@
         <td ng-repeat="(key, value) in row.row" ng-class="{overview: 'overview', 'video': 'video', 'social': 'social'}[value.group]">
             <div class="cell">
                 <div class="header">
-                    {{value.value}}
+                    {{value.value|format:key:tableComplex.rules}}
                     <div ng-if="value.action == 'bar'" class="bar-chart" bar-chart="value"></div>
                     <span ng-if="$index == 0" class="placements" ng-pluralize count="row.placements.length"
                       when="{'0': 'No placements',
@@ -52,7 +52,7 @@
                 </div>
                 <div class="content">
                     <div ng-repeat="placement in row.placements" class="table-cell">
-                        {{placement[key]}}
+                        {{placement[key]|format:key:tableComplex.rules}}
                     </div>
                 </div>
             </div>

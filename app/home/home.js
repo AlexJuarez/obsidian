@@ -12,22 +12,22 @@ define(function (require) {
 
     app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
 
-        $http.get('fixtures/table.json').then(function(res){
+        $http.get('fixtures/table.json').then(function (res) {
             $scope.table = res.data;
         });
 
-        $http.get('fixtures/table_complex.json').then(function(res){
+        $http.get('fixtures/table_complex.json').then(function (res) {
             $scope.tableComplex = res.data;
         });
 
         $scope.state = '';
         $scope.sort = sort;
 
-        function sort (column, event){
+        function sort(column, event) {
             var $elem = ng.element(event.currentTarget);
             var isSelected = $elem.hasClass('selected');
 
-            if(isSelected) {
+            if (isSelected) {
                 $elem.removeClass('selected');
                 $elem.removeClass('desc');
                 $elem.addClass('asc');
@@ -37,18 +37,18 @@ define(function (require) {
                 $elem.addClass('desc');
             }
 
-            $scope.tableComplex.data.sort(function(a, b){
+            $scope.tableComplex.data.sort(function (a, b) {
                 a = a.row[column].value;
                 b = b.row[column].value;
 
-                if(typeof a === "number"){
-                    if(isSelected){
+                if (typeof a === 'number') {
+                    if (isSelected) {
                         return b - a;
                     } else {
                         return a - b;
                     }
-                } else if (typeof a === "string") {
-                    if(isSelected){
+                } else if (typeof a === 'string') {
+                    if (isSelected) {
                         return b.localeCompare(a);
                     } else {
                         return a.localeCompare(b);

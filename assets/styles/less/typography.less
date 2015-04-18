@@ -62,3 +62,12 @@ p {
 .muted {
     color: @gray;
 }
+.justify {
+    &:after {
+        content: "";
+        display: inline-block;
+        width: 100%;
+    }
+    text-align: justify;
+    text-justify: inter-word;
+}

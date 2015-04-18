@@ -17,6 +17,20 @@
             "children": ["Total Social User Actions", "Facebook", "Twitter", "Pinterest", "Tumblr"]
         }
     ],
+    "rules": {
+        "publisher": "",
+        "impressions": "number",
+        "viewRate": "percent",
+        "ctr": "percent",
+        "watched": "number",
+        "avg_viewed": "percent",
+        "quartiles": "quartile",
+        "social": "number",
+        "facebook": "number",
+        "twitter": "number",
+        "pininterst": "number",
+        "tumblr": "number"
+    },
     "headers": [
         {"value": "Publishers", "column": "publisher"},
         {"value": "Impressions", "column": "impressions"},

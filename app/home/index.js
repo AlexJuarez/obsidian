@@ -8,4 +8,5 @@ define(function (require) {
     require('./homeRoutes');
     require('./toggleClass');
     require('./comparisonChart');
+    require('./formatFilter');
 });
