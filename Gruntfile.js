@@ -259,7 +259,6 @@ module.exports = function (grunt) {
         // Concurrent Config
         concurrent: {
             dist: [
-                'less:dist',
                 'requirejs',
                 'copy:styles',
                 'svgmin',
@@ -289,6 +288,7 @@ module.exports = function (grunt) {
     // Build
     grunt.registerTask('build', 'Build production ready assets and views.', [
         'clean:dist',
+        'less:dist',
         'concurrent:dist',
         'useminPrepare',
         'imagemin',

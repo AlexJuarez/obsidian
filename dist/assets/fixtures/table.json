@@ -1,0 +1,36 @@
+{
+    "headers": [
+        {"main": "Publishers"},
+        {"main": "Clickthroughs"},
+        {"main": "CTR", "subtitle": "benchmark 1.30%"},
+        {"main": "Minutes Watched", "parent": "CTR"},
+        {"main": "Average % Viewer", "subtitle": "benchmark 30%"},
+        {"main": "Quartiles", "subtitle": [25, 50, 75, 100]}
+    ],
+    "data": [
+        {
+            "publisher": "CNN",
+            "clickthroughs": 80123,
+            "ctr": 0.9,
+            "minutesWatched": 50234,
+            "avgViewer": 24.0,
+            "quantiles": [10, 4, 3.5, 2.10]
+        },
+        {
+            "publisher": "Google",
+            "clickthroughs": 74452,
+            "ctr": 0.9,
+            "minutesWatched": 50234,
+            "avgViewer": 24.0,
+            "quantiles": [10, 4, 3.5, 2.10]
+        },
+        {
+            "publisher": "MSN",
+            "clickthroughs": 65415,
+            "ctr": 0.9,
+            "minutesWatched": 50234,
+            "avgViewer": 24.0,
+            "quantiles": [10, 4, 3.5, 2.10]
+        }
+    ]
+}
