@@ -2,11 +2,13 @@ define(function (require) {
     'use strict';
 
     var app = require('./module');
-    var ng = require('angular');
+    //var ng = require('angular');
 
+    app.filter('format', ['$filter', '$sce', function ($filter) {
+        function percent(input) {
+            return $filter('number')(input, 2) + '%';
+        }
 
-
-    app.filter('format', ['$filter', '$sce', function ($filter, $sce) {
         return function (input, key, rules) {
             input = input || '';
             var rule = rules[key];
@@ -15,7 +17,7 @@ define(function (require) {
                 return $filter('number')(input, 0);
             case 'percent':
                 return percent(input);
-                case 'quartile':
+            case 'quartile':
                 return input.map(function (d) {
                     return percent(d);
                 }).join(' ');
@@ -23,9 +25,5 @@ define(function (require) {
                 return input;
             }
         };
-
-        function percent (input) {
-            return $filter('number')(input, 2) + '%';
-        }
     }]);
 });

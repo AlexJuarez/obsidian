@@ -1,22 +1,4 @@
 {
-    "regions": [
-        {
-            "title": "",
-            "children": ["publishers"]
-        },
-        {
-            "title": "Overview",
-            "children": ["Impressions", "View Rate", "CTR"]
-        },
-        {
-            "title": "Video Performance",
-            "children": ["Minutes Watched", "Average % Viewed", "Quartiles"]
-        },
-        {
-            "title": "Social",
-            "children": ["Total Social User Actions", "Facebook", "Twitter", "Pinterest", "Tumblr"]
-        }
-    ],
     "headers": [
         {"value": "Publishers", "column": "publisher"},
         {"value": "Impressions", "column": "impressions"},
