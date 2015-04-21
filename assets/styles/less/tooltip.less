@@ -1,0 +1,90 @@
+@tool-tip-dark-bg: #3c3c3c;
+
+.tooltip {
+    position: relative;
+    .wrapper {
+        display: none;
+        position: absolute;
+        border-radius: 0.2rem;
+        .content {
+            padding: 20px;
+            white-space: nowrap;
+        }
+    }
+
+    &.hover:hover .wrapper {
+        display: inline-block;
+    }
+
+    &.tooltip-dark .wrapper {
+        &:before {
+            border: solid transparent;
+        }
+
+        &:before {
+            content: '';
+            position: absolute;
+            border-color: rgba(194, 225, 245, 0);
+            border-width: 8px;
+            height: 0;
+            width: 0;
+        }
+
+        background: @tool-tip-dark-bg;
+        color: #fff;
+    }
+
+    &[class*="tooltip-right"] .wrapper {
+        left: 100%;
+        top: 0;
+        margin-left: 9px;
+        &:before {
+            border-right-color: @tool-tip-dark-bg;
+            margin-top: -8px;
+        }
+    }
+
+    &.tooltip-right-top .wrapper:before  {
+        right: 100%;
+        top: 15%;
+    }
+
+    &.tooltip-right-middle .wrapper:before  {
+        right: 100%;
+        top: 50%;
+    }
+
+    &.tooltip-right-bottom .wrapper:before  {
+        right: 100%;
+        top: 85%;
+    }
+
+    &[class*="tooltip-bottom"] .wrapper {
+        left: 0;
+        top: 100%;
+        margin-top: 9px;
+        &:before {
+            border-bottom-color: @tool-tip-dark-bg;
+            margin-top: -16px;
+        }
+    }
+
+    &.tooltip-bottom-left .wrapper:before {
+        top: 0;
+        left: 15%;
+    }
+
+    &.tooltip-bottom-middle .wrapper:before {
+        top: 0;
+        left: 50%;
+    }
+
+    &.tooltip-bottom-middle .wrapper:before {
+        top: 0;
+        left: 85%;
+    }
+
+    &.open .wrapper {
+        display: inline-block;
+    }
+}

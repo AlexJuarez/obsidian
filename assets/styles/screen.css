@@ -465,3 +465,78 @@ table {
   display: inline-block;
   background-color: #0378bd;
 }
+.tooltip {
+  position: relative;
+}
+.tooltip .wrapper {
+  display: none;
+  position: absolute;
+  border-radius: 0.2rem;
+}
+.tooltip .wrapper .content {
+  padding: 20px;
+  white-space: nowrap;
+}
+.tooltip.hover:hover .wrapper {
+  display: inline-block;
+}
+.tooltip.tooltip-dark .wrapper {
+  background: #3c3c3c;
+  color: #fff;
+}
+.tooltip.tooltip-dark .wrapper:before {
+  border: solid transparent;
+}
+.tooltip.tooltip-dark .wrapper:before {
+  content: '';
+  position: absolute;
+  border-color: rgba(194, 225, 245, 0);
+  border-width: 8px;
+  height: 0;
+  width: 0;
+}
+.tooltip[class*="tooltip-right"] .wrapper {
+  left: 100%;
+  top: 0;
+  margin-left: 9px;
+}
+.tooltip[class*="tooltip-right"] .wrapper:before {
+  border-right-color: #3c3c3c;
+  margin-top: -8px;
+}
+.tooltip.tooltip-right-top .wrapper:before {
+  right: 100%;
+  top: 15%;
+}
+.tooltip.tooltip-right-middle .wrapper:before {
+  right: 100%;
+  top: 50%;
+}
+.tooltip.tooltip-right-bottom .wrapper:before {
+  right: 100%;
+  top: 85%;
+}
+.tooltip[class*="tooltip-bottom"] .wrapper {
+  left: 0;
+  top: 100%;
+  margin-top: 9px;
+}
+.tooltip[class*="tooltip-bottom"] .wrapper:before {
+  border-bottom-color: #3c3c3c;
+  margin-top: -16px;
+}
+.tooltip.tooltip-bottom-left .wrapper:before {
+  top: 0;
+  left: 15%;
+}
+.tooltip.tooltip-bottom-middle .wrapper:before {
+  top: 0;
+  left: 50%;
+}
+.tooltip.tooltip-bottom-middle .wrapper:before {
+  top: 0;
+  left: 85%;
+}
+.tooltip.open .wrapper {
+  display: inline-block;
+}
