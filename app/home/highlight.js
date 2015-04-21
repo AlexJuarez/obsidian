@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./module');
     var hljs = require('hljs');
 
-    app.directive('createSnippet', [function () {
+    app.directive('highlight', [function () {
         return {
             restrict: 'A',
             link: function (scope, element, attrs) {
