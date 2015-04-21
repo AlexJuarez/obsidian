@@ -22,6 +22,15 @@ define(function (require) {
 
         $scope.state = '';
         $scope.sort = sort;
+        $scope.changeGlyph = changeGlyph;
+
+        function changeGlyph(e){
+            e = e || window.event;
+            var name = e.target.getAttribute('data-name') || e.target.parentNode.getAttribute('data-name');
+            if(name){
+                document.getElementById('glyph-name').childNodes[0].childNodes[0].innerHTML = name;
+            }
+        }
 
         function sort(column, event) {
             var $elem = ng.element(event.currentTarget);

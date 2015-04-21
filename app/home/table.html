@@ -1,6 +1,55 @@
+<h1>Tables</h1>
+<h2>Basic table with header</h2>
+<table class="table">
+    <thead>
+    <tr>
+        <th ng-repeat="header in table.headers track by $index">
+            {{header.main}}
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="row in table.data track by $index">
+        <td ng-repeat="(key, value) in row">
+            <div class="cell">
+                {{value|format:key:table.rules}}
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<div class="highlight" highlight>
+<pre><code class="html">&lt;table class="table"&gt;...&lt;/table&gt;</code></pre>
+</div>
+<hr />
+<h2>Basic table with hover</h2>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th ng-repeat="header in table.headers track by $index">
+            {{header.main}}
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="row in table.data track by $index">
+        <td ng-repeat="(key, value) in row">
+            <div class="cell">
+                {{value|format:key:table.rules}}
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<div class="highlight" highlight>
+    <pre><code class="html">&lt;table class="table table-hover"&gt;...&lt;/table&gt;</code></pre>
+</div>
+<hr />
+<h2>Accordion Tables</h2>
 <div class="table-collapse" toggle-class="open">
     <div class="header">
         <span class="icon-status success"></span> Work in Progress
+        <i class="glyph-icon glyph-cheveron-up"></i>
     </div>
     <div class="content">
         <table class="table table-hover">

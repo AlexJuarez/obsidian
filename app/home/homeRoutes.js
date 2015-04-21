@@ -11,6 +11,7 @@ define(function (require) {
     require('tpl!./typography.html');
     require('tpl!./button.html');
     require('tpl!./table.html');
+    require('tpl!./mixpo-icons.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

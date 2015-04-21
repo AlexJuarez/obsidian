@@ -35,6 +35,10 @@ module.exports = function (grunt) {
                 files: ['assets/styles/**/*.less'],
                 tasks: ['less:dev']
             },
+            fonts: {
+                files: ['assets/icons/*.svg'],
+                tasks: ['webfont']
+            },
             images: {
                 files: [
                     'assets/images/**/*.{png,jpg,jpeg,webp}'
@@ -76,6 +80,26 @@ module.exports = function (grunt) {
                 '!app/components/**/*',
                 '!assets/scripts/vendor/*'
             ]
+        },
+
+        webfont: {
+            icons: {
+                src: 'assets/icons/*.svg',
+                dest: 'assets/font',
+                destCss: 'assets/styles',
+                options: {
+                    htmlDemo: true,
+                    destHtml: 'app/home',
+                    htmlDemoTemplate: 'assets/icons/template.html',
+                    syntax: 'bootstrap',
+                    templateOptions: {
+                        baseClass: 'glyph-icon',
+                        classPrefix: 'glyph-',
+                        mixinPrefix: 'glyph-'
+                    },
+                    font: 'mixpo-icons'
+                }
+            }
         },
 
         less: {
@@ -272,6 +296,7 @@ module.exports = function (grunt) {
     grunt.registerTask('workon', 'Start working on this project.', [
         'jshint',
         'less:dev',
+        'webfont',
         'express:dev',
         //'open:site',
         //'open:editor',
@@ -289,6 +314,7 @@ module.exports = function (grunt) {
     grunt.registerTask('build', 'Build production ready assets and views.', [
         'clean:dist',
         'less:dist',
+        'webfont',
         'concurrent:dist',
         'useminPrepare',
         'imagemin',
