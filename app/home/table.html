@@ -1,4 +1,4 @@
-<h1>Tables</h1>
+<h1 id="tables">Tables</h1>
 <h2>Basic table with header</h2>
 <table class="table">
     <thead>
@@ -49,9 +49,8 @@
 <div class="table-collapse" toggle-class="open">
     <div class="header">
         <span class="icon-status success"></span> Work in Progress
-        <i class="glyph-icon glyph-cheveron-up"></i>
     </div>
-    <div class="content">
+    <div class="content" accordion-height>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -71,6 +70,14 @@
             </tbody>
         </table>
     </div>
+</div>
+<div class="highlight" highlight>
+<pre><code class="html">&lt;div class=&quot;table-collapse&quot; toggle-class=&quot;open&quot;&gt;
+    &lt;div class=&quot;header&quot;&gt;...&lt;/div&gt;
+    &lt;div class=&quot;content&quot;&gt;
+        &lt;table class=&quot;table table-hover&quot;&gt;...&lt;/table&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
 </div>
 <hr />
 <table class="table table-row-collapse table-hover" ng-class="{'video': 'video', 'social': 'social'}[state]">

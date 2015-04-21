@@ -4,10 +4,10 @@
 
 @font-face {
 	font-family:"mixpo-icons";
-	src:url("../font/mixpo-icons.eot?4fccb76613564100dadaa6cfabb1669f");
+	src:url("../font/mixpo-icons.eot?e2ecc787e099a4787d9fc98c237617e8");
 	src:url("../font/mixpo-icons.eot?#iefix") format("embedded-opentype"),
-		url("../font/mixpo-icons.woff?4fccb76613564100dadaa6cfabb1669f") format("woff"),
-		url("../font/mixpo-icons.ttf?4fccb76613564100dadaa6cfabb1669f") format("truetype");
+		url("../font/mixpo-icons.woff?e2ecc787e099a4787d9fc98c237617e8") format("woff"),
+		url("../font/mixpo-icons.ttf?e2ecc787e099a4787d9fc98c237617e8") format("truetype");
 	font-weight:normal;
 	font-style:normal;
 }
@@ -101,19 +101,25 @@
 
 
 
-.glyph-preview:before {
+.glyph-pin-left:before {
 	content:"\f10c";
 }
 
 
 
-.glyph-settings:before {
+.glyph-preview:before {
 	content:"\f10d";
 }
 
 
 
-.glyph-tag:before {
+.glyph-settings:before {
 	content:"\f10e";
+}
+
+
+
+.glyph-tag:before {
+	content:"\f10f";
 }
 

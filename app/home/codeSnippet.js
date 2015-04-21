@@ -10,7 +10,7 @@ define(function (require) {
         return {
             restrict: 'A',
             link: function (scope, element, attrs) {
-                $timeout(function(){
+                $timeout(function () {
                     //Set the language
                     scope.language = attrs.createSnippet;
 
@@ -32,7 +32,6 @@ define(function (require) {
                     element.after(template[0]);
                 });
             }
-
         };
     }]);
 });

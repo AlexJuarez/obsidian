@@ -163,7 +163,12 @@ table {
 .table-collapse {
     &.open {
         > .content {
-            max-height: 300px;
+            display: block;
+        }
+        > .header {
+            &:after {
+                content:"\f103";
+            }
         }
     }
     > .header {
@@ -174,11 +179,18 @@ table {
         font-weight: bold;
         .font-size(1.4);
         padding: 1.3rem 2rem;
+        position: relative;
+        &:after {
+            position: absolute;
+            font-family: "mixpo-icons";
+            content: "\f106";
+            right: 20px;
+            top: 50%;
+            margin-top: -8px;
+        }
     }
     > .content {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height .6s;
+        display: none;
         > .table {
             margin-bottom: 0;
         }

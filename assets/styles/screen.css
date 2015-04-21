@@ -464,7 +464,10 @@ table {
   margin-bottom: 0;
 }
 .table-collapse.open > .content {
-  max-height: 300px;
+  display: block;
+}
+.table-collapse.open > .header:after {
+  content: "\f103";
 }
 .table-collapse > .header {
   cursor: pointer;
@@ -475,11 +478,18 @@ table {
   font-size: 14px;
   font-size: 1.4rem;
   padding: 1.3rem 2rem;
+  position: relative;
+}
+.table-collapse > .header:after {
+  position: absolute;
+  font-family: "mixpo-icons";
+  content: "\f106";
+  right: 20px;
+  top: 50%;
+  margin-top: -8px;
 }
 .table-collapse > .content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.6s;
+  display: none;
 }
 .table-collapse > .content > .table {
   margin-bottom: 0;

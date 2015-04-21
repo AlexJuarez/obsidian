@@ -7,10 +7,9 @@ define(function (require) {
     app.directive('highlight', [function () {
         return {
             restrict: 'A',
-            link: function (scope, element, attrs) {
+            link: function (scope, element) {
                 hljs.highlightBlock(element[0]);
             }
-
         };
     }]);
 });
