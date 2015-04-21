@@ -61,6 +61,16 @@ h6 + hr {
   margin-top: -2rem;
   border-top-color: #3c3c3c;
 }
+h1 small,
+h2 small,
+h3 small,
+h4 small,
+h5 small,
+h6 small {
+  font-size: 65%;
+  font-weight: normal;
+  color: #707274;
+}
 h1 {
   font-size: 30px;
   font-size: 3rem;
