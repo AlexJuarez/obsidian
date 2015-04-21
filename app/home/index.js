@@ -9,5 +9,6 @@ define(function (require) {
     require('./toggleClass');
     require('./comparisonChart');
     require('./formatFilter');
-    require('./code');
+    require('./codeSnippet');
+    require('./highlight');
 });
