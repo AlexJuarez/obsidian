@@ -9,4 +9,5 @@ define(function (require) {
     require('./toggleClass');
     require('./comparisonChart');
     require('./formatFilter');
+    require('./code');
 });

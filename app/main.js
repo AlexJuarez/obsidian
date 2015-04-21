@@ -8,7 +8,8 @@ require.config({
         'domReady': 'components/domReady/domReady',
         'tpl': 'components/requirejs-tpl-angular/tpl',
         'text': 'components/requirejs-text/text',
-        'd3': 'components/d3/d3'
+        'd3': 'components/d3/d3',
+        'hljs': 'components/highlightjs/highlight.pack'
     },
     shim: {
         'd3': {
