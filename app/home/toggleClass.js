@@ -6,7 +6,7 @@ define(function (require) {
 
     var app = require('./module');
 
-    app.directive('toggleClass', function () {
+    app.directive('toggleClass', [function () {
         return {
             restrict: 'A',
             link: function (scope, element, attrs) {
@@ -15,5 +15,5 @@ define(function (require) {
                 });
             }
         };
-    });
+    }]);
 });

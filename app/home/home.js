@@ -3,6 +3,7 @@
  */
 /* jshint camelcase: false */
 /* jshint -W098 */
+/* jshint -W004 */
 
 'use strict';
 
@@ -10,7 +11,12 @@ define(function (require) {
     var app = require('./module');
     var ng = require('angular');
 
-    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
+    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll) {
+        $scope.navigation = [];
+        $scope.state = '';
+        $scope.sort = sort;
+        $scope.changeGlyph = changeGlyph;
+        $scope.scrollTo = scrollTo;
 
         $http.get('fixtures/table.json').then(function (res) {
             $scope.table = res.data;
@@ -20,9 +26,104 @@ define(function (require) {
             $scope.tableComplex = res.data;
         });
 
-        $scope.state = '';
-        $scope.sort = sort;
-        $scope.changeGlyph = changeGlyph;
+        /**
+         * A bunch of code around building out menus dynamically
+         */
+
+        $timeout(function () {
+            var output = [];
+            var $headers = ng.element($window.document).find('h1');
+            ng.forEach($headers, function (d, i) {
+                var $elem = ng.element(d);
+                if ($elem.attr('id')) {
+                    var children = [];
+                    var $children = $elem.parent().find('h2');
+                    ng.forEach($children, function (d, i) {
+                        var $child = ng.element(d);
+                        if ($child.attr('id')) {
+                            children.push({
+                                value: $child.text(),
+                                id: $child.attr('id'),
+                                elem: $child,
+                                active: false
+                            });
+                        }
+                    });
+                    output.push({
+                        value: $elem.text(),
+                        id: $elem.attr('id'),
+                        children: children,
+                        elem: $elem,
+                        active: false
+                    });
+                }
+            });
+            output[0].active = true;
+            $scope.navigation = output;
+            ng.element($window).bind('scroll',
+                debounce(function () {
+                    var scrollTop = this.pageYOffset;
+                    var closest = '';
+                    var offsetTop;
+                    for (var i = 0; i < output.length; i++) {
+                        var children = output[i].children;
+                        offsetTop = output[i].elem[0].offsetTop;
+                        /* jshint -W083 */
+                        ng.forEach(children, function (v, k) {
+                            v.active = false;
+                        });
+
+                        if (offsetTop <= scrollTop && i + 1 >= output.length ||
+                            i + 1 < output.length &&
+                            offsetTop <= scrollTop &&
+                            scrollTop < output[i + 1].elem[0].offsetTop) {
+                            closest = output[i].id;
+
+                            for (var k = 0; k < children.length; k++) {
+                                offsetTop = children[k].elem[0].offsetTop;
+                                if (offsetTop <= scrollTop && k + 1 >= children.length ||
+                                    k + 1 < children.length &&
+                                    offsetTop <= scrollTop &&
+                                    scrollTop < children[k + 1].elem[0].offsetTop) {
+                                    closest = children[k].id;
+                                    children[k].active = true;
+                                } else {
+                                    children[k].active = false;
+                                }
+                            }
+                        }
+                        output[i].active = closest === output[i].id;
+                    }
+                    $scope.$apply(function () {
+                        $location.hash(closest);
+                    });
+                }, 100)
+            );
+        });
+
+        function debounce(func, wait, immediate) {
+            var timeout;
+            return function () {
+                var context = this, args = arguments;
+                function later() {
+                    timeout = null;
+                    if (!immediate) {
+                        func.apply(context, args);
+                    }
+                }
+                var callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) {
+                    func.apply(context, args);
+                }
+            };
+        }
+
+        function scrollTo(id) {
+            $location.hash(id);
+            $anchorScroll();
+        }
 
         function changeGlyph(e) {
             e = e || window.event;

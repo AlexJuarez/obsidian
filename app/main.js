@@ -12,6 +12,9 @@ require.config({
         'hljs': 'components/highlightjs/highlight.pack'
     },
     shim: {
+        'hljs': {
+            exports: 'hljs'
+        },
         'd3': {
             exports: 'd3'
         },

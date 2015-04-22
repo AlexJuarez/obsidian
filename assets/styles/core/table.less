@@ -160,6 +160,37 @@ table {
     }
 }
 
+.table-collapse-group {
+    .table-collapse {
+        > .header {
+            border-radius: 0;
+        }
+        & + .table-collapse {
+            > .header {
+                border-top: none;
+            }
+        }
+        &.open + .table-collapse {
+            > .header {
+                border-top: 1px solid;
+            }
+        }
+        &:first-child {
+            > .header {
+                border-top-left-radius: 0.2rem;
+                border-top-right-radius: 0.2rem;
+            }
+        }
+        &:last-child {
+            > .header {
+                border-bottom-left-radius: 0.2rem;
+                border-bottom-right-radius: 0.2rem;
+            }
+        }
+
+    }
+}
+
 .table-collapse {
     &.open {
         > .content {
@@ -167,7 +198,7 @@ table {
         }
         > .header {
             &:after {
-                content:"\f103";
+                content:"\f106";
             }
         }
     }
@@ -183,7 +214,7 @@ table {
         &:after {
             position: absolute;
             font-family: "mixpo-icons";
-            content: "\f106";
+            content: "\f109";
             right: 20px;
             top: 50%;
             margin-top: -8px;

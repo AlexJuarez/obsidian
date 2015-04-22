@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./module');
     //var ng = require('angular');
 
-    app.filter('format', ['$filter', '$sce', function ($filter) {
+    app.filter('format', ['$filter', function ($filter) {
         function percent(input) {
             return $filter('number')(input, 2) + '%';
         }

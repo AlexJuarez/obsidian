@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./module');
     var d3 = require('d3');
 
-    app.directive('barChart', function () {
+    app.directive('barChart', [function () {
         return {
             link: function (scope, elem, attr) {
                 var key = attr.barChart;
@@ -30,5 +30,5 @@ define(function (require) {
                 });
             }
         };
-    });
+    }]);
 });

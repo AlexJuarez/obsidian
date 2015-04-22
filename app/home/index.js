@@ -4,6 +4,8 @@
 define(function (require) {
     'use strict';
 
+    require('tpl!./mixpo-icons.html');
+    require('tpl!./navigation.html');
     require('./home');
     require('./homeRoutes');
     require('./toggleClass');

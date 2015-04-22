@@ -92,6 +92,7 @@ module.exports = function (grunt) {
                     destHtml: 'app/home',
                     htmlDemoTemplate: 'assets/icons/template.html',
                     syntax: 'bootstrap',
+                    relativeFontPath: '/font/',
                     templateOptions: {
                         baseClass: 'glyph-icon',
                         classPrefix: 'glyph-',
@@ -108,7 +109,8 @@ module.exports = function (grunt) {
                     paths: ['assets/styles/less']
                 },
                 files: {
-                    'assets/styles/screen.css': 'assets/styles/less/screen.less'
+                    'assets/styles/screen.css': 'assets/styles/less/screen.less',
+                    'assets/styles/core.css': 'assets/styles/core/core.less'
                 }
             },
             dist: {
@@ -120,7 +122,8 @@ module.exports = function (grunt) {
                     ]
                 },
                 files: {
-                    'assets/styles/screen.css': 'assets/styles/less/screen.less'
+                    'assets/styles/screen.css': 'assets/styles/less/screen.less',
+                    'assets/styles/core.css': 'assets/styles/core/core.less'
                 }
             }
         },
@@ -130,6 +133,8 @@ module.exports = function (grunt) {
                 options: {
                     baseUrl: 'app',
                     mainConfigFile: 'app/main.js',
+                    generateSourceMaps: true,
+                    preserveLicenseComments: false,
 
                     optimize: 'uglify2', //none uglify2
                     out: 'dist/assets/scripts/app.js',
@@ -304,8 +309,8 @@ module.exports = function (grunt) {
     ]);
 
     // Restart
-    grunt.registerTask('restart', 'Restart the server.', [
-        'express:dev',
+    grunt.registerTask('serve', 'Restart the server.', [
+        'express:prod',
         'watch'
     ]);
 
