@@ -11,7 +11,8 @@ define(function (require) {
     var app = require('./module');
     var ng = require('angular');
 
-    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll) {
+    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll',
+        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll) {
         $scope.navigation = [];
         $scope.state = '';
         $scope.sort = sort;

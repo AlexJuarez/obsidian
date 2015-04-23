@@ -36,8 +36,8 @@ module.exports = function (grunt) {
                 tasks: ['less:dev']
             },
             fonts: {
-                files: ['assets/icons/*.svg'],
-                tasks: ['webfont']
+                files: ['assets/icons/*.svg']//,
+                //tasks: ['webfont']
             },
             images: {
                 files: [
@@ -301,7 +301,7 @@ module.exports = function (grunt) {
     grunt.registerTask('workon', 'Start working on this project.', [
         'jshint',
         'less:dev',
-        'webfont',
+        //'webfont',
         'express:dev',
         //'open:site',
         //'open:editor',
