@@ -173,8 +173,7 @@ module.exports = function (grunt) {
                     optimize: 'none',
                     out: 'build/core.js',
                     findNestedDependencies: true,
-                    include: ['main-core'],
-                    name: 'components/almond/almond'
+                    include: ['main-core']
                 }
             }
         },
