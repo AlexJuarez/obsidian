@@ -38155,11 +38155,10 @@ define('app-core',['require','angular','./chart/index','./table/index'],function
 /**
  * Created by Alex on 3/1/2015.
  */
-define('bootstrap-core',['require','app-core','angular'],function (require) {
+define('bootstrap-core',['require','app-core'],function (require) {
     'use strict';
 
     require('app-core');
-    window.Angular = require('angular');
 });
 
 /**
