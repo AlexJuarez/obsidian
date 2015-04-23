@@ -2,7 +2,9 @@
     "name": "obsidian",
     "version": "0.5.0",
     "main": [
-
+        "build/core.js",
+        "build/core.css",
+        "build/mixpo-icons.css"
     ],
     "ignore": [
         "views",
@@ -16,7 +18,7 @@
         ".gitignore",
         ".editorconfig"
     ],
-    "dependencies": {
+    "devDependencies": {
         "angular": "~1.4.0",
         "requirejs": "~2.1.16",
         "angular-ui-router": "~0.2.13",
@@ -25,6 +27,5 @@
         "almond": "~0.3.0",
         "d3": "~3.5.5",
         "highlightjs": "~8.5.0"
-    },
-    "devDependencies": {}
+    }
 }
