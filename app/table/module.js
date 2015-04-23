@@ -5,7 +5,6 @@ define(function (require) {
     'use strict';
 
     var ng = require('angular');
-    require('ui-router');
 
-    return ng.module('app.home', ['ui.router', 'app.tables', 'app.charts']);
+    return ng.module('app.tables', ['app.charts']);
 });

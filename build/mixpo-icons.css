@@ -4,10 +4,10 @@
 
 @font-face {
 	font-family:"mixpo-icons";
-	src:url("/font/52067220.mixpo-icons.eot?b4b242ecbf7fb5e36663eef55174071c");
-	src:url("/font/52067220.mixpo-icons.eot?#iefix") format("embedded-opentype"),
-		url("/font/b235087d.mixpo-icons.woff?b4b242ecbf7fb5e36663eef55174071c") format("woff"),
-		url("/font/73036d86.mixpo-icons.ttf?b4b242ecbf7fb5e36663eef55174071c") format("truetype");
+	src:url("/fonts/mixpo-icons.eot?b7ea70a00dacd6c2c0356378de5adb1b");
+	src:url("/fonts/mixpo-icons.eot?#iefix") format("embedded-opentype"),
+		url("/fonts/mixpo-icons.woff?b7ea70a00dacd6c2c0356378de5adb1b") format("woff"),
+		url("/fonts/mixpo-icons.ttf?b7ea70a00dacd6c2c0356378de5adb1b") format("truetype");
 	font-weight:normal;
 	font-style:normal;
 }

@@ -1,15 +1,30 @@
 {
-  "name": "css-scaffolding",
-  "version": "0.0.0",
-  "dependencies": {
-    "angular": "~1.4.0",
-    "requirejs": "~2.1.16",
-    "angular-ui-router": "~0.2.13",
-    "domReady": "~2.0.1",
-    "requirejs-tpl-angular": "https://github.com/AlexJuarez/requirejs-tpl-angular.git#~1.0.1",
-    "almond": "~0.3.0",
-    "d3": "~3.5.5",
-    "highlightjs": "~8.5.0"
-  },
-  "devDependencies": {}
+    "name": "obsidian",
+    "version": "0.5.0",
+    "main": [
+
+    ],
+    "ignore": [
+        "views",
+        "app",
+        "dist",
+        "assets",
+        "Procfile",
+        "Gruntfile.js",
+        ".jshintrc",
+        "app.js",
+        ".gitignore",
+        ".editorconfig"
+    ],
+    "dependencies": {
+        "angular": "~1.4.0",
+        "requirejs": "~2.1.16",
+        "angular-ui-router": "~0.2.13",
+        "domReady": "~2.0.1",
+        "requirejs-tpl-angular": "https://github.com/AlexJuarez/requirejs-tpl-angular.git#~1.0.1",
+        "almond": "~0.3.0",
+        "d3": "~3.5.5",
+        "highlightjs": "~8.5.0"
+    },
+    "devDependencies": {}
 }

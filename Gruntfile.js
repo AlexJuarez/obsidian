@@ -65,6 +65,16 @@ module.exports = function (grunt) {
                     ]
                 }]
             },
+            bower: {
+                files: [{
+                    dot: true,
+                    src: [
+                        '.tmp',
+                        'build/*',
+                        '!build/.git*'
+                    ]
+                }]
+            },
             server: ['.tmp']
         },
 
@@ -85,14 +95,14 @@ module.exports = function (grunt) {
         webfont: {
             icons: {
                 src: 'assets/icons/*.svg',
-                dest: 'assets/font',
+                dest: 'assets/fonts',
                 destCss: 'assets/styles',
                 options: {
                     htmlDemo: true,
                     destHtml: 'app/home',
                     htmlDemoTemplate: 'assets/icons/template.html',
                     syntax: 'bootstrap',
-                    relativeFontPath: '/font/',
+                    relativeFontPath: '/fonts/',
                     templateOptions: {
                         baseClass: 'glyph-icon',
                         classPrefix: 'glyph-',
@@ -111,6 +121,18 @@ module.exports = function (grunt) {
                 files: {
                     'assets/styles/screen.css': 'assets/styles/less/screen.less',
                     'assets/styles/core.css': 'assets/styles/core/core.less'
+                }
+            },
+            bower: {
+                options: {
+                    paths: ['assets/styles/less'],
+                    plugins: [
+                        new (require('less-plugin-autoprefix'))({browsers: ['last 2 versions']}),
+                        new (require('less-plugin-clean-css'))()
+                    ]
+                },
+                files: {
+                    'build/core.css': 'assets/styles/core/core.less'
                 }
             },
             dist: {
@@ -141,6 +163,17 @@ module.exports = function (grunt) {
 
                     findNestedDependencies: true,
                     include: ['main'],
+                    name: 'components/almond/almond'
+                }
+            },
+            core: {
+                options: {
+                    baseUrl: 'app',
+                    mainConfigFile: 'app/main-core.js',
+                    optimize: 'none',
+                    out: 'build/core.js',
+                    findNestedDependencies: true,
+                    include: ['main-core'],
                     name: 'components/almond/almond'
                 }
             }
@@ -184,7 +217,7 @@ module.exports = function (grunt) {
                         'dist/assets/scripts/**/*.js',
                         'dist/assets/styles/**/*.css',
                         'dist/assets/images/**/*.{png,jpg,jpeg,webp}',
-                        'dist/assets/font/**/*.*'
+                        'dist/assets/fonts/**/*.*'
                     ]
                 }
             }
@@ -266,7 +299,7 @@ module.exports = function (grunt) {
                         '*.{ico,png,txt}',
                         '.htaccess',
                         'images/**/*.{webp,gif}',
-                        'font/{,*/}*.*'
+                        'fonts/{,*/}*.*'
                     ]
                 }, {
                     expand: true,
@@ -274,6 +307,25 @@ module.exports = function (grunt) {
                     cwd: 'views',
                     dest: 'dist/views/',
                     src: '**/*.html'
+                }]
+            },
+            bower: {
+                files: [{
+                    expand: true,
+                    dot: true,
+                    cwd: 'assets',
+                    dest: 'build',
+                    src: [
+                        'fonts/{,*/}*.*'
+                    ]
+                }, {
+                    expand: true,
+                    dot: true,
+                    cwd: 'assets/styles',
+                    dest: 'build',
+                    src: [
+                        'mixpo-icons.css'
+                    ]
                 }]
             },
             styles: {
@@ -312,6 +364,13 @@ module.exports = function (grunt) {
     grunt.registerTask('serve', 'Restart the server.', [
         'express:prod',
         'watch'
+    ]);
+
+    grunt.registerTask('build:bower', 'Creates assets to export', [
+        'clean:bower',
+        'less:bower',
+        'requirejs:core',
+        'copy:bower'
     ]);
 
 

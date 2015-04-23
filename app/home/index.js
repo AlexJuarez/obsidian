@@ -9,8 +9,6 @@ define(function (require) {
     require('./home');
     require('./homeRoutes');
     require('./toggleClass');
-    require('./comparisonChart');
-    require('./formatFilter');
     require('./codeSnippet');
     require('./highlight');
 });

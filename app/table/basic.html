@@ -1,0 +1,18 @@
+<table class="table" ng-class="classes">
+    <thead>
+    <tr>
+        <th ng-repeat="header in table.headers track by $index">
+            {{header.main}}
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="row in table.data track by $index">
+        <td ng-repeat="(key, value) in row">
+            <div class="cell">
+                {{value|format:key:table.rules}}
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
