@@ -5,4 +5,5 @@ define(function (require) {
     'use strict';
 
     require('app-core');
+    window.Angular = require('angular');
 });
