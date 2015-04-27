@@ -16,7 +16,8 @@ table {
     width: 100%;
     margin-bottom: 3rem;
     > thead {
-        .font-size(1);
+        .font-size(1.2);
+        font-weight: 900;
         text-transform: uppercase;
         text-align: left;
         > tr {
@@ -28,9 +29,12 @@ table {
         }
     }
     > tbody {
-        .font-size(1.2);
+        .font-size(1.4);
         font-weight: bold;
         color: @dark-gray;
+        > tr:last-child {
+            border-bottom: 2px solid @table-header-bg;
+        }
         > tr {
             background: @table-bg;
             &:nth-child(2n+1) {
@@ -206,9 +210,9 @@ table {
         cursor: pointer;
         box-sizing: border-box;
         border: 1px solid @table-collapse-border;
-        border-radius: 0.2rem;
+        //border-radius: 0.2rem; TODO:
         font-weight: bold;
-        .font-size(1.4);
+        .font-size(1.6);
         padding: 1.3rem 2rem;
         position: relative;
         &:after {
