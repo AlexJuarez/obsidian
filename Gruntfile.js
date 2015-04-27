@@ -163,7 +163,7 @@ module.exports = function (grunt) {
 
                     findNestedDependencies: true,
                     include: ['main'],
-                    name: '../components/almond/almond'
+                    name: 'components/almond/almond'
                 }
             },
             core: {
@@ -175,7 +175,7 @@ module.exports = function (grunt) {
                     findNestedDependencies: true,
                     wrap: true,
                     include: ['main-core'],
-                    name: '../components/almond/almond'
+                    name: 'components/almond/almond'
                 }
             }
         },

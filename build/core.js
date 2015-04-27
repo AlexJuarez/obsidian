@@ -37593,7 +37593,7 @@ define('table/module',['require','angular'],function (require) {
 
     var ng = require('angular');
 
-    return ng.module('app.tables', ['app.charts']);
+    return ng.module('app.tables', []);
 });
 
 define('table/formatFilter',['require','./module'],function (require) {
