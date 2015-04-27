@@ -6,5 +6,5 @@ define(function (require) {
 
     var ng = require('angular');
 
-    return ng.module('app.tables', ['app.charts']);
+    return ng.module('app.tables', []);
 });
