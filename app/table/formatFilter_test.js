@@ -33,7 +33,7 @@ define(function (require) {
             expect(filter('default', '', {'test': 'percent'})).toEqual('default');
         });
 
-        it('case quartile', function() {
+        it('case quartile', function () {
             expect(filter([2, 5], 'test', {'test': 'quartile'})).toEqual('2.00% 5.00%');
         });
 
