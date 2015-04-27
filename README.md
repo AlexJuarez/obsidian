@@ -17,3 +17,9 @@ This project also requires
 * `grunt workon` - starts a local server
 * `grunt build` builds the distribution version
 * `grunt build:bower` builds the core version
+
+## Running tests
+
+The test runner for this project is karma.
+
+* `karma start`
