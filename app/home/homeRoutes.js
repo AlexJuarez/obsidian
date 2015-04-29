@@ -13,6 +13,7 @@ define(function (require) {
     require('tpl!./table.html');
     require('tpl!./header.html');
     require('tpl!./dropdown.html');
+    require('tpl!./nav.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
