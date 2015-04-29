@@ -21,6 +21,10 @@ define(function (require) {
 
                     var clone = element.clone();
                     clone.removeAttr('create-snippet');
+                    clone.removeClass('ng-scope');
+                    ng.forEach(clone.children(), function (child) {
+                        ng.element(child).removeClass('ng-isolate-scope');
+                    });
 
                     //Select the compiled template code element.
                     ng.element(template[0]).find('code').text(clone[0].outerHTML);

@@ -1,7 +1,15 @@
 @dropdown-link-color: @dark-gray;
+@dropdown-link-hover: #d7d7d7;
+@dropdown-bg-color: #ececec;
 
 .dropdown {
     position: relative;
+}
+
+.dropdown.dropdown-hover:hover {
+    .dropdown-menu {
+        display:block;
+    }
 }
 
 .open {
@@ -21,19 +29,19 @@
     z-index: @zindex-dropdown;
     display: none; // none by default, but block on "open" of the menu
     float: left;
-    min-width: 160px;
+    min-width: 190px;
     padding: 0.5rem 0;
-    margin: 0.2rem 0 0; // override default ul
+    margin: 0; // override default ul
     list-style: none;
-    .font-size(1.2);
+    .font-size(1.4);
     text-align: left; // Ensures proper alignment if parent has it changed (e.g., modal footer)
     border-radius: @border-radius-base;
-    background: @light-gray;
+    background: @dropdown-bg-color;
     background-clip: padding-box;
 
     .divider {
         height: 1px;
-        margin: 0.9rem 0;
+        margin: 0.3rem 0;
         overflow: hidden;
         background-color: @dark-gray;
     }
@@ -41,12 +49,14 @@
     // Links within the dropdown menu
     > li > a {
         display: block;
-        padding: 3px 20px;
+        padding: 0.9rem 3rem;
         clear: both;
         font-weight: normal;
         line-height: @line-height-base;
         color: @dropdown-link-color;
         white-space: nowrap; // prevent links from randomly breaking onto new lines
+        &:hover {
+            background: @dropdown-link-hover;
+        }
     }
 }
-

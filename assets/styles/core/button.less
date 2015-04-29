@@ -13,7 +13,7 @@
     padding: 6px 12px;
     .font-size(1.6);
     line-height: 1.42857;
-    border-radius: .2rem;
+    border-radius: 0;
     box-sizing: border-box;
     user-select: none;
     outline: none;
@@ -30,6 +30,9 @@
     font-family: 'Lato', sans-serif;
     font-weight: bold;
     letter-spacing: .1rem;
+    [class*="glyph"] {
+        .font-size(1.1);
+    }
 }
 
 .btn-block {
@@ -41,21 +44,18 @@
     padding: 1rem 1.6rem;
     .font-size(1.8);
     line-height: 1.33;
-    border-radius: .2rem;
 }
 
 .btn-sm {
     padding: .5rem 1rem;
     .font-size(1.2);
     line-height: 1.5;
-    border-radius: .2rem;
 }
 
 .btn-xs {
     padding: .1rem .5rem;
     .font-size(1.2);
     line-height: 1.5;
-    border-radius: .2rem;
 }
 
 .btn-default {
