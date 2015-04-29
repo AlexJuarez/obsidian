@@ -5,6 +5,7 @@
   background-color: #f7f7f9;
   border: 1px solid #e1e1e8;
   border-radius: 4px;
+  box-sizing: border-box;
 }
 .highlight pre {
   padding: 0;
@@ -16,7 +17,7 @@
   border: 0;
 }
 .highlight pre code:first-child {
-  display: inline-block;
+  box-sizing: border-box;
   padding-right: 45px;
 }
 .highlight pre code {

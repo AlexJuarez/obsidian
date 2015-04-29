@@ -815,17 +815,17 @@ table {
 }
 @media (min-width: 768px) {
   .container {
-    width: 768px;
+    width: 750px;
   }
 }
 @media (min-width: 992px) {
   .container {
-    width: 992px;
+    width: 970px;
   }
 }
 @media (min-width: 1200px) {
   .container {
-    width: 1200px;
+    width: 1170px;
   }
 }
 .container-fluid {

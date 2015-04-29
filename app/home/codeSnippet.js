@@ -27,10 +27,11 @@ define(function (require) {
                     });
 
                     //Select the compiled template code element.
-                    ng.element(template[0]).find('code').text(clone[0].outerHTML);
+                    var code = ng.element(template[0]).find('code');
+                    code.text(clone[0].outerHTML);
 
                     //Highlight the code element
-                    hljs.highlightBlock(template[0]);
+                    hljs.highlightBlock(code[0]);
 
                     //append after the element the fruits of our labor
                     element.after(template[0]);

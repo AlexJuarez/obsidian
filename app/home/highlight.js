@@ -8,9 +8,10 @@ define(function (require) {
         return {
             restrict: 'A',
             link: function (scope, element) {
-                var content = element.find('code').html();
-                element.find('code').html(content.trim());
-                hljs.highlightBlock(element[0]);
+                var code = element.find('code');
+                var content = code.html();
+                code.html(content.trim());
+                hljs.highlightBlock(code[0]);
             }
         };
     }]);

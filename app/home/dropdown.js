@@ -5,7 +5,6 @@ define(function (require) {
     'use strict';
 
     var app = require('./module');
-    var ng = require('angular');
 
     app.directive('dropdownToggle', ['$document', function ($document) {
         return {
@@ -22,16 +21,18 @@ define(function (require) {
 
                 $document.on('click', documentClickHandler);
 
-                element.parent().on('click', function (event) {
-                    var $elem = ng.element(event.target);
-
+                element.on('click', function (event) {
                     scope.$apply(function () {
-                        if ($elem.hasClass('dropdown-toggle')) {
-                            scope.selected = !scope.selected;
-                        } else {
-                            scope.selected = false;
-                        }
+                        scope.selected = !scope.selected;
                     });
+                    event.stopPropagation();
+                });
+
+                element.parent().on('click', function () {
+                    scope.$apply(function () {
+                        scope.selected = false;
+                    });
+
                     event.stopPropagation();
                 });
 
