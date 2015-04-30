@@ -30,20 +30,20 @@
   width: 263px;
   padding-left: 20px;
 }
-.side-nav > .nav {
+.side-nav .nav {
   padding-left: 0;
   margin-bottom: 0;
   list-style: none;
 }
-.side-nav > .nav .active {
+.side-nav .nav .active {
   color: #003c60;
 }
-.side-nav > .nav > li > a {
+.side-nav .nav > li > a {
   display: block;
   padding: 4px 20px;
   font-size: 13px;
 }
-.side-nav > .nav .nav > li > a {
+.side-nav .nav .nav > li > a {
   padding-top: 1px;
   padding-bottom: 1px;
   padding-left: 30px;
