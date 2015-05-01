@@ -1,278 +1,114 @@
-@import "form";
+@nav-item-bg: #026baa;
+@nav-item-hover-bg: #fff;
+@nav-item-color: #fff;
 
-@navbar-padding-horizontal: 1.5rem;
-@navbar-height: 50px;
-@navbar-padding-vertical: 1.5rem;
-@font-size-large: 1.8rem;
-@line-height-computed: 20px;
+.navbar-header {
+    .logo {
+        height: 38px;
+        width: 190px;
+        margin-bottom: 40px;
+        display: inline-block;
+        background: data-uri('../../images/mixpologo.svg');
+    }
+    .settings {
+        .dropdown-toggle {
+            background: @nav-item-bg;
+        }
+        margin-top: -4rem;
+    }
 
-.navbar-vertical-align(@element-height) {
-    margin-top: ((@navbar-height - @element-height) / 2);
-    margin-bottom: ((@navbar-height - @element-height) / 2);
+}
+
+.navbar-default {
+    background: @brand-color;
+
+    .primary.active {
+        background: @dark-blue;
+    }
+
+    .nav > li > a {
+        display: inline-block;
+        background: @nav-item-bg;
+        color: @white;
+
+        &:hover, &.active {
+            background: @nav-item-hover-bg;
+            color: @brand-color;
+        }
+    }
 }
 
 .navbar {
-    position: relative;
-
-    margin-bottom: 0;
-
-    // Prevent floats from breaking the navbar
-    &:extend(.clearfix all);
-
-    @media (min-width: @grid-float-breakpoint) {
-        //apply styles when the navbar breaks
-    }
-}
-
-.navbar-default .navbar-toggle .icon-bar {
-    background-color: #888;
-}
-
-.navbar-header {
-    &:extend(.clearfix all);
-
-    @media (min-width: @grid-float-breakpoint) {
-        float: left;
-    }
-
-    &:before {
-        display: table;
-        content: " ";
-    }
-
-    &:after {
-        content: " ";
-        display: table;
-        clear:both;
-    }
-}
-
-.collapse {
-    display: none;
-}
-
-.navbar-collapse {
-    overflow-x: visible;
-    padding-right: @navbar-padding-horizontal;
-    padding-left:  @navbar-padding-horizontal;
-    border-top: 1px solid transparent;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
-    &:extend(.clearfix all);
-    -webkit-overflow-scrolling: touch;
-
-    &.in {
-        overflow-y: auto;
-    }
-
-    @media (min-width: @grid-float-breakpoint) {
-        width: auto;
-        border-top: 0;
-        box-shadow: none;
-
-        &.collapse {
-            display: block !important;
-            height: auto !important;
-            padding-bottom: 0; // Override default setting
-            overflow: visible !important;
-        }
-
-        &.in {
-            overflow-y: visible;
-        }
-
-        // Undo the collapse side padding for navbars with containers to ensure
-        // alignment of right-aligned contents.
-        .navbar-fixed-top &,
-        .navbar-static-top &,
-        .navbar-fixed-bottom & {
-            padding-left: 0;
-            padding-right: 0;
-        }
-    }
-
-    &:before {
-        display: table;
-        content: " ";
-    }
-
-    &:after {
-        content: " ";
-        display: table;
-        clear:both;
-    }
-}
-
-.container,
-.container-fluid {
-    > .navbar-header,
-    > .navbar-collapse {
-        margin-right: -@navbar-padding-horizontal;
-        margin-left:  -@navbar-padding-horizontal;
-
-        @media (min-width: @grid-float-breakpoint) {
-            margin-right: 0;
-            margin-left:  0;
-        }
-    }
-}
-
-.navbar-brand {
-    float: left;
+    padding-top: 40px;
     box-sizing: border-box;
-    padding: @navbar-padding-vertical @navbar-padding-horizontal;
-    font-size: @font-size-large;
-    line-height: @line-height-computed;
-    height: @navbar-height;
+    position: relative;
+    .clearfix();
 
-    &:hover,
-    &:focus {
-        text-decoration: none;
-    }
+    .nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        > li {
+            float: left;
+            margin-right: 2rem;
+            &:last-child {
+                margin-right: 0;
+            }
+            > a {
+                padding: 0 2rem;
+                line-height: 6rem;
+            }
 
-    > img {
-        display: block;
+        }
     }
 
     @media (min-width: @grid-float-breakpoint) {
-        .navbar > .container &,
-        .navbar > .container-fluid & {
-            margin-left: -@navbar-padding-horizontal;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    @media (min-width: @screen-md-min) {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+}
+
+.navbar-left {
+    float: left;
+}
+
+.navbar-right {
+    float: right;
+
+    .dropdown-menu {
+        right: 0;
+        left: auto;
+    }
+
+    &.nav {
+        > li {
+            &:first-child {
+                margin-left: 0;
+            }
+            margin-left: 2rem;
+            margin-right: 0;
         }
     }
 }
 
 .navbar-toggle {
-    position: relative;
-    float: right;
-    margin-right: @navbar-padding-horizontal;
-    padding: 9px 10px;
-    .navbar-vertical-align(34px);
-    background-color: transparent;
-    background-image: none; // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
-    border: 1px solid transparent;
-    border-radius: @border-radius-base;
-
-    // We remove the `outline` here, but later compensate by attaching `:hover`
-    // styles to `:focus`.
-    &:focus {
-        outline: 0;
-    }
-
-    // Bars
-    .icon-bar {
-        display: block;
-        width: 22px;
-        height: 2px;
-        border-radius: 1px;
-    }
-    .icon-bar + .icon-bar {
-        margin-top: 4px;
-    }
-
     @media (min-width: @grid-float-breakpoint) {
         display: none;
     }
 }
 
-.navbar-nav {
-    margin: (@navbar-padding-vertical / 2) -@navbar-padding-horizontal;
+.navbar-collapse {
+    width: auto;
+    bottom: 0;
 
-    > li > a {
-        padding-top:    10px;
-        padding-bottom: 10px;
-        line-height: @line-height-computed;
-    }
+    .clearfix();
 
-    @media (max-width: @grid-float-breakpoint-max) {
-        // Dropdowns get custom display when collapsed
-        .open .dropdown-menu {
-            position: static;
-            float: none;
-            width: auto;
-            margin-top: 0;
-            background-color: transparent;
-            border: 0;
-            box-shadow: none;
-            > li > a,
-            .dropdown-header {
-                padding: 5px 15px 5px 25px;
-            }
-            > li > a {
-                line-height: @line-height-computed;
-                &:hover,
-                &:focus {
-                    background-image: none;
-                }
-            }
-        }
-    }
-
-    // Uncollapse the nav
-    @media (min-width: @grid-float-breakpoint) {
-        float: left;
-        margin: 0;
-
-        > li {
-            float: left;
-            > a {
-                padding-top:    @navbar-padding-vertical;
-                padding-bottom: @navbar-padding-vertical;
-            }
-        }
-    }
-}
-
-.navbar-form {
-    margin-left: -@navbar-padding-horizontal;
-    margin-right: -@navbar-padding-horizontal;
-    padding: 10px @navbar-padding-horizontal;
-    border-top: 1px solid transparent;
-
-    // Mixin behavior for optimum display
-    .form-inline();
-
-    .form-group {
-        @media (max-width: @grid-float-breakpoint-max) {
-            margin-bottom: 5px;
-
-            &:last-child {
-                margin-bottom: 0;
-            }
-        }
-    }
-
-    // Vertically center in expanded, horizontal navbar
-    .navbar-vertical-align(@input-height-base);
-
-    // Undo 100% width for pull classes
-    @media (min-width: @grid-float-breakpoint) {
-        width: auto;
-        border: 0;
-        margin-left: 0;
-        margin-right: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-    }
-}
-
-.navbar-text {
-    .navbar-vertical-align(@line-height-computed);
-
-    @media (min-width: @grid-float-breakpoint) {
-        float: left;
-        margin-left: @navbar-padding-horizontal;
-        margin-right: @navbar-padding-horizontal;
-    }
-}
-
-@media (min-width: @grid-float-breakpoint) {
-    .navbar-left  { float: left; }
-    .navbar-right {
-        float: right;
-        margin-right: -@navbar-padding-horizontal;
-
-        ~ .navbar-right {
-            margin-right: 0;
-        }
+    @media (max-width: @grid-float-breakpoint) {
+        display: none;
     }
 }
