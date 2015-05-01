@@ -4,17 +4,31 @@
 
 .navbar-header {
     .logo {
-        height: 38px;
-        width: 190px;
-        margin-bottom: 40px;
         display: inline-block;
         background: data-uri('../../images/mixpologo.svg');
+        @media (min-width: @grid-float-breakpoint) {
+            margin-bottom: 40px;
+            height: 38px;
+            width: 190px;
+        }
+        @media (max-width: @grid-float-breakpoint) {
+            float: right;
+            margin-top: 9px;
+            margin-right: 15px;
+            background-size: 160px 32px;
+            height: 32px;
+            width: 160px;
+            background-repeat: no-repeat;
+        }
     }
     .settings {
         .dropdown-toggle {
             background: @nav-item-bg;
         }
         margin-top: -4rem;
+        @media (max-width: @grid-float-breakpoint) {
+            display: none;
+        }
     }
 
 }
@@ -37,13 +51,42 @@
             color: @brand-color;
         }
     }
+
+    .navbar-toggle {
+        background: @nav-item-bg;
+        .icon-bar {
+            background-color: @nav-item-color;
+        }
+    }
 }
 
 .navbar {
-    padding-top: 40px;
     box-sizing: border-box;
     position: relative;
     .clearfix();
+
+    .navbar-toggle {
+        position: relative;
+        float: left;
+        padding: 9px 10px;
+        margin-top: 8px;
+        margin-left: 15px;
+        margin-bottom: 8px;
+        background-image: none;
+        border: 1px solid transparent;
+        border-radius: 4px;
+
+        .icon-bar {
+            display: block;
+            width: 22px;
+            height: 2px;
+            border-radius: 1px;
+            margin-right: 0;
+            + .icon-bar {
+                margin-top: 4px;
+            }
+        }
+    }
 
     .nav {
         list-style: none;
@@ -64,11 +107,13 @@
     }
 
     @media (min-width: @grid-float-breakpoint) {
+        padding-top: 40px;
         padding-left: 2rem;
         padding-right: 2rem;
     }
 
     @media (min-width: @screen-md-min) {
+        padding-top: 40px;
         padding-left: 4rem;
         padding-right: 4rem;
     }
