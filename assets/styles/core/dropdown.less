@@ -12,6 +12,10 @@
     }
 }
 
+.dropdown-toggle {
+    cursor: pointer;
+}
+
 .open {
     .dropdown-menu {
         display: block;
@@ -19,6 +23,15 @@
 
     > a {
         outline: 0;
+    }
+}
+
+.dropdown-search {
+    .input {
+        background-color: transparent;
+        border: none;
+        font-style: italic;
+        outline: none;
     }
 }
 
@@ -49,7 +62,7 @@
     // Links within the dropdown menu
     > li > a {
         display: block;
-        padding: 0.9rem 3rem;
+        padding: 0.9rem 2rem;
         clear: both;
         font-weight: normal;
         line-height: @line-height-base;

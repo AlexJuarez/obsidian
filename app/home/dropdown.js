@@ -28,10 +28,12 @@ define(function (require) {
                     event.stopPropagation();
                 });
 
-                element.parent().on('click', function () {
-                    scope.$apply(function () {
-                        scope.selected = false;
-                    });
+                element.parent().on('click', function (event) {
+                    if (event.target.tagName === 'A') {
+                        scope.$apply(function () {
+                            scope.selected = false;
+                        });
+                    }
 
                     event.stopPropagation();
                 });

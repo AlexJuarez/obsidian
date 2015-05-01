@@ -96,11 +96,13 @@ module.exports = function (grunt) {
             icons: {
                 src: 'assets/icons/*.svg',
                 dest: 'assets/fonts',
-                destCss: 'assets/styles',
+                destCss: 'assets/styles/core',
                 options: {
                     htmlDemo: true,
                     destHtml: 'app/home',
+                    stylesheet: 'less',
                     htmlDemoTemplate: 'assets/icons/template.html',
+                    template: 'assets/icons/template.less',
                     syntax: 'bootstrap',
                     relativeFontPath: '/fonts/',
                     templateOptions: {
@@ -353,8 +355,8 @@ module.exports = function (grunt) {
     // Workon
     grunt.registerTask('workon', 'Start working on this project.', [
         'jshint',
-        'less:dev',
         'webfont',
+        'less:dev',
         'express:dev',
         //'open:site',
         //'open:editor',
@@ -378,8 +380,8 @@ module.exports = function (grunt) {
     // Build
     grunt.registerTask('build', 'Build production ready assets and views.', [
         'clean:dist',
-        'less:dist',
         'webfont',
+        'less:dist',
         'concurrent:dist',
         'useminPrepare',
         'imagemin',
