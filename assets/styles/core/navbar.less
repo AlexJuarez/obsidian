@@ -22,11 +22,12 @@
 .navbar-default {
     background: @brand-color;
 
-    .primary.active {
-        background: @dark-blue;
-    }
-
     .nav > li > a {
+        &.primary.active {
+            background: @dark-blue;
+            color: @nav-item-color;
+        }
+
         display: inline-block;
         background: @nav-item-bg;
         color: @white;

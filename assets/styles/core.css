@@ -1693,13 +1693,14 @@ table {
 .navbar-default {
   background: #0378bd;
 }
-.navbar-default .primary.active {
-  background: #003c60;
-}
 .navbar-default .nav > li > a {
   display: inline-block;
   background: #026baa;
   color: #ebebeb;
+}
+.navbar-default .nav > li > a.primary.active {
+  background: #003c60;
+  color: #ffffff;
 }
 .navbar-default .nav > li > a:hover,
 .navbar-default .nav > li > a.active {
