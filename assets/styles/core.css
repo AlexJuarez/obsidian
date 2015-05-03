@@ -1792,11 +1792,11 @@ table {
 @media (max-width: 768px) {
   .navbar-header .logo {
     float: right;
-    margin-top: 9px;
+    margin-top: 12px;
     margin-right: 15px;
-    background-size: 160px 32px;
+    background-size: 140px 28px;
     height: 32px;
-    width: 160px;
+    width: 140px;
     background-repeat: no-repeat;
   }
 }
@@ -1821,7 +1821,6 @@ table {
   background: #0378bd;
 }
 .navbar-default .nav > li > a {
-  display: inline-block;
   background: #026baa;
   color: #ebebeb;
 }
@@ -1924,6 +1923,7 @@ table {
   margin-right: 0;
 }
 .navbar .nav > li > a {
+  display: inline-block;
   font-weight: bold;
   padding: 0 2rem;
   line-height: 6rem;
@@ -2056,9 +2056,11 @@ table {
   clear: both;
 }
 .navbar-collapse .dropdown-menu .dropdown-search .input {
+  box-sizing: border-box;
   color: #ffffff;
   padding: 0;
-  width: 350px;
+  width: 100%;
+  padding-left: 2em;
   line-height: 2.4rem;
   float: right;
 }
@@ -2089,63 +2091,9 @@ table {
   margin: 0;
   padding: 0;
 }
-.navbar-collapse .dropdown-menu .pin {
-  font-style: normal;
-  float: right;
-  display: inline-block;
-}
-.navbar-collapse .dropdown-menu .pin .unpin,
-.navbar-collapse .dropdown-menu .pin .repin {
-  display: none;
-}
-.navbar-collapse .dropdown-menu .pin:hover .repin {
-  display: inline-block;
-}
-.navbar-collapse .dropdown-menu .pin:hover:before {
-  margin-top: 2px;
-  margin-right: 5px;
-  content: "\f112";
-}
-.navbar-collapse .dropdown-menu .pin:hover:before:before {
-  content: "\f112";
-}
-.navbar-collapse .dropdown-menu .pin:before {
-  height: 0;
-  margin-top: 0;
-  margin-right: 0;
-  margin-left: 5px;
-  display: inline-block;
-  font-family: "mixpo-icons";
-  content: "\f111";
-  vertical-align: top;
-}
-.navbar-collapse .dropdown-menu .pin:before:before {
-  content: "\f111";
-}
-.navbar-collapse .dropdown-menu .pinned .pin:before {
-  content: "\f112";
-}
-.navbar-collapse .dropdown-menu .pinned .pin:before:before {
-  content: "\f112";
-}
-.navbar-collapse .dropdown-menu .pinned .pin:hover .repin {
-  display: none;
-}
-.navbar-collapse .dropdown-menu .pinned .pin:hover .unpin {
-  display: inline-block;
-}
-.navbar-collapse .dropdown-menu .pinned .pin:hover:before {
-  margin-top: 0;
-  margin-right: 0;
-  content: "\f111";
-}
-.navbar-collapse .dropdown-menu .pinned .pin:hover:before:before {
-  content: "\f111";
-}
 .navbar-collapse .dropdown-toggle-title {
   line-height: 6rem;
   font-family: 'Oswald', sans-serif;
-  width: 190px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2157,6 +2105,102 @@ table {
   .navbar-collapse {
     display: none;
   }
+}
+@media (max-width: 768px) {
+  .navbar-open .navbar-collapse {
+    z-index: 10;
+    display: block;
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    left: 0;
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .navbar-open .navbar-collapse .dropdown {
+    position: static;
+  }
+  .navbar-open .navbar-collapse .dropdown-toggle {
+    width: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  .navbar-open .navbar-collapse .dropdown-menu {
+    z-index: 10;
+    width: 100%;
+  }
+  .navbar-open .navbar-collapse .nav {
+    width: 60%;
+    background: #0378bd;
+  }
+  .navbar-open .navbar-collapse .nav > li {
+    float: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .navbar-open .navbar-collapse .nav > li > a {
+    display: block;
+    line-height: 4rem;
+    font-size: 1.4rem;
+  }
+  .navbar-open .navbar-collapse .navbar-right,
+  .navbar-open .navbar-collapse .navbar-left {
+    margin-top: 0;
+    float: none;
+  }
+}
+.pin {
+  font-style: normal;
+  float: right;
+  display: inline-block;
+}
+.pin .unpin,
+.pin .repin {
+  display: none;
+}
+.pin:hover .repin {
+  display: inline-block;
+}
+.pin:hover:before {
+  margin-top: 3px;
+  margin-right: 5px;
+  margin-left: 7px;
+  content: "\f112";
+}
+.pin:hover:before:before {
+  content: "\f112";
+}
+.pin:before {
+  height: 0;
+  margin-top: 0;
+  margin-right: 0;
+  margin-left: 5px;
+  display: inline-block;
+  font-family: "mixpo-icons";
+  content: "\f111";
+  vertical-align: top;
+}
+.pin:before:before {
+  content: "\f111";
+}
+.pinned .pin:before {
+  content: "\f112";
+}
+.pinned .pin:before:before {
+  content: "\f112";
+}
+.pinned .pin:hover .repin {
+  display: none;
+}
+.pinned .pin:hover .unpin {
+  display: inline-block;
+}
+.pinned .pin:hover:before {
+  margin-top: 0;
+  margin-right: 0;
+  content: "\f111";
+}
+.pinned .pin:hover:before:before {
+  content: "\f111";
 }
 .dropdown {
   position: relative;

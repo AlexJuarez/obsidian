@@ -16,11 +16,11 @@
         }
         @media (max-width: @grid-float-breakpoint) {
             float: right;
-            margin-top: 9px;
+            margin-top: 12px;
             margin-right: 15px;
-            background-size: 160px 32px;
+            background-size: 140px 28px;
             height: 32px;
-            width: 160px;
+            width: 140px;
             background-repeat: no-repeat;
         }
     }
@@ -55,7 +55,6 @@
             color: @nav-item-color;
         }
 
-        display: inline-block;
         background: @nav-item-bg;
         color: @white;
 
@@ -154,6 +153,7 @@
                 margin-right: 0;
             }
             > a {
+                display: inline-block;
                 font-weight: bold;
                 padding: 0 2rem;
                 line-height: 6rem;
@@ -251,9 +251,11 @@
             display: block;
             .clearfix();
             .input {
+                box-sizing: border-box;
                 color: @nav-item-color;
                 padding: 0;
-                width: 350px;
+                width: 100%;
+                padding-left: 2em;
                 line-height: 2.4rem;
                 float: right;
             }
@@ -283,69 +285,11 @@
             color: @nav-item-color;
             text-transform: uppercase;
         }
-
-        .pin {
-            font-style: normal;
-            float: right;
-            display: inline-block;
-
-            .unpin, .repin {
-                display: none;
-            }
-
-            &:hover {
-                .repin {
-                    display: inline-block;
-                }
-                &:before {
-                    margin-top: 2px;
-                    margin-right: 5px;
-                    .glyph-pin-left();
-                }
-            }
-
-            &:before {
-                height: 0;
-                margin-top: 0;
-                margin-right: 0;
-                margin-left: 5px;
-                display: inline-block;
-                font-family: "mixpo-icons";
-                .glyph-pin-down();
-                vertical-align: top;
-            }
-
-        }
-
-        .pinned {
-            .pin {
-
-                &:before {
-                    .glyph-pin-left();
-                }
-
-
-                &:hover {
-                    .repin {
-                        display: none;
-                    }
-                    .unpin {
-                        display: inline-block;
-                    }
-                    &:before {
-                        margin-top: 0;
-                        margin-right: 0;
-                        .glyph-pin-down();
-                    }
-                }
-            }
-        }
     }
 
     .dropdown-toggle-title {
         line-height: 6rem;
         font-family: 'Oswald', sans-serif;
-        width: 190px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -356,5 +300,54 @@
 
     @media (max-width: @grid-float-breakpoint) {
         display: none;
+    }
+}
+
+.navbar-open {
+    .navbar-collapse {
+        @media (max-width: @grid-float-breakpoint) {
+            z-index: 10;
+            display: block;
+            position: absolute;
+            top: 100%;
+            width: 100%;
+            left: 0;
+            background: rgba(0,0,0,0.3);
+
+            .dropdown {
+                position: static;
+            }
+
+            .dropdown-toggle {
+                width: auto;
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+
+            .dropdown-menu {
+                z-index: 10;
+                width: 100%;
+            }
+
+            .nav {
+                width: 60%;
+                background: @brand-color;
+                > li {
+                    float: none;
+                    margin-left: 0;
+                    margin-right: 0;
+                    > a {
+                        display: block;
+                        line-height: 4rem;
+                        font-size: 1.4rem;
+                    }
+                }
+            }
+
+            .navbar-right, .navbar-left {
+                margin-top: 0;
+                float: none;
+            }
+        }
     }
 }
