@@ -6,4 +6,8 @@ define(function (require) {
 
     var ng = require('angular');
     require('app-core');
+
+    require(['domReady!'], function (document) {
+        ng.bootstrap(document, ['app']);
+    });
 });
