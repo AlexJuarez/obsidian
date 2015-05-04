@@ -28515,7 +28515,7 @@ define('tpl',[
 });
 
 
-define('tpl!core/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar.html', '<div class="navbar-header">\n    <button type="button" class="navbar-toggle" ng-click="open = !open">\n        <span class="sr-only">Toggle navigation</span>\n        <span class="icon-bar"></span>\n        <span class="icon-bar"></span>\n        <span class="icon-bar"></span>\n    </button>\n    <div class="dropdown navbar-right settings">\n        <a href="" class="btn btn-primary solid dropdown-toggle">Settings <i class="glyph-cheveron-down"></i></a>\n        <ul class="dropdown-menu" role="menu">\n            <li><a href="#">Action</a></li>\n            <li><a href="#">Another action</a></li>\n            <li><a href="#">Something else here</a></li>\n            <li class="divider"></li>\n            <li><a href="#">Separated link</a></li>\n            <li class="divider"></li>\n            <li><a href="#">One more separated </a></li>\n        </ul>\n    </div>\n    <a class="logo" href=""></a>\n</div>\n<div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n<!-- Collect the nav links, forms, and other content for toggling -->\n<div class="navbar-collapse">\n    <ul class="nav navbar-right">\n        <li><a href="#">Campaign Management</a></li>\n        <li><a class="primary" href="#">Analytics</a></li>\n    </ul>\n    <ul class="nav navbar-left">\n        <li class="dropdown">\n            <div class="dropdown-toggle">\n                <div class="dropdown-toggle-subtitle">\n                    Clients\n                </div>\n                <div class="dropdown-toggle-title">\n                    <i class="glyph-cheveron-down"></i>\n                    All Clients\n                </div>\n            </div>\n            <div class="dropdown-menu" role="menu">\n                <label class="dropdown-search">\n                    <input class="input" placeholder="Search" type="search" />\n                </label>\n                <ul class="list">\n                    <li><a href="">All Clients</a></li>\n                    <li>Pinned\n                        <ul class="pinned">\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n                <ul class="list">\n                    <li>#\n                        <ul>\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n            </div>\n        </li>\n        <li class="dropdown">\n            <div class="dropdown-toggle">\n                <div class="dropdown-toggle-subtitle">\n                    Divisons\n                </div>\n                <div class="dropdown-toggle-title">\n                    <i class="glyph-cheveron-down"></i>\n                    All Divisons\n                </div>\n            </div>\n            <div class="dropdown-menu" role="menu">\n                <label class="dropdown-search">\n                    <input class="input" placeholder="Search" type="search" />\n                </label>\n                <ul class="list">\n                    <li><a href="">All Clients</a></li>\n                    <li>Pinned\n                        <ul class="pinned">\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n                <ul class="list">\n                    <li>#\n                        <ul>\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n            </div>\n        </li>\n    </ul>\n</div><!-- /.navbar-collapse -->\n'); });
+define('tpl!core/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar.html', ''); });
 
 /**
  * Created by alex on 4/15/15.
@@ -28529,19 +28529,8 @@ define('core/navbar',['require','./module','tpl!./navbar.html'],function (requir
     app.directive('navbar', [function () {
         return {
             restrict: 'C',
-            transclude: true,
             scope: {
                 open: '='
-            },
-            templateUrl: 'core/navbar.html',
-            link: function (scope, element) {
-                scope.$watch('open', function (value) {
-                    if (value) {
-                        element.addClass('navbar-open');
-                    } else {
-                        element.removeClass('navbar-open');
-                    }
-                });
             }
         };
     }]);

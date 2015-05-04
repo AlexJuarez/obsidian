@@ -1,5 +1,102 @@
 <h1 id="nav">Navbar</h1>
 <hr />
-<nav class="navbar navbar-default">
+<nav class="navbar navbar-default" ng-class="{'navbar-open': open}">
     <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" ng-click="open = !open">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <div class="dropdown navbar-right settings">
+            <a href="" class="btn btn-primary solid dropdown-toggle">Settings <i class="glyph-cheveron-down"></i></a>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="#">Action</a></li>
+                <li><a href="#">Another action</a></li>
+                <li><a href="#">Something else here</a></li>
+                <li class="divider"></li>
+                <li><a href="#">Separated link</a></li>
+                <li class="divider"></li>
+                <li><a href="#">One more separated </a></li>
+            </ul>
+        </div>
+        <a class="logo" href=""></a>
+    </div>
+    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="navbar-collapse">
+        <ul class="nav navbar-right">
+            <li><a href="#">Campaign Management</a></li>
+            <li><a class="primary" href="#">Analytics</a></li>
+        </ul>
+        <ul class="nav navbar-left">
+            <li class="dropdown">
+                <div class="dropdown-toggle">
+                    <div class="dropdown-toggle-subtitle">
+                        Clients
+                    </div>
+                    <div class="dropdown-toggle-title">
+                        <i class="glyph-cheveron-down"></i>
+                        All Clients
+                    </div>
+                </div>
+                <div class="dropdown-menu" role="menu">
+                    <label class="dropdown-search">
+                        <input class="input" placeholder="Search" type="search" />
+                    </label>
+                    <ul class="list">
+                        <li><a href="">All Clients</a></li>
+                        <li>Pinned
+                            <ul class="pinned">
+                                <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="list">
+                        <li>#
+                            <ul>
+                                <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            <li class="dropdown">
+                <div class="dropdown-toggle">
+                    <div class="dropdown-toggle-subtitle">
+                        Divisons
+                    </div>
+                    <div class="dropdown-toggle-title">
+                        <i class="glyph-cheveron-down"></i>
+                        All Divisons
+                    </div>
+                </div>
+                <div class="dropdown-menu" role="menu">
+                    <label class="dropdown-search">
+                        <input class="input" placeholder="Search" type="search" />
+                    </label>
+                    <ul class="list">
+                        <li><a href="">All Clients</a></li>
+                        <li>Pinned
+                            <ul class="pinned">
+                                <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="list">
+                        <li>#
+                            <ul>
+                                <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </div><!-- /.navbar-collapse -->
 </nav>

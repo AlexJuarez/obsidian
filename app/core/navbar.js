@@ -10,19 +10,8 @@ define(function (require) {
     app.directive('navbar', [function () {
         return {
             restrict: 'C',
-            transclude: true,
             scope: {
                 open: '='
-            },
-            templateUrl: 'core/navbar.html',
-            link: function (scope, element) {
-                scope.$watch('open', function (value) {
-                    if (value) {
-                        element.addClass('navbar-open');
-                    } else {
-                        element.removeClass('navbar-open');
-                    }
-                });
             }
         };
     }]);
