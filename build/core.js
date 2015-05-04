@@ -38169,10 +38169,9 @@ define('core/navbar',['require','./module','tpl!./navbar.html'],function (requir
                 open: '='
             },
             templateUrl: 'core/navbar.html',
-            link: function(scope, element) {
+            link: function (scope, element) {
                 scope.$watch('open', function (value) {
-                    console.log(value);
-                    if(value) {
+                    if (value) {
                         element.addClass('navbar-open');
                     } else {
                         element.removeClass('navbar-open');
@@ -38400,9 +38399,10 @@ define('domReady',[],function () {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('bootstrap-core',['require','app-core'],function (require) {
+define('bootstrap-core',['require','angular','app-core'],function (require) {
     'use strict';
 
+    var ng = require('angular');
     require('app-core');
 
     require(['domReady!'], function (document) {

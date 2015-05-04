@@ -15,10 +15,9 @@ define(function (require) {
                 open: '='
             },
             templateUrl: 'core/navbar.html',
-            link: function(scope, element) {
+            link: function (scope, element) {
                 scope.$watch('open', function (value) {
-                    console.log(value);
-                    if(value) {
+                    if (value) {
                         element.addClass('navbar-open');
                     } else {
                         element.removeClass('navbar-open');
