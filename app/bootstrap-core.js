@@ -5,9 +5,9 @@ define(function (require) {
     'use strict';
 
     var ng = require('angular');
-    require('app-core');
+    var app = require('app-core');
 
-    require(['domReady!'], function (document) {
-        ng.bootstrap(document, ['app']);
+    require(['domReady!'], function () {
+        ng.bootstrap(window.document.querySelector('body'), ['app']);
     });
 });

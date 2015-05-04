@@ -8,7 +8,7 @@ define(function (require) {
     require('app');
     require('routes');
 
-    require(['domReady!'], function (document) {
-        ng.bootstrap(document, ['app']);
+    require(['domReady!'], function () {
+        ng.bootstrap(window.document.querySelector('body'), ['app']);
     });
 });
