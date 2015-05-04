@@ -38138,19 +38138,264 @@ define('table/index',['require','./formatFilter','./basicTable'],function (requi
     require('./basicTable');
 });
 
-define('app-core',['require','angular','./chart/index','./table/index'],function (require) {
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.core', []);
+});
+
+
+define('tpl!core/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar.html', '<div class="navbar-header">\n    <button type="button" class="navbar-toggle" ng-click="open = !open">\n        <span class="sr-only">Toggle navigation</span>\n        <span class="icon-bar"></span>\n        <span class="icon-bar"></span>\n        <span class="icon-bar"></span>\n    </button>\n    <div class="dropdown navbar-right settings">\n        <a href="" class="btn btn-primary solid dropdown-toggle">Settings <i class="glyph-cheveron-down"></i></a>\n        <ul class="dropdown-menu" role="menu">\n            <li><a href="#">Action</a></li>\n            <li><a href="#">Another action</a></li>\n            <li><a href="#">Something else here</a></li>\n            <li class="divider"></li>\n            <li><a href="#">Separated link</a></li>\n            <li class="divider"></li>\n            <li><a href="#">One more separated </a></li>\n        </ul>\n    </div>\n    <a class="logo" href=""></a>\n</div>\n<div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n<!-- Collect the nav links, forms, and other content for toggling -->\n<div class="navbar-collapse">\n    <ul class="nav navbar-right">\n        <li><a href="#">Campaign Management</a></li>\n        <li><a class="primary" href="#">Analytics</a></li>\n    </ul>\n    <ul class="nav navbar-left">\n        <li class="dropdown">\n            <div class="dropdown-toggle">\n                <div class="dropdown-toggle-subtitle">\n                    Clients\n                </div>\n                <div class="dropdown-toggle-title">\n                    <i class="glyph-cheveron-down"></i>\n                    All Clients\n                </div>\n            </div>\n            <div class="dropdown-menu" role="menu">\n                <label class="dropdown-search">\n                    <input class="input" placeholder="Search" type="search" />\n                </label>\n                <ul class="list">\n                    <li><a href="">All Clients</a></li>\n                    <li>Pinned\n                        <ul class="pinned">\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n                <ul class="list">\n                    <li>#\n                        <ul>\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n            </div>\n        </li>\n        <li class="dropdown">\n            <div class="dropdown-toggle">\n                <div class="dropdown-toggle-subtitle">\n                    Divisons\n                </div>\n                <div class="dropdown-toggle-title">\n                    <i class="glyph-cheveron-down"></i>\n                    All Divisons\n                </div>\n            </div>\n            <div class="dropdown-menu" role="menu">\n                <label class="dropdown-search">\n                    <input class="input" placeholder="Search" type="search" />\n                </label>\n                <ul class="list">\n                    <li><a href="">All Clients</a></li>\n                    <li>Pinned\n                        <ul class="pinned">\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n                <ul class="list">\n                    <li>#\n                        <ul>\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n            </div>\n        </li>\n    </ul>\n</div><!-- /.navbar-collapse -->\n'); });
+
+/**
+ * Created by alex on 4/15/15.
+ */
+define('core/navbar',['require','./module','tpl!./navbar.html'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    require('tpl!./navbar.html');
+
+    app.directive('navbar', [function () {
+        return {
+            restrict: 'C',
+            transclude: true,
+            scope: {
+                open: '='
+            },
+            templateUrl: 'core/navbar.html',
+            link: function(scope, element) {
+                scope.$watch('open', function (value) {
+                    console.log(value);
+                    if(value) {
+                        element.addClass('navbar-open');
+                    } else {
+                        element.removeClass('navbar-open');
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by alex on 4/15/15.
+ */
+define('core/dropdown',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+
+    app.directive('dropdownToggle', ['$document', function ($document) {
+        return {
+            restrict: 'C',
+            scope: {
+                selected: '='
+            },
+            link: function (scope, element) {
+                function documentClickHandler() {
+                    scope.$apply(function () {
+                        scope.selected = false;
+                    });
+                }
+
+                $document.on('click', documentClickHandler);
+
+                element.on('click', function (event) {
+                    scope.$apply(function () {
+                        scope.selected = !scope.selected;
+                    });
+                    event.stopPropagation();
+                });
+
+                element.parent().on('click', function (event) {
+                    if (event.target.tagName === 'A') {
+                        scope.$apply(function () {
+                            scope.selected = false;
+                        });
+                    }
+
+                    event.stopPropagation();
+                });
+
+                scope.$on('$destroy', function () {
+                    $document.off('click', documentClickHandler);
+                });
+
+                scope.$watch('selected', function (value) {
+                    if (value) {
+                        element.parent().addClass('open');
+                    } else {
+                        element.parent().removeClass('open');
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/index',['require','./navbar','./dropdown'],function (require) {
+    'use strict';
+
+    require('./navbar');
+    require('./dropdown');
+
+});
+
+define('app-core',['require','angular','./chart/index','./table/index','./core/index'],function (require) {
     'use strict';
 
     var ng = require('angular');
     require('./chart/index');
     require('./table/index');
+    require('./core/index');
 
     return ng.module('app', [
+        'app.core',
         'app.tables',
         'app.charts',
         'tpl'
     ]);
 });
+
+/**
+ * @license RequireJS domReady 2.0.1 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/requirejs/domReady for details
+ */
+/*jslint */
+/*global require: false, define: false, requirejs: false,
+  window: false, clearInterval: false, document: false,
+  self: false, setInterval: false */
+
+
+define('domReady',[],function () {
+    'use strict';
+
+    var isTop, testDiv, scrollIntervalId,
+        isBrowser = typeof window !== "undefined" && window.document,
+        isPageLoaded = !isBrowser,
+        doc = isBrowser ? document : null,
+        readyCalls = [];
+
+    function runCallbacks(callbacks) {
+        var i;
+        for (i = 0; i < callbacks.length; i += 1) {
+            callbacks[i](doc);
+        }
+    }
+
+    function callReady() {
+        var callbacks = readyCalls;
+
+        if (isPageLoaded) {
+            //Call the DOM ready callbacks
+            if (callbacks.length) {
+                readyCalls = [];
+                runCallbacks(callbacks);
+            }
+        }
+    }
+
+    /**
+     * Sets the page as loaded.
+     */
+    function pageLoaded() {
+        if (!isPageLoaded) {
+            isPageLoaded = true;
+            if (scrollIntervalId) {
+                clearInterval(scrollIntervalId);
+            }
+
+            callReady();
+        }
+    }
+
+    if (isBrowser) {
+        if (document.addEventListener) {
+            //Standards. Hooray! Assumption here that if standards based,
+            //it knows about DOMContentLoaded.
+            document.addEventListener("DOMContentLoaded", pageLoaded, false);
+            window.addEventListener("load", pageLoaded, false);
+        } else if (window.attachEvent) {
+            window.attachEvent("onload", pageLoaded);
+
+            testDiv = document.createElement('div');
+            try {
+                isTop = window.frameElement === null;
+            } catch (e) {}
+
+            //DOMContentLoaded approximation that uses a doScroll, as found by
+            //Diego Perini: http://javascript.nwbox.com/IEContentLoaded/,
+            //but modified by other contributors, including jdalton
+            if (testDiv.doScroll && isTop && window.external) {
+                scrollIntervalId = setInterval(function () {
+                    try {
+                        testDiv.doScroll();
+                        pageLoaded();
+                    } catch (e) {}
+                }, 30);
+            }
+        }
+
+        //Check if document already complete, and if so, just trigger page load
+        //listeners. Latest webkit browsers also use "interactive", and
+        //will fire the onDOMContentLoaded before "interactive" but not after
+        //entering "interactive" or "complete". More details:
+        //http://dev.w3.org/html5/spec/the-end.html#the-end
+        //http://stackoverflow.com/questions/3665561/document-readystate-of-interactive-vs-ondomcontentloaded
+        //Hmm, this is more complicated on further use, see "firing too early"
+        //bug: https://github.com/requirejs/domReady/issues/1
+        //so removing the || document.readyState === "interactive" test.
+        //There is still a window.onload binding that should get fired if
+        //DOMContentLoaded is missed.
+        if (document.readyState === "complete") {
+            pageLoaded();
+        }
+    }
+
+    /** START OF PUBLIC API **/
+
+    /**
+     * Registers a callback for DOM ready. If DOM is already ready, the
+     * callback is called immediately.
+     * @param {Function} callback
+     */
+    function domReady(callback) {
+        if (isPageLoaded) {
+            callback(doc);
+        } else {
+            readyCalls.push(callback);
+        }
+        return domReady;
+    }
+
+    domReady.version = '2.0.1';
+
+    /**
+     * Loader Plugin API method
+     */
+    domReady.load = function (name, req, onLoad, config) {
+        if (config.isBuild) {
+            onLoad(null);
+        } else {
+            domReady(onLoad);
+        }
+    };
+
+    /** END OF PUBLIC API **/
+
+    return domReady;
+});
+
 
 /**
  * Created by Alex on 3/1/2015.
@@ -38159,6 +38404,10 @@ define('bootstrap-core',['require','app-core'],function (require) {
     'use strict';
 
     require('app-core');
+
+    require(['domReady!'], function (document) {
+        ng.bootstrap(document, ['app']);
+    });
 });
 
 /**
@@ -38169,6 +38418,7 @@ require.config({
         'angular': 'components/angular/angular',
         'tpl': 'components/requirejs-tpl-angular/tpl',
         'text': 'components/requirejs-text/text',
+        'domReady': 'components/domReady/domReady',
         'd3': 'components/d3/d3'
     },
     shim: {
