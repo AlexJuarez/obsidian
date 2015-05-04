@@ -2103,49 +2103,78 @@ table {
 }
 @media (max-width: 768px) {
   .navbar-collapse {
-    display: none;
-  }
-}
-@media (max-width: 768px) {
-  .navbar-open .navbar-collapse {
+    visibility: hidden;
+    -webkit-overflow-scrolling: touch;
+    transform: translateX(-100%);
+    position: fixed;
     z-index: 10;
-    display: block;
-    position: absolute;
-    top: 100%;
-    width: 100%;
+    top: 0;
+    bottom: 0;
     left: 0;
-    background: rgba(0, 0, 0, 0.3);
+    width: 60%;
+    overflow-y: auto;
+    height: 100%;
+    max-width: 348px;
+    background: #0378bd;
   }
-  .navbar-open .navbar-collapse .dropdown {
+  .navbar-collapse .dropdown {
     position: static;
   }
-  .navbar-open .navbar-collapse .dropdown-toggle {
+  .navbar-collapse .dropdown-toggle {
     width: auto;
     padding-left: 2rem;
     padding-right: 2rem;
   }
-  .navbar-open .navbar-collapse .dropdown-menu {
+  .navbar-collapse .dropdown-menu {
+    position: static;
     z-index: 10;
     width: 100%;
   }
-  .navbar-open .navbar-collapse .nav {
-    width: 60%;
-    background: #0378bd;
+  .navbar-collapse .nav {
+    white-space: normal;
+    overflow: visible;
   }
-  .navbar-open .navbar-collapse .nav > li {
+  .navbar-collapse .nav > li {
     float: none;
     margin-left: 0;
     margin-right: 0;
   }
-  .navbar-open .navbar-collapse .nav > li > a {
+  .navbar-collapse .nav > li > a {
     display: block;
     line-height: 4rem;
     font-size: 1.4rem;
   }
-  .navbar-open .navbar-collapse .navbar-right,
-  .navbar-open .navbar-collapse .navbar-left {
+  .navbar-collapse .navbar-right,
+  .navbar-collapse .navbar-left {
     margin-top: 0;
     float: none;
+  }
+}
+@media (max-width: 768px) {
+  .navbar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    z-index: 9;
+    -webkit-transition: opacity .25s linear;
+    transition: opacity .25s linear;
+  }
+}
+@media (max-width: 768px) {
+  .navbar-open .navbar-overlay {
+    opacity: 1;
+  }
+}
+@media (max-width: 768px) {
+  .navbar-open .navbar-collapse {
+    transition: 300ms ease;
+    visibility: visible;
+    transform: translateX(0%);
   }
 }
 .pin {

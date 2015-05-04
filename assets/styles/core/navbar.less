@@ -299,55 +299,87 @@
     }
 
     @media (max-width: @grid-float-breakpoint) {
-        display: none;
+        visibility: hidden;
+        -webkit-overflow-scrolling: touch;
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 10;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 60%;
+        overflow-y: auto;
+        height: 100%;
+        max-width: 348px;
+        background: @brand-color;
+
+        .dropdown {
+            position: static;
+        }
+
+        .dropdown-toggle {
+            width: auto;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+
+        .dropdown-menu {
+            position: static;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .nav {
+            white-space: normal;
+            overflow: visible;
+            > li {
+                float: none;
+                margin-left: 0;
+                margin-right: 0;
+                > a {
+                    display: block;
+                    line-height: 4rem;
+                    font-size: 1.4rem;
+                }
+            }
+        }
+
+        .navbar-right, .navbar-left {
+            margin-top: 0;
+            float: none;
+        }
     }
 }
 
+.navbar-overlay {
+    @media (max-width: @grid-float-breakpoint) {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        cursor: pointer;
+        background-color: rgba(0, 0, 0, .6);
+        opacity: 0;
+        z-index: 9;
+        -webkit-transition: opacity .25s linear;
+        transition: opacity .25s linear;
+    }
+}
+
+
 .navbar-open {
+    .navbar-overlay {
+        @media (max-width: @grid-float-breakpoint) {
+            opacity: 1;
+        }
+    }
+
     .navbar-collapse {
         @media (max-width: @grid-float-breakpoint) {
-            z-index: 10;
-            display: block;
-            position: absolute;
-            top: 100%;
-            width: 100%;
-            left: 0;
-            background: rgba(0,0,0,0.3);
-
-            .dropdown {
-                position: static;
-            }
-
-            .dropdown-toggle {
-                width: auto;
-                padding-left: 2rem;
-                padding-right: 2rem;
-            }
-
-            .dropdown-menu {
-                z-index: 10;
-                width: 100%;
-            }
-
-            .nav {
-                width: 60%;
-                background: @brand-color;
-                > li {
-                    float: none;
-                    margin-left: 0;
-                    margin-right: 0;
-                    > a {
-                        display: block;
-                        line-height: 4rem;
-                        font-size: 1.4rem;
-                    }
-                }
-            }
-
-            .navbar-right, .navbar-left {
-                margin-top: 0;
-                float: none;
-            }
+            transition: 300ms ease;
+            visibility: visible;
+            transform: translateX(0%);
         }
     }
 }

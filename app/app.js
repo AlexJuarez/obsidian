@@ -9,6 +9,7 @@ define(function (require) {
     require('./chart/index');
     require('./table/index');
     require('./home/index');
+    require('./core/index');
 
     return ng.module('app', [
         'app.home',

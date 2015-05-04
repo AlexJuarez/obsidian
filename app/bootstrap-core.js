@@ -5,4 +5,8 @@ define(function (require) {
     'use strict';
 
     require('app-core');
+
+    require(['domReady!'], function (document) {
+        ng.bootstrap(document, ['app']);
+    });
 });
