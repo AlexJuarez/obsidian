@@ -2070,6 +2070,9 @@ table {
   color: #ffffff;
   text-transform: uppercase;
 }
+.navbar-collapse .dropdown-menu .list.no-margin {
+  margin-top: 1rem;
+}
 .navbar-collapse .dropdown-menu .list.no-margin > li {
   margin-top: 0;
 }
