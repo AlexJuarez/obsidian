@@ -2059,6 +2059,7 @@ table {
   float: right;
 }
 .navbar-collapse .dropdown-menu .list {
+  max-height: 270px;
   width: 50%;
   padding: 0;
   margin: 0;
