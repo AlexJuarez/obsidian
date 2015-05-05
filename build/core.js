@@ -28552,8 +28552,7 @@ define('core/dropdown',['require','./module'],function (require) {
             },
             link: function (scope, element) {
                 function documentClickHandler(event) {
-                    console.log(event);
-                    if (!event.results || event.results && scope.$id !== event.results.id) {
+                    if (!event.data || event.data && scope.$id !== event.data.id) {
                         scope.$apply(function () {
                             scope.selected = false;
                         });
@@ -28563,7 +28562,7 @@ define('core/dropdown',['require','./module'],function (require) {
                 $document.on('click', documentClickHandler);
 
                 element.on('click', function (event) {
-                    event.results = {
+                    event.data = {
                         id: scope.$id
                     };
 
@@ -28573,7 +28572,7 @@ define('core/dropdown',['require','./module'],function (require) {
                 });
 
                 element.parent().on('click', function(event){
-                    event.results = {
+                    event.data = {
                         id: scope.$id
                     };
                 });
