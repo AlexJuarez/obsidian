@@ -14,6 +14,7 @@ define(function (require) {
             },
             link: function (scope, element) {
                 function documentClickHandler(event) {
+                    console.log(event);
                     if (!event.results || event.results && scope.$id !== event.results.id) {
                         scope.$apply(function () {
                             scope.selected = false;
