@@ -1,90 +1,160 @@
-@tool-tip-dark-bg: #3c3c3c;
+@tool-tip-light-bg: #fff;
+@tool-tip-dark-bg: #3F403F;
+
+// Layout styles just for pattern library display purposes
+.border-right {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    li {
+        border: 1px solid #E1E1E1;
+        border-width: 0 1px 0 0;
+        padding-right: 1rem;
+        margin-right: 1rem;
+        display: inline;
+    }
+    li:last-child {
+        border: none;
+    }
+}
+// ----------------
 
 .tooltip {
     position: relative;
+    display: inline-block;
+    .font-smoothing();
     .wrapper {
-        display: none;
+        .transition(all 0.3s ease);
+        visibility: hidden;
+        opacity: 0;
         position: absolute;
-        border-radius: 0.2rem;
+        border-radius: 0.5rem;
         .content {
-            padding: 20px;
+            padding: 0.3rem 1rem 0.5rem 1rem;
             white-space: nowrap;
+            font-size: 1.4rem;
         }
     }
-
-    &.hover:hover .wrapper {
-        display: inline-block;
+    &.hover:hover {
+        cursor: default;
     }
-
-    &.tooltip-dark .wrapper {
-        &:before {
+    &.hover:hover .wrapper, &.hover:hover &:before, &.hover:hover &:after {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    // Light BG settings
+    &.tooltip-light .wrapper {
+        background: @tool-tip-light-bg;
+        border: solid 1px @tool-tip-dark-bg;
+        color: @tool-tip-dark-bg;
+        &:before, &:after {
+            content: '';
+            position: absolute;
             border: solid transparent;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        &:before {
+            border-color: rgba(60, 60, 60, 0);
+            border-width: 9px;
+        }
+        &:after {
+            border-color: rgba(255, 255, 255, 0);
+            border-width: 8px;
         }
 
+    }
+    &[class*="top"].tooltip-light .wrapper {
+        &:before {
+            border-top-color: @tool-tip-dark-bg;
+        }
+        &:after {
+            border-top-color: #fff;
+        }
+    }
+    &[class*="bottom"].tooltip-light .wrapper {
+        &:before {
+            border-bottom-color: @tool-tip-dark-bg;
+        }
+        &:after {
+            border-bottom-color: #fff;
+        }
+    }
+    
+    // Dark BG settings
+    &.tooltip-dark .wrapper {
+        background: @tool-tip-dark-bg;
+        border: none;
+        color: @tool-tip-light-bg;
         &:before {
             content: '';
             position: absolute;
-            border-color: rgba(194, 225, 245, 0);
-            border-width: 8px;
-            height: 0;
+            border: solid transparent;
             width: 0;
-        }
-
-        background: @tool-tip-dark-bg;
-        color: #fff;
+            height: 0;
+            pointer-events: none;
+            border-width: 8px;
+            border-color: rgba(60, 60, 60, 0);
+       }
     }
-
-    &[class*="tooltip-right"] .wrapper {
-        left: 100%;
-        top: 0;
-        margin-left: 9px;
+    &[class*="top"].tooltip-dark .wrapper {
         &:before {
-            border-right-color: @tool-tip-dark-bg;
-            margin-top: -8px;
+            border-top-color: @tool-tip-dark-bg;
         }
     }
-
-    &.tooltip-right-top .wrapper:before  {
-        right: 100%;
-        top: 15%;
-    }
-
-    &.tooltip-right-middle .wrapper:before  {
-        right: 100%;
-        top: 50%;
-    }
-
-    &.tooltip-right-bottom .wrapper:before  {
-        right: 100%;
-        top: 85%;
-    }
-
-    &[class*="tooltip-bottom"] .wrapper {
-        left: 0;
-        top: 100%;
-        margin-top: 9px;
+    &[class*="bottom"].tooltip-dark .wrapper {
         &:before {
             border-bottom-color: @tool-tip-dark-bg;
-            margin-top: -16px;
+        }
+    }
+    
+    // Positioning 
+    &[class*="top"] .wrapper {
+        bottom: 120%;
+        &:before, &:after {
+            top: 100%;
+        }
+    }
+    &[class*="left"] .wrapper {
+        left: -10px;
+        &:before {
+            left: 15px;
+        }
+        &:after {
+            left: 16px;
+        }
+    }
+    &[class*="center"] .wrapper {
+        left: 50%;
+        transform: translateX(-50%);
+        &:before {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        &:after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    }
+    &[class*="right"] .wrapper {
+        right: -10px;
+        &:before {
+            right: 15px;
+        }
+        &:after {
+            right: 16px;
+        }
+    }
+    &[class*="bottom"] .wrapper {
+        top: 120%;
+        &:before, &:after {
+            bottom: 100%;
         }
     }
 
-    &.tooltip-bottom-left .wrapper:before {
-        top: 0;
-        left: 15%;
-    }
-
-    &.tooltip-bottom-middle .wrapper:before {
-        top: 0;
-        left: 50%;
-    }
-
-    &.tooltip-bottom-middle .wrapper:before {
-        top: 0;
-        left: 85%;
-    }
-
-    &.open .wrapper {
-        display: inline-block;
-    }
+    // &.open .wrapper {
+    //     display: inline-block;
+    // }
 }

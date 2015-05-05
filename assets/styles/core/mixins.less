@@ -5,3 +5,14 @@
         clear:both;
     }
 }
+.transition( @property ) {
+	-webkit-transition: @property;
+	-moz-transition: @property;
+	-o-transition: @property;
+	transition: @property;
+}
+.font-smoothing {
+	// This is to get the font weight closer to what the designs show
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
