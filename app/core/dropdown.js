@@ -13,29 +13,20 @@ define(function (require) {
                 selected: '='
             },
             link: function (scope, element) {
-                function documentClickHandler() {
-                    scope.$apply(function () {
-                        scope.selected = false;
-                    });
-                }
-
-                $document.on('click', documentClickHandler);
-
-                element.on('click', function (event) {
-                    scope.$apply(function () {
-                        scope.selected = !scope.selected;
-                    });
-                    event.stopPropagation();
-                });
-
-                element.parent().on('click', function (event) {
-                    if (event.target.tagName === 'A') {
+                function documentClickHandler(event) {
+                    if (!event.target.isEqualNode(element[0])) {
                         scope.$apply(function () {
                             scope.selected = false;
                         });
                     }
+                }
 
-                    event.stopPropagation();
+                $document.on('click', documentClickHandler);
+
+                element.on('click', function () {
+                    scope.$apply(function () {
+                        scope.selected = !scope.selected;
+                    });
                 });
 
                 scope.$on('$destroy', function () {
