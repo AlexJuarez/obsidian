@@ -2179,7 +2179,6 @@ table {
 }
 .pin {
   font-style: normal;
-  float: right;
   display: inline-block;
 }
 .pin .unpin,
