@@ -13,7 +13,6 @@ define(function (require) {
     require('tpl!./typography.html');
     require('tpl!./button.html');
     require('tpl!./table.html');
-    require('tpl!./header.html');
     require('tpl!./dropdown.html');
     require('tpl!./nav.html');
 

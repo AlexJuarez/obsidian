@@ -4,17 +4,18 @@
 @nav-item-color: #fff;
 @nav-subtitle-border: #003c60;
 @nav-border-hover: #0378bd;
+@navbar-min-width: @screen-lg-min;
 
 .navbar-header {
     .logo {
         display: inline-block;
         background: data-uri('../../images/mixpologo.svg');
-        @media (min-width: @grid-float-breakpoint) {
+        @media (min-width: @navbar-min-width) {
             margin-bottom: 40px;
             height: 38px;
             width: 190px;
         }
-        @media (max-width: @grid-float-breakpoint) {
+        @media (max-width: @navbar-min-width) {
             float: right;
             margin-top: 12px;
             margin-right: 15px;
@@ -39,7 +40,7 @@
             }
         }
         margin-top: -4rem;
-        @media (max-width: @grid-float-breakpoint) {
+        @media (max-width: @navbar-min-width) {
             display: none;
         }
     }
@@ -148,7 +149,7 @@
         padding: 0;
         > li {
             float: left;
-            margin-right: 2rem;
+            margin-right: 1rem;
             &:last-child {
                 margin-right: 0;
             }
@@ -174,13 +175,7 @@
         }
     }
 
-    @media (min-width: @grid-float-breakpoint) {
-        padding-top: 40px;
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
-
-    @media (min-width: @screen-md-min) {
+    @media (min-width: @navbar-min-width) {
         padding-top: 40px;
         padding-left: 4rem;
         padding-right: 4rem;
@@ -204,14 +199,14 @@
             &:first-child {
                 margin-left: 0;
             }
-            margin-left: 2rem;
+            margin-left: 1rem;
             margin-right: 0;
         }
     }
 }
 
 .navbar-toggle {
-    @media (min-width: @grid-float-breakpoint) {
+    @media (min-width: @navbar-min-width) {
         display: none;
     }
 }
@@ -228,7 +223,7 @@
     }
 
     .dropdown-toggle {
-        width: 190px;
+        width: 170px;
         padding: 6px 10px 0 10px;
     }
 
@@ -268,6 +263,14 @@
             font-weight: bold;
             .font-size(1.2);
             float:left;
+
+            &.no-margin {
+                margin-top: 1rem;
+                > li {
+                    margin-top: 0;
+                }
+            }
+
             > li {
                 margin-top: 1rem;
             }
@@ -298,7 +301,7 @@
         }
     }
 
-    @media (max-width: @grid-float-breakpoint) {
+    @media (max-width: @navbar-min-width) {
         visibility: hidden;
         -webkit-overflow-scrolling: touch;
         transform: translateX(-100%);
@@ -352,7 +355,7 @@
 }
 
 .navbar-overlay {
-    @media (max-width: @grid-float-breakpoint) {
+    @media (max-width: @navbar-min-width) {
         position: fixed;
         top: 0;
         left: 0;
@@ -370,13 +373,13 @@
 
 .navbar-open {
     .navbar-overlay {
-        @media (max-width: @grid-float-breakpoint) {
+        @media (max-width: @navbar-min-width) {
             opacity: 1;
         }
     }
 
     .navbar-collapse {
-        @media (max-width: @grid-float-breakpoint) {
+        @media (max-width: @navbar-min-width) {
             transition: 300ms ease;
             visibility: visible;
             transform: translateX(0%);

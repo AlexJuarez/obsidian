@@ -28029,6 +28029,658 @@ define("angular", (function (global) {
 /**
  * Created by Alex on 3/1/2015.
  */
+define('core/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.core', []);
+});
+
+/**
+ * @license RequireJS text 2.0.14 Copyright (c) 2010-2014, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/requirejs/text for details
+ */
+/*jslint regexp: true */
+/*global require, XMLHttpRequest, ActiveXObject,
+  define, window, process, Packages,
+  java, location, Components, FileUtils */
+
+define('text',['module'], function (module) {
+    'use strict';
+
+    var text, fs, Cc, Ci, xpcIsWindows,
+        progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'],
+        xmlRegExp = /^\s*<\?xml(\s)+version=[\'\"](\d)*.(\d)*[\'\"](\s)*\?>/im,
+        bodyRegExp = /<body[^>]*>\s*([\s\S]+)\s*<\/body>/im,
+        hasLocation = typeof location !== 'undefined' && location.href,
+        defaultProtocol = hasLocation && location.protocol && location.protocol.replace(/\:/, ''),
+        defaultHostName = hasLocation && location.hostname,
+        defaultPort = hasLocation && (location.port || undefined),
+        buildMap = {},
+        masterConfig = (module.config && module.config()) || {};
+
+    text = {
+        version: '2.0.14',
+
+        strip: function (content) {
+            //Strips <?xml ...?> declarations so that external SVG and XML
+            //documents can be added to a document without worry. Also, if the string
+            //is an HTML document, only the part inside the body tag is returned.
+            if (content) {
+                content = content.replace(xmlRegExp, "");
+                var matches = content.match(bodyRegExp);
+                if (matches) {
+                    content = matches[1];
+                }
+            } else {
+                content = "";
+            }
+            return content;
+        },
+
+        jsEscape: function (content) {
+            return content.replace(/(['\\])/g, '\\$1')
+                .replace(/[\f]/g, "\\f")
+                .replace(/[\b]/g, "\\b")
+                .replace(/[\n]/g, "\\n")
+                .replace(/[\t]/g, "\\t")
+                .replace(/[\r]/g, "\\r")
+                .replace(/[\u2028]/g, "\\u2028")
+                .replace(/[\u2029]/g, "\\u2029");
+        },
+
+        createXhr: masterConfig.createXhr || function () {
+            //Would love to dump the ActiveX crap in here. Need IE 6 to die first.
+            var xhr, i, progId;
+            if (typeof XMLHttpRequest !== "undefined") {
+                return new XMLHttpRequest();
+            } else if (typeof ActiveXObject !== "undefined") {
+                for (i = 0; i < 3; i += 1) {
+                    progId = progIds[i];
+                    try {
+                        xhr = new ActiveXObject(progId);
+                    } catch (e) {}
+
+                    if (xhr) {
+                        progIds = [progId];  // so faster next time
+                        break;
+                    }
+                }
+            }
+
+            return xhr;
+        },
+
+        /**
+         * Parses a resource name into its component parts. Resource names
+         * look like: module/name.ext!strip, where the !strip part is
+         * optional.
+         * @param {String} name the resource name
+         * @returns {Object} with properties "moduleName", "ext" and "strip"
+         * where strip is a boolean.
+         */
+        parseName: function (name) {
+            var modName, ext, temp,
+                strip = false,
+                index = name.lastIndexOf("."),
+                isRelative = name.indexOf('./') === 0 ||
+                             name.indexOf('../') === 0;
+
+            if (index !== -1 && (!isRelative || index > 1)) {
+                modName = name.substring(0, index);
+                ext = name.substring(index + 1);
+            } else {
+                modName = name;
+            }
+
+            temp = ext || modName;
+            index = temp.indexOf("!");
+            if (index !== -1) {
+                //Pull off the strip arg.
+                strip = temp.substring(index + 1) === "strip";
+                temp = temp.substring(0, index);
+                if (ext) {
+                    ext = temp;
+                } else {
+                    modName = temp;
+                }
+            }
+
+            return {
+                moduleName: modName,
+                ext: ext,
+                strip: strip
+            };
+        },
+
+        xdRegExp: /^((\w+)\:)?\/\/([^\/\\]+)/,
+
+        /**
+         * Is an URL on another domain. Only works for browser use, returns
+         * false in non-browser environments. Only used to know if an
+         * optimized .js version of a text resource should be loaded
+         * instead.
+         * @param {String} url
+         * @returns Boolean
+         */
+        useXhr: function (url, protocol, hostname, port) {
+            var uProtocol, uHostName, uPort,
+                match = text.xdRegExp.exec(url);
+            if (!match) {
+                return true;
+            }
+            uProtocol = match[2];
+            uHostName = match[3];
+
+            uHostName = uHostName.split(':');
+            uPort = uHostName[1];
+            uHostName = uHostName[0];
+
+            return (!uProtocol || uProtocol === protocol) &&
+                   (!uHostName || uHostName.toLowerCase() === hostname.toLowerCase()) &&
+                   ((!uPort && !uHostName) || uPort === port);
+        },
+
+        finishLoad: function (name, strip, content, onLoad) {
+            content = strip ? text.strip(content) : content;
+            if (masterConfig.isBuild) {
+                buildMap[name] = content;
+            }
+            onLoad(content);
+        },
+
+        load: function (name, req, onLoad, config) {
+            //Name has format: some.module.filext!strip
+            //The strip part is optional.
+            //if strip is present, then that means only get the string contents
+            //inside a body tag in an HTML string. For XML/SVG content it means
+            //removing the <?xml ...?> declarations so the content can be inserted
+            //into the current doc without problems.
+
+            // Do not bother with the work if a build and text will
+            // not be inlined.
+            if (config && config.isBuild && !config.inlineText) {
+                onLoad();
+                return;
+            }
+
+            masterConfig.isBuild = config && config.isBuild;
+
+            var parsed = text.parseName(name),
+                nonStripName = parsed.moduleName +
+                    (parsed.ext ? '.' + parsed.ext : ''),
+                url = req.toUrl(nonStripName),
+                useXhr = (masterConfig.useXhr) ||
+                         text.useXhr;
+
+            // Do not load if it is an empty: url
+            if (url.indexOf('empty:') === 0) {
+                onLoad();
+                return;
+            }
+
+            //Load the text. Use XHR if possible and in a browser.
+            if (!hasLocation || useXhr(url, defaultProtocol, defaultHostName, defaultPort)) {
+                text.get(url, function (content) {
+                    text.finishLoad(name, parsed.strip, content, onLoad);
+                }, function (err) {
+                    if (onLoad.error) {
+                        onLoad.error(err);
+                    }
+                });
+            } else {
+                //Need to fetch the resource across domains. Assume
+                //the resource has been optimized into a JS module. Fetch
+                //by the module name + extension, but do not include the
+                //!strip part to avoid file system issues.
+                req([nonStripName], function (content) {
+                    text.finishLoad(parsed.moduleName + '.' + parsed.ext,
+                                    parsed.strip, content, onLoad);
+                });
+            }
+        },
+
+        write: function (pluginName, moduleName, write, config) {
+            if (buildMap.hasOwnProperty(moduleName)) {
+                var content = text.jsEscape(buildMap[moduleName]);
+                write.asModule(pluginName + "!" + moduleName,
+                               "define(function () { return '" +
+                                   content +
+                               "';});\n");
+            }
+        },
+
+        writeFile: function (pluginName, moduleName, req, write, config) {
+            var parsed = text.parseName(moduleName),
+                extPart = parsed.ext ? '.' + parsed.ext : '',
+                nonStripName = parsed.moduleName + extPart,
+                //Use a '.js' file name so that it indicates it is a
+                //script that can be loaded across domains.
+                fileName = req.toUrl(parsed.moduleName + extPart) + '.js';
+
+            //Leverage own load() method to load plugin value, but only
+            //write out values that do not have the strip argument,
+            //to avoid any potential issues with ! in file names.
+            text.load(nonStripName, req, function (value) {
+                //Use own write() method to construct full module value.
+                //But need to create shell that translates writeFile's
+                //write() to the right interface.
+                var textWrite = function (contents) {
+                    return write(fileName, contents);
+                };
+                textWrite.asModule = function (moduleName, contents) {
+                    return write.asModule(moduleName, fileName, contents);
+                };
+
+                text.write(pluginName, nonStripName, textWrite, config);
+            }, config);
+        }
+    };
+
+    if (masterConfig.env === 'node' || (!masterConfig.env &&
+            typeof process !== "undefined" &&
+            process.versions &&
+            !!process.versions.node &&
+            !process.versions['node-webkit'] &&
+            !process.versions['atom-shell'])) {
+        //Using special require.nodeRequire, something added by r.js.
+        fs = require.nodeRequire('fs');
+
+        text.get = function (url, callback, errback) {
+            try {
+                var file = fs.readFileSync(url, 'utf8');
+                //Remove BOM (Byte Mark Order) from utf8 files if it is there.
+                if (file[0] === '\uFEFF') {
+                    file = file.substring(1);
+                }
+                callback(file);
+            } catch (e) {
+                if (errback) {
+                    errback(e);
+                }
+            }
+        };
+    } else if (masterConfig.env === 'xhr' || (!masterConfig.env &&
+            text.createXhr())) {
+        text.get = function (url, callback, errback, headers) {
+            var xhr = text.createXhr(), header;
+            xhr.open('GET', url, true);
+
+            //Allow plugins direct access to xhr headers
+            if (headers) {
+                for (header in headers) {
+                    if (headers.hasOwnProperty(header)) {
+                        xhr.setRequestHeader(header.toLowerCase(), headers[header]);
+                    }
+                }
+            }
+
+            //Allow overrides specified in config
+            if (masterConfig.onXhr) {
+                masterConfig.onXhr(xhr, url);
+            }
+
+            xhr.onreadystatechange = function (evt) {
+                var status, err;
+                //Do not explicitly handle errors, those should be
+                //visible via console output in the browser.
+                if (xhr.readyState === 4) {
+                    status = xhr.status || 0;
+                    if (status > 399 && status < 600) {
+                        //An http 4xx or 5xx error. Signal an error.
+                        err = new Error(url + ' HTTP status: ' + status);
+                        err.xhr = xhr;
+                        if (errback) {
+                            errback(err);
+                        }
+                    } else {
+                        callback(xhr.responseText);
+                    }
+
+                    if (masterConfig.onXhrComplete) {
+                        masterConfig.onXhrComplete(xhr, url);
+                    }
+                }
+            };
+            xhr.send(null);
+        };
+    } else if (masterConfig.env === 'rhino' || (!masterConfig.env &&
+            typeof Packages !== 'undefined' && typeof java !== 'undefined')) {
+        //Why Java, why is this so awkward?
+        text.get = function (url, callback) {
+            var stringBuffer, line,
+                encoding = "utf-8",
+                file = new java.io.File(url),
+                lineSeparator = java.lang.System.getProperty("line.separator"),
+                input = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(file), encoding)),
+                content = '';
+            try {
+                stringBuffer = new java.lang.StringBuffer();
+                line = input.readLine();
+
+                // Byte Order Mark (BOM) - The Unicode Standard, version 3.0, page 324
+                // http://www.unicode.org/faq/utf_bom.html
+
+                // Note that when we use utf-8, the BOM should appear as "EF BB BF", but it doesn't due to this bug in the JDK:
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4508058
+                if (line && line.length() && line.charAt(0) === 0xfeff) {
+                    // Eat the BOM, since we've already found the encoding on this file,
+                    // and we plan to concatenating this buffer with others; the BOM should
+                    // only appear at the top of a file.
+                    line = line.substring(1);
+                }
+
+                if (line !== null) {
+                    stringBuffer.append(line);
+                }
+
+                while ((line = input.readLine()) !== null) {
+                    stringBuffer.append(lineSeparator);
+                    stringBuffer.append(line);
+                }
+                //Make sure we return a JavaScript string and not a Java string.
+                content = String(stringBuffer.toString()); //String
+            } finally {
+                input.close();
+            }
+            callback(content);
+        };
+    } else if (masterConfig.env === 'xpconnect' || (!masterConfig.env &&
+            typeof Components !== 'undefined' && Components.classes &&
+            Components.interfaces)) {
+        //Avert your gaze!
+        Cc = Components.classes;
+        Ci = Components.interfaces;
+        Components.utils['import']('resource://gre/modules/FileUtils.jsm');
+        xpcIsWindows = ('@mozilla.org/windows-registry-key;1' in Cc);
+
+        text.get = function (url, callback) {
+            var inStream, convertStream, fileObj,
+                readData = {};
+
+            if (xpcIsWindows) {
+                url = url.replace(/\//g, '\\');
+            }
+
+            fileObj = new FileUtils.File(url);
+
+            //XPCOM, you so crazy
+            try {
+                inStream = Cc['@mozilla.org/network/file-input-stream;1']
+                           .createInstance(Ci.nsIFileInputStream);
+                inStream.init(fileObj, 1, 0, false);
+
+                convertStream = Cc['@mozilla.org/intl/converter-input-stream;1']
+                                .createInstance(Ci.nsIConverterInputStream);
+                convertStream.init(inStream, "utf-8", inStream.available(),
+                Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+
+                convertStream.readString(inStream.available(), readData);
+                convertStream.close();
+                inStream.close();
+                callback(readData.value);
+            } catch (e) {
+                throw new Error((fileObj && fileObj.path || '') + ': ' + e);
+            }
+        };
+    }
+    return text;
+});
+
+/**
+ * AngularJS template loader plugin for RequireJS.
+ *
+ * Copyright (c) 2014, David Hall.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ *     1. Redistributions of source code must retain the above copyright notice, 
+ *        this list of conditions and the following disclaimer.
+ *     
+ *     2. Redistributions in binary form must reproduce the above copyright 
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ * 
+ *     3. Neither the name of David Hall nor the names of its contributors may be
+ *        used to endorse or promote products derived from this software without
+ *        specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+define('tpl',[
+    "text"
+], function(
+    text
+) {
+
+    "use strict";
+
+    var tplModule = null;
+    
+    var buildMap = {};
+
+    var tpl = {
+
+        _cacheTemplate: function(angular, name, contents) {
+            if (!tplModule) {
+                tplModule = angular.module("tpl", []);
+            }
+            tplModule.run(["$templateCache", function($templateCache) {
+                $templateCache.put(name, contents);
+            }]);
+            return contents;
+        },
+
+        load: function(name, parentRequire, onload, config) {
+            text.get(require.toUrl(name), function(contents) {
+                // How we act next depends on whether this is the browser.
+                if (config.isBuild) {
+                    // This is an optimizing build
+                    buildMap[name] = contents;
+                    onload(contents);
+                } else {
+                    // Add to the template cache.
+                    require(["angular"], function(angular) {
+                        onload(tpl._cacheTemplate(angular, name, contents));
+                    });
+                }
+            });
+        },
+
+        write: function (pluginName, moduleName, write) {
+            if (moduleName in buildMap) {
+                var contents = text.jsEscape(buildMap[moduleName]);
+                write("define('" + pluginName + "!" + moduleName  + "', ['angular', '" + pluginName + "'], function (angular, tpl) { return tpl._cacheTemplate(angular, '" + moduleName + "', '" + contents + "'); });\n");
+            }
+        }
+
+    };
+
+    return tpl;
+
+});
+
+
+define('tpl!core/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar.html', ''); });
+
+/**
+ * Created by alex on 4/15/15.
+ */
+define('core/navbar',['require','./module','tpl!./navbar.html'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    require('tpl!./navbar.html');
+
+    app.directive('navbar', [function () {
+        return {
+            restrict: 'C',
+            scope: {
+                open: '='
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by alex on 4/15/15.
+ */
+define('core/dropdown',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+
+    app.directive('dropdownToggle', ['$document', function ($document) {
+        return {
+            restrict: 'C',
+            scope: {
+                selected: '='
+            },
+            link: function (scope, element) {
+                function documentClickHandler(event) {
+                    if (!scope.clicked) {
+                        scope.$apply(function () {
+                            scope.selected = false;
+                        });
+                    } else {
+                        scope.clicked = false;
+                    }
+                }
+
+                $document.on('click', documentClickHandler);
+
+                element.on('click', function (event) {
+                    scope.clicked = true;
+
+                    scope.$apply(function () {
+                        scope.selected = !scope.selected;
+                    });
+                });
+
+                element.parent().on('click', function(event){
+                    scope.clicked = true;
+                });
+
+                scope.$on('$destroy', function () {
+                    $document.off('click', documentClickHandler);
+                });
+
+                scope.$watch('selected', function (value) {
+                    if (value) {
+                        element.parent().addClass('open');
+                    } else {
+                        element.parent().removeClass('open');
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/index',['require','./navbar','./dropdown'],function (require) {
+    'use strict';
+
+    require('./navbar');
+    require('./dropdown');
+
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('table/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.tables', []);
+});
+
+define('table/formatFilter',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    //var ng = require('angular');
+
+    app.filter('format', ['$filter', function ($filter) {
+        function percent(input) {
+            return $filter('number')(input, 2) + '%';
+        }
+
+        return function (input, key, rules) {
+            input = input || '';
+            var rule = rules[key];
+            switch (rule) {
+            case 'number':
+                return $filter('number')(input, 0);
+            case 'percent':
+                return percent(input);
+            case 'quartile':
+                return input.map(function (d) {
+                    return percent(d);
+                }).join(' ');
+            default:
+                return input;
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.main}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="(key, value) in row">\n            <div class="cell">\n                {{value|format:key:table.rules}}\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+
+/**
+ * Created by alex on 4/23/15.
+ */
+define('table/basicTable',['require','./module','tpl!./basic.html'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    require('tpl!./basic.html');
+
+    app.directive('basicTable', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/basic.html',
+            replace: true,
+            scope: {
+                table: '=basicTable',
+                classes: '@class'
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('table/index',['require','./formatFilter','./basicTable'],function (require) {
+    'use strict';
+
+    require('./formatFilter');
+    require('./basicTable');
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
 define('chart/module',['require','angular'],function (require) {
     'use strict';
 
@@ -37585,683 +38237,19 @@ define('chart/index',['require','./comparisonChart'],function (require) {
     require('./comparisonChart');
 });
 
-/**
- * Created by Alex on 3/1/2015.
- */
-define('table/module',['require','angular'],function (require) {
+define('app-core',['require','angular','./core/index','./table/index','./chart/index'],function (require) {
     'use strict';
 
     var ng = require('angular');
-
-    return ng.module('app.tables', []);
-});
-
-define('table/formatFilter',['require','./module'],function (require) {
-    'use strict';
-
-    var app = require('./module');
-    //var ng = require('angular');
-
-    app.filter('format', ['$filter', function ($filter) {
-        function percent(input) {
-            return $filter('number')(input, 2) + '%';
-        }
-
-        return function (input, key, rules) {
-            input = input || '';
-            var rule = rules[key];
-            switch (rule) {
-            case 'number':
-                return $filter('number')(input, 0);
-            case 'percent':
-                return percent(input);
-            case 'quartile':
-                return input.map(function (d) {
-                    return percent(d);
-                }).join(' ');
-            default:
-                return input;
-            }
-        };
-    }]);
-});
-
-/**
- * @license RequireJS text 2.0.14 Copyright (c) 2010-2014, The Dojo Foundation All Rights Reserved.
- * Available via the MIT or new BSD license.
- * see: http://github.com/requirejs/text for details
- */
-/*jslint regexp: true */
-/*global require, XMLHttpRequest, ActiveXObject,
-  define, window, process, Packages,
-  java, location, Components, FileUtils */
-
-define('text',['module'], function (module) {
-    'use strict';
-
-    var text, fs, Cc, Ci, xpcIsWindows,
-        progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'],
-        xmlRegExp = /^\s*<\?xml(\s)+version=[\'\"](\d)*.(\d)*[\'\"](\s)*\?>/im,
-        bodyRegExp = /<body[^>]*>\s*([\s\S]+)\s*<\/body>/im,
-        hasLocation = typeof location !== 'undefined' && location.href,
-        defaultProtocol = hasLocation && location.protocol && location.protocol.replace(/\:/, ''),
-        defaultHostName = hasLocation && location.hostname,
-        defaultPort = hasLocation && (location.port || undefined),
-        buildMap = {},
-        masterConfig = (module.config && module.config()) || {};
-
-    text = {
-        version: '2.0.14',
-
-        strip: function (content) {
-            //Strips <?xml ...?> declarations so that external SVG and XML
-            //documents can be added to a document without worry. Also, if the string
-            //is an HTML document, only the part inside the body tag is returned.
-            if (content) {
-                content = content.replace(xmlRegExp, "");
-                var matches = content.match(bodyRegExp);
-                if (matches) {
-                    content = matches[1];
-                }
-            } else {
-                content = "";
-            }
-            return content;
-        },
-
-        jsEscape: function (content) {
-            return content.replace(/(['\\])/g, '\\$1')
-                .replace(/[\f]/g, "\\f")
-                .replace(/[\b]/g, "\\b")
-                .replace(/[\n]/g, "\\n")
-                .replace(/[\t]/g, "\\t")
-                .replace(/[\r]/g, "\\r")
-                .replace(/[\u2028]/g, "\\u2028")
-                .replace(/[\u2029]/g, "\\u2029");
-        },
-
-        createXhr: masterConfig.createXhr || function () {
-            //Would love to dump the ActiveX crap in here. Need IE 6 to die first.
-            var xhr, i, progId;
-            if (typeof XMLHttpRequest !== "undefined") {
-                return new XMLHttpRequest();
-            } else if (typeof ActiveXObject !== "undefined") {
-                for (i = 0; i < 3; i += 1) {
-                    progId = progIds[i];
-                    try {
-                        xhr = new ActiveXObject(progId);
-                    } catch (e) {}
-
-                    if (xhr) {
-                        progIds = [progId];  // so faster next time
-                        break;
-                    }
-                }
-            }
-
-            return xhr;
-        },
-
-        /**
-         * Parses a resource name into its component parts. Resource names
-         * look like: module/name.ext!strip, where the !strip part is
-         * optional.
-         * @param {String} name the resource name
-         * @returns {Object} with properties "moduleName", "ext" and "strip"
-         * where strip is a boolean.
-         */
-        parseName: function (name) {
-            var modName, ext, temp,
-                strip = false,
-                index = name.lastIndexOf("."),
-                isRelative = name.indexOf('./') === 0 ||
-                             name.indexOf('../') === 0;
-
-            if (index !== -1 && (!isRelative || index > 1)) {
-                modName = name.substring(0, index);
-                ext = name.substring(index + 1);
-            } else {
-                modName = name;
-            }
-
-            temp = ext || modName;
-            index = temp.indexOf("!");
-            if (index !== -1) {
-                //Pull off the strip arg.
-                strip = temp.substring(index + 1) === "strip";
-                temp = temp.substring(0, index);
-                if (ext) {
-                    ext = temp;
-                } else {
-                    modName = temp;
-                }
-            }
-
-            return {
-                moduleName: modName,
-                ext: ext,
-                strip: strip
-            };
-        },
-
-        xdRegExp: /^((\w+)\:)?\/\/([^\/\\]+)/,
-
-        /**
-         * Is an URL on another domain. Only works for browser use, returns
-         * false in non-browser environments. Only used to know if an
-         * optimized .js version of a text resource should be loaded
-         * instead.
-         * @param {String} url
-         * @returns Boolean
-         */
-        useXhr: function (url, protocol, hostname, port) {
-            var uProtocol, uHostName, uPort,
-                match = text.xdRegExp.exec(url);
-            if (!match) {
-                return true;
-            }
-            uProtocol = match[2];
-            uHostName = match[3];
-
-            uHostName = uHostName.split(':');
-            uPort = uHostName[1];
-            uHostName = uHostName[0];
-
-            return (!uProtocol || uProtocol === protocol) &&
-                   (!uHostName || uHostName.toLowerCase() === hostname.toLowerCase()) &&
-                   ((!uPort && !uHostName) || uPort === port);
-        },
-
-        finishLoad: function (name, strip, content, onLoad) {
-            content = strip ? text.strip(content) : content;
-            if (masterConfig.isBuild) {
-                buildMap[name] = content;
-            }
-            onLoad(content);
-        },
-
-        load: function (name, req, onLoad, config) {
-            //Name has format: some.module.filext!strip
-            //The strip part is optional.
-            //if strip is present, then that means only get the string contents
-            //inside a body tag in an HTML string. For XML/SVG content it means
-            //removing the <?xml ...?> declarations so the content can be inserted
-            //into the current doc without problems.
-
-            // Do not bother with the work if a build and text will
-            // not be inlined.
-            if (config && config.isBuild && !config.inlineText) {
-                onLoad();
-                return;
-            }
-
-            masterConfig.isBuild = config && config.isBuild;
-
-            var parsed = text.parseName(name),
-                nonStripName = parsed.moduleName +
-                    (parsed.ext ? '.' + parsed.ext : ''),
-                url = req.toUrl(nonStripName),
-                useXhr = (masterConfig.useXhr) ||
-                         text.useXhr;
-
-            // Do not load if it is an empty: url
-            if (url.indexOf('empty:') === 0) {
-                onLoad();
-                return;
-            }
-
-            //Load the text. Use XHR if possible and in a browser.
-            if (!hasLocation || useXhr(url, defaultProtocol, defaultHostName, defaultPort)) {
-                text.get(url, function (content) {
-                    text.finishLoad(name, parsed.strip, content, onLoad);
-                }, function (err) {
-                    if (onLoad.error) {
-                        onLoad.error(err);
-                    }
-                });
-            } else {
-                //Need to fetch the resource across domains. Assume
-                //the resource has been optimized into a JS module. Fetch
-                //by the module name + extension, but do not include the
-                //!strip part to avoid file system issues.
-                req([nonStripName], function (content) {
-                    text.finishLoad(parsed.moduleName + '.' + parsed.ext,
-                                    parsed.strip, content, onLoad);
-                });
-            }
-        },
-
-        write: function (pluginName, moduleName, write, config) {
-            if (buildMap.hasOwnProperty(moduleName)) {
-                var content = text.jsEscape(buildMap[moduleName]);
-                write.asModule(pluginName + "!" + moduleName,
-                               "define(function () { return '" +
-                                   content +
-                               "';});\n");
-            }
-        },
-
-        writeFile: function (pluginName, moduleName, req, write, config) {
-            var parsed = text.parseName(moduleName),
-                extPart = parsed.ext ? '.' + parsed.ext : '',
-                nonStripName = parsed.moduleName + extPart,
-                //Use a '.js' file name so that it indicates it is a
-                //script that can be loaded across domains.
-                fileName = req.toUrl(parsed.moduleName + extPart) + '.js';
-
-            //Leverage own load() method to load plugin value, but only
-            //write out values that do not have the strip argument,
-            //to avoid any potential issues with ! in file names.
-            text.load(nonStripName, req, function (value) {
-                //Use own write() method to construct full module value.
-                //But need to create shell that translates writeFile's
-                //write() to the right interface.
-                var textWrite = function (contents) {
-                    return write(fileName, contents);
-                };
-                textWrite.asModule = function (moduleName, contents) {
-                    return write.asModule(moduleName, fileName, contents);
-                };
-
-                text.write(pluginName, nonStripName, textWrite, config);
-            }, config);
-        }
-    };
-
-    if (masterConfig.env === 'node' || (!masterConfig.env &&
-            typeof process !== "undefined" &&
-            process.versions &&
-            !!process.versions.node &&
-            !process.versions['node-webkit'] &&
-            !process.versions['atom-shell'])) {
-        //Using special require.nodeRequire, something added by r.js.
-        fs = require.nodeRequire('fs');
-
-        text.get = function (url, callback, errback) {
-            try {
-                var file = fs.readFileSync(url, 'utf8');
-                //Remove BOM (Byte Mark Order) from utf8 files if it is there.
-                if (file[0] === '\uFEFF') {
-                    file = file.substring(1);
-                }
-                callback(file);
-            } catch (e) {
-                if (errback) {
-                    errback(e);
-                }
-            }
-        };
-    } else if (masterConfig.env === 'xhr' || (!masterConfig.env &&
-            text.createXhr())) {
-        text.get = function (url, callback, errback, headers) {
-            var xhr = text.createXhr(), header;
-            xhr.open('GET', url, true);
-
-            //Allow plugins direct access to xhr headers
-            if (headers) {
-                for (header in headers) {
-                    if (headers.hasOwnProperty(header)) {
-                        xhr.setRequestHeader(header.toLowerCase(), headers[header]);
-                    }
-                }
-            }
-
-            //Allow overrides specified in config
-            if (masterConfig.onXhr) {
-                masterConfig.onXhr(xhr, url);
-            }
-
-            xhr.onreadystatechange = function (evt) {
-                var status, err;
-                //Do not explicitly handle errors, those should be
-                //visible via console output in the browser.
-                if (xhr.readyState === 4) {
-                    status = xhr.status || 0;
-                    if (status > 399 && status < 600) {
-                        //An http 4xx or 5xx error. Signal an error.
-                        err = new Error(url + ' HTTP status: ' + status);
-                        err.xhr = xhr;
-                        if (errback) {
-                            errback(err);
-                        }
-                    } else {
-                        callback(xhr.responseText);
-                    }
-
-                    if (masterConfig.onXhrComplete) {
-                        masterConfig.onXhrComplete(xhr, url);
-                    }
-                }
-            };
-            xhr.send(null);
-        };
-    } else if (masterConfig.env === 'rhino' || (!masterConfig.env &&
-            typeof Packages !== 'undefined' && typeof java !== 'undefined')) {
-        //Why Java, why is this so awkward?
-        text.get = function (url, callback) {
-            var stringBuffer, line,
-                encoding = "utf-8",
-                file = new java.io.File(url),
-                lineSeparator = java.lang.System.getProperty("line.separator"),
-                input = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(file), encoding)),
-                content = '';
-            try {
-                stringBuffer = new java.lang.StringBuffer();
-                line = input.readLine();
-
-                // Byte Order Mark (BOM) - The Unicode Standard, version 3.0, page 324
-                // http://www.unicode.org/faq/utf_bom.html
-
-                // Note that when we use utf-8, the BOM should appear as "EF BB BF", but it doesn't due to this bug in the JDK:
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4508058
-                if (line && line.length() && line.charAt(0) === 0xfeff) {
-                    // Eat the BOM, since we've already found the encoding on this file,
-                    // and we plan to concatenating this buffer with others; the BOM should
-                    // only appear at the top of a file.
-                    line = line.substring(1);
-                }
-
-                if (line !== null) {
-                    stringBuffer.append(line);
-                }
-
-                while ((line = input.readLine()) !== null) {
-                    stringBuffer.append(lineSeparator);
-                    stringBuffer.append(line);
-                }
-                //Make sure we return a JavaScript string and not a Java string.
-                content = String(stringBuffer.toString()); //String
-            } finally {
-                input.close();
-            }
-            callback(content);
-        };
-    } else if (masterConfig.env === 'xpconnect' || (!masterConfig.env &&
-            typeof Components !== 'undefined' && Components.classes &&
-            Components.interfaces)) {
-        //Avert your gaze!
-        Cc = Components.classes;
-        Ci = Components.interfaces;
-        Components.utils['import']('resource://gre/modules/FileUtils.jsm');
-        xpcIsWindows = ('@mozilla.org/windows-registry-key;1' in Cc);
-
-        text.get = function (url, callback) {
-            var inStream, convertStream, fileObj,
-                readData = {};
-
-            if (xpcIsWindows) {
-                url = url.replace(/\//g, '\\');
-            }
-
-            fileObj = new FileUtils.File(url);
-
-            //XPCOM, you so crazy
-            try {
-                inStream = Cc['@mozilla.org/network/file-input-stream;1']
-                           .createInstance(Ci.nsIFileInputStream);
-                inStream.init(fileObj, 1, 0, false);
-
-                convertStream = Cc['@mozilla.org/intl/converter-input-stream;1']
-                                .createInstance(Ci.nsIConverterInputStream);
-                convertStream.init(inStream, "utf-8", inStream.available(),
-                Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
-
-                convertStream.readString(inStream.available(), readData);
-                convertStream.close();
-                inStream.close();
-                callback(readData.value);
-            } catch (e) {
-                throw new Error((fileObj && fileObj.path || '') + ': ' + e);
-            }
-        };
-    }
-    return text;
-});
-
-/**
- * AngularJS template loader plugin for RequireJS.
- *
- * Copyright (c) 2014, David Hall.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- * 
- *     1. Redistributions of source code must retain the above copyright notice, 
- *        this list of conditions and the following disclaimer.
- *     
- *     2. Redistributions in binary form must reproduce the above copyright 
- *        notice, this list of conditions and the following disclaimer in the
- *        documentation and/or other materials provided with the distribution.
- * 
- *     3. Neither the name of David Hall nor the names of its contributors may be
- *        used to endorse or promote products derived from this software without
- *        specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-define('tpl',[
-    "text"
-], function(
-    text
-) {
-
-    "use strict";
-
-    var tplModule = null;
-    
-    var buildMap = {};
-
-    var tpl = {
-
-        _cacheTemplate: function(angular, name, contents) {
-            if (!tplModule) {
-                tplModule = angular.module("tpl", []);
-            }
-            tplModule.run(["$templateCache", function($templateCache) {
-                $templateCache.put(name, contents);
-            }]);
-            return contents;
-        },
-
-        load: function(name, parentRequire, onload, config) {
-            text.get(require.toUrl(name), function(contents) {
-                // How we act next depends on whether this is the browser.
-                if (config.isBuild) {
-                    // This is an optimizing build
-                    buildMap[name] = contents;
-                    onload(contents);
-                } else {
-                    // Add to the template cache.
-                    require(["angular"], function(angular) {
-                        onload(tpl._cacheTemplate(angular, name, contents));
-                    });
-                }
-            });
-        },
-
-        write: function (pluginName, moduleName, write) {
-            if (moduleName in buildMap) {
-                var contents = text.jsEscape(buildMap[moduleName]);
-                write("define('" + pluginName + "!" + moduleName  + "', ['angular', '" + pluginName + "'], function (angular, tpl) { return tpl._cacheTemplate(angular, '" + moduleName + "', '" + contents + "'); });\n");
-            }
-        }
-
-    };
-
-    return tpl;
-
-});
-
-
-define('tpl!table/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.main}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="(key, value) in row">\n            <div class="cell">\n                {{value|format:key:table.rules}}\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
-
-/**
- * Created by alex on 4/23/15.
- */
-define('table/basicTable',['require','./module','tpl!./basic.html'],function (require) {
-    'use strict';
-
-    var app = require('./module');
-    require('tpl!./basic.html');
-
-    app.directive('basicTable', [function () {
-        return {
-            restrict: 'A',
-            templateUrl: 'table/basic.html',
-            replace: true,
-            scope: {
-                table: '=basicTable',
-                classes: '@class'
-            }
-        };
-    }]);
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('table/index',['require','./formatFilter','./basicTable'],function (require) {
-    'use strict';
-
-    require('./formatFilter');
-    require('./basicTable');
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('core/module',['require','angular'],function (require) {
-    'use strict';
-
-    var ng = require('angular');
-
-    return ng.module('app.core', []);
-});
-
-
-define('tpl!core/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar.html', '<div class="navbar-header">\n    <button type="button" class="navbar-toggle" ng-click="open = !open">\n        <span class="sr-only">Toggle navigation</span>\n        <span class="icon-bar"></span>\n        <span class="icon-bar"></span>\n        <span class="icon-bar"></span>\n    </button>\n    <div class="dropdown navbar-right settings">\n        <a href="" class="btn btn-primary solid dropdown-toggle">Settings <i class="glyph-cheveron-down"></i></a>\n        <ul class="dropdown-menu" role="menu">\n            <li><a href="#">Action</a></li>\n            <li><a href="#">Another action</a></li>\n            <li><a href="#">Something else here</a></li>\n            <li class="divider"></li>\n            <li><a href="#">Separated link</a></li>\n            <li class="divider"></li>\n            <li><a href="#">One more separated </a></li>\n        </ul>\n    </div>\n    <a class="logo" href=""></a>\n</div>\n<div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n<!-- Collect the nav links, forms, and other content for toggling -->\n<div class="navbar-collapse">\n    <ul class="nav navbar-right">\n        <li><a href="#">Campaign Management</a></li>\n        <li><a class="primary" href="#">Analytics</a></li>\n    </ul>\n    <ul class="nav navbar-left">\n        <li class="dropdown">\n            <div class="dropdown-toggle">\n                <div class="dropdown-toggle-subtitle">\n                    Clients\n                </div>\n                <div class="dropdown-toggle-title">\n                    <i class="glyph-cheveron-down"></i>\n                    All Clients\n                </div>\n            </div>\n            <div class="dropdown-menu" role="menu">\n                <label class="dropdown-search">\n                    <input class="input" placeholder="Search" type="search" />\n                </label>\n                <ul class="list">\n                    <li><a href="">All Clients</a></li>\n                    <li>Pinned\n                        <ul class="pinned">\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n                <ul class="list">\n                    <li>#\n                        <ul>\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n            </div>\n        </li>\n        <li class="dropdown">\n            <div class="dropdown-toggle">\n                <div class="dropdown-toggle-subtitle">\n                    Divisons\n                </div>\n                <div class="dropdown-toggle-title">\n                    <i class="glyph-cheveron-down"></i>\n                    All Divisons\n                </div>\n            </div>\n            <div class="dropdown-menu" role="menu">\n                <label class="dropdown-search">\n                    <input class="input" placeholder="Search" type="search" />\n                </label>\n                <ul class="list">\n                    <li><a href="">All Clients</a></li>\n                    <li>Pinned\n                        <ul class="pinned">\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n                <ul class="list">\n                    <li>#\n                        <ul>\n                            <li><a href="">Client 5 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            <li><a href="">Client 0 <i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                        </ul>\n                    </li>\n                </ul>\n            </div>\n        </li>\n    </ul>\n</div><!-- /.navbar-collapse -->\n'); });
-
-/**
- * Created by alex on 4/15/15.
- */
-define('core/navbar',['require','./module','tpl!./navbar.html'],function (require) {
-    'use strict';
-
-    var app = require('./module');
-    require('tpl!./navbar.html');
-
-    app.directive('navbar', [function () {
-        return {
-            restrict: 'C',
-            transclude: true,
-            scope: {
-                open: '='
-            },
-            templateUrl: 'core/navbar.html',
-            link: function (scope, element) {
-                scope.$watch('open', function (value) {
-                    if (value) {
-                        element.addClass('navbar-open');
-                    } else {
-                        element.removeClass('navbar-open');
-                    }
-                });
-            }
-        };
-    }]);
-});
-
-/**
- * Created by alex on 4/15/15.
- */
-define('core/dropdown',['require','./module'],function (require) {
-    'use strict';
-
-    var app = require('./module');
-
-    app.directive('dropdownToggle', ['$document', function ($document) {
-        return {
-            restrict: 'C',
-            scope: {
-                selected: '='
-            },
-            link: function (scope, element) {
-                function documentClickHandler() {
-                    scope.$apply(function () {
-                        scope.selected = false;
-                    });
-                }
-
-                $document.on('click', documentClickHandler);
-
-                element.on('click', function (event) {
-                    scope.$apply(function () {
-                        scope.selected = !scope.selected;
-                    });
-                    event.stopPropagation();
-                });
-
-                element.parent().on('click', function (event) {
-                    if (event.target.tagName === 'A') {
-                        scope.$apply(function () {
-                            scope.selected = false;
-                        });
-                    }
-
-                    event.stopPropagation();
-                });
-
-                scope.$on('$destroy', function () {
-                    $document.off('click', documentClickHandler);
-                });
-
-                scope.$watch('selected', function (value) {
-                    if (value) {
-                        element.parent().addClass('open');
-                    } else {
-                        element.parent().removeClass('open');
-                    }
-                });
-            }
-        };
-    }]);
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('core/index',['require','./navbar','./dropdown'],function (require) {
-    'use strict';
-
-    require('./navbar');
-    require('./dropdown');
-
-});
-
-define('app-core',['require','angular','./chart/index','./table/index','./core/index'],function (require) {
-    'use strict';
-
-    var ng = require('angular');
-    require('./chart/index');
-    require('./table/index');
     require('./core/index');
+    require('./table/index');
+    require('./chart/index');
 
     return ng.module('app', [
+        'tpl',
         'app.core',
         'app.tables',
-        'app.charts',
-        'tpl'
+        'app.charts'
     ]);
 });
 
@@ -38396,7 +38384,7 @@ define('domReady',[],function () {
 });
 
 
-/**
+/**without route
  * Created by Alex on 3/1/2015.
  */
 define('bootstrap-core',['require','angular','app-core'],function (require) {
@@ -38405,8 +38393,8 @@ define('bootstrap-core',['require','angular','app-core'],function (require) {
     var ng = require('angular');
     require('app-core');
 
-    require(['domReady!'], function (document) {
-        ng.bootstrap(document, ['app']);
+    require(['domReady!'], function () {
+        ng.bootstrap(window.document.querySelector('body'), ['app']);
     });
 });
 

@@ -13,29 +13,28 @@ define(function (require) {
                 selected: '='
             },
             link: function (scope, element) {
-                function documentClickHandler() {
-                    scope.$apply(function () {
-                        scope.selected = false;
-                    });
+                function documentClickHandler(event) {
+                    if (!scope.clicked) {
+                        scope.$apply(function () {
+                            scope.selected = false;
+                        });
+                    } else {
+                        scope.clicked = false;
+                    }
                 }
 
                 $document.on('click', documentClickHandler);
 
                 element.on('click', function (event) {
+                    scope.clicked = true;
+
                     scope.$apply(function () {
                         scope.selected = !scope.selected;
                     });
-                    event.stopPropagation();
                 });
 
-                element.parent().on('click', function (event) {
-                    if (event.target.tagName === 'A') {
-                        scope.$apply(function () {
-                            scope.selected = false;
-                        });
-                    }
-
-                    event.stopPropagation();
+                element.parent().on('click', function(event){
+                    scope.clicked = true;
                 });
 
                 scope.$on('$destroy', function () {
