@@ -28552,19 +28552,19 @@ define('core/dropdown',['require','./module'],function (require) {
             },
             link: function (scope, element) {
                 function documentClickHandler(event) {
-                    if (!event.data || event.data && scope.$id !== event.data.id) {
+                    if (!scope.clicked) {
                         scope.$apply(function () {
                             scope.selected = false;
                         });
+                    } else {
+                        scope.clicked = false;
                     }
                 }
 
                 $document.on('click', documentClickHandler);
 
                 element.on('click', function (event) {
-                    event.data = {
-                        id: scope.$id
-                    };
+                    scope.clicked = true;
 
                     scope.$apply(function () {
                         scope.selected = !scope.selected;
@@ -28572,9 +28572,7 @@ define('core/dropdown',['require','./module'],function (require) {
                 });
 
                 element.parent().on('click', function(event){
-                    event.data = {
-                        id: scope.$id
-                    };
+                    scope.clicked = true;
                 });
 
                 scope.$on('$destroy', function () {
