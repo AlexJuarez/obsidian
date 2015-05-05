@@ -24,6 +24,21 @@
   font-size: inherit;
   color: #333;
 }
+.border-right {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.border-right li {
+  border: 1px solid #E1E1E1;
+  border-width: 0 1px 0 0;
+  padding-right: 1rem;
+  margin-right: 1rem;
+  display: inline;
+}
+.border-right li:last-child {
+  border: none;
+}
 .side-nav {
   position: fixed;
   top: 20px;

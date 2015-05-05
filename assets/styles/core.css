@@ -827,20 +827,41 @@ table {
   display: inline-block;
   background-color: #0378bd;
 }
-.border-right {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.tooltip-light .wrapper {
+  background: #ffffff;
+  border: solid 1px #3f403f;
+  color: #3f403f;
 }
-.border-right li {
-  border: 1px solid #E1E1E1;
-  border-width: 0 1px 0 0;
-  padding-right: 1rem;
-  margin-right: 1rem;
-  display: inline;
+.tooltip-light .wrapper:before,
+.tooltip-light .wrapper:after {
+  content: '';
+  position: absolute;
+  border: solid transparent;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
-.border-right li:last-child {
+.tooltip-light .wrapper:before {
+  border-color: rgba(60, 60, 60, 0);
+  border-width: 9px;
+}
+.tooltip-light .wrapper:after {
+  border-color: rgba(255, 255, 255, 0);
+  border-width: 8px;
+}
+.tooltip-dark .wrapper {
+  background: #3f403f;
   border: none;
+  color: #ffffff;
+}
+.tooltip-dark .wrapper:before {
+  content: '';
+  position: absolute;
+  border: solid rgba(60, 60, 60, 0);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  border-width: 8px;
 }
 .tooltip {
   position: relative;
@@ -872,28 +893,6 @@ table {
   visibility: visible;
   opacity: 1;
 }
-.tooltip.tooltip-light .wrapper {
-  background: #ffffff;
-  border: solid 1px #3f403f;
-  color: #3f403f;
-}
-.tooltip.tooltip-light .wrapper:before,
-.tooltip.tooltip-light .wrapper:after {
-  content: '';
-  position: absolute;
-  border: solid transparent;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-.tooltip.tooltip-light .wrapper:before {
-  border-color: rgba(60, 60, 60, 0);
-  border-width: 9px;
-}
-.tooltip.tooltip-light .wrapper:after {
-  border-color: rgba(255, 255, 255, 0);
-  border-width: 8px;
-}
 .tooltip[class*="top"].tooltip-light .wrapper:before {
   border-top-color: #3f403f;
 }
@@ -905,21 +904,6 @@ table {
 }
 .tooltip[class*="bottom"].tooltip-light .wrapper:after {
   border-bottom-color: #fff;
-}
-.tooltip.tooltip-dark .wrapper {
-  background: #3f403f;
-  border: none;
-  color: #ffffff;
-}
-.tooltip.tooltip-dark .wrapper:before {
-  content: '';
-  position: absolute;
-  border: solid transparent;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  border-width: 8px;
-  border-color: rgba(60, 60, 60, 0);
 }
 .tooltip[class*="top"].tooltip-dark .wrapper:before {
   border-top-color: #3f403f;

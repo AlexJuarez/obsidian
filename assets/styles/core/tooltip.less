@@ -1,28 +1,48 @@
 @tool-tip-light-bg: #fff;
 @tool-tip-dark-bg: #3F403F;
 
-// Layout styles just for pattern library display purposes
-.border-right {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    li {
-        border: 1px solid #E1E1E1;
-        border-width: 0 1px 0 0;
-        padding-right: 1rem;
-        margin-right: 1rem;
-        display: inline;
+.tooltip-light .wrapper {
+    background: @tool-tip-light-bg;
+    border: solid 1px @tool-tip-dark-bg;
+    color: @tool-tip-dark-bg;
+    &:before, &:after {
+        content: '';
+        position: absolute;
+        border: solid transparent;
+        width: 0;
+        height: 0;
+        pointer-events: none;
     }
-    li:last-child {
-        border: none;
+    &:before {
+        border-color: rgba(60, 60, 60, 0);
+        border-width: 9px;
+    }
+    &:after {
+        border-color: rgba(255, 255, 255, 0);
+        border-width: 8px;
     }
 }
-// ----------------
+
+.tooltip-dark .wrapper {
+    background: @tool-tip-dark-bg;
+    border: none;
+    color: @tool-tip-light-bg;
+    &:before {
+        content: '';
+        position: absolute;
+        border: solid rgba(60, 60, 60, 0);
+        width: 0;
+        height: 0;
+        pointer-events: none;
+        border-width: 8px;
+    }
+}
 
 .tooltip {
     position: relative;
     display: inline-block;
     .font-smoothing();
+
     .wrapper {
         .transition(all 0.3s ease);
         visibility: hidden;
@@ -35,37 +55,16 @@
             font-size: 1.4rem;
         }
     }
+
     &.hover:hover {
         cursor: default;
     }
+
     &.hover:hover .wrapper, &.hover:hover &:before, &.hover:hover &:after {
         visibility: visible;
         opacity: 1;
     }
-    
-    // Light BG settings
-    &.tooltip-light .wrapper {
-        background: @tool-tip-light-bg;
-        border: solid 1px @tool-tip-dark-bg;
-        color: @tool-tip-dark-bg;
-        &:before, &:after {
-            content: '';
-            position: absolute;
-            border: solid transparent;
-            width: 0;
-            height: 0;
-            pointer-events: none;
-        }
-        &:before {
-            border-color: rgba(60, 60, 60, 0);
-            border-width: 9px;
-        }
-        &:after {
-            border-color: rgba(255, 255, 255, 0);
-            border-width: 8px;
-        }
 
-    }
     &[class*="top"].tooltip-light .wrapper {
         &:before {
             border-top-color: @tool-tip-dark-bg;
@@ -82,23 +81,7 @@
             border-bottom-color: #fff;
         }
     }
-    
-    // Dark BG settings
-    &.tooltip-dark .wrapper {
-        background: @tool-tip-dark-bg;
-        border: none;
-        color: @tool-tip-light-bg;
-        &:before {
-            content: '';
-            position: absolute;
-            border: solid transparent;
-            width: 0;
-            height: 0;
-            pointer-events: none;
-            border-width: 8px;
-            border-color: rgba(60, 60, 60, 0);
-       }
-    }
+
     &[class*="top"].tooltip-dark .wrapper {
         &:before {
             border-top-color: @tool-tip-dark-bg;
@@ -109,8 +92,8 @@
             border-bottom-color: @tool-tip-dark-bg;
         }
     }
-    
-    // Positioning 
+
+    // Positioning
     &[class*="top"] .wrapper {
         bottom: 120%;
         &:before, &:after {
@@ -153,8 +136,4 @@
             bottom: 100%;
         }
     }
-
-    // &.open .wrapper {
-    //     display: inline-block;
-    // }
 }
