@@ -28552,7 +28552,7 @@ define('core/dropdown',['require','./module'],function (require) {
             },
             link: function (scope, element) {
                 function documentClickHandler(event) {
-                    if (!event.target.isEqualNode(element[0])) {
+                    if (!event.result || event.result && scope.$id !== event.result.id) {
                         scope.$apply(function () {
                             scope.selected = false;
                         });
@@ -28561,10 +28561,20 @@ define('core/dropdown',['require','./module'],function (require) {
 
                 $document.on('click', documentClickHandler);
 
-                element.on('click', function () {
+                element.on('click', function (event) {
+                    event.result = {
+                        id: scope.$id
+                    };
+
                     scope.$apply(function () {
                         scope.selected = !scope.selected;
                     });
+                });
+
+                element.parent().on('click', function(event){
+                    event.result = {
+                        id: scope.$id
+                    };
                 });
 
                 scope.$on('$destroy', function () {
@@ -38383,7 +38393,7 @@ define('bootstrap-core',['require','angular','app-core'],function (require) {
     'use strict';
 
     var ng = require('angular');
-    var app = require('app-core');
+    require('app-core');
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);
