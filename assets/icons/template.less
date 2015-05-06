@@ -37,6 +37,11 @@
 <% if (stylesheet === 'less') { %>
 .<%= mixinPrefix %><%= glyphs[glyphIdx] %>() {
     content:"<% if (addLigatures) { %><%= glyphs[glyphIdx] %><% } else { %>\<%= codepoints[glyphIdx] %><% } %>";
+    font-family:"<%= fontBaseName %>";
+    text-rendering:optimizeLegibility;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    speak:none;
 }
 
 .<%= classPrefix %><%= glyphs[glyphIdx] %>{

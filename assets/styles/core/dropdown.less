@@ -27,6 +27,14 @@
 }
 
 .dropdown-search {
+    .clearfix();
+    &:before {
+        cursor: pointer;
+        .font-size(1.8);
+        position: absolute;
+        color: #fff;
+        .glyph-search();
+    }
     .input {
         background-color: transparent;
         border: none;
@@ -43,7 +51,7 @@
     display: none; // none by default, but block on "open" of the menu
     float: left;
     min-width: 190px;
-    padding: 0.5rem 0;
+    padding: 0;
     margin: 0; // override default ul
     list-style: none;
     .font-size(1.4);
@@ -54,7 +62,7 @@
 
     .divider {
         height: 1px;
-        margin: 0.3rem 0;
+        margin: 0;
         overflow: hidden;
         background-color: @dark-gray;
     }

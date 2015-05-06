@@ -178,8 +178,8 @@ th {
 }
 @font-face {
   font-family: "mixpo-icons";
-  src: url("/fonts/mixpo-icons.eot?65f61fe5ecad12f54bf62ba334d3b54a");
-  src: url("/fonts/mixpo-icons.eot?#iefix") format("embedded-opentype"), url("/fonts/mixpo-icons.woff?65f61fe5ecad12f54bf62ba334d3b54a") format("woff"), url("/fonts/mixpo-icons.ttf?65f61fe5ecad12f54bf62ba334d3b54a") format("truetype");
+  src: url("/fonts/mixpo-icons.eot?2b7d54810b510e292253bec2d7b197d3");
+  src: url("/fonts/mixpo-icons.eot?#iefix") format("embedded-opentype"), url("/fonts/mixpo-icons.woff?2b7d54810b510e292253bec2d7b197d3") format("woff"), url("/fonts/mixpo-icons.ttf?2b7d54810b510e292253bec2d7b197d3") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
@@ -198,78 +198,211 @@ th {
 }
 .glyph-add:before {
   content: "\f101";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-benchmarks:before {
   content: "\f102";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-calendar-1:before {
   content: "\f103";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-calendar-2:before {
   content: "\f104";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-calendar:before {
   content: "\f105";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-cheveron-down:before {
   content: "\f106";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-cheveron-left:before {
   content: "\f107";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-cheveron-right:before {
   content: "\f108";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-cheveron-up:before {
   content: "\f109";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-close:before {
   content: "\f10a";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-copy:before {
   content: "\f10b";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-download-chart:before {
   content: "\f10c";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-download-data:before {
   content: "\f10d";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-filter:before {
   content: "\f10e";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-grid:before {
   content: "\f10f";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-list:before {
   content: "\f110";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-pin-down:before {
   content: "\f111";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-pin-left:before {
   content: "\f112";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-play:before {
   content: "\f113";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-preview:before {
   content: "\f114";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-save:before {
   content: "\f115";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
+}
+.glyph-search:before {
+  content: "\f116";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-settings:before {
-  content: "\f116";
+  content: "\f117";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-share:before {
-  content: "\f117";
+  content: "\f118";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-tag:before {
-  content: "\f118";
+  content: "\f119";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .glyph-view:before {
-  content: "\f119";
+  content: "\f11a";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .clearfix:after,
 .clearfix:before,
@@ -764,9 +897,19 @@ table {
 }
 .table-collapse.open > .header:after {
   content: "\f106";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .table-collapse.open > .header:after:before {
   content: "\f106";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .table-collapse > .header {
   cursor: pointer;
@@ -779,15 +922,24 @@ table {
   position: relative;
 }
 .table-collapse > .header:after {
-  font-family: "mixpo-icons";
   position: absolute;
   content: "\f109";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
   right: 20px;
   top: 50%;
   margin-top: -8px;
 }
 .table-collapse > .header:after:before {
   content: "\f109";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .table-collapse > .content {
   display: none;
@@ -2092,26 +2244,12 @@ table {
   border-bottom: 1px solid #fff;
   display: block;
 }
-.navbar-collapse .dropdown-menu .dropdown-search:before,
-.navbar-collapse .dropdown-menu .dropdown-search:after {
-  content: " ";
-  display: table;
-}
-.navbar-collapse .dropdown-menu .dropdown-search:after {
-  clear: both;
-}
-.navbar-collapse .dropdown-menu .dropdown-search:after,
-.navbar-collapse .dropdown-menu .dropdown-search:before {
-  display: table;
-  content: " ";
-  clear: both;
-}
 .navbar-collapse .dropdown-menu .dropdown-search .input {
   box-sizing: border-box;
   color: #ffffff;
   padding: 0;
   width: 100%;
-  padding-left: 2em;
+  padding-left: 2.2rem;
   line-height: 2.4rem;
   float: right;
 }
@@ -2251,9 +2389,19 @@ table {
   margin-right: 5px;
   margin-left: 7px;
   content: "\f112";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .pin:hover:before:before {
   content: "\f112";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .pin:before {
   height: 0;
@@ -2261,18 +2409,37 @@ table {
   margin-right: 0;
   margin-left: 5px;
   display: inline-block;
-  font-family: "mixpo-icons";
   content: "\f111";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
   vertical-align: top;
 }
 .pin:before:before {
   content: "\f111";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .pinned .pin:before {
   content: "\f112";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .pinned .pin:before:before {
   content: "\f112";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .pinned .pin:hover .repin {
   display: none;
@@ -2284,9 +2451,19 @@ table {
   margin-top: 0;
   margin-right: 0;
   content: "\f111";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .pinned .pin:hover:before:before {
   content: "\f111";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
 }
 .dropdown {
   position: relative;
@@ -2303,6 +2480,41 @@ table {
 .open > a {
   outline: 0;
 }
+.dropdown-search:before,
+.dropdown-search:after {
+  content: " ";
+  display: table;
+}
+.dropdown-search:after {
+  clear: both;
+}
+.dropdown-search:after,
+.dropdown-search:before {
+  display: table;
+  content: " ";
+  clear: both;
+}
+.dropdown-search:before {
+  cursor: pointer;
+  font-size: 18px;
+  font-size: 1.8rem;
+  position: absolute;
+  color: #fff;
+  content: "\f116";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
+}
+.dropdown-search:before:before {
+  content: "\f116";
+  font-family: "mixpo-icons";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  speak: none;
+}
 .dropdown-search .input {
   background-color: transparent;
   border: none;
@@ -2317,7 +2529,7 @@ table {
   display: none;
   float: left;
   min-width: 190px;
-  padding: 0.5rem 0;
+  padding: 0;
   margin: 0;
   list-style: none;
   font-size: 14px;
@@ -2329,7 +2541,7 @@ table {
 }
 .dropdown-menu .divider {
   height: 1px;
-  margin: 0.3rem 0;
+  margin: 0;
   overflow: hidden;
   background-color: #3f403f;
 }

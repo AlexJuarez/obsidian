@@ -2,7 +2,7 @@
     <thead>
     <tr>
         <th ng-repeat="header in table.headers track by $index">
-            {{header.main}}
+            [[header.main]]
         </th>
     </tr>
     </thead>
@@ -10,7 +10,7 @@
     <tr ng-repeat="row in table.data track by $index">
         <td ng-repeat="(key, value) in row">
             <div class="cell">
-                {{value|format:key:table.rules}}
+                [[value|format:key:table.rules]]
             </div>
         </td>
     </tr>

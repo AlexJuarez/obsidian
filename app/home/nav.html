@@ -31,7 +31,7 @@
             <li><a class="primary" href="#">Analytics</a></li>
         </ul>
         <ul class="nav navbar-left">
-            <li class="dropdown">
+            <li class="dropdown" client-dropdown>
                 <div class="dropdown-toggle">
                     <div class="dropdown-toggle-subtitle">
                         Clients
@@ -49,16 +49,20 @@
                         <li><a href="">All Clients</a></li>
                         <li>Pinned
                             <ul class="pinned">
-                                <li><a href="">Client 5</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                                <li><a href="">Client 0</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li ng-repeat="client in pinned track by $index">
+                                    <a href="">[[client.name]]</a>
+                                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                                </li>
                             </ul>
                         </li>
                     </ul>
                     <ul class="list">
-                        <li>#
+                        <li ng-repeat="(key, value) in clientsMap">
+                            [[key]]
                             <ul>
-                                <li><a href="">Client 5</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                                <li><a href="">Client 0</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li ng-repeat="client in value track by $index">
+                                    <a href="">[[client.name]]</a>
+                                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                             </ul>
                         </li>
                     </ul>

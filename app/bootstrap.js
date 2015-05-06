@@ -5,8 +5,12 @@ define(function (require) {
     'use strict';
 
     var ng = require('angular');
-    require('app');
+    var app = require('app');
     require('routes');
+
+    app.config(function ($interpolateProvider) {
+        $interpolateProvider.startSymbol('[[').endSymbol(']]');
+    });
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);

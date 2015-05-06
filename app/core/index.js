@@ -6,5 +6,7 @@ define(function (require) {
 
     require('./navbar');
     require('./dropdown');
+    require('./clientService');
+    require('./clientDropdown');
 
 });
