@@ -3,23 +3,23 @@ define(function (require) {
 
     var app = require('./module');
 
-    app.directive('divisionDropdown', ['divisionService', '$timeout', function (divisions, $timeout) {
+    app.directive('accountDropdown', ['accountService', '$timeout', function (accounts, $timeout) {
         return {
             restrict: 'A',
             scope: true,
             controller: ['$scope', function ($scope) {
-                $scope.pin = divisions.pin;
-                $scope.unpin = divisions.unpin;
+                $scope.pin = accounts.pin;
+                $scope.unpin = accounts.unpin;
 
-                divisions.init();
+                accounts.init();
 
-                divisions.observe(update);
+                accounts.observe(update);
 
                 function update() {
                     $timeout(function () {
                         $scope.$apply(function () {
-                            $scope.divisionsMap = divisions.alphabetMap();
-                            $scope.pinned = divisions.pinned();
+                            $scope.accountsMap = accounts.alphabetMap();
+                            $scope.pinned = accounts.pinned();
                         });
                     });
                 }

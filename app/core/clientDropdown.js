@@ -6,10 +6,10 @@ define(function (require) {
     app.directive('clientDropdown', ['clientService', '$timeout', function (clients, $timeout) {
         return {
             restrict: 'A',
-            link: function (scope) {
-
-                scope.pin = clients.pin;
-                scope.unpin = clients.unpin;
+            scope: true,
+            controller: ['$scope', function ($scope) {
+                $scope.pin = clients.pin;
+                $scope.unpin = clients.unpin;
 
                 clients.init();
 
@@ -17,13 +17,13 @@ define(function (require) {
 
                 function update() {
                     $timeout(function () {
-                        scope.$apply(function () {
-                            scope.clientsMap = clients.alphabetMap();
-                            scope.pinned = clients.pinned();
+                        $scope.$apply(function () {
+                            $scope.clientsMap = clients.alphabetMap();
+                            $scope.pinned = clients.pinned();
                         });
                     });
                 }
-            }
+            }]
         };
     }]);
 });
