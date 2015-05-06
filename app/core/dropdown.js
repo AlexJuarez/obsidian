@@ -13,7 +13,7 @@ define(function (require) {
                 selected: '='
             },
             link: function (scope, element) {
-                function documentClickHandler(event) {
+                function documentClickHandler() {
                     if (!scope.clicked) {
                         scope.$apply(function () {
                             scope.selected = false;
@@ -25,7 +25,7 @@ define(function (require) {
 
                 $document.on('click', documentClickHandler);
 
-                element.on('click', function (event) {
+                element.on('click', function () {
                     scope.clicked = true;
 
                     scope.$apply(function () {
@@ -33,7 +33,7 @@ define(function (require) {
                     });
                 });
 
-                element.parent().on('click', function(event){
+                element.parent().on('click', function () {
                     scope.clicked = true;
                 });
 

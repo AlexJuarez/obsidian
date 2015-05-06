@@ -10,7 +10,10 @@ define(function (require) {
         var initialized = false;
 
         function init(url) {
-            if(initialized) throw "Client service has already been initialized";
+            if (initialized) {
+                throw 'Client service has already been initialized';
+            }
+
             initialized = true;
 
             url = url || 'fixtures/clients.json';
@@ -20,7 +23,7 @@ define(function (require) {
             });
         }
 
-        function setData (data) {
+        function setData(data) {
             clients = data;
         }
 
@@ -29,7 +32,7 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(clients, function(client) {
+            ng.forEach(clients, function (client) {
                 if (client.id === id) {
                     return id;
                 }
@@ -41,6 +44,6 @@ define(function (require) {
             setData: setData,
             all: all,
             get: get
-        }
+        };
     }]);
 });
