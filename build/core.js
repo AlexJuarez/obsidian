@@ -28536,9 +28536,6 @@ define('core/navbar',['require','./module','tpl!./navbar.html'],function (requir
     }]);
 });
 
-/**
- * Created by alex on 4/15/15.
- */
 define('core/dropdown',['require','./module'],function (require) {
     'use strict';
 
@@ -28551,7 +28548,7 @@ define('core/dropdown',['require','./module'],function (require) {
                 selected: '='
             },
             link: function (scope, element) {
-                function documentClickHandler(event) {
+                function documentClickHandler() {
                     if (!scope.clicked) {
                         scope.$apply(function () {
                             scope.selected = false;
@@ -28563,7 +28560,7 @@ define('core/dropdown',['require','./module'],function (require) {
 
                 $document.on('click', documentClickHandler);
 
-                element.on('click', function (event) {
+                element.on('click', function () {
                     scope.clicked = true;
 
                     scope.$apply(function () {
@@ -28571,7 +28568,7 @@ define('core/dropdown',['require','./module'],function (require) {
                     });
                 });
 
-                element.parent().on('click', function(event){
+                element.parent().on('click', function () {
                     scope.clicked = true;
                 });
 
@@ -28591,14 +28588,326 @@ define('core/dropdown',['require','./module'],function (require) {
     }]);
 });
 
+define('core/clientService',['require','./module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./module');
+    var ng = require('angular');
+
+    var clients = [];
+    var observers = [];
+
+    module.service('clientService', ['$http', function ($http) {
+        var initialized = false;
+
+        function init(url) {
+            if (initialized) {
+                throw 'Client service has already been initialized';
+            }
+
+            initialized = true;
+
+            url = url || 'fixtures/clients.json';
+
+            return $http.get(url).success(function (data) {
+                clients = data.clients;
+                notifyObservers();
+            });
+        }
+
+        function setData(data) {
+            clients = data;
+            notifyObservers();
+        }
+
+        function all() {
+            return clients;
+        }
+
+        function sortByName() {
+            var output = clients.slice();
+
+            output.sort(function (a, b) {
+                return a.name.localeCompare(b.name);
+            });
+
+            return output;
+        }
+
+        function alphabetMap() {
+            var sorted = sortByName();
+            var map = {};
+
+            ng.forEach(sorted, function (item) {
+                var key = item.name.charAt(0).toLowerCase();
+                if (/\d/.test(key)) {
+                    if (typeof map['#'] === 'undefined') {
+                        map['#'] = [item];
+                    } else {
+                        map['#'].push(item);
+                    }
+                } else {
+                    if (typeof map[key] === 'undefined') {
+                        map[key] = [item];
+                    } else {
+                        map[key].push(item);
+                    }
+                }
+            });
+
+            return map;
+        }
+
+        function pin(client) {
+            client.pinned = true;
+            notifyObservers();
+        }
+
+        function unpin(client) {
+            client.pinned = false;
+            notifyObservers();
+        }
+
+        function pinned() {
+            var output = [];
+
+            ng.forEach(sortByName(), function (client) {
+                if (client.pinned) {
+                    output.push(client);
+                }
+            });
+
+            return output;
+        }
+
+        function observe(callback) {
+            observers.push(callback);
+        }
+
+        function notifyObservers() {
+            ng.forEach(observers, function (fn) {
+                fn();
+            });
+        }
+
+        function get(id) {
+            ng.forEach(clients, function (client) {
+                if (client.id === id) {
+                    return client;
+                }
+            });
+        }
+
+        return {
+            init: init,
+            setData: setData,
+            alphabetMap: alphabetMap,
+            observe: observe,
+            pinned: pinned,
+            unpin: unpin,
+            pin: pin,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
+define('core/clientDropdown',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+
+    app.directive('clientDropdown', ['clientService', '$timeout', function (clients, $timeout) {
+        return {
+            restrict: 'A',
+            scope: true,
+            controller: ['$scope', function ($scope) {
+                $scope.pin = clients.pin;
+                $scope.unpin = clients.unpin;
+
+                clients.init();
+
+                clients.observe(update);
+
+                function update() {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            $scope.clientsMap = clients.alphabetMap();
+                            $scope.pinned = clients.pinned();
+                        });
+                    });
+                }
+            }]
+        };
+    }]);
+});
+
+define('core/divisionDropdown',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+
+    app.directive('divisionDropdown', ['divisionService', '$timeout', function (divisions, $timeout) {
+        return {
+            restrict: 'A',
+            scope: true,
+            controller: ['$scope', function ($scope) {
+                $scope.pin = divisions.pin;
+                $scope.unpin = divisions.unpin;
+
+                divisions.init();
+
+                divisions.observe(update);
+
+                function update() {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            $scope.divisionsMap = divisions.alphabetMap();
+                            $scope.pinned = divisions.pinned();
+                        });
+                    });
+                }
+            }]
+        };
+    }]);
+});
+
+define('core/divisionService',['require','./module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./module');
+    var ng = require('angular');
+
+    var divisions = [];
+    var observers = [];
+
+    module.service('divisionService', ['$http', function ($http) {
+        var initialized = false;
+
+        function init(url) {
+            if (initialized) {
+                throw 'Client service has already been initialized';
+            }
+
+            initialized = true;
+
+            url = url || 'fixtures/divisions.json';
+
+            return $http.get(url).success(function (data) {
+                divisions = data.divisions;
+                notifyObservers();
+            });
+        }
+
+        function setData(data) {
+            divisions = data;
+            notifyObservers();
+        }
+
+        function all() {
+            return divisions;
+        }
+
+        function sortByName() {
+            var output = divisions.slice();
+
+            output.sort(function (a, b) {
+                return a.name.localeCompare(b.name);
+            });
+
+            return output;
+        }
+
+        function alphabetMap() {
+            var sorted = sortByName();
+            var map = {};
+
+            ng.forEach(sorted, function (item) {
+                var key = item.name.charAt(0).toLowerCase();
+                if (/\d/.test(key)) {
+                    if (typeof map['#'] === 'undefined') {
+                        map['#'] = [item];
+                    } else {
+                        map['#'].push(item);
+                    }
+                } else {
+                    if (typeof map[key] === 'undefined') {
+                        map[key] = [item];
+                    } else {
+                        map[key].push(item);
+                    }
+                }
+            });
+
+            return map;
+        }
+
+        function pin(client) {
+            client.pinned = true;
+            notifyObservers();
+        }
+
+        function unpin(client) {
+            client.pinned = false;
+            notifyObservers();
+        }
+
+        function pinned() {
+            var output = [];
+
+            ng.forEach(sortByName(), function (client) {
+                if (client.pinned) {
+                    output.push(client);
+                }
+            });
+
+            return output;
+        }
+
+        function observe(callback) {
+            observers.push(callback);
+        }
+
+        function notifyObservers() {
+            ng.forEach(observers, function (fn) {
+                fn();
+            });
+        }
+
+        function get(id) {
+            ng.forEach(divisions, function (client) {
+                if (client.id === id) {
+                    return client;
+                }
+            });
+        }
+
+        return {
+            init: init,
+            setData: setData,
+            alphabetMap: alphabetMap,
+            observe: observe,
+            pinned: pinned,
+            unpin: unpin,
+            pin: pin,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar','./dropdown'],function (require) {
+define('core/index',['require','./navbar','./dropdown','./clientService','./clientDropdown','./divisionDropdown','./divisionService'],function (require) {
     'use strict';
 
     require('./navbar');
     require('./dropdown');
+    require('./clientService');
+    require('./clientDropdown');
+    require('./divisionDropdown');
+    require('./divisionService');
 
 });
 
@@ -28644,7 +28953,7 @@ define('table/formatFilter',['require','./module'],function (require) {
 });
 
 
-define('tpl!table/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.main}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="(key, value) in row">\n            <div class="cell">\n                {{value|format:key:table.rules}}\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!table/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.main]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="(key, value) in row">\n            <div class="cell">\n                [[value|format:key:table.rules]]\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 /**
  * Created by alex on 4/23/15.
@@ -38391,7 +38700,11 @@ define('bootstrap-core',['require','angular','app-core'],function (require) {
     'use strict';
 
     var ng = require('angular');
-    require('app-core');
+    var app = require('app-core');
+
+    app.config(function ($interpolateProvider) {
+        $interpolateProvider.startSymbol('[[').endSymbol(']]');
+    });
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);
