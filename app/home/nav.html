@@ -68,14 +68,14 @@
                     </ul>
                 </div>
             </li>
-            <li class="dropdown">
+            <li class="dropdown" division-dropdown>
                 <div class="dropdown-toggle">
                     <div class="dropdown-toggle-subtitle">
-                        Divisons
+                        Divisions
                     </div>
                     <div class="dropdown-toggle-title">
                         <i class="glyph-cheveron-down"></i>
-                        All Divisons
+                        All Divisions
                     </div>
                 </div>
                 <div class="dropdown-menu" role="menu">
@@ -83,19 +83,23 @@
                         <input class="input" placeholder="Search" type="search" />
                     </label>
                     <ul class="list">
-                        <li><a href="">All Clients</a></li>
-                        <li>Pinned
+                        <li><a href="">All Divisions</a></li>
+                        <li ng-if="pinned.length">Pinned
                             <ul class="pinned">
-                                <li><a href="">Client 5</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                                <li><a href="">Client 0</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li ng-repeat="division in pinned track by $index">
+                                    <a href="">[[division.name]]</a>
+                                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                                </li>
                             </ul>
                         </li>
                     </ul>
                     <ul class="list">
-                        <li>#
+                        <li ng-repeat="(key, value) in divisionsMap">
+                            [[key]]
                             <ul>
-                                <li><a href="">Client 5</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                                <li><a href="">Client 0</a><a href=""><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                                <li ng-repeat="division in value track by $index">
+                                    <a href="">[[division.name]]</a>
+                                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                             </ul>
                         </li>
                     </ul>

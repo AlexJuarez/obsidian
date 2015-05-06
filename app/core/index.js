@@ -8,5 +8,7 @@ define(function (require) {
     require('./dropdown');
     require('./clientService');
     require('./clientDropdown');
+    require('./divisionDropdown');
+    require('./divisionService');
 
 });
