@@ -8,9 +8,9 @@ define(function (require) {
     var app = require('app');
     require('routes');
 
-    app.config(function ($interpolateProvider) {
+    app.config(['$interpolateProvider', function ($interpolateProvider) {
         $interpolateProvider.startSymbol('[[').endSymbol(']]');
-    });
+    }]);
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);
