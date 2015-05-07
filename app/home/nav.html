@@ -50,7 +50,7 @@
                         <li>Pinned
                             <ul class="pinned">
                                 <li ng-repeat="client in pinned track by $index">
-                                    <a href="">[[client.name]]</a>
+                                    <a ng-click="transition(client.id)">[[client.name]]</a>
                                     <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                                 </li>
                             </ul>
@@ -61,7 +61,7 @@
                             [[key]]
                             <ul>
                                 <li ng-repeat="client in value track by $index">
-                                    <a href="">[[client.name]]</a>
+                                    <a ng-click="transition(client.id)">[[client.name]]</a>
                                     <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                             </ul>
                         </li>

@@ -6,6 +6,8 @@ define(function (require) {
 
     require('./navbar');
     require('./dropdown');
+    require('./safeFilter');
+    require('./interpolateFilter');
     require('./clientService');
     require('./clientDropdown');
     require('./divisionDropdown');

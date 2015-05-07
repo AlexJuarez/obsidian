@@ -202,7 +202,7 @@ table {
         }
         > .header {
             &:after {
-                .glyph-cheveron-down();
+                .glyph-cheveron-up();
             }
         }
     }
@@ -218,7 +218,7 @@ table {
         &:after {
             font-family: "mixpo-icons";
             position: absolute;
-            .glyph-cheveron-up();
+            .glyph-cheveron-down();
             right: 2rem;
             top: 50%;
             margin-top: -0.8rem;
@@ -226,6 +226,7 @@ table {
     }
     > .content {
         display: none;
+        overflow: auto;
         > .table {
             margin-bottom: 0;
         }

@@ -10,10 +10,17 @@ define(function (require) {
             controller: ['$scope', function ($scope) {
                 $scope.pin = divisions.pin;
                 $scope.unpin = divisions.unpin;
+                $scope.transition = transition;
 
                 divisions.init();
 
                 divisions.observe(update);
+
+                function transition(divisionId) {
+                    if(window.Router) {
+                        window.Router.router.transitionTo('campaign-management.division.index', {divisionId: divisionId});
+                    }
+                }
 
                 function update() {
                     $timeout(function () {

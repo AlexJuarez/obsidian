@@ -15,14 +15,7 @@
 </div>
 <hr />
 <h2 id="tables-accordion">Accordion Tables</h2>
-<div class="table-collapse" toggle-class="open">
-    <div class="header">
-        <span class="icon-status success"></span> Work in Progress
-    </div>
-    <div class="content">
-        <div basic-table="table" class="table-hover"></div>
-    </div>
-</div>
+<div accordion></div>
 <div class="highlight" highlight>
 <pre><code class="html">
 &lt;div class=&quot;table-collapse&quot; toggle-class=&quot;open&quot;&gt;
@@ -36,16 +29,16 @@
 <hr />
 <h2 id="tables-accordion-group">Accordion Table Group</h2>
 <div class="table-collapse-group">
-<div class="table-collapse" toggle-class="open">
-        <div class="header">
+<div class="table-collapse" ng-class="{'open': open1}">
+        <div class="header" ng-click="open1 = !open1">
             <span class="icon-status success"></span> Work in Progress
         </div>
         <div class="content">
             <div basic-table="table" class="table-hover"></div>
         </div>
     </div>
-    <div class="table-collapse" toggle-class="open">
-        <div class="header">
+    <div class="table-collapse" ng-class="{'open': open2}">
+        <div class="header" ng-click="open2 = !open2">
             <span class="icon-status success"></span> Work in Progress
         </div>
         <div class="content">

@@ -18,20 +18,26 @@ define(function (require) {
                     } else {
                         scope.clicked = false;
                     }
+                    scope.toggle = false;
                 }
 
                 $document.on('click', documentClickHandler);
 
                 element.on('click', function () {
                     scope.clicked = true;
+                    scope.toggle = true;
 
                     scope.$apply(function () {
                         scope.selected = !scope.selected;
                     });
                 });
 
-                element.parent().on('click', function () {
-                    scope.clicked = true;
+                element.parent().on('click', function (event) {
+                    if (!scope.toggle) {
+                        scope.clicked = (event.target.tagName !== 'A');
+                    } else {
+                        scope.clicked = true;
+                    }
                 });
 
                 scope.$on('$destroy', function () {

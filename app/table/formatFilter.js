@@ -9,6 +9,10 @@ define(function (require) {
             return $filter('number')(input, 2) + '%';
         }
 
+        function date(input) {
+            return $filter('date')(input, 'longDate');
+        }
+
         return function (input, key, rules) {
             input = input || '';
             var rule = rules[key];
@@ -21,6 +25,10 @@ define(function (require) {
                 return input.map(function (d) {
                     return percent(d);
                 }).join(' ');
+            case 'date':
+                return date(input);
+            case 'bullet':
+                return '';
             default:
                 return input;
             }

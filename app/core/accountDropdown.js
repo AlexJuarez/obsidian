@@ -10,10 +10,17 @@ define(function (require) {
             controller: ['$scope', function ($scope) {
                 $scope.pin = accounts.pin;
                 $scope.unpin = accounts.unpin;
+                $scope.transition = transition;
 
                 accounts.init();
 
                 accounts.observe(update);
+
+                function transition(accountId) {
+                    if(window.Router) {
+                        window.Router.router.transitionTo('campaign-management.account.index', {accountId: accountId});
+                    }
+                }
 
                 function update() {
                     $timeout(function () {
