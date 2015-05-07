@@ -1,0 +1,54 @@
+{
+    "accounts": [
+        {
+            "id": "accountId0",
+            "name": "Account 0",
+            "pinned": true,
+            "active": false,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
+        },
+        {
+            "id": "accountId1",
+            "name": "Account 1",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-01-02T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
+        },
+        {
+            "id": "accountId2",
+            "name": "Account 2",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-01-03T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
+        },
+        {
+            "id": "accountId3",
+            "name": "Account 3",
+            "pinned": true,
+            "active": true,
+            "lastViewed": "2015-01-04T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
+        },
+        {
+            "id": "accountId4",
+            "name": "Account 4",
+            "pinned": false,
+            "active": true,
+            "lastViewed": "2015-01-05T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
+        }
+    ]
+}
