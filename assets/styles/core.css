@@ -178,8 +178,8 @@ th {
 }
 @font-face {
   font-family: "mixpo-icons";
-  src: url("/fonts/mixpo-icons.eot?65f61fe5ecad12f54bf62ba334d3b54a");
-  src: url("/fonts/mixpo-icons.eot?#iefix") format("embedded-opentype"), url("/fonts/mixpo-icons.woff?65f61fe5ecad12f54bf62ba334d3b54a") format("woff"), url("/fonts/mixpo-icons.ttf?65f61fe5ecad12f54bf62ba334d3b54a") format("truetype");
+  src: url("/fonts/mixpo-icons.eot?5064f758eb2f1afc80cfa2f9b573f4b1");
+  src: url("/fonts/mixpo-icons.eot?#iefix") format("embedded-opentype"), url("/fonts/mixpo-icons.woff?5064f758eb2f1afc80cfa2f9b573f4b1") format("woff"), url("/fonts/mixpo-icons.ttf?5064f758eb2f1afc80cfa2f9b573f4b1") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
@@ -211,65 +211,68 @@ th {
 .glyph-calendar:before {
   content: "\f105";
 }
-.glyph-cheveron-down:before {
+.glyph-checkmark:before {
   content: "\f106";
 }
-.glyph-cheveron-left:before {
+.glyph-cheveron-down:before {
   content: "\f107";
 }
-.glyph-cheveron-right:before {
+.glyph-cheveron-left:before {
   content: "\f108";
 }
-.glyph-cheveron-up:before {
+.glyph-cheveron-right:before {
   content: "\f109";
 }
-.glyph-close:before {
+.glyph-cheveron-up:before {
   content: "\f10a";
 }
-.glyph-copy:before {
+.glyph-close:before {
   content: "\f10b";
 }
-.glyph-download-chart:before {
+.glyph-copy:before {
   content: "\f10c";
 }
-.glyph-download-data:before {
+.glyph-download-chart:before {
   content: "\f10d";
 }
-.glyph-filter:before {
+.glyph-download-data:before {
   content: "\f10e";
 }
-.glyph-grid:before {
+.glyph-filter:before {
   content: "\f10f";
 }
-.glyph-list:before {
+.glyph-grid:before {
   content: "\f110";
 }
-.glyph-pin-down:before {
+.glyph-list:before {
   content: "\f111";
 }
-.glyph-pin-left:before {
+.glyph-pin-down:before {
   content: "\f112";
 }
-.glyph-play:before {
+.glyph-pin-left:before {
   content: "\f113";
 }
-.glyph-preview:before {
+.glyph-play:before {
   content: "\f114";
 }
-.glyph-save:before {
+.glyph-preview:before {
   content: "\f115";
 }
-.glyph-settings:before {
+.glyph-save:before {
   content: "\f116";
 }
-.glyph-share:before {
+.glyph-settings:before {
   content: "\f117";
 }
-.glyph-tag:before {
+.glyph-share:before {
   content: "\f118";
 }
-.glyph-view:before {
+.glyph-tag:before {
   content: "\f119";
+}
+.glyph-view:before {
+  content: "\f11a";
 }
 .clearfix:after,
 .clearfix:before,
@@ -765,10 +768,10 @@ table {
   display: block;
 }
 .table-collapse.open > .header:after {
-  content: "\f106";
+  content: "\f107";
 }
 .table-collapse.open > .header:after:before {
-  content: "\f106";
+  content: "\f107";
 }
 .table-collapse > .header {
   cursor: pointer;
@@ -783,13 +786,13 @@ table {
 .table-collapse > .header:after {
   font-family: "mixpo-icons";
   position: absolute;
-  content: "\f109";
+  content: "\f10a";
   right: 20px;
   top: 50%;
   margin-top: -8px;
 }
 .table-collapse > .header:after:before {
-  content: "\f109";
+  content: "\f10a";
 }
 .table-collapse > .content {
   display: none;
@@ -2300,10 +2303,10 @@ table {
   margin-top: 3px;
   margin-right: 5px;
   margin-left: 7px;
-  content: "\f112";
+  content: "\f113";
 }
 .pin:hover:before:before {
-  content: "\f112";
+  content: "\f113";
 }
 .pin:before {
   height: 0;
@@ -2312,17 +2315,17 @@ table {
   margin-left: 5px;
   display: inline-block;
   font-family: "mixpo-icons";
-  content: "\f111";
+  content: "\f112";
   vertical-align: top;
 }
 .pin:before:before {
-  content: "\f111";
+  content: "\f112";
 }
 .pinned .pin:before {
-  content: "\f112";
+  content: "\f113";
 }
 .pinned .pin:before:before {
-  content: "\f112";
+  content: "\f113";
 }
 .pinned .pin:hover .repin {
   display: none;
@@ -2333,10 +2336,10 @@ table {
 .pinned .pin:hover:before {
   margin-top: 0;
   margin-right: 0;
-  content: "\f111";
+  content: "\f112";
 }
 .pinned .pin:hover:before:before {
-  content: "\f111";
+  content: "\f112";
 }
 .dropdown {
   position: relative;
@@ -2427,6 +2430,8 @@ table {
 }
 .checkbox input[type="checkbox"] + label span {
   display: block;
+  width: 100%;
+  height: 100%;
   transform: scale(0);
   transition: transform 0.15s ease;
 }
