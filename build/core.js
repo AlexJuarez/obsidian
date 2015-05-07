@@ -28556,20 +28556,26 @@ define('core/dropdown',['require','./module'],function (require) {
                     } else {
                         scope.clicked = false;
                     }
+                    scope.toggle = false;
                 }
 
                 $document.on('click', documentClickHandler);
 
                 element.on('click', function () {
                     scope.clicked = true;
+                    scope.toggle = true;
 
                     scope.$apply(function () {
                         scope.selected = !scope.selected;
                     });
                 });
 
-                element.parent().on('click', function () {
-                    scope.clicked = true;
+                element.parent().on('click', function (event) {
+                    if (!scope.toggle) {
+                        scope.clicked = (event.target.tagName !== 'A');
+                    } else {
+                        scope.clicked = true;
+                    }
                 });
 
                 scope.$on('$destroy', function () {
@@ -28584,6 +28590,32 @@ define('core/dropdown',['require','./module'],function (require) {
                     }
                 });
             }
+        };
+    }]);
+});
+
+define('core/safeFilter',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    //var ng = require('angular');
+
+    app.filter('safe', ['$sce', function ($sce) {
+        return function (input) {
+            return $sce.trustAsHtml(input);
+        };
+    }]);
+});
+
+define('core/interpolateFilter',['require','./module'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    //var ng = require('angular');
+
+    app.filter('interpolate', ['$interpolate', function ($interpolate) {
+        return function (input) {
+            return $interpolate(input);
         };
     }]);
 });
@@ -28724,10 +28756,17 @@ define('core/clientDropdown',['require','./module'],function (require) {
             controller: ['$scope', function ($scope) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
+                $scope.transition = transition;
 
                 clients.init();
 
                 clients.observe(update);
+
+                function transition(clientId) {
+                    if(window.Router) {
+                        window.Router.router.transitionTo('campaign-management.client.index', {clientId: clientId});
+                    }
+                }
 
                 function update() {
                     $timeout(function () {
@@ -28754,10 +28793,17 @@ define('core/divisionDropdown',['require','./module'],function (require) {
             controller: ['$scope', function ($scope) {
                 $scope.pin = divisions.pin;
                 $scope.unpin = divisions.unpin;
+                $scope.transition = transition;
 
                 divisions.init();
 
                 divisions.observe(update);
+
+                function transition(divisionId) {
+                    if(window.Router) {
+                        window.Router.router.transitionTo('campaign-management.division.index', {divisionId: divisionId});
+                    }
+                }
 
                 function update() {
                     $timeout(function () {
@@ -28899,11 +28945,13 @@ define('core/divisionService',['require','./module','angular'],function (require
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar','./dropdown','./clientService','./clientDropdown','./divisionDropdown','./divisionService'],function (require) {
+define('core/index',['require','./navbar','./dropdown','./safeFilter','./interpolateFilter','./clientService','./clientDropdown','./divisionDropdown','./divisionService'],function (require) {
     'use strict';
 
     require('./navbar');
     require('./dropdown');
+    require('./safeFilter');
+    require('./interpolateFilter');
     require('./clientService');
     require('./clientDropdown');
     require('./divisionDropdown');
@@ -28933,6 +28981,10 @@ define('table/formatFilter',['require','./module'],function (require) {
             return $filter('number')(input, 2) + '%';
         }
 
+        function date(input) {
+            return $filter('date')(input, 'longDate');
+        }
+
         return function (input, key, rules) {
             input = input || '';
             var rule = rules[key];
@@ -28945,6 +28997,10 @@ define('table/formatFilter',['require','./module'],function (require) {
                 return input.map(function (d) {
                     return percent(d);
                 }).join(' ');
+            case 'date':
+                return date(input);
+            case 'bullet':
+                return '';
             default:
                 return input;
             }
@@ -28953,7 +29009,31 @@ define('table/formatFilter',['require','./module'],function (require) {
 });
 
 
-define('tpl!table/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.main]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="(key, value) in row">\n            <div class="cell">\n                [[value|format:key:table.rules]]\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!table/accordion.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/accordion.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in rows track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n        </div>\n    </div>\n</div>\n'); });
+
+define('table/accordionDirective',['require','./module','tpl!./accordion.html'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    require('tpl!./accordion.html');
+
+    app.directive('accordion', ['$http', function ($http) {
+        return {
+            restrict: 'A',
+            scope: true,
+            transclude: true,
+            templateUrl: 'table/accordion.html',
+            controller: ['$scope', function ($scope) {
+                $http.get('fixtures/accordion_table.json').success(function (data) {
+                    $scope.rows = data;
+                });
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!table/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="(key, value) in row">\n            <div class="cell">\n                [[value|format:key:table.rules]]\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 /**
  * Created by alex on 4/23/15.
@@ -28980,10 +29060,11 @@ define('table/basicTable',['require','./module','tpl!./basic.html'],function (re
 /**
  * Created by Alex on 3/1/2015.
  */
-define('table/index',['require','./formatFilter','./basicTable'],function (require) {
+define('table/index',['require','./formatFilter','./accordionDirective','./basicTable'],function (require) {
     'use strict';
 
     require('./formatFilter');
+    require('./accordionDirective');
     require('./basicTable');
 });
 
