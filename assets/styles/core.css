@@ -1027,9 +1027,6 @@ table {
   -moz-osx-font-smoothing: grayscale;
 }
 .tooltip .wrapper {
-  -webkit-transition: all 0.3s ease;
-  -moz-transition: all 0.3s ease;
-  -o-transition: all 0.3s ease;
   transition: all 0.3s ease;
   visibility: hidden;
   opacity: 0;
@@ -2199,6 +2196,9 @@ table {
   padding: 0 2rem;
 }
 .navbar .settings .dropdown-toggle .glyph-cheveron-down {
+  height: 4rem;
+  box-sizing: border-box;
+  padding-top: 0.3rem;
   float: right;
   vertical-align: middle;
 }
@@ -2351,6 +2351,11 @@ table {
   text-overflow: ellipsis;
 }
 .navbar-collapse .dropdown-toggle-title .glyph-cheveron-down {
+  box-sizing: border-box;
+  height: 6rem;
+  padding-top: 0.4rem;
+  font-size: 14px;
+  font-size: 1.4rem;
   float: right;
 }
 @media (max-width: 1200px) {
