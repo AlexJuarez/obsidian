@@ -9,6 +9,7 @@ define(function (require) {
     require('./safeFilter');
     require('./interpolateFilter');
     require('./clientService');
+    require('./storeService');
     require('./clientDropdown');
     require('./divisionDropdown');
     require('./divisionService');

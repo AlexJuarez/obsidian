@@ -4,17 +4,25 @@ define(function (require) {
     var app = require('./module');
     require('tpl!./accordion.html');
 
-    app.directive('accordion', ['$http', function ($http) {
+    app.directive('accordion', ['$timeout', 'storeService', function ($timeout, store) {
         return {
             restrict: 'A',
             scope: true,
             transclude: true,
             templateUrl: 'table/accordion.html',
-            controller: ['$scope', function ($scope) {
-                $http.get('fixtures/accordion_table.json').success(function (data) {
-                    $scope.rows = data;
-                });
-            }]
+            link:function (scope, element, attrs) {
+                var id = attrs.accordion;
+
+                store.observe(id, update);
+
+                function update() {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            scope.rows = store.all(id);
+                        });
+                    });
+                }
+            }
         };
     }]);
 });

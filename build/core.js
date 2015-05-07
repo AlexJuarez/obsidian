@@ -28744,6 +28744,46 @@ define('core/clientService',['require','./module','angular'],function (require) 
     }]);
 });
 
+define('core/storeService',['require','./module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./module');
+    var ng = require('angular');
+
+    var store = {};
+    var observers = {};
+
+    module.service('storeService', [function () {
+        function setData(id, data) {
+            store[id] = data;
+            notifyObservers(id);
+        }
+
+        function all(id) {
+            return store[id];
+        }
+
+        function observe(id, callback) {
+            if (typeof observers[id] === 'undefined') {
+                observers[id] = [];
+            }
+            observers[id].push(callback);
+        }
+
+        function notifyObservers(id) {
+            ng.forEach(observers[id], function (fn) {
+                fn();
+            });
+        }
+
+        return {
+            setData: setData,
+            observe: observe,
+            all: all
+        };
+    }]);
+});
+
 define('core/clientDropdown',['require','./module'],function (require) {
     'use strict';
 
@@ -28945,7 +28985,7 @@ define('core/divisionService',['require','./module','angular'],function (require
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar','./dropdown','./safeFilter','./interpolateFilter','./clientService','./clientDropdown','./divisionDropdown','./divisionService'],function (require) {
+define('core/index',['require','./navbar','./dropdown','./safeFilter','./interpolateFilter','./clientService','./storeService','./clientDropdown','./divisionDropdown','./divisionService'],function (require) {
     'use strict';
 
     require('./navbar');
@@ -28953,6 +28993,7 @@ define('core/index',['require','./navbar','./dropdown','./safeFilter','./interpo
     require('./safeFilter');
     require('./interpolateFilter');
     require('./clientService');
+    require('./storeService');
     require('./clientDropdown');
     require('./divisionDropdown');
     require('./divisionService');
@@ -29017,17 +29058,25 @@ define('table/accordionDirective',['require','./module','tpl!./accordion.html'],
     var app = require('./module');
     require('tpl!./accordion.html');
 
-    app.directive('accordion', ['$http', function ($http) {
+    app.directive('accordion', ['$timeout', 'storeService', function ($timeout, store) {
         return {
             restrict: 'A',
             scope: true,
             transclude: true,
             templateUrl: 'table/accordion.html',
-            controller: ['$scope', function ($scope) {
-                $http.get('fixtures/accordion_table.json').success(function (data) {
-                    $scope.rows = data;
-                });
-            }]
+            link:function (scope, element, attrs) {
+                var id = attrs.accordion;
+
+                store.observe(id, update);
+
+                function update() {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            scope.rows = store.all(id);
+                        });
+                    });
+                }
+            }
         };
     }]);
 });
