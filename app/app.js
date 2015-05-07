@@ -8,8 +8,8 @@ define(function (require) {
     require('ui-router');
     require('./chart/index');
     require('./table/index');
-    require('./home/index');
     require('./core/index');
+    require('./home/index');
 
     return ng.module('app', [
         'app.home',
