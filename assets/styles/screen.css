@@ -24,20 +24,34 @@
   font-size: inherit;
   color: #333;
 }
+.radio-button {
+  margin-bottom: .5rem;
+}
 .border-right {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: inline-block;
 }
 .border-right li {
   border: 1px solid #E1E1E1;
   border-width: 0 1px 0 0;
   padding-right: 1rem;
   margin-right: 1rem;
+  float: left;
   display: inline;
 }
 .border-right li:last-child {
   border: none;
+}
+.dark-bg {
+  background: #003c60;
+}
+.dark-bg li {
+  border: none;
+  padding: 1rem;
+  margin-right: 1rem;
+  color: #fff;
 }
 .side-nav {
   position: fixed;
