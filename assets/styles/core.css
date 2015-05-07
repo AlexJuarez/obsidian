@@ -301,6 +301,8 @@ body {
   color: #3f403f;
   font-family: 'Lato', sans-serif;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 ol,
 ul {
@@ -870,13 +872,8 @@ table {
 .tooltip {
   position: relative;
   display: inline-block;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 .tooltip .wrapper {
-  -webkit-transition: all 0.3s ease;
-  -moz-transition: all 0.3s ease;
-  -o-transition: all 0.3s ease;
   transition: all 0.3s ease;
   visibility: hidden;
   opacity: 0;
@@ -2407,4 +2404,60 @@ table {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+.checkbox {
+  position: relative;
+}
+.checkbox input[type="checkbox"] {
+  display: none;
+}
+.checkbox input[type="checkbox"] + label {
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+.checkbox input[type="checkbox"] + label:hover {
+  cursor: pointer;
+}
+.checkbox input[type="checkbox"] + label span:before {
+  display: block;
+  max-height: 100%;
+  text-align: center;
+}
+.checkbox input[type="checkbox"] + label span {
+  display: block;
+  transform: scale(0);
+  transition: transform 0.15s ease;
+}
+.checkbox input[type="checkbox"]:checked + label span {
+  transform: scale(1);
+}
+.checkbox input[type="checkbox"]:disabled + label:hover {
+  cursor: not-allowed;
+}
+.checkbox-light {
+  width: 2rem;
+  height: 2rem;
+}
+.checkbox-light input[type="checkbox"] + label {
+  border: 1px solid #3f403f;
+  font-size: 1.4rem;
+  color: #0378bd;
+}
+.checkbox-light input[type="checkbox"]:disabled + label {
+  opacity: 0.25;
+}
+.checkbox-dark {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.checkbox-dark input[type="checkbox"] + label {
+  background: #004e7d;
+  font-size: 0.9rem;
+  color: #fff;
+}
+.checkbox-dark input[type="checkbox"]:disabled + label {
+  background: #cccccc;
+  color: #0378bd;
 }
