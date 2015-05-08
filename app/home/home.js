@@ -11,8 +11,8 @@ define(function (require) {
     var app = require('./module');
     var ng = require('angular');
 
-    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll',
-        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll) {
+    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService',
+        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store) {
         $scope.navigation = [];
         $scope.state = '';
         $scope.sort = sort;
@@ -25,6 +25,10 @@ define(function (require) {
 
         $http.get('fixtures/table_complex.json').then(function (res) {
             $scope.tableComplex = res.data;
+        });
+
+        $http.get('fixtures/accordion_table.json').success(function (data) {
+            store.setData('test', data);
         });
 
         /**

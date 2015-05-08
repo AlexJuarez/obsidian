@@ -28803,7 +28803,7 @@ define('core/clientDropdown',['require','./module'],function (require) {
                 clients.observe(update);
 
                 function transition(clientId) {
-                    if(window.Router) {
+                    if (window.Router) {
                         window.Router.router.transitionTo('campaign-management.client.index', {clientId: clientId});
                     }
                 }
@@ -28840,7 +28840,7 @@ define('core/divisionDropdown',['require','./module'],function (require) {
                 divisions.observe(update);
 
                 function transition(divisionId) {
-                    if(window.Router) {
+                    if (window.Router) {
                         window.Router.router.transitionTo('campaign-management.division.index', {divisionId: divisionId});
                     }
                 }
@@ -29066,8 +29066,6 @@ define('table/accordionDirective',['require','./module','tpl!./accordion.html'],
             templateUrl: 'table/accordion.html',
             link: function (scope, element, attrs) {
                 var id = attrs.accordion;
-
-                console.log(id);
 
                 store.observe(id, update);
 

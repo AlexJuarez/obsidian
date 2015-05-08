@@ -13,8 +13,6 @@ define(function (require) {
             link: function (scope, element, attrs) {
                 var id = attrs.accordion;
 
-                console.log(id);
-
                 store.observe(id, update);
 
                 function update() {
