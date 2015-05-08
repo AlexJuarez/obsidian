@@ -28034,7 +28034,7 @@ define('core/module',['require','angular'],function (require) {
 
     var ng = require('angular');
 
-    return ng.module('app.core', []);
+    return ng.module('app.core', ['ng']);
 });
 
 /**
