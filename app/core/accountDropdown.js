@@ -17,7 +17,7 @@ define(function (require) {
                 accounts.observe(update);
 
                 function transition(accountId) {
-                    if(window.Router) {
+                    if (window.Router) {
                         window.Router.router.transitionTo('campaign-management.account.index', {accountId: accountId});
                     }
                 }

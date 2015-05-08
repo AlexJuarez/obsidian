@@ -14,6 +14,8 @@ define(function (require) {
     require('tpl!./button.html');
     require('tpl!./table.html');
     require('tpl!./dropdown.html');
+    require('tpl!./checkboxes.html');
+    require('tpl!./radio-buttons.html');
     require('tpl!./tooltip.html');
     require('tpl!./nav.html');
 

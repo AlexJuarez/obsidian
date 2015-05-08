@@ -17,7 +17,7 @@ define(function (require) {
                 clients.observe(update);
 
                 function transition(clientId) {
-                    if(window.Router) {
+                    if (window.Router) {
                         window.Router.router.transitionTo('campaign-management.client.index', {clientId: clientId});
                     }
                 }

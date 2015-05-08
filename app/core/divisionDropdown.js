@@ -17,7 +17,7 @@ define(function (require) {
                 divisions.observe(update);
 
                 function transition(divisionId) {
-                    if(window.Router) {
+                    if (window.Router) {
                         window.Router.router.transitionTo('campaign-management.division.index', {divisionId: divisionId});
                     }
                 }
