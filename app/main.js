@@ -9,7 +9,10 @@ require.config({
         'tpl': 'components/requirejs-tpl-angular/tpl',
         'text': 'components/requirejs-text/text',
         'd3': 'components/d3/d3',
-        'hljs': 'components/highlightjs/highlight.pack'
+        'hljs': 'components/highlightjs/highlight.pack',
+        'jquery': 'components/jquery/dist/jquery',
+        'chosen': 'components/chosen/chosen.jquery',
+        'angular-chosen': 'components/angular-chosen-localytics/chosen'
     },
     shim: {
         'hljs': {
@@ -18,7 +21,17 @@ require.config({
         'd3': {
             exports: 'd3'
         },
+        'jquery': {
+            exports: 'jquery'
+        },
+        'angular-chosen': {
+            deps: ['angular', 'chosen']
+        },
+        'chosen': {
+            deps: ['jquery']
+        },
         'angular': {
+            deps: ['jquery'],
             exports: 'angular'
         },
         'ui-router': {

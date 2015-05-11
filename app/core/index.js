@@ -4,14 +4,14 @@
 define(function (require) {
     'use strict';
 
-    require('./navbar');
+    require('./navbar/navbar');
+    require('./navbar/clientDropdown');
+    require('./navbar/divisionDropdown');
+    require('./navbar/divisionService');
+    require('./navbar/clientService');
     require('./dropdown');
     require('./safeFilter');
     require('./interpolateFilter');
-    require('./clientService');
     require('./storeService');
-    require('./clientDropdown');
-    require('./divisionDropdown');
-    require('./divisionService');
 
 });

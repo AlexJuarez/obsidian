@@ -19,6 +19,31 @@ define(function (require) {
         $scope.changeGlyph = changeGlyph;
         $scope.scrollTo = scrollTo;
 
+        $scope.selected = [];
+
+        $scope.multiselect = [
+            {
+                name: 'test1',
+                value: '1'
+            },
+            {
+                name: 'test2',
+                value: '2'
+            },
+            {
+                name: 'test3',
+                value: '3'
+            },
+            {
+                name: 'test4',
+                value: '4'
+            },
+            {
+                name: 'test5',
+                value: '5'
+            }
+        ];
+
         $http.get('fixtures/table.json').then(function (res) {
             $scope.table = res.data;
         });

@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
 
     app.directive('divisionDropdown', ['divisionService', '$timeout', function (divisions, $timeout) {
         return {

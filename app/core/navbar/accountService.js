@@ -1,13 +1,13 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./module');
+    var module = require('./../module');
     var ng = require('angular');
 
-    var divisions = [];
+    var accounts = [];
     var observers = [];
 
-    module.service('divisionService', ['$http', function ($http) {
+    module.service('accountService', ['$http', function ($http) {
         var initialized = false;
 
         function init(url) {
@@ -17,25 +17,25 @@ define(function (require) {
 
             initialized = true;
 
-            url = url || 'fixtures/divisions.json';
+            url = url || 'fixtures/accounts.json';
 
             return $http.get(url).success(function (data) {
-                divisions = data.divisions;
+                accounts = data.accounts;
                 notifyObservers();
             });
         }
 
         function setData(data) {
-            divisions = data;
+            accounts = data;
             notifyObservers();
         }
 
         function all() {
-            return divisions;
+            return accounts;
         }
 
         function sortByName() {
-            var output = divisions.slice();
+            var output = accounts.slice();
 
             output.sort(function (a, b) {
                 return a.name.localeCompare(b.name);
@@ -101,7 +101,7 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(divisions, function (client) {
+            ng.forEach(accounts, function (client) {
                 if (client.id === id) {
                     return client;
                 }
