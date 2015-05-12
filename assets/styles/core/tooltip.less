@@ -46,7 +46,7 @@
     display: inline-block;
 
     .wrapper {
-        transition: all 0.3s ease;
+        transition: opacity 0.3s ease;
         visibility: hidden;
         opacity: 0;
         border-radius: 0.5rem;
@@ -57,11 +57,20 @@
         }
     }
 
+    &.help {
+        cursor: help;
+    }
+
     &.hover:hover {
         cursor: default;
     }
 
-    &.hover:hover .wrapper, &.hover:hover &:before, &.hover:hover &:after {
+    &.hover:hover .wrapper,
+    &.hover:hover &:before,
+    &.hover:hover &:after,
+    &.open .wrapper,
+    &.open &:before,
+    &.open &:after {
         visibility: visible;
         opacity: 1;
     }
@@ -124,18 +133,18 @@
 
     // Positioning
     &[class*="top"] .wrapper {
-        bottom: calc(~'100% + 5px');
+        bottom: calc(~'100% + 10px');
         &:before, &:after {
             top: 100%;
         }
     }
-    &[class*="left"] .wrapper {
+    &[class*="right"] .wrapper {
         left: -1rem;
         &:before {
-            left: 1.5rem;
+            left: 15px;
         }
         &:after {
-            left: 1.6rem;
+            left: 16px;
         }
     }
     &[class*="center"] .wrapper {
@@ -150,13 +159,13 @@
             transform: translateX(-50%);
         }
     }
-    &[class*="right"] .wrapper {
+    &[class*="left"] .wrapper {
         right: -1.0rem;
         &:before {
-            right: 1.5rem;
+            right: 15px;
         }
         &:after {
-            right: 1.6rem;
+            right: 16px;
         }
     }
     &[class*="middle"] .wrapper {

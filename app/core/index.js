@@ -12,6 +12,7 @@ define(function (require) {
     require('./navbar/accountService');
     require('./navbar/accountDropdown');
     require('./dropdown');
+    require('./tooltip');
     require('./safeFilter');
     require('./interpolateFilter');
     require('./storeService');

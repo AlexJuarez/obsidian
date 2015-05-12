@@ -5,8 +5,10 @@ define(function (require) {
     //var ng = require('angular');
 
     app.filter('interpolate', ['$interpolate', function ($interpolate) {
-        return function (input) {
-            return $interpolate(input);
+        return function (input, scope) {
+            if (input) {
+                return $interpolate(input)(scope);
+            }
         };
     }]);
 });
