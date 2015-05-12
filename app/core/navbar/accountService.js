@@ -12,7 +12,7 @@ define(function (require) {
 
         function init(url) {
             if (initialized) {
-                throw 'Client service has already been initialized';
+                throw 'account service has already been initialized';
             }
 
             initialized = true;
@@ -68,22 +68,22 @@ define(function (require) {
             return map;
         }
 
-        function pin(client) {
-            client.pinned = true;
+        function pin(account) {
+            account.pinned = true;
             notifyObservers();
         }
 
-        function unpin(client) {
-            client.pinned = false;
+        function unpin(account) {
+            account.pinned = false;
             notifyObservers();
         }
 
         function pinned() {
             var output = [];
 
-            ng.forEach(sortByName(), function (client) {
-                if (client.pinned) {
-                    output.push(client);
+            ng.forEach(sortByName(), function (account) {
+                if (account.pinned) {
+                    output.push(account);
                 }
             });
 
@@ -101,9 +101,9 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(accounts, function (client) {
-                if (client.id === id) {
-                    return client;
+            ng.forEach(accounts, function (account) {
+                if (account.id === id) {
+                    return account;
                 }
             });
         }

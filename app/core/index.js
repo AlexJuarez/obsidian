@@ -9,6 +9,8 @@ define(function (require) {
     require('./navbar/divisionDropdown');
     require('./navbar/divisionService');
     require('./navbar/clientService');
+    require('./navbar/accountService');
+    require('./navbar/accountDropdown');
     require('./dropdown');
     require('./safeFilter');
     require('./interpolateFilter');

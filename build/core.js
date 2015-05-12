@@ -39402,6 +39402,167 @@ define('core/navbar/clientService',['require','./../module','angular'],function 
     }]);
 });
 
+define('core/navbar/accountService',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    var accounts = [];
+    var observers = [];
+
+    module.service('accountService', ['$http', function ($http) {
+        var initialized = false;
+
+        function init(url) {
+            if (initialized) {
+                throw 'account service has already been initialized';
+            }
+
+            initialized = true;
+
+            url = url || 'fixtures/accounts.json';
+
+            return $http.get(url).success(function (data) {
+                accounts = data.accounts;
+                notifyObservers();
+            });
+        }
+
+        function setData(data) {
+            accounts = data;
+            notifyObservers();
+        }
+
+        function all() {
+            return accounts;
+        }
+
+        function sortByName() {
+            var output = accounts.slice();
+
+            output.sort(function (a, b) {
+                return a.name.localeCompare(b.name);
+            });
+
+            return output;
+        }
+
+        function alphabetMap() {
+            var sorted = sortByName();
+            var map = {};
+
+            ng.forEach(sorted, function (item) {
+                var key = item.name.charAt(0).toLowerCase();
+                if (/\d/.test(key)) {
+                    if (typeof map['#'] === 'undefined') {
+                        map['#'] = [item];
+                    } else {
+                        map['#'].push(item);
+                    }
+                } else {
+                    if (typeof map[key] === 'undefined') {
+                        map[key] = [item];
+                    } else {
+                        map[key].push(item);
+                    }
+                }
+            });
+
+            return map;
+        }
+
+        function pin(account) {
+            account.pinned = true;
+            notifyObservers();
+        }
+
+        function unpin(account) {
+            account.pinned = false;
+            notifyObservers();
+        }
+
+        function pinned() {
+            var output = [];
+
+            ng.forEach(sortByName(), function (account) {
+                if (account.pinned) {
+                    output.push(account);
+                }
+            });
+
+            return output;
+        }
+
+        function observe(callback) {
+            observers.push(callback);
+        }
+
+        function notifyObservers() {
+            ng.forEach(observers, function (fn) {
+                fn();
+            });
+        }
+
+        function get(id) {
+            ng.forEach(accounts, function (account) {
+                if (account.id === id) {
+                    return account;
+                }
+            });
+        }
+
+        return {
+            init: init,
+            setData: setData,
+            alphabetMap: alphabetMap,
+            observe: observe,
+            pinned: pinned,
+            unpin: unpin,
+            pin: pin,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
+define('core/navbar/accountDropdown',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.directive('accountDropdown', ['accountService', '$timeout', function (accounts, $timeout) {
+        return {
+            restrict: 'A',
+            scope: true,
+            controller: ['$scope', function ($scope) {
+                $scope.pin = accounts.pin;
+                $scope.unpin = accounts.unpin;
+                $scope.transition = transition;
+
+                accounts.init();
+
+                accounts.observe(update);
+
+                function transition(accountId) {
+                    if (window.Router) {
+                        window.Router.router.transitionTo('campaign-management.account.index', {accountId: accountId});
+                    }
+                }
+
+                function update() {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            $scope.accountsMap = accounts.alphabetMap();
+                            $scope.pinned = accounts.pinned();
+                        });
+                    });
+                }
+            }]
+        };
+    }]);
+});
+
 define('core/dropdown',['require','./module'],function (require) {
     'use strict';
 
@@ -39529,7 +39690,7 @@ define('core/storeService',['require','./module','angular'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar/navbar','./navbar/clientDropdown','./navbar/divisionDropdown','./navbar/divisionService','./navbar/clientService','./dropdown','./safeFilter','./interpolateFilter','./storeService'],function (require) {
+define('core/index',['require','./navbar/navbar','./navbar/clientDropdown','./navbar/divisionDropdown','./navbar/divisionService','./navbar/clientService','./navbar/accountService','./navbar/accountDropdown','./dropdown','./safeFilter','./interpolateFilter','./storeService'],function (require) {
     'use strict';
 
     require('./navbar/navbar');
@@ -39537,6 +39698,8 @@ define('core/index',['require','./navbar/navbar','./navbar/clientDropdown','./na
     require('./navbar/divisionDropdown');
     require('./navbar/divisionService');
     require('./navbar/clientService');
+    require('./navbar/accountService');
+    require('./navbar/accountDropdown');
     require('./dropdown');
     require('./safeFilter');
     require('./interpolateFilter');
