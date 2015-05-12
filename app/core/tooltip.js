@@ -51,8 +51,6 @@ define(function (require) {
                         elem.removeClass(c);
                     });
 
-                    console.log(dims.top);
-
                     if (dims.top > 50) {
                         if (dims.left > 200 && dims.right > 200) {
                             elem.addClass('tooltip-top-center');

@@ -39619,6 +39619,85 @@ define('core/dropdown',['require','./module'],function (require) {
     }]);
 });
 
+
+define('tpl!core/tooltip.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/tooltip.html', '<div ng-mouseover="updatePosition()" ng-bind-html="main|interpolate:this.$parent|safe"></div>\n<div class="wrapper">\n    <div class="content" ng-bind-html="content|interpolate:this.$parent|safe">\n    </div>\n</div>\n'); });
+
+define('core/tooltip',['require','./module','angular','tpl!./tooltip.html'],function (require) {
+    'use strict';
+
+    var app = require('./module');
+    var ng = require('angular');
+
+    var directionClasses = [
+        'tooltip-middle-left', 'tooltip-middle-right', 'tooltip-top-left', 'tooltip-top-center',
+        'tooltip-top-right',
+        'tooltip-bottom-left',
+        'tooltip-bottom-center',
+        'tooltip-bottom-right'
+    ];
+
+    require('tpl!./tooltip.html');
+
+    app.directive('tooltip', ['$templateCache', '$compile', '$document', function ($templateCache, $compile, $document) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function (scope, elem, attr) {
+
+                scope.updatePosition = updatePosition;
+
+                var tooltip = attr.tooltip;
+                scope.main = elem.html();
+                var baseTemplate = $templateCache.get('core/tooltip.html');
+
+                scope.$watch(tooltip, function (newValue) {
+                    var template = $templateCache.get(newValue);
+                    if (!template) {
+                        scope.content = newValue;
+                    } else {
+                        scope.content = $compile(template)(scope);
+                    }
+                    elem.html($compile(baseTemplate)(scope));
+                });
+
+                function updatePosition() {
+                    var elementOffset = elem[0].getBoundingClientRect();
+                    var doc = $document[0].documentElement;
+
+                    var dims = {
+                        right: doc.clientWidth - elementOffset.right,
+                        left: elementOffset.left,
+                        top: elementOffset.top,
+                        bottom: doc.clientHeight - elementOffset.bottom
+                    };
+
+                    ng.forEach(directionClasses, function (c) {
+                        elem.removeClass(c);
+                    });
+
+                    if (dims.top > 50) {
+                        if (dims.left > 200 && dims.right > 200) {
+                            elem.addClass('tooltip-top-center');
+                        } else if (dims.left > dims.right) {
+                            elem.addClass('tooltip-top-left');
+                        } else {
+                            elem.addClass('tooltip-top-right');
+                        }
+                    } else {
+                        if (dims.left > 200 && dims.right > 200) {
+                            elem.addClass('tooltip-bottom-center');
+                        } else if (dims.left > dims.right) {
+                            elem.addClass('tooltip-bottom-left');
+                        } else {
+                            elem.addClass('tooltip-bottom-right');
+                        }
+                    }
+                }
+            }
+        };
+    }]);
+});
+
 define('core/safeFilter',['require','./module'],function (require) {
     'use strict';
 
@@ -39639,8 +39718,10 @@ define('core/interpolateFilter',['require','./module'],function (require) {
     //var ng = require('angular');
 
     app.filter('interpolate', ['$interpolate', function ($interpolate) {
-        return function (input) {
-            return $interpolate(input);
+        return function (input, scope) {
+            if (input) {
+                return $interpolate(input)(scope);
+            }
         };
     }]);
 });
@@ -39688,7 +39769,7 @@ define('core/storeService',['require','./module','angular'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar/navbar','./navbar/clientDropdown','./navbar/divisionDropdown','./navbar/divisionService','./navbar/clientService','./navbar/accountService','./navbar/accountDropdown','./dropdown','./safeFilter','./interpolateFilter','./storeService'],function (require) {
+define('core/index',['require','./navbar/navbar','./navbar/clientDropdown','./navbar/divisionDropdown','./navbar/divisionService','./navbar/clientService','./navbar/accountService','./navbar/accountDropdown','./dropdown','./tooltip','./safeFilter','./interpolateFilter','./storeService'],function (require) {
     'use strict';
 
     require('./navbar/navbar');
@@ -39699,6 +39780,7 @@ define('core/index',['require','./navbar/navbar','./navbar/clientDropdown','./na
     require('./navbar/accountService');
     require('./navbar/accountDropdown');
     require('./dropdown');
+    require('./tooltip');
     require('./safeFilter');
     require('./interpolateFilter');
     require('./storeService');
