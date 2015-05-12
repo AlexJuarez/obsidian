@@ -39540,8 +39540,6 @@ define('core/navbar/accountDropdown',['require','./../module'],function (require
                 $scope.unpin = accounts.unpin;
                 $scope.transition = transition;
 
-                accounts.init();
-
                 accounts.observe(update);
 
                 function transition(accountId) {
