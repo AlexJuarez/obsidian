@@ -5,3 +5,5 @@ app/bower_components
 .idea
 app/components
 coverage
+assets/styles/core.css
+assets/styles/screen.css
