@@ -12,8 +12,6 @@ define(function (require) {
                 $scope.unpin = divisions.unpin;
                 $scope.transition = transition;
 
-                divisions.init();
-
                 divisions.observe(update);
 
                 function transition(divisionId) {

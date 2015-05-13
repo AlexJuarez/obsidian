@@ -39094,8 +39094,6 @@ define('core/navbar/clientDropdown',['require','./../module'],function (require)
                 $scope.unpin = clients.unpin;
                 $scope.transition = transition;
 
-                clients.init();
-
                 clients.observe(update);
 
                 function transition(clientId) {
@@ -39130,8 +39128,6 @@ define('core/navbar/divisionDropdown',['require','./../module'],function (requir
                 $scope.pin = divisions.pin;
                 $scope.unpin = divisions.unpin;
                 $scope.transition = transition;
-
-                divisions.init();
 
                 divisions.observe(update);
 

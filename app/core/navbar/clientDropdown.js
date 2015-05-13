@@ -12,8 +12,6 @@ define(function (require) {
                 $scope.unpin = clients.unpin;
                 $scope.transition = transition;
 
-                clients.init();
-
                 clients.observe(update);
 
                 function transition(clientId) {

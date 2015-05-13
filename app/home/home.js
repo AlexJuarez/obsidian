@@ -11,13 +11,16 @@ define(function (require) {
     var app = require('./module');
     var ng = require('angular');
 
-    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService',
-        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store) {
+    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService',
+        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store, clients, divisions) {
         $scope.navigation = [];
         $scope.state = '';
         $scope.sort = sort;
         $scope.changeGlyph = changeGlyph;
         $scope.scrollTo = scrollTo;
+
+        clients.init();
+        divisions.init();
 
         $scope.selected = [];
 
