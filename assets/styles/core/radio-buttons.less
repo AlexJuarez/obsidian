@@ -22,6 +22,24 @@
                 height: 16px;
             }
         }
+        &:after {
+            content: " ";
+            box-sizing: border-box;
+            display: inline-block;
+            position: absolute;
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            border-radius: 50%;
+            top: 3px;
+            transition: opacity 0.15s ease;
+            opacity: 0;
+
+            @media screen and (max-width: @screen-md-min){
+                width: 10px;
+                height: 10px;
+            }
+        }
     }
 
     &:checked {
@@ -30,20 +48,7 @@
                 font-size: 1.2rem;
             }
             &:after {
-                content: " ";
-                box-sizing: border-box;
-                display: inline-block;
-                position: absolute;
-                height: 14px;
-                width: 14px;
-                left: 3px;
-                border-radius: 50%;
-                top: 3px;
-
-                @media screen and (max-width: @screen-md-min){
-                    width: 10px;
-                    height: 10px;
-                }
+                opacity: 1;
             }
         }
     }

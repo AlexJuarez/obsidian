@@ -26,23 +26,23 @@ define(function (require) {
 
         $scope.multiselect = [
             {
-                name: 'test1',
+                name: 'First Choice',
                 value: '1'
             },
             {
-                name: 'test2',
+                name: 'Second',
                 value: '2'
             },
             {
-                name: 'test3',
+                name: 'Choice #3',
                 value: '3'
             },
             {
-                name: 'test4',
+                name: 'Pick me, pick me, pick me!',
                 value: '4'
             },
             {
-                name: 'test5',
+                name: 'Sheeple',
                 value: '5'
             }
         ];
