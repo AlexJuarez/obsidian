@@ -4,48 +4,27 @@ define(function (require) {
     var module = require('./../module');
     var ng = require('angular');
 
-    var divisions = [];
-    var observers = [];
-
-    module.service('divisionService', ['$http', function ($http) {
-        var initialized = false;
+    module.service('divisionService', ['$http', 'dataFactory', function ($http, dataFactory) {
+        var divisions = dataFactory(sortByName);
 
         function init(url) {
-            if (initialized) {
-                throw 'Client service has already been initialized';
-            }
-
-            initialized = true;
-
             url = url || 'fixtures/divisions.json';
 
-            return $http.get(url).success(function (data) {
-                divisions = data.divisions;
-                notifyObservers();
+            return divisions.init(url, function (data) {
+                return data.divisions;
             });
         }
 
-        function setData(data) {
-            divisions = data;
-            notifyObservers();
-        }
-
-        function all() {
-            return divisions;
-        }
-
-        function sortByName() {
-            var output = divisions.slice();
-
-            output.sort(function (a, b) {
+        function sortByName(data) {
+            data.sort(function (a, b) {
                 return a.name.localeCompare(b.name);
             });
 
-            return output;
+            return data;
         }
 
         function alphabetMap() {
-            var sorted = sortByName();
+            var sorted = all();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -68,51 +47,46 @@ define(function (require) {
             return map;
         }
 
-        function pin(client) {
-            client.pinned = true;
-            notifyObservers();
+        function all() {
+            return divisions.all();
         }
 
-        function unpin(client) {
-            client.pinned = false;
-            notifyObservers();
+        function pin(division) {
+            division.pinned = true;
+            divisions.notifyObservers();
+        }
+
+        function unpin(division) {
+            division.pinned = false;
+            divisions.notifyObservers();
         }
 
         function pinned() {
             var output = [];
 
-            ng.forEach(sortByName(), function (client) {
-                if (client.pinned) {
-                    output.push(client);
+            ng.forEach(all(), function (division) {
+                if (division.pinned) {
+                    output.push(division);
                 }
             });
 
             return output;
         }
 
-        function observe(callback) {
-            observers.push(callback);
-        }
-
-        function notifyObservers() {
-            ng.forEach(observers, function (fn) {
-                fn();
-            });
-        }
-
         function get(id) {
-            ng.forEach(divisions, function (client) {
-                if (client.id === id) {
-                    return client;
+            ng.forEach(all(), function (division) {
+                if (division.id === id) {
+                    return division;
                 }
             });
         }
 
         return {
             init: init,
-            setData: setData,
+            setData: divisions.setData,
+            addData: divisions.addData,
             alphabetMap: alphabetMap,
-            observe: observe,
+            observe: divisions.observe,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

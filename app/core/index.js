@@ -5,12 +5,15 @@ define(function (require) {
     'use strict';
 
     require('./navbar/navbar');
-    require('./navbar/clientDropdown');
-    require('./navbar/divisionDropdown');
+    require('./dataFactory');
     require('./navbar/divisionService');
+    require('./navbar/campaignService');
     require('./navbar/clientService');
     require('./navbar/accountService');
+    require('./navbar/clientDropdown');
+    require('./navbar/divisionDropdown');
     require('./navbar/accountDropdown');
+    require('./navbar/campaignDropdown');
     require('./dropdown');
     require('./tooltip');
     require('./safeFilter');

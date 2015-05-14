@@ -4,44 +4,28 @@ define(function (require) {
     var module = require('./../module');
     var ng = require('angular');
 
-    var clients = [];
-    var observers = [];
-
-    module.service('clientService', ['$http', function ($http) {
-        var initialized = false;
+    module.service('clientService', ['$http', 'dataFactory', function ($http, dataFactory) {
+        var clients = dataFactory(sortByName);
 
         function init(url) {
-            if (initialized) {
-                throw 'Client service has already been initialized';
-            }
-
-            initialized = true;
 
             url = url || 'fixtures/clients.json';
 
-            return $http.get(url).success(function (data) {
-                clients = data.clients;
-                notifyObservers();
+            return clients.init(url, function (data) {
+                return data.clients;
             });
-        }
-
-        function setData(data) {
-            clients = data;
-            notifyObservers();
         }
 
         function all() {
-            return clients;
+            return clients.all();
         }
 
-        function sortByName() {
-            var output = clients.slice();
-
-            output.sort(function (a, b) {
+        function sortByName(data) {
+            data.sort(function (a, b) {
                 return a.name.localeCompare(b.name);
             });
 
-            return output;
+            return data;
         }
 
         function alphabetMap() {
@@ -70,12 +54,12 @@ define(function (require) {
 
         function pin(client) {
             client.pinned = true;
-            notifyObservers();
+            clients.notifyObservers();
         }
 
         function unpin(client) {
             client.pinned = false;
-            notifyObservers();
+            clients.notifyObservers();
         }
 
         function pinned() {
@@ -90,18 +74,8 @@ define(function (require) {
             return output;
         }
 
-        function observe(callback) {
-            observers.push(callback);
-        }
-
-        function notifyObservers() {
-            ng.forEach(observers, function (fn) {
-                fn();
-            });
-        }
-
         function get(id) {
-            ng.forEach(clients, function (client) {
+            ng.forEach(all(), function (client) {
                 if (client.id === id) {
                     return client;
                 }
@@ -110,9 +84,10 @@ define(function (require) {
 
         return {
             init: init,
-            setData: setData,
+            setData: clients.setData,
+            addData: clients.addData,
             alphabetMap: alphabetMap,
-            observe: observe,
+            observe: clients.observe,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

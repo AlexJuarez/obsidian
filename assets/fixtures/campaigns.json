@@ -10,9 +10,9 @@
             "lastViewedName": "Joe Snoopypants",
             "startDate": "2015-02-01",
             "endDate": "2015-03-01",
-            "client": {"id": "clientId0"},
-            "division": {"id": "divisionId0"},
-            "account": {"id": "accountId0"},
+            "client": "clientId0",
+            "division": "divisionId0",
+            "account": "accountId0",
             "metrics": {
                 "currentImpressions": 15000,
                 "placementCount": 10,
@@ -29,9 +29,9 @@
             "lastViewedName": "Joe Snoopypants",
             "startDate": "2015-03-01",
             "endDate": "2015-04-01",
-            "client": {"id": "clientId0"},
-            "division": {"id": "divisionId0"},
-            "account": {"id": "accountId0"},
+            "client": "clientId0",
+            "division": "divisionId0",
+            "account": "accountId0",
             "metrics": {
                 "currentImpressions": 15000,
                 "placementCount": 10,
@@ -48,9 +48,9 @@
             "lastViewedName": "Joe Snoopypants",
             "startDate": "2015-04-01",
             "endDate": "2015-04-06",
-            "client": {"id": "clientId0"},
-            "division": {"id": "divisionId0"},
-            "account": {"id": "accountId0"},
+            "client": "clientId0",
+            "division": "divisionId0",
+            "account": "accountId0",
             "metrics": {
                 "currentImpressions": 32000,
                 "placementCount": 6,
@@ -67,9 +67,9 @@
             "lastViewedName": "Joe Snoopypants",
             "startDate": "2015-02-01",
             "endDate": "2015-02-15",
-            "client": {"id": "clientId0"},
-            "division": {"id": "divisionId0"},
-            "account": {"id": "accountId0"},
+            "client": "clientId0",
+            "division": "divisionId0",
+            "account": "accountId0",
             "metrics": {
                 "currentImpressions": 15000,
                 "placementCount": 10,
@@ -86,9 +86,9 @@
             "lastViewedName": "Joe Snoopypants",
             "startDate": "2015-02-01",
             "endDate": "2015-03-01",
-            "client": {"id": "clientId0"},
-            "division": {"id": "divisionId0"},
-            "account": {"id": "accountId0"},
+            "client": "clientId0",
+            "division": "divisionId0",
+            "account": "accountId0",
             "metrics": {
                 "currentImpressions": 150000,
                 "placementCount": 25,
@@ -96,4 +96,5 @@
             }
         }
     ]
+
 }

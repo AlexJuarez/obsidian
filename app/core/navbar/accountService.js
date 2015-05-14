@@ -4,48 +4,32 @@ define(function (require) {
     var module = require('./../module');
     var ng = require('angular');
 
-    var accounts = [];
-    var observers = [];
-
-    module.service('accountService', ['$http', function ($http) {
-        var initialized = false;
+    module.service('accountService', ['$http', 'dataFactory', function ($http, dataFactory) {
+        var accounts = dataFactory(sortByName);
 
         function init(url) {
-            if (initialized) {
-                throw 'account service has already been initialized';
-            }
-
-            initialized = true;
 
             url = url || 'fixtures/accounts.json';
 
-            return $http.get(url).success(function (data) {
-                accounts = data.accounts;
-                notifyObservers();
+            return accounts.init(url, function (data) {
+                return data.accounts;
             });
-        }
-
-        function setData(data) {
-            accounts = data;
-            notifyObservers();
         }
 
         function all() {
-            return accounts;
+            return accounts.all();
         }
 
-        function sortByName() {
-            var output = accounts.slice();
-
-            output.sort(function (a, b) {
+        function sortByName(data) {
+            data.sort(function (a, b) {
                 return a.name.localeCompare(b.name);
             });
 
-            return output;
+            return data;
         }
 
         function alphabetMap() {
-            var sorted = sortByName();
+            var sorted = all();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -70,18 +54,18 @@ define(function (require) {
 
         function pin(account) {
             account.pinned = true;
-            notifyObservers();
+            accounts.notifyObservers();
         }
 
         function unpin(account) {
             account.pinned = false;
-            notifyObservers();
+            accounts.notifyObservers();
         }
 
         function pinned() {
             var output = [];
 
-            ng.forEach(sortByName(), function (account) {
+            ng.forEach(all(), function (account) {
                 if (account.pinned) {
                     output.push(account);
                 }
@@ -90,18 +74,8 @@ define(function (require) {
             return output;
         }
 
-        function observe(callback) {
-            observers.push(callback);
-        }
-
-        function notifyObservers() {
-            ng.forEach(observers, function (fn) {
-                fn();
-            });
-        }
-
         function get(id) {
-            ng.forEach(accounts, function (account) {
+            ng.forEach(all(), function (account) {
                 if (account.id === id) {
                     return account;
                 }
@@ -110,9 +84,10 @@ define(function (require) {
 
         return {
             init: init,
-            setData: setData,
+            setData: accounts.setData,
+            addData: accounts.addData,
             alphabetMap: alphabetMap,
-            observe: observe,
+            observe: accounts.observe,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

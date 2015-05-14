@@ -21,24 +21,21 @@ define(function (require) {
             expect(filter).not.toEqual(null);
         });
 
-        it('case number', function () {
+        it('should be formatted as a number', function () {
             expect(filter(2000, 'test', {'test': 'number'})).toEqual('2,000');
+            expect(filter(0, 'test', {'test': 'number'})).toEqual('0');
         });
 
-        it('case percent', function () {
+        it('should be formatted as a percent', function () {
             expect(filter(24, 'test', {'test': 'percent'})).toEqual('24.00%');
         });
 
-        it('case default', function () {
+        it('should be formatted not formatted', function () {
             expect(filter('default', '', {'test': 'percent'})).toEqual('default');
         });
 
-        it('case quartile', function () {
+        it('should be formatted as a multiple percents', function () {
             expect(filter([2, 5], 'test', {'test': 'quartile'})).toEqual('2.00% 5.00%');
-        });
-
-        it('case no input', function () {
-            expect(filter(0, 'test', {'test': 'number'})).toEqual('0');
         });
     });
 });

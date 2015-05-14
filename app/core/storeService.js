@@ -2,32 +2,27 @@ define(function (require) {
     'use strict';
 
     var module = require('./module');
-    var ng = require('angular');
 
     var store = {};
-    var observers = {};
 
-    module.service('storeService', [function () {
+    module.service('storeService', ['dataFactory', function (dataFactory) {
         function setData(id, data) {
-            store[id] = data;
-            notifyObservers(id);
+            if (typeof store[id] === 'undefined') {
+                store[id] = dataFactory();
+            }
+            store[id].setData(data);
+            store[id].notifyObservers();
         }
 
         function all(id) {
-            return store[id];
+            return store[id].all();
         }
 
         function observe(id, callback) {
-            if (typeof observers[id] === 'undefined') {
-                observers[id] = [];
+            if (typeof store[id] === 'undefined') {
+                store[id] = dataFactory();
             }
-            observers[id].push(callback);
-        }
-
-        function notifyObservers(id) {
-            ng.forEach(observers[id], function (fn) {
-                fn();
-            });
+            store[id].observe(callback);
         }
 
         return {

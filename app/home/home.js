@@ -4,6 +4,7 @@
 /* jshint camelcase: false */
 /* jshint -W098 */
 /* jshint -W004 */
+/* jshint -W101 */
 
 'use strict';
 
@@ -11,8 +12,8 @@ define(function (require) {
     var app = require('./module');
     var ng = require('angular');
 
-    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService',
-        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store, clients, divisions) {
+    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService', 'campaignService',
+        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store, clients, divisions, campaigns) {
         $scope.navigation = [];
         $scope.state = '';
         $scope.sort = sort;
@@ -21,6 +22,7 @@ define(function (require) {
 
         clients.init();
         divisions.init();
+        campaigns.init();
 
         $scope.selected = [];
 
