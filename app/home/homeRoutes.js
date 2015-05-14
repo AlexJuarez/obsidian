@@ -20,6 +20,7 @@ define(function (require) {
     require('tpl!./multi-select.html');
     require('tpl!./tooltip.html');
     require('tpl!./nav.html');
+    require('tpl!./forms.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
