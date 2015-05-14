@@ -39419,7 +39419,7 @@ define('core/navbar/clientService',['require','./../module','angular'],function 
         }
 
         function alphabetMap() {
-            var sorted = sortByName();
+            var sorted = all();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -39455,7 +39455,7 @@ define('core/navbar/clientService',['require','./../module','angular'],function 
         function pinned() {
             var output = [];
 
-            ng.forEach(sortByName(), function (client) {
+            ng.forEach(all(), function (client) {
                 if (client.pinned) {
                     output.push(client);
                 }

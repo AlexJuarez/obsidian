@@ -29,7 +29,7 @@ define(function (require) {
         }
 
         function alphabetMap() {
-            var sorted = sortByName();
+            var sorted = all();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -65,7 +65,7 @@ define(function (require) {
         function pinned() {
             var output = [];
 
-            ng.forEach(sortByName(), function (client) {
+            ng.forEach(all(), function (client) {
                 if (client.pinned) {
                     output.push(client);
                 }
