@@ -1,85 +1,53 @@
-@import "chosen/vendor";
-
-// Reset stuff from Normalize...
-fieldset {
-    border: none;
-    margin: 0;
-    padding: 0;
-}
-label {
+label, .form-label {
+    font-weight: 600;
     vertical-align: top;
-    &.required > span {
-        font-weight: 600;
-        &:after {
-            content: '*';
-        }
-    }
-}
-legend {
-    font-weight: 100;
-    font-size: 2rem;
-    color: @gray;
-    margin: 0 0 3rem;
-}
-textarea {
-    margin: 0;
-    padding: 0;
-    border: none;
 }
 
 .form {
-
-    input[type="text"].form-control, input[type="email"].form-control {
+//  li {
+//     color: contrast(@bodyBackground,
+//             lighten(@bodyBackground, 13%),
+//              darken(@bodyBackground, 13%));
+// }   
+    input[type="text"].form-control {
         border: 1px solid @dark-gray;
         border-width: 0 0 1px;
-        &:focus {
-            outline: none;
-            border-color: @brand-color;
-        }
     }
-    textarea.form-control {
-        padding: 0 1rem 1rem 0;
-        border: 1px solid @dark-gray;
-        border-width: 0 1px 1px 0;
-        
-        &:focus {
-            outline: none;
-            border-color: @brand-color;
-        }
-    }
+
 }
 
 .form-basic {
 
+
+    // Reset stuff from Normalize...
+    .form-group, .form-control {
+        border: none;
+        margin: 0;
+        padding: 0;
+    }
+    
     .form-group {
         width: 100%;
-        margin: 0 0 3rem 0;
-
+        display: block;
         .form-label {
             display: block;
+            margin-bottom: 0.5rem;
         }
         .form-control {
             display: block;
         }
-        input[type="text"].form-control, input[type="email"].form-control {
+        input[type="text"].form-control {
             width: 100%;
             padding: 0.5rem 0;
         }
-        textarea.form-control {
-            width: 100%;
-            max-width: 100%;
+        input[type="text"]:focus.form-control {
+            outline: none;
         }
     }
+
 }
 
 .form-inline {
-
-    .form-group {
-        margin-right: 2rem;
-        .form-label > span {
-            margin-right: 1rem;
-        }
-    }
 
     // Kick in the inline
     @media (min-width: @screen-sm-min) {
