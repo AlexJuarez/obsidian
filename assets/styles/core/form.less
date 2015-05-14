@@ -1,4 +1,5 @@
 @import "chosen/vendor";
+@import "text-input";
 
 // Reset stuff from Normalize...
 fieldset {
@@ -8,6 +9,9 @@ fieldset {
 }
 label {
     vertical-align: top;
+    & > span {
+        margin-right: 1rem;
+    }
     &.required > span {
         font-weight: 600;
         &:after {
@@ -29,14 +33,14 @@ textarea {
 
 .form {
 
-    input[type="text"].form-control, input[type="email"].form-control {
-        border: 1px solid @dark-gray;
-        border-width: 0 0 1px;
-        &:focus {
-            outline: none;
-            border-color: @brand-color;
-        }
-    }
+    // input[type="text"].form-control, input[type="email"].form-control {
+    //     border: 1px solid @dark-gray;
+    //     border-width: 0 0 1px;
+    //     &:focus {
+    //         outline: none;
+    //         border-color: @brand-color;
+    //     }
+    // }
     textarea.form-control {
         padding: 0 1rem 1rem 0;
         border: 1px solid @dark-gray;
@@ -53,10 +57,11 @@ textarea {
 
     .form-group {
         width: 100%;
-        margin: 0 0 3rem 0;
+        
 
         .form-label {
             display: block;
+            margin: 0 0 3rem 0;
         }
         .form-control {
             display: block;
@@ -75,11 +80,9 @@ textarea {
 
 .form-inline {
 
-    .form-group {
+    .form-group .form-label {
         margin-right: 2rem;
-        .form-label > span {
-            margin-right: 1rem;
-        }
+        
     }
 
     // Kick in the inline

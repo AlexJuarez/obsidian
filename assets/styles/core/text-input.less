@@ -1,0 +1,17 @@
+input[type="text"].form-control, input[type="email"].form-control {
+	border: 1px solid @dark-gray;
+	border-width: 0 0 1px;
+	&:focus {
+		outline: none;
+		border-color: @brand-color;
+	}
+	&.ng-valid {
+		border-color: @green;
+	}
+	&.ng-warning {
+		border-color: @orange;
+	}
+	&.ng-invalid {
+		border-color: @red;
+	}
+}

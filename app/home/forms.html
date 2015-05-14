@@ -2,26 +2,20 @@
 <hr />
 <h2>Basic Form</h2>
 <form class="form form-basic" role="form">
-  <fieldset>
+  <fieldset class="form-group">
     <legend>Title of Form</legend>
-    <div class="form-group">
       <label class="form-label required">
         <span>Name</span>
         <input class="form-control" placeholder="Enter name" type="text">
       </label>
-    </div>    
-    <div class="form-group">
       <label class="form-label">
         <span>Email</span>
         <input class="form-control" placeholder="Enter email" type="email">
       </label>
-    </div>    
-    <div class="form-group">
       <label class="form-label">
         <span>Text Area</span>
         <textarea class="form-control" placeholder="Enter some text" rows="2"></textarea>
       </label>
-    </div>
 <!--     <div class="form-group">
       <label class="form-label">
         <span>Select Options</span>
@@ -34,7 +28,7 @@
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
-&lt;form class=&quot;form form-basic&quot; role=&quot;form&quot;&gt;
+<!-- &lt;form class=&quot;form form-basic&quot; role=&quot;form&quot;&gt;
   &lt;fieldset&gt;
     &lt;legend&gt;Title of Form&lt;/legend&gt;
     &lt;div class=&quot;form-group&quot;&gt;
@@ -57,25 +51,27 @@
     &lt;/div&gt;
     &lt;button type=&quot;submit&quot; class=&quot;btn btn-default&quot;&gt;Submit&lt;/button&gt;
   &lt;/fieldset&gt;
-&lt;/form&gt;
+&lt;/form&gt; -->
 </code></pre>
 </div>
 
 <h2>Inline Form</h2>
 <form class="form form-inline" role="form">
-    <div class="form-group">
+  <fieldset class="form-group">
+    <!-- <div class="form-group"> -->
       <label class="form-label required">
         <span class="sr-only">Name</span>
         <input class="form-control" placeholder="Enter name" type="text">
       </label>
-    </div>    
+<!--     </div>    
     <div class="form-group">
-      <label class="form-label">
+ -->      <label class="form-label">
         <span class="sr-only">Email</span>
         <input class="form-control" placeholder="Enter email" type="email">
       </label>
-    </div>    
+    <!-- </div> -->    
     <button type="submit" class="btn btn-sm">Submit</button>
+  </fieldset>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
