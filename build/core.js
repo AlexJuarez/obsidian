@@ -39315,11 +39315,7 @@ define('core/navbar/campaignService',['require','./../module','angular'],functio
         }
 
         function isInFlight(campaign) {
-            var now = new Date();
-            var startDate = new Date(campaign.startDate);
-            var endDate = new Date(campaign.endDate);
-
-            return now > startDate && now < endDate;
+            return campaign.status === 'inFlight';
         }
 
         function inFlight() {
@@ -39335,10 +39331,7 @@ define('core/navbar/campaignService',['require','./../module','angular'],functio
         }
 
         function isPreFlight(campaign) {
-            var now = new Date();
-            var startDate = new Date(campaign.startDate);
-
-            return now < startDate;
+            return campaign.status === 'preFlight';
         }
 
         function preFlight() {
@@ -39354,10 +39347,7 @@ define('core/navbar/campaignService',['require','./../module','angular'],functio
         }
 
         function isCompleted(campaign) {
-            var now = new Date();
-            var endDate = new Date(campaign.endDate);
-
-            return now > endDate;
+            return campaign.status === 'completed';
         }
 
         function completed() {
