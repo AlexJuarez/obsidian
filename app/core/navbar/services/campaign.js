@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./../module');
+    var module = require('./../../module');
     var ng = require('angular');
 
     module.service('campaignService', ['$http', 'dataFactory', function ($http, dataFactory) {

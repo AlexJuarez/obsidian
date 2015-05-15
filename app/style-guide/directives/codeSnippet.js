@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
     var hljs = require('hljs');
     var ng = require('angular');
     require('tpl!./code-snippet.html');
@@ -15,7 +15,7 @@ define(function (require) {
                     scope.language = attrs.createSnippet;
 
                     //get the cached template and compile it
-                    var template = $compile($templateCache.get('home/code-snippet.html'))(scope);
+                    var template = $compile($templateCache.get('style-guide/directives/code-snippet.html'))(scope);
 
                     scope.$apply();
 

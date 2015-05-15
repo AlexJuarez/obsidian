@@ -26,9 +26,9 @@ define(function (require) {
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
             .state('root', {
-                url: '/',
-                templateUrl: 'home/index.html',
-                controller: 'HomeCtrl'
+                url: '/style-guide',
+                templateUrl: 'style-guide/index.html',
+                controller: 'styleGuideCtrl'
             });
     }]);
 });

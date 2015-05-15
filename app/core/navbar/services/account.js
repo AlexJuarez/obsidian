@@ -1,18 +1,23 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./../module');
+    var module = require('./../../module');
     var ng = require('angular');
 
-    module.service('divisionService', ['$http', 'dataFactory', function ($http, dataFactory) {
-        var divisions = dataFactory(sortByName);
+    module.service('accountService', ['$http', 'dataFactory', function ($http, dataFactory) {
+        var accounts = dataFactory(sortByName);
 
         function init(url) {
-            url = url || 'fixtures/divisions.json';
 
-            return divisions.init(url, function (data) {
-                return data.divisions;
+            url = url || 'fixtures/accounts.json';
+
+            return accounts.init(url, function (data) {
+                return data.accounts;
             });
+        }
+
+        function all() {
+            return accounts.all();
         }
 
         function sortByName(data) {
@@ -47,26 +52,22 @@ define(function (require) {
             return map;
         }
 
-        function all() {
-            return divisions.all();
+        function pin(account) {
+            account.pinned = true;
+            accounts.notifyObservers();
         }
 
-        function pin(division) {
-            division.pinned = true;
-            divisions.notifyObservers();
-        }
-
-        function unpin(division) {
-            division.pinned = false;
-            divisions.notifyObservers();
+        function unpin(account) {
+            account.pinned = false;
+            accounts.notifyObservers();
         }
 
         function pinned() {
             var output = [];
 
-            ng.forEach(all(), function (division) {
-                if (division.pinned) {
-                    output.push(division);
+            ng.forEach(all(), function (account) {
+                if (account.pinned) {
+                    output.push(account);
                 }
             });
 
@@ -74,19 +75,19 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(all(), function (division) {
-                if (division.id === id) {
-                    return division;
+            ng.forEach(all(), function (account) {
+                if (account.id === id) {
+                    return account;
                 }
             });
         }
 
         return {
             init: init,
-            setData: divisions.setData,
-            addData: divisions.addData,
+            setData: accounts.setData,
+            addData: accounts.addData,
             alphabetMap: alphabetMap,
-            observe: divisions.observe,
+            observe: accounts.observe,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

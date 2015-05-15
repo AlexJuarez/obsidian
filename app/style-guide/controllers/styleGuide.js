@@ -9,10 +9,10 @@
 'use strict';
 
 define(function (require) {
-    var app = require('./module');
+    var app = require('./../module');
     var ng = require('angular');
 
-    app.controller('HomeCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService', 'campaignService',
+    app.controller('styleGuideCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService', 'campaignService',
         function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store, clients, divisions, campaigns) {
         $scope.navigation = [];
         $scope.state = '';

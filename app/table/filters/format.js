@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
     //var ng = require('angular');
 
     app.filter('format', ['$filter', function ($filter) {

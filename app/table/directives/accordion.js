@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
     require('tpl!./accordion.html');
 
     app.directive('accordion', ['$timeout', 'storeService', function ($timeout, store) {
@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             transclude: true,
-            templateUrl: 'table/accordion.html',
+            templateUrl: 'table/directives/accordion.html',
             link: function (scope, element, attrs) {
                 var id = attrs.accordion;
 

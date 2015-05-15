@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./../module');
+    var app = require('./../../module');
 
     app.directive('campaignDropdown', ['campaignService', '$timeout', function (campaigns, $timeout) {
         return {

@@ -5,19 +5,19 @@ define(function (require) {
     'use strict';
 
     require('./navbar/navbar');
-    require('./dataFactory');
-    require('./navbar/divisionService');
-    require('./navbar/campaignService');
-    require('./navbar/clientService');
-    require('./navbar/accountService');
-    require('./navbar/clientDropdown');
-    require('./navbar/divisionDropdown');
-    require('./navbar/accountDropdown');
-    require('./navbar/campaignDropdown');
-    require('./dropdown');
-    require('./tooltip');
-    require('./safeFilter');
-    require('./interpolateFilter');
-    require('./storeService');
+    require('./services/dataFactory');
+    require('./navbar/services/division');
+    require('./navbar/services/campaign');
+    require('./navbar/services/client');
+    require('./navbar/services/account');
+    require('./navbar/directives/clientDropdown');
+    require('./navbar/directives/divisionDropdown');
+    require('./navbar/directives/accountDropdown');
+    require('./navbar/directives/campaignDropdown');
+    require('./directives/dropdown');
+    require('./directives/tooltip');
+    require('./filters/safeFilter');
+    require('./filters/interpolateFilter');
+    require('./services/store');
 
 });

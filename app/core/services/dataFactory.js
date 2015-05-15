@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./module');
+    var module = require('./../module');
     var ng = require('angular');
 
     module.factory('dataFactory', ['$http', function ($http) {

@@ -1,23 +1,23 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./../module');
+    var module = require('./../../module');
     var ng = require('angular');
 
-    module.service('accountService', ['$http', 'dataFactory', function ($http, dataFactory) {
-        var accounts = dataFactory(sortByName);
+    module.service('clientService', ['$http', 'dataFactory', function ($http, dataFactory) {
+        var clients = dataFactory(sortByName);
 
         function init(url) {
 
-            url = url || 'fixtures/accounts.json';
+            url = url || 'fixtures/clients.json';
 
-            return accounts.init(url, function (data) {
-                return data.accounts;
+            return clients.init(url, function (data) {
+                return data.clients;
             });
         }
 
         function all() {
-            return accounts.all();
+            return clients.all();
         }
 
         function sortByName(data) {
@@ -52,22 +52,22 @@ define(function (require) {
             return map;
         }
 
-        function pin(account) {
-            account.pinned = true;
-            accounts.notifyObservers();
+        function pin(client) {
+            client.pinned = true;
+            clients.notifyObservers();
         }
 
-        function unpin(account) {
-            account.pinned = false;
-            accounts.notifyObservers();
+        function unpin(client) {
+            client.pinned = false;
+            clients.notifyObservers();
         }
 
         function pinned() {
             var output = [];
 
-            ng.forEach(all(), function (account) {
-                if (account.pinned) {
-                    output.push(account);
+            ng.forEach(all(), function (client) {
+                if (client.pinned) {
+                    output.push(client);
                 }
             });
 
@@ -75,19 +75,19 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(all(), function (account) {
-                if (account.id === id) {
-                    return account;
+            ng.forEach(all(), function (client) {
+                if (client.id === id) {
+                    return client;
                 }
             });
         }
 
         return {
             init: init,
-            setData: accounts.setData,
-            addData: accounts.addData,
+            setData: clients.setData,
+            addData: clients.addData,
             alphabetMap: alphabetMap,
-            observe: accounts.observe,
+            observe: clients.observe,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

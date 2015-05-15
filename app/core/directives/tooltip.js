@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
     var ng = require('angular');
 
     var directionClasses = [
@@ -24,7 +24,7 @@ define(function (require) {
 
                 var tooltip = attr.tooltip;
                 scope.main = elem.html();
-                var baseTemplate = $templateCache.get('core/tooltip.html');
+                var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);

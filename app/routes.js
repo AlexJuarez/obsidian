@@ -6,7 +6,7 @@ define(function (require) {
     var app = require('./app');
 
     return app.config(['$urlRouterProvider', '$anchorScrollProvider', function ($urlRouterProvider, $anchorScrollProvider) {
-        $urlRouterProvider.otherwise('/');
+        $urlRouterProvider.otherwise('/style-guide');
         $anchorScrollProvider.disableAutoScrolling();
     }]);
 });

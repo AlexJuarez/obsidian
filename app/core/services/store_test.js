@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    require('./storeService');
+    require('./store');
     require('angularMocks');
 
     describe('storeService', function () {

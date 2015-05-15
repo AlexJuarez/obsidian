@@ -1,23 +1,18 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./../module');
+    var module = require('./../../module');
     var ng = require('angular');
 
-    module.service('clientService', ['$http', 'dataFactory', function ($http, dataFactory) {
-        var clients = dataFactory(sortByName);
+    module.service('divisionService', ['$http', 'dataFactory', function ($http, dataFactory) {
+        var divisions = dataFactory(sortByName);
 
         function init(url) {
+            url = url || 'fixtures/divisions.json';
 
-            url = url || 'fixtures/clients.json';
-
-            return clients.init(url, function (data) {
-                return data.clients;
+            return divisions.init(url, function (data) {
+                return data.divisions;
             });
-        }
-
-        function all() {
-            return clients.all();
         }
 
         function sortByName(data) {
@@ -52,22 +47,26 @@ define(function (require) {
             return map;
         }
 
-        function pin(client) {
-            client.pinned = true;
-            clients.notifyObservers();
+        function all() {
+            return divisions.all();
         }
 
-        function unpin(client) {
-            client.pinned = false;
-            clients.notifyObservers();
+        function pin(division) {
+            division.pinned = true;
+            divisions.notifyObservers();
+        }
+
+        function unpin(division) {
+            division.pinned = false;
+            divisions.notifyObservers();
         }
 
         function pinned() {
             var output = [];
 
-            ng.forEach(all(), function (client) {
-                if (client.pinned) {
-                    output.push(client);
+            ng.forEach(all(), function (division) {
+                if (division.pinned) {
+                    output.push(division);
                 }
             });
 
@@ -75,19 +74,19 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(all(), function (client) {
-                if (client.id === id) {
-                    return client;
+            ng.forEach(all(), function (division) {
+                if (division.id === id) {
+                    return division;
                 }
             });
         }
 
         return {
             init: init,
-            setData: clients.setData,
-            addData: clients.addData,
+            setData: divisions.setData,
+            addData: divisions.addData,
             alphabetMap: alphabetMap,
-            observe: clients.observe,
+            observe: divisions.observe,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

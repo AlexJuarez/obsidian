@@ -4,13 +4,13 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
     require('tpl!./basic.html');
 
     app.directive('basicTable', [function () {
         return {
             restrict: 'A',
-            templateUrl: 'table/basic.html',
+            templateUrl: 'table/directives/basic.html',
             replace: true,
             scope: {
                 table: '=basicTable',

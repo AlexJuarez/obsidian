@@ -4,7 +4,7 @@
 define(function (require) {
     'use strict';
 
-    require('./formatFilter');
+    require('./format');
     require('angularMocks');
 
     describe('formatFilter', function () {

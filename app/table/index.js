@@ -4,7 +4,7 @@
 define(function (require) {
     'use strict';
 
-    require('./formatFilter');
-    require('./accordionDirective');
-    require('./basicTable');
+    require('./filters/format');
+    require('./directives/accordion');
+    require('./directives/basicTable');
 });

@@ -10,7 +10,7 @@ define(function (require) {
     require('./chart/index');
     require('./table/index');
     require('./core/index');
-    require('./home/index');
+    require('./style-guide/index');
 
     return ng.module('app', [
         'localytics.directives',
