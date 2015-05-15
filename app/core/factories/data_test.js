@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    require('./dataFactory');
+    require('./data');
     require('angularMocks');
 
     describe('dataFactory', function () {

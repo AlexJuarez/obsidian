@@ -5,7 +5,7 @@ define(function (require) {
     'use strict';
 
     require('./navbar/navbar');
-    require('./services/dataFactory');
+    require('./factories/data');
     require('./navbar/services/division');
     require('./navbar/services/campaign');
     require('./navbar/services/client');
