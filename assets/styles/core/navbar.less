@@ -247,6 +247,7 @@
         padding: 0 2rem 2rem 2rem;
         .dropdown-search {
             margin-top: 1rem;
+            margin-bottom: 2rem;
             border-bottom: 1px solid #fff;
             display: block;
             .input {
@@ -260,24 +261,31 @@
             }
         }
         .list {
+            box-sizing: border-box;
             max-height: 27rem;
-            width: 50%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            width: calc(~"50% - 1rem");
             padding: 0;
             margin: 0;
+            margin-right: 1rem;
             list-style: none;
             font-weight: bold;
             .font-size(1.2);
             float:left;
-            overflow: auto;
 
             &.no-margin {
                 margin-top: 1rem;
-                > li {
+                [ng-transclude] > li, & > li {
                     margin-top: 0;
                 }
             }
 
-            > li {
+            [ng-transclude] > li, & > li {
+                &:first-child {
+                    margin-top: 0;
+                }
                 margin-top: 1rem;
             }
             a {

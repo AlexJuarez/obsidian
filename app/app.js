@@ -6,6 +6,7 @@ define(function (require) {
 
     var ng = require('angular');
     require('angular-chosen');
+    require('ng-perfect-scrollbar');
     require('ui-router');
     require('./chart/index');
     require('./table/index');
@@ -13,6 +14,7 @@ define(function (require) {
     require('./style-guide/index');
 
     return ng.module('app', [
+        'perfect_scrollbar',
         'localytics.directives',
         'app.home',
         'tpl',

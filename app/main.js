@@ -12,7 +12,9 @@ require.config({
         'hljs': 'components/highlightjs/highlight.pack',
         'jquery': 'components/jquery/dist/jquery',
         'chosen': 'components/chosen/chosen.jquery',
-        'angular-chosen': 'components/angular-chosen-localytics/chosen'
+        'angular-chosen': 'components/angular-chosen-localytics/chosen',
+        'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
+        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
     },
     shim: {
         'hljs': {
@@ -23,6 +25,12 @@ require.config({
         },
         'jquery': {
             exports: 'jquery'
+        },
+        'ng-perfect-scrollbar': {
+            deps: ['angular', 'perfect-scrollbar']
+        },
+        'perfect-scrollbar': {
+            deps: ['jquery']
         },
         'angular-chosen': {
             deps: ['angular', 'chosen']
