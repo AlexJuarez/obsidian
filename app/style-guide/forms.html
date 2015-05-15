@@ -62,15 +62,11 @@
 <h2>Inline Form</h2>
 <form class="form form-inline" role="form">
   <fieldset class="form-group">
-      <label class="form-label required">
-        <span class="sr-only">Name</span>
-        <input class="form-control" placeholder="Enter name" type="text">
-      </label>
-      <label class="form-label">
-        <span class="sr-only">Email</span>
-        <input class="form-control" placeholder="Enter email" type="email">
-      </label>
-    <button type="submit" class="btn btn-sm">Submit</button>
+    <label class="form-label">
+      <span class="sr-only">Select Options</span>
+      <select class="single-select" chosen ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+    </label>
+    <button type="submit" class="btn btn-default">Submit</button>
   </fieldset>
 </form>
 <div class="highlight" highlight>
