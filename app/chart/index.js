@@ -4,5 +4,5 @@
 define(function (require) {
     'use strict';
 
-    require('./comparisonChart');
+    require('./directives/comparisonChart');
 });

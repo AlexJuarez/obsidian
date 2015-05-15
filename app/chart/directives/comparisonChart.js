@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./module');
+    var app = require('./../module');
     var d3 = require('d3');
 
     app.directive('barChart', [function () {
