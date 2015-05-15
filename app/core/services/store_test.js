@@ -14,12 +14,12 @@ define(function (require) {
             });
         });
 
-        it('should set data for an id', function() {
+        it('should set data for an id', function () {
             store.setData('test', 1);
             expect(store.all('test')).toEqual(1);
         });
 
-        it('should call a callback for an id', function() {
+        it('should call a callback for an id', function () {
             function callback() {
                 expect(store.all('test')).toEqual(1);
             }

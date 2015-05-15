@@ -99,7 +99,7 @@ module.exports = function (grunt) {
                 destCss: 'assets/styles/core',
                 options: {
                     htmlDemo: true,
-                    destHtml: 'app/home',
+                    destHtml: 'app/style-guide',
                     stylesheet: 'less',
                     htmlDemoTemplate: 'assets/icons/template.html',
                     template: 'assets/icons/template.less',
