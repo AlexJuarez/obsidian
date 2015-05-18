@@ -1,6 +1,5 @@
 @import "checkboxes";
 @import "radio-buttons";
-@import "text-input";
 @import "range-input";
 
 .form-checkbox {
@@ -27,6 +26,8 @@ textarea.form-control {
 }
 
 .form {
+    .clearfix();
+
     .required > span {
         font-weight: 600;
         &:after {
@@ -51,9 +52,16 @@ textarea.form-control {
             max-width: 100%;
         }
     }
+
+    .chosen-container {
+        min-width: 100%;
+    }
 }
 
 .form-inline {
+    .form-control {
+        width: 100%;
+    }
     @media (min-width: @screen-sm-min) {
         .form-group {
             display: inline-block;
@@ -74,5 +82,50 @@ textarea.form-control {
     .form-control {
         width: 100%;
         display: block;
+    }
+}
+
+.form-group {
+    .form-control {
+        border: 1px solid @dark-gray;
+        border-width: 0 0 1px;
+        &:focus {
+            outline: none;
+            border-color: @brand-color;
+        }
+    }
+
+    &.has-success {
+        .form-control {
+            border-color: @green;
+        }
+        .form-label {
+            color: @green;
+            .form-control {
+                color: initial;
+            }
+        }
+    }
+    &.has-error {
+        .form-control {
+            border-color: @red;
+        }
+        .form-label {
+            color: @red;
+            .form-control {
+                color: initial;
+            }
+        }
+    }
+    &.has-warning {
+        .form-control {
+            border-color: @orange;
+        }
+        .form-label {
+            color: @orange;
+            .form-control {
+                color: initial;
+            }
+        }
     }
 }

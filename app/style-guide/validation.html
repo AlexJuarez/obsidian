@@ -1,12 +1,38 @@
-<h2 id="validation">Validation</h2>
-
+<h1 id="validation">Validation</h1>
+<hr />
 <h3>Input states</h3>
-<label class="form-label">
-  <span>Name</span>
-  <input class="form-control" placeholder="Enter name" type="text">
-</label>
-
-<h2>Default Required</h2>
+<form class="form">
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="form-group has-success">
+                <label class="form-label">
+                    <input class="form-control" placeholder="Enter name" type="text" value="amazing-client">
+                    <span>amazing-client is available</span>
+                </label>
+            </div>
+            <div class="highlight" highlight><code class="html"><pre>.form-group .has-success</pre></code></div>
+        </div>
+        <div class="col-sm-4">
+            <div class="form-group has-error">
+                <label class="form-label">
+                    <input class="form-control" placeholder="Enter email" type="email" value="bad@e">
+                    <span>bad@e is not a valid email address</span>
+                </label>
+            </div>
+            <div class="highlight" highlight><code class="html"><pre>.form-group .has-error</pre></code></div>
+        </div>
+        <div class="col-sm-4">
+            <div class="form-group has-warning">
+                <label class="form-label">
+                    <input class="form-control" placeholder="Enter name" type="text" value="test-name">
+                    <span>test-name is similar to another name</span>
+                </label>
+            </div>
+            <div class="highlight" highlight><code class="html"><pre>.form-group .has-warning</pre></code></div>
+        </div>
+    </div>
+</form>
+<h2>Form states</h2>
 <label class="form-label required">
   <span>Name</span>
   <input class="form-control" placeholder="Enter name" type="text">
