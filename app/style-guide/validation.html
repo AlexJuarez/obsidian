@@ -34,7 +34,7 @@
 </form>
 <h2>Form states</h2>
 <form name="validationForm" class="form" novalidate>
-    <div ng-show="validationForm.$invalid" class="alert alert-danger">
+    <div ng-show="validationForm.$invalid && validationForm.$pristine" class="alert alert-danger">
         There were <strong>[[validationForm.$error|errorCount]]</strong> errors submitting this form
     </div>
     <div class="form-group" ng-class="{'has-error': validationForm.name.$invalid}">
@@ -51,7 +51,7 @@
             <span>Email</span>
             <input name="email" ng-model="user.email" class="form-control" placeholder="Enter email" type="email">
             <p ng-show="validationForm.email.$invalid" class="help-block">
-                [[user.email]] is not a valid email address
+                not a valid email address
             </p>
         </label>
     </div>
