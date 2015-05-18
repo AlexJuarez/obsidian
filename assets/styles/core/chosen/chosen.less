@@ -23,7 +23,7 @@
 .chosen-container-single .chosen-default {
     color: @dark-gray;
 }
-.chosen-container-single .chosen-single, 
+.chosen-container-single .chosen-single,
 .chosen-container-single.chosen-container-active .chosen-single {
     // Reset bg style
     background: none;
@@ -33,8 +33,9 @@
     border: 1px solid @dark-gray;
     border-radius: 0;
     box-shadow: none;
-    height: auto;
-    line-height: 3.5rem;
+    height: 3.4rem;
+    line-height: 3.4rem;
+    box-sizing: border-box;
 
     //background: url('assets/icons/chevron-down.svg');
 }
@@ -52,10 +53,8 @@
         background: #fff;
 
         &:before {
-            content: '\f107';
-            font-family: 'mixpo-icons';
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
+            .glyph-cheveron-down();
+            margin-top: 3px;
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
