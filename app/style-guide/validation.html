@@ -35,12 +35,15 @@
 <h2>Form states</h2>
 <form name="validationForm" class="form" novalidate>
     <div ng-show="validationForm.$invalid" class="alert alert-danger">
-        There was <strong>one</strong> error submitting this form
+        There were <strong>[[validationForm.$error|errorCount]]</strong> errors submitting this form
     </div>
-    <div class="form-group">
+    <div class="form-group" ng-class="{'has-error': validationForm.name.$invalid}">
         <label class="form-label required">
             <span>Name</span>
-            <input ng-model="user.name" class="form-control" placeholder="Enter name" type="text" required>
+            <input ng-model="user.name" name="name" class="form-control" placeholder="Enter name" type="text" required>
+            <p ng-show="validationForm.name.$invalid" class="help-block">
+                name is required
+            </p>
         </label>
     </div>
     <div class="form-group" ng-class="{'has-error': validationForm.email.$invalid}">
@@ -55,7 +58,7 @@
     <div class="form-checkbox">
         <label>
             <input type="checkbox" class="checkbox checkbox-light" />
-            <span>Check me out</span>
+            <span>Remember me</span>
         </label>
     </div>
     <button type="submit" class="btn btn-default">Submit</button>
