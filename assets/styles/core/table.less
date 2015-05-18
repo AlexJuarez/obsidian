@@ -166,9 +166,6 @@ table {
 
 .table-collapse-group {
     .table-collapse {
-        > .header {
-            border-radius: 0;
-        }
         & + .table-collapse {
             > .header {
                 border-top: none;
@@ -177,18 +174,6 @@ table {
         &.open + .table-collapse {
             > .header {
                 border-top: 1px solid;
-            }
-        }
-        &:first-child {
-            > .header {
-                border-top-left-radius: 0.2rem;
-                border-top-right-radius: 0.2rem;
-            }
-        }
-        &:last-child {
-            > .header {
-                border-bottom-left-radius: 0.2rem;
-                border-bottom-right-radius: 0.2rem;
             }
         }
 
@@ -202,7 +187,7 @@ table {
         }
         > .header {
             &:after {
-                .glyph-cheveron-up();
+                .glyph-chevron-up();
             }
         }
     }
@@ -210,7 +195,6 @@ table {
         cursor: pointer;
         box-sizing: border-box;
         border: 1px solid @table-collapse-border;
-        //border-radius: 0.2rem; TODO:
         font-weight: bold;
         .font-size(1.6);
         padding: 1.3rem 2rem;
@@ -218,7 +202,7 @@ table {
         &:after {
             font-family: "mixpo-icons";
             position: absolute;
-            .glyph-cheveron-down();
+            .glyph-chevron-down();
             right: 2rem;
             top: 50%;
             margin-top: -0.8rem;
@@ -233,14 +217,12 @@ table {
     }
     &.group:first-child {
         > .header {
-            border-radius: 0.2rem 0.2rem 0 0;
             border-bottom: none;
         }
     }
     &.group:last-child {
         > .header {
             border-bottom: 1px solid @table-collapse-border;
-            border-radius: 0 0 0.2rem 0.2rem;
         }
     }
 }
