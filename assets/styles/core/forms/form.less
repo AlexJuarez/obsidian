@@ -1,7 +1,7 @@
 @import "checkboxes";
 @import "radio-buttons";
-@import "text-input";
 @import "range-input";
+@import "alert";
 
 .form-checkbox {
     margin-top: 1.5rem;
@@ -26,7 +26,16 @@ textarea.form-control {
 
 }
 
+.help-block {
+    display: block;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    color: #7c7c86;
+}
+
 .form {
+    .clearfix();
+
     .required > span {
         font-weight: 600;
         &:after {
@@ -51,9 +60,16 @@ textarea.form-control {
             max-width: 100%;
         }
     }
+
+    .chosen-container {
+        min-width: 100%;
+    }
 }
 
 .form-inline {
+    .form-control {
+        width: 100%;
+    }
     @media (min-width: @screen-sm-min) {
         .form-group {
             display: inline-block;
@@ -74,5 +90,59 @@ textarea.form-control {
     .form-control {
         width: 100%;
         display: block;
+    }
+}
+
+.form-group {
+    input.form-control {
+        border: 1px solid @dark-gray;
+        border-width: 0 0 1px;
+        &:focus {
+            outline: none;
+            border-color: @brand-color;
+        }
+    }
+
+    &.has-success {
+        .form-control {
+            border-color: @green;
+        }
+        .form-label {
+            color: @green;
+            .form-control {
+                color: initial;
+            }
+        }
+        .help-block {
+            color: inherit;
+        }
+    }
+    &.has-error {
+        .form-control {
+            border-color: @red;
+        }
+        .form-label {
+            color: @red;
+            .form-control {
+                color: initial;
+            }
+        }
+        .help-block {
+            color: inherit;
+        }
+    }
+    &.has-warning {
+        .form-control {
+            border-color: @orange;
+        }
+        .form-label {
+            color: @orange;
+            .form-control {
+                color: initial;
+            }
+        }
+        .help-block {
+            color: inherit;
+        }
     }
 }
