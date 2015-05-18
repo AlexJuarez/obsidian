@@ -53,23 +53,11 @@
 <form class="form-inline" role="form">
     <div class="form-group">
       <label class="form-label">
-        <span class="sr-only">Name</span>
-        <input class="form-control" placeholder="Enter name" type="text">
+        <span class="sr-only">Select Options</span>
+        <select class="single-select" chosen ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
       </label>
     </div>
-    <div class="form-group">
-      <label class="form-label">
-        <span class="sr-only">Email</span>
-        <input class="form-control" placeholder="Enter email" type="email">
-      </label>
-    </div>
-    <div class="form-group">
-        <label>
-            <input type="checkbox" class="checkbox checkbox-light" />
-            <span>Remember Me</span>
-        </label>
-    </div>
-    <button type="submit" class="btn btn-primary solid">Submit</button>
+    <button type="submit" class="btn btn-default">Submit</button>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
