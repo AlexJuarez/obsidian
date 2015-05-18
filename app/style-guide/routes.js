@@ -21,7 +21,7 @@ define(function (require) {
     require('tpl!./tooltip.html');
     require('tpl!./nav.html');
     require('tpl!./forms.html');
-    require('tpl!./text-input.html');
+    require('tpl!./validation.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
