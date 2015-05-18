@@ -1,6 +1,7 @@
 @import "checkboxes";
 @import "radio-buttons";
 @import "range-input";
+@import "alert";
 
 .form-checkbox {
     margin-top: 1.5rem;
@@ -23,6 +24,13 @@ textarea.form-control {
         border-color: @brand-color;
     }
 
+}
+
+.help-block {
+    display: block;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    color: #7c7c86;
 }
 
 .form {
@@ -86,7 +94,7 @@ textarea.form-control {
 }
 
 .form-group {
-    .form-control {
+    input.form-control {
         border: 1px solid @dark-gray;
         border-width: 0 0 1px;
         &:focus {
@@ -105,6 +113,9 @@ textarea.form-control {
                 color: initial;
             }
         }
+        .help-block {
+            color: inherit;
+        }
     }
     &.has-error {
         .form-control {
@@ -116,6 +127,9 @@ textarea.form-control {
                 color: initial;
             }
         }
+        .help-block {
+            color: inherit;
+        }
     }
     &.has-warning {
         .form-control {
@@ -126,6 +140,9 @@ textarea.form-control {
             .form-control {
                 color: initial;
             }
+        }
+        .help-block {
+            color: inherit;
         }
     }
 }

@@ -19,6 +19,10 @@ define(function (require) {
         $scope.sort = sort;
         $scope.changeGlyph = changeGlyph;
         $scope.scrollTo = scrollTo;
+        $scope.user = {
+            name: '',
+            email: 'invalid@e,'
+        };
 
         clients.init();
         divisions.init();

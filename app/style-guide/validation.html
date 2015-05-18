@@ -33,25 +33,30 @@
     </div>
 </form>
 <h2>Form states</h2>
-<label class="form-label required">
-  <span>Name</span>
-  <input class="form-control" placeholder="Enter name" type="text">
-</label>
-
-<h2>Success</h2>
-<label class="form-label required">
-  <span>Name</span>
-  <input class="form-control ng-valid" placeholder="Enter name" type="text" required>
-</label>
-
-<h2>Warning</h2>
-<label class="form-label required">
-  <span>Name</span>
-  <input class="form-control ng-warning" placeholder="Enter name" type="text" required>
-</label>
-
-<h2>Error</h2>
-<label class="form-label required">
-  <span>Name</span>
-  <input class="form-control ng-invalid" placeholder="Enter name" type="text" required>
-</label>
+<form name="validationForm" class="form" novalidate>
+    <div ng-show="validationForm.$invalid" class="alert alert-danger">
+        There was <strong>one</strong> error submitting this form
+    </div>
+    <div class="form-group">
+        <label class="form-label required">
+            <span>Name</span>
+            <input ng-model="user.name" class="form-control" placeholder="Enter name" type="text" required>
+        </label>
+    </div>
+    <div class="form-group" ng-class="{'has-error': validationForm.email.$invalid}">
+        <label class="form-label">
+            <span>Email</span>
+            <input name="email" ng-model="user.email" class="form-control" placeholder="Enter email" type="email">
+            <p ng-show="validationForm.email.$invalid" class="help-block">
+                [[user.email]] is not a valid email address
+            </p>
+        </label>
+    </div>
+    <div class="form-checkbox">
+        <label>
+            <input type="checkbox" class="checkbox checkbox-light" />
+            <span>Check me out</span>
+        </label>
+    </div>
+    <button type="submit" class="btn btn-default" ng-disabled="validationForm.$invalid">Submit</button>
+</form>

@@ -3577,6 +3577,29 @@ input[type=range]:disabled::-ms-thumb:hover {
   cursor: not-allowed;
   background: #3f403f;
 }
+.alert {
+  padding: 1rem;
+  margin-bottom: 2rem;
+  border: 1px solid transparent;
+}
+.alert a {
+  color: inherit;
+}
+.alert-danger {
+  background-color: #D64242;
+  border-color: #D64242;
+  color: #fff;
+}
+.alert-success {
+  background-color: #00a651;
+  border-color: #00a651;
+  color: #fff;
+}
+.alert-info {
+  background-color: #9bd2f1;
+  border-color: #9bd2f1;
+  color: #fff;
+}
 .form-checkbox {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
@@ -3594,6 +3617,12 @@ textarea.form-control {
 textarea.form-control:focus {
   outline: none;
   border-color: #0378bd;
+}
+.help-block {
+  display: block;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  color: #7c7c86;
 }
 .form:before,
 .form:after {
@@ -3669,11 +3698,11 @@ textarea.form-control:focus {
   width: 100%;
   display: block;
 }
-.form-group .form-control {
+.form-group input.form-control {
   border: 1px solid #3f403f;
   border-width: 0 0 1px;
 }
-.form-group .form-control:focus {
+.form-group input.form-control:focus {
   outline: none;
   border-color: #0378bd;
 }
@@ -3686,6 +3715,9 @@ textarea.form-control:focus {
 .form-group.has-success .form-label .form-control {
   color: initial;
 }
+.form-group.has-success .help-block {
+  color: inherit;
+}
 .form-group.has-error .form-control {
   border-color: #f73737;
 }
@@ -3695,6 +3727,9 @@ textarea.form-control:focus {
 .form-group.has-error .form-label .form-control {
   color: initial;
 }
+.form-group.has-error .help-block {
+  color: inherit;
+}
 .form-group.has-warning .form-control {
   border-color: #f89930;
 }
@@ -3703,6 +3738,9 @@ textarea.form-control:focus {
 }
 .form-group.has-warning .form-label .form-control {
   color: initial;
+}
+.form-group.has-warning .help-block {
+  color: inherit;
 }
 .ps-container.ps-active-x > .ps-scrollbar-x-rail,
 .ps-container.ps-active-y > .ps-scrollbar-y-rail {
