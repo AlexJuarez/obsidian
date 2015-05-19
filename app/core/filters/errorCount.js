@@ -4,11 +4,11 @@ define(function (require) {
     var app = require('./../module');
     //var ng = require('angular');
 
-    app.filter('errorCount', ['$sce', function ($sce) {
+    app.filter('errorCount', [function () {
         return function (input) {
             var count = 0;
             for (var k in input) {
-                if(input.hasOwnProperty(k)) {
+                if (input.hasOwnProperty(k)) {
                     count++;
                 }
             }
