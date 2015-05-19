@@ -3623,6 +3623,11 @@ input[type=range]:disabled::-ms-thumb:hover {
 }
 .alert a {
   color: inherit;
+  text-decoration: underline;
+}
+.alert > p,
+.alert > ul {
+  margin-bottom: 0;
 }
 .alert-danger {
   background-color: #D64242;
@@ -3637,7 +3642,6 @@ input[type=range]:disabled::-ms-thumb:hover {
 .alert-info {
   background-color: #9bd2f1;
   border-color: #9bd2f1;
-  color: #fff;
 }
 .form-checkbox {
   margin-top: 1.5rem;

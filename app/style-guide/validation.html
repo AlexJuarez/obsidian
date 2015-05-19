@@ -32,7 +32,9 @@
         </div>
     </div>
 </form>
+<hr />
 <h2 id="demo">Form states</h2>
+<hr/>
 <form name="validationForm" class="form" novalidate>
     <div ng-show="validationForm.$invalid && validationForm.$pristine" class="alert alert-danger">
         There were <strong>[[validationForm.$error|errorCount]]</strong> errors submitting this form
@@ -63,3 +65,22 @@
     </div>
     <button type="submit" class="btn btn-default">Submit</button>
 </form>
+<hr />
+<h2 id="alerts">Alerts</h2>
+<hr />
+<h3>Standard Error</h3>
+<div create-snippet="html" class="alert alert-danger">
+    <p>Your profile could not be updated</p>
+</div>
+<h3>Error with link</h3>
+<div create-snippet="html" class="alert alert-danger">
+    <p>Your profile could not be updated <a href="">Do action</a></p>
+</div>
+<h3>Standard Success</h3>
+<div create-snippet="html" class="alert alert-success">
+    <p><strong>Account Name</strong> has been changed. <a href="">Click to undo</a></p>
+</div>
+<h3>Standard Info</h3>
+<div create-snippet="html" class="alert alert-info">
+    <p>A new feature has been added. <a href="">Check it out here</a></p>
+</div>
