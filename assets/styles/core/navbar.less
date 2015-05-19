@@ -250,6 +250,14 @@
             margin-bottom: 2rem;
             border-bottom: 1px solid #fff;
             display: block;
+
+            position: relative;
+            &:before {
+                position: absolute;
+                left: 0;
+            }
+            .glyph-search();
+            
             .input {
                 box-sizing: border-box;
                 color: @nav-item-color;
@@ -258,6 +266,7 @@
                 padding-left: 2.2rem;
                 line-height: 2.4rem;
                 float: right;
+
             }
         }
         .list {
