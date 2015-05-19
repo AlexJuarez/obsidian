@@ -8,6 +8,8 @@ define(function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
+    require('tpl!./clients/index.html');
+    require('tpl!./youWorkOn.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
@@ -15,6 +17,18 @@ define(function (require) {
                 url: '/campaign-management',
                 templateUrl: 'campaign-management/index.html',
                 controller: 'campaignManagementCtrl'
-            });
+            })
+                .state('cm.clients', {
+                    url: '/clients',
+                    templateUrl: 'campaign-management/clients/index.html'
+                })
+                    .state('cm.clients.detail', {
+                        url: '/:id',
+                        views: {
+                            'header': {
+                                templateUrl: 'campaign-management/youWorkOn.html'
+                            }
+                        }
+                    });
     }]);
 });

@@ -4,6 +4,7 @@
 require.config({
     paths: {
         'angular': 'components/angular/angular',
+        'ui-router': 'components/angular-ui-router/release/angular-ui-router',
         'tpl': 'components/requirejs-tpl-angular/tpl',
         'text': 'components/requirejs-text/text',
         'domReady': 'components/domReady/domReady',
