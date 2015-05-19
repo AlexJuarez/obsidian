@@ -3,6 +3,10 @@
 @import "range-input";
 @import "alert";
 
+input[type]:disabled {
+    cursor: not-allowed;
+}
+
 .form-checkbox {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
@@ -64,6 +68,12 @@ textarea.form-control {
     .chosen-container {
         min-width: 100%;
     }
+
+    // &.dark-bg {
+    //     background: @gray;
+    //     border-color: lighten(@gray, 10);
+    // }
+
 }
 
 .form-inline {
