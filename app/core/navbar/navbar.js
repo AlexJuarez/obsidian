@@ -9,7 +9,9 @@ define(function (require) {
 
     app.directive('navbar', [function () {
         return {
-            restrict: 'C',
+            restrict: 'A',
+            templateUrl: 'core/navbar/navbar.html',
+            replace: true,
             scope: {
                 open: '='
             }

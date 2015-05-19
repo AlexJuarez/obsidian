@@ -17,7 +17,7 @@ define(function (require) {
     require('./directives/dropdown');
     require('./directives/tooltip');
     require('./filters/safe');
-    require('./filters/interpolateFilter');
+    require('./filters/interpolate');
     require('./filters/errorCount');
     require('./services/store');
 
