@@ -11,7 +11,7 @@ define(function (require) {
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
 
-    return app.config(['$stateProvider', function ($stateProvider) {
+    return app.config(['$stateProvider', '$locationProvider', function ($stateProvider, $locationProvider) {
         $stateProvider
             .state('cm', {
                 url: '/campaign-management',
@@ -31,5 +31,7 @@ define(function (require) {
                             }
                         }
                     });
+
+        $locationProvider.html5Mode(true);
     }]);
 });
