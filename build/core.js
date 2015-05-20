@@ -56142,7 +56142,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                         }
                     });
 
-        $locationProvider.html5Mode(true);
+        $locationProvider.hashPrefix('!');
     }]);
 });
 
