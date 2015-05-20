@@ -45429,6 +45429,8 @@ define('core/factories/data',['require','./../module','angular'],function (requi
                     throw 'service has already been initialized';
                 }
 
+                transform = transform || function (d) { return d; };
+
                 initialized = true;
 
                 return $http.get(url).success(function (d) {
@@ -45549,11 +45551,13 @@ define('core/navbar/services/division',['require','./../../module','angular'],fu
         }
 
         function get(id) {
-            ng.forEach(all(), function (division) {
-                if (division.id === id) {
-                    return division;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {
@@ -45694,11 +45698,13 @@ define('core/navbar/services/campaign',['require','./../../module','angular'],fu
         }
 
         function get(id) {
-            ng.forEach(all(), function (campaign) {
-                if (campaign.id === id) {
-                    return campaign;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {
@@ -45796,11 +45802,13 @@ define('core/navbar/services/client',['require','./../../module','angular'],func
         }
 
         function get(id) {
-            ng.forEach(all(), function (client) {
-                if (client.id === id) {
-                    return client;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {
@@ -45895,11 +45903,13 @@ define('core/navbar/services/account',['require','./../../module','angular'],fun
         }
 
         function get(id) {
-            ng.forEach(all(), function (account) {
-                if (account.id === id) {
-                    return account;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {
@@ -46253,6 +46263,28 @@ define('core/filters/errorCount',['require','./../module'],function (require) {
     }]);
 });
 
+define('core/filters/truncateNumber',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('truncateNumber', [function () {
+        return function (input) {
+            if (input < 1000) {
+                return input;
+            }
+            if (input < 1000000) {
+                return Math.round(input/100)/10 + 'K';
+            }
+            if (input < 1000000000) {
+                return Math.round(input/100000)/10 + 'M';
+            }
+            return input;
+        };
+    }]);
+});
+
 define('core/services/store',['require','./../module'],function (require) {
     'use strict';
 
@@ -46291,7 +46323,7 @@ define('core/services/store',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar/navbar','./factories/data','./navbar/services/division','./navbar/services/campaign','./navbar/services/client','./navbar/services/account','./navbar/directives/clientDropdown','./navbar/directives/divisionDropdown','./navbar/directives/accountDropdown','./navbar/directives/campaignDropdown','./directives/dropdown','./directives/tooltip','./filters/safe','./filters/interpolate','./filters/errorCount','./services/store'],function (require) {
+define('core/index',['require','./navbar/navbar','./factories/data','./navbar/services/division','./navbar/services/campaign','./navbar/services/client','./navbar/services/account','./navbar/directives/clientDropdown','./navbar/directives/divisionDropdown','./navbar/directives/accountDropdown','./navbar/directives/campaignDropdown','./directives/dropdown','./directives/tooltip','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/truncateNumber','./services/store'],function (require) {
     'use strict';
 
     require('./navbar/navbar');
@@ -46309,6 +46341,7 @@ define('core/index',['require','./navbar/navbar','./factories/data','./navbar/se
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
+    require('./filters/truncateNumber');
     require('./services/store');
 
 });
@@ -56024,13 +56057,56 @@ define('campaign-management/controllers/campaignManagement',['require','./../mod
 });
 
 
+define('tpl!campaign-management/clients/directives/active.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/directives/active.html', '<div class="header-summary">\n    <h3 class="title">Active</h3>\n    <button class="btn btn-default solid right">Add new Client</button>\n    <ul class="list">\n        <li>\n            <span>clients</span>\n            <span>[[active.clients|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>accounts</span>\n            <span>[[active.accounts|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>campaigns</span>\n            <span>[[active.campaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[active.preFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[active.inFlight|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('campaign-management/clients/directives/activeSummary',['require','./../../module','tpl!./active.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./active.html');
+
+    app.directive('activeSummary', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaign-management/clients/directives/active.html',
+            controller: ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
+                $http.get('fixtures/clients_active.json').then(function (res) {
+                    $timeout(function () {
+                        $scope.active = res.data.active;
+                        $scope.$apply();
+                    });
+                });
+            }]
+        };
+    }]);
+});
+
+
+
+define('campaign-management/clients/controllers/client',['require','./../../module'],function (require) {
+    var app = require('./../../module');
+    //var ng = require('angular');
+
+    app.controller('clientCtrl', ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
+        $http.get('fixtures/clients_youworkon.json').then(function (res) {
+            $timeout(function () {
+                $scope.youWorkOn = res.data;
+                $scope.$apply();
+            });
+        });
+    }]);
+});
+
+
 define('tpl!campaign-management/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n\n</section>\n'); });
 
 
-define('tpl!campaign-management/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/index.html', '<div ui-view="header">\ntest\n</div>\n'); });
+define('tpl!campaign-management/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/index.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n'); });
 
 
-define('tpl!campaign-management/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/youWorkOn.html', '<div>\n    <h1>you work on</h1>\n    <ul>\n        <li>\n            <span>accounts</span>\n            <span>[[accounts]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[campaigns]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[preFLight]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[inFlight]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[complete]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[archive]]</span>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!campaign-management/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.accounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.campaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.preFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.inFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.complete|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.archived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 /**
  * Created by Alex on 3/1/2015.
@@ -56038,12 +56114,12 @@ define('tpl!campaign-management/youWorkOn.html', ['angular', 'tpl'], function (a
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaign-management/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./youWorkOn.html'],function (require) {
+define('campaign-management/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
-    require('tpl!./youWorkOn.html');
+    require('tpl!./clients/youWorkOn.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
@@ -56060,20 +56136,23 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                         url: '/:id',
                         views: {
                             'header': {
-                                templateUrl: 'campaign-management/youWorkOn.html'
+                                controller: 'clientCtrl',
+                                templateUrl: 'campaign-management/clients/youWorkOn.html'
                             }
                         }
                     });
     }]);
 });
 
-/**
+/**activeSummary
  * Created by Alex on 3/1/2015.
  */
-define('campaign-management/index',['require','./controllers/campaignManagement','./routes'],function (require) {
+define('campaign-management/index',['require','./controllers/campaignManagement','./clients/directives/activeSummary','./clients/controllers/client','./routes'],function (require) {
     'use strict';
 
     require('./controllers/campaignManagement');
+    require('./clients/directives/activeSummary');
+    require('./clients/controllers/client');
     require('./routes');
 });
 
@@ -56232,7 +56311,7 @@ define('domReady',[],function () {
 });
 
 
-/**without route
+/**
  * Created by Alex on 3/1/2015.
  */
 define('bootstrap-core',['require','angular','app-core'],function (require) {
@@ -56289,7 +56368,7 @@ require.config({
         'angular': {
             deps: ['jquery'],
             exports: 'angular'
-        },
+        }
     },
 
     deps: [

@@ -37,7 +37,7 @@ require.config({
         'angular': {
             deps: ['jquery'],
             exports: 'angular'
-        },
+        }
     },
 
     deps: [
