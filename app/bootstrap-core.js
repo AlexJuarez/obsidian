@@ -6,7 +6,6 @@ define(function (require) {
 
     var ng = require('angular');
     var app = require('app-core');
-    require('./routes');
 
     app.config(function ($interpolateProvider) {
         $interpolateProvider.startSymbol('[[').endSymbol(']]');

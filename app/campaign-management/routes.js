@@ -9,7 +9,7 @@ define(function (require) {
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
-    require('tpl!./youWorkOn.html');
+    require('tpl!./clients/youWorkOn.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
@@ -26,7 +26,8 @@ define(function (require) {
                         url: '/:id',
                         views: {
                             'header': {
-                                templateUrl: 'campaign-management/youWorkOn.html'
+                                controller: 'clientCtrl',
+                                templateUrl: 'campaign-management/clients/youWorkOn.html'
                             }
                         }
                     });
