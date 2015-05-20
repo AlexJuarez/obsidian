@@ -3,10 +3,11 @@
 @import "range-input";
 @import "alert";
 
-input[type]:disabled {
+input[disabled], input[type]:disabled {
     cursor: not-allowed;
+    background-color: inherit;
+    opacity: 0.4;
 }
-
 .form-checkbox {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
