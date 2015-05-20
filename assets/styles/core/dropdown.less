@@ -4,6 +4,7 @@
 
 .dropdown {
     position: relative;
+    display: inline-block;
 }
 
 .dropdown.dropdown-hover:hover {
@@ -14,6 +15,10 @@
 
 .dropdown-toggle {
     cursor: pointer;
+
+    > i {
+        margin-left: 2rem;
+    }
 }
 
 .open {
@@ -50,7 +55,7 @@
     z-index: @zindex-dropdown;
     display: none; // none by default, but block on "open" of the menu
     float: left;
-    min-width: 19rem;
+    min-width: 100%;
     padding: 0;
     margin: 0; // override default ul
     list-style: none;
