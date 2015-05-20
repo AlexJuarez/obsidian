@@ -32,6 +32,6 @@ define(function (require) {
                         }
                     });
 
-        $locationProvider.hashPrefix('!');
+        $locationProvider.html5Mode({ enabled: true });
     }]);
 });
