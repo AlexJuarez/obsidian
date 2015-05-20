@@ -12,6 +12,8 @@ Object.keys(window.__karma__.files).forEach(function(file) {
     }
 });
 
+console.log(allTestFiles);
+
 requirejs.config({
     // Karma serves files from '/base'
     baseUrl: '/base/',
@@ -24,7 +26,12 @@ requirejs.config({
         'tpl': '/base/app/components/requirejs-tpl-angular/tpl',
         'text': '/base/app/components/requirejs-text/text',
         'd3': '/base/app/components/d3/d3',
-        'hljs': '/base/app/components/highlightjs/highlight.pack'
+        'hljs': '/base/app/components/highlightjs/highlight.pack',
+        'jquery': 'components/jquery/dist/jquery',
+        'chosen': 'components/chosen/chosen.jquery',
+        'angular-chosen': 'components/angular-chosen-localytics/chosen',
+        'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
+        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
     },
     shim: {
         'hljs': {
@@ -41,6 +48,21 @@ requirejs.config({
         },
         'ui-router': {
             deps: ['angular']
+        },
+        'ng-perfect-scrollbar': {
+            deps: ['angular', 'perfect-scrollbar']
+        },
+        'perfect-scrollbar': {
+            deps: ['jquery']
+        },
+        'angular-chosen': {
+            deps: ['angular', 'chosen']
+        },
+        'chosen': {
+            deps: ['jquery']
+        },
+        'jquery': {
+            exports: 'jquery'
         }
     },
 

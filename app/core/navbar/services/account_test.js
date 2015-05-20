@@ -63,5 +63,15 @@ define(function (require) {
             account.unpin(a);
             expect(account.pinned().length).toEqual(0);
         });
+
+        it('should return a map containing a key of the first letter by name', function () {
+            account.setData(accounts);
+            expect(account.alphabetMap()).toEqual({a: [accounts[0]]});
+        });
+
+        it('should get an account by id', function () {
+            account.setData(accounts);
+            expect(account.get('accountId0')).toEqual(accounts[0]);
+        });
     });
 });

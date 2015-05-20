@@ -74,11 +74,13 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(all(), function (division) {
-                if (division.id === id) {
-                    return division;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {

@@ -75,11 +75,13 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(all(), function (client) {
-                if (client.id === id) {
-                    return client;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {

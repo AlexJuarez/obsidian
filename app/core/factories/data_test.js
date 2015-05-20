@@ -24,6 +24,16 @@ define(function (require) {
             expect(data).not.toEqual(null);
         });
 
+        it('should error when initialized twice', function () {
+            httpBackend.when('GET', '/test')
+                .respond({test: ['data']});
+
+            var test1 = data();
+            test1.init('/test');
+            httpBackend.flush();
+            expect(function() { test1.init('/test'); }).toThrow('service has already been initialized');
+        });
+
         it('should be sorted', function () {
             var test1 = data(function (a) { a.sort(); return a; });
             test1.setData([2, 1]);

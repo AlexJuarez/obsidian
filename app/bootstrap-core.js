@@ -1,4 +1,4 @@
-/**without route
+/**
  * Created by Alex on 3/1/2015.
  */
 define(function (require) {
@@ -6,6 +6,7 @@ define(function (require) {
 
     var ng = require('angular');
     var app = require('app-core');
+    require('./routes');
 
     app.config(function ($interpolateProvider) {
         $interpolateProvider.startSymbol('[[').endSymbol(']]');

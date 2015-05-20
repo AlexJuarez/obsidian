@@ -16,6 +16,8 @@ define(function (require) {
                     throw 'service has already been initialized';
                 }
 
+                transform = transform || function (d) { return d; };
+
                 initialized = true;
 
                 return $http.get(url).success(function (d) {

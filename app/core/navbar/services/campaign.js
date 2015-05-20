@@ -121,11 +121,13 @@ define(function (require) {
         }
 
         function get(id) {
-            ng.forEach(all(), function (campaign) {
-                if (campaign.id === id) {
-                    return campaign;
+            var items = all();
+            var length = items.length;
+            for (var i = 0; i < length; i++) {
+                if(items[i].id === id) {
+                    return items[i];
                 }
-            });
+            }
         }
 
         return {
