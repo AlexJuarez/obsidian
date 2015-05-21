@@ -18,7 +18,7 @@ define(function (require) {
         campaigns.init('/narwhal/campaigns?dimensions=id,name,pinned,status,startDate');
         accounts.init('/narwhal/accounts?dimensions=id,name,pinned');
 
-        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {
                 window.Router.router.handleURL($location.url());
             }
