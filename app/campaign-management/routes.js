@@ -18,7 +18,6 @@ define(function (require) {
                 parent: 'index'
             })
             .state('index', {
-                url: '',
                 templateUrl: 'campaign-management/index.html',
                 controller: 'indexCtrl'
             })

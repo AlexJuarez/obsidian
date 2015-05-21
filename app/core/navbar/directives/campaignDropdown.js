@@ -10,7 +10,6 @@ define(function (require) {
             controller: ['$scope', function ($scope) {
                 $scope.pin = campaigns.pin;
                 $scope.unpin = campaigns.unpin;
-                $scope.transition = transition;
 
                 campaigns.observe(update);
 

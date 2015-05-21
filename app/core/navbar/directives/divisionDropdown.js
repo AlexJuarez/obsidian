@@ -10,7 +10,6 @@ define(function (require) {
             controller: ['$scope', function ($scope) {
                 $scope.pin = divisions.pin;
                 $scope.unpin = divisions.unpin;
-                $scope.transition = transition;
 
                 divisions.observe(update);
 
