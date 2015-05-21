@@ -56641,7 +56641,7 @@ define('campaign-management/controllers/index',['require','./../module'],functio
     var app = require('./../module');
     //var ng = require('angular');
 
-    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', function ($scope, clients, divisions, campaigns, accounts, $rootScope) {
+    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
         clients.init('/narwhal/clients?dimensions=id,name,pinned');
         divisions.init('/narwhal/divisions?dimensions=id,name,pinned');
         campaigns.init('/narwhal/campaigns?dimensions=id,name,pinned,status,startDate');
@@ -56649,7 +56649,7 @@ define('campaign-management/controllers/index',['require','./../module'],functio
 
         $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {
-                window.Router.router.handleURL(toState.url);
+                window.Router.router.handleURL($location.url());
             }
         });
     }]);
