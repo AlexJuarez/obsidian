@@ -56702,6 +56702,9 @@ define('campaign-management/clients/controllers/client',['require','./../../modu
 define('tpl!campaign-management/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n\n</section>\n'); });
 
 
+define('tpl!campaign-management/inner.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/inner.html', '<div ui-view>\n\n</div>\n'); });
+
+
 define('tpl!campaign-management/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/index.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n'); });
 
 
@@ -56713,10 +56716,11 @@ define('tpl!campaign-management/clients/youWorkOn.html', ['angular', 'tpl'], fun
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaign-management/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html'],function (require) {
+define('campaign-management/routes',['require','./module','tpl!./index.html','tpl!./inner.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
+    require('tpl!./inner.html');
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
 
@@ -56733,6 +56737,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
             .state('cm', {
                 url: '/campaign-management',
                 controller: 'campaignManagementCtrl',
+                templateUrl: 'campaign-management/inner.html',
                 parent: 'index'
             })
                 .state('cm.clients', {

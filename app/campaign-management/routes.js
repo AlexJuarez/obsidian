@@ -8,6 +8,7 @@ define(function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
+    require('tpl!./inner.html');
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
 
@@ -24,6 +25,7 @@ define(function (require) {
             .state('cm', {
                 url: '/campaign-management',
                 controller: 'campaignManagementCtrl',
+                templateUrl: 'campaign-management/inner.html',
                 parent: 'index'
             })
                 .state('cm.clients', {
