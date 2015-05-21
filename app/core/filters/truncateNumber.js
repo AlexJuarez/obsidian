@@ -10,10 +10,10 @@ define(function (require) {
                 return input;
             }
             if (input < 1000000) {
-                return Math.round(input/100)/10 + 'K';
+                return Math.round(input / 100) / 10 + 'K';
             }
             if (input < 1000000000) {
-                return Math.round(input/100000)/10 + 'M';
+                return Math.round(input / 100000) / 10 + 'M';
             }
             return input;
         };

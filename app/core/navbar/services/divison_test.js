@@ -9,12 +9,12 @@ define(function (require) {
 
         var divisions = [
             {
-                "id": "divisionId0",
-                "name": "Division 0",
-                "pinned": true,
-                "active": false,
-                "lastViewed": "2015-01-01T12:00:00Z",
-                "client": {"id": "clientId0"}
+                'id': 'divisionId0',
+                'name': 'Division 0',
+                'pinned': true,
+                'active': false,
+                'lastViewed': '2015-01-01T12:00:00Z',
+                'client': {'id': 'clientId0'}
             }
         ];
 

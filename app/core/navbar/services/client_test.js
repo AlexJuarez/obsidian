@@ -9,13 +9,13 @@ define(function (require) {
 
         var clients = [
             {
-                "id": "clientId0",
-                "name": "Client 0",
-                "pinned": true,
-                "active": false,
-                "lastViewed": "2015-01-01T12:00:00Z",
-                "lastViewedName": "Joe Snoopypants",
-                "channel": "Advertisers"
+                'id': 'clientId0',
+                'name': 'Client 0',
+                'pinned': true,
+                'active': false,
+                'lastViewed': '2015-01-01T12:00:00Z',
+                'lastViewedName': 'Joe Snoopypants',
+                'channel': 'Advertisers'
             }
         ];
 

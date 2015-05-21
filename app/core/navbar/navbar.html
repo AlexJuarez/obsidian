@@ -30,41 +30,7 @@
         </ul>
         <ul class="nav navbar-left">
             <li class="dropdown" client-dropdown>
-                <div class="dropdown-toggle">
-                    <div class="dropdown-toggle-subtitle">
-                        Clients
-                    </div>
-                    <div class="dropdown-toggle-title">
-                        <i class="glyph-chevron-down"></i>
-                        All Clients
-                    </div>
-                </div>
-                <div class="dropdown-menu" role="menu">
-                    <label class="dropdown-search">
-                        <input class="input" placeholder="Search" type="search" />
-                    </label>
-                    <ul class="list">
-                        <li><a ui-sref="cm.clients">All Clients</a></li>
-                        <li>Pinned
-                            <ul class="pinned">
-                                <li ng-repeat="client in pinned track by $index">
-                                    <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>
-                                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="list">
-                        <li ng-repeat="(key, value) in clientsMap">
-                            [[key]]
-                            <ul>
-                                <li ng-repeat="client in value track by $index">
-                                    <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>
-                                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
+
             </li>
             <li class="dropdown" division-dropdown>
                 <div class="dropdown-toggle">

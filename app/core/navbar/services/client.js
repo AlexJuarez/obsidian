@@ -78,7 +78,7 @@ define(function (require) {
             var items = all();
             var length = items.length;
             for (var i = 0; i < length; i++) {
-                if(items[i].id === id) {
+                if (items[i].id === id) {
                     return items[i];
                 }
             }

@@ -31,7 +31,7 @@ define(function (require) {
             var test1 = data();
             test1.init('/test');
             httpBackend.flush();
-            expect(function() { test1.init('/test'); }).toThrow('service has already been initialized');
+            expect(function () { test1.init('/test'); }).toThrow('service has already been initialized');
         });
 
         it('should be sorted', function () {
