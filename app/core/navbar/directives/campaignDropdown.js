@@ -14,12 +14,6 @@ define(function (require) {
 
                 campaigns.observe(update);
 
-                function transition(campaignId) {
-                    if (window.Router) {
-                        window.Router.router.transitionTo('campaign-management.campaign.index', {campaignId: campaignId});
-                    }
-                }
-
                 function update() {
                     $timeout(function () {
                         $scope.$apply(function () {

@@ -14,12 +14,6 @@ define(function (require) {
 
                 accounts.observe(update);
 
-                function transition(accountId) {
-                    if (window.Router) {
-                        window.Router.router.transitionTo('campaign-management.account.index', {accountId: accountId});
-                    }
-                }
-
                 function update() {
                     $timeout(function () {
                         $scope.$apply(function () {

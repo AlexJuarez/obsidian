@@ -46574,12 +46574,6 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module'],fu
 
                 divisions.observe(update);
 
-                function transition(divisionId) {
-                    if (window.Router) {
-                        window.Router.router.transitionTo('campaign-management.division.index', {divisionId: divisionId});
-                    }
-                }
-
                 function update() {
                     $timeout(function () {
                         $scope.$apply(function () {
@@ -46609,12 +46603,6 @@ define('core/navbar/directives/accountDropdown',['require','./../../module'],fun
 
                 accounts.observe(update);
 
-                function transition(accountId) {
-                    if (window.Router) {
-                        window.Router.router.transitionTo('campaign-management.account.index', {accountId: accountId});
-                    }
-                }
-
                 function update() {
                     $timeout(function () {
                         $scope.$apply(function () {
@@ -46643,12 +46631,6 @@ define('core/navbar/directives/campaignDropdown',['require','./../../module'],fu
                 $scope.transition = transition;
 
                 campaigns.observe(update);
-
-                function transition(campaignId) {
-                    if (window.Router) {
-                        window.Router.router.transitionTo('campaign-management.campaign.index', {campaignId: campaignId});
-                    }
-                }
 
                 function update() {
                     $timeout(function () {
@@ -56764,7 +56746,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                             }
                         }
                     });
-        $locationProvider.html5Mode({ enabled: false });
+        $locationProvider.html5Mode({ enabled: true });
     }]);
 });
 
