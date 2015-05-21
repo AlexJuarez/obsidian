@@ -21,7 +21,7 @@
   "devDependencies": {
     "angular": "~1.4.0",
     "requirejs": "~2.1.16",
-    "angular-ui-router": "git@github.com:AlexJuarez/ui-router.git#~0.2.13",
+    "angular-ui-router": "https://github.com/AlexJuarez/ui-router.git#latest",
     "domReady": "~2.0.1",
     "requirejs-tpl-angular": "https://github.com/AlexJuarez/requirejs-tpl-angular.git#~1.0.1",
     "almond": "~0.3.0",
