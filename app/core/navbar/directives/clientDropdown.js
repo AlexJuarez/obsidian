@@ -8,7 +8,7 @@ define(function (require) {
         return {
             restrict: 'A',
             scope: true,
-            templateUrl: 'core/navbar/client.html',
+            templateUrl: 'core/navbar/directives/client.html',
             controller: ['$scope', function ($scope) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;

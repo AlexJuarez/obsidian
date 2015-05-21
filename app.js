@@ -30,9 +30,9 @@ if (process.env.NODE_ENV === 'production') {
     // Locate the assets
     app.use(express.static(__dirname + '/assets'));
 
-    app.use(express.static(__dirname + '/app/'));
-    app.use(express.static(__dirname + '/build/'));
-    app.use(express.static(__dirname + '/components/'));
+    app.use(express.static(__dirname + '/app'));
+    app.use(express.static(__dirname + '/build'));
+    app.use(express.static(__dirname + '/components'));
 }
 
 /*

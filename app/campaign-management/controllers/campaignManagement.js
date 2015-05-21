@@ -12,10 +12,6 @@ define(function (require) {
     var app = require('./../module');
     //var ng = require('angular');
 
-    app.controller('campaignManagementCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', function ($scope, clients, divisions, campaigns, accounts) {
-        clients.init();
-        divisions.init();
-        campaigns.init();
-        accounts.init();
+    app.controller('campaignManagementCtrl', ['$scope', function () {
     }]);
 });

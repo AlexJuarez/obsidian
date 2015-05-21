@@ -45984,7 +45984,7 @@ define('tpl',[
 });
 
 
-define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle">Settings <i class="glyph-chevron-down"></i></a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a href="#">Campaign Management</a></li>\n            <li><a class="primary" href="#">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Clients\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Clients\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list">\n                        <li><a ui-sref="cm.clients">All Clients</a></li>\n                        <li>Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="client in pinned track by $index">\n                                    <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>\n                                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in clientsMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="client in value track by $index">\n                                    <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>\n                                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n            <li class="dropdown" division-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Divisions\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Divisions\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list">\n                        <li><a href="">All Divisions</a></li>\n                        <li ng-if="pinned.length">Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="division in pinned track by $index">\n                                    <a href="">[[division.name]]</a>\n                                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in divisionsMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="division in value track by $index">\n                                    <a href="">[[division.name]]</a>\n                                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n            <li class="dropdown" account-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Accounts\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Accounts\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list">\n                        <li><a href="">All Accounts</a></li>\n                        <li ng-if="pinned.length">Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="account in pinned track by $index">\n                                    <a href="">[[account.name]]</a>\n                                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in accountsMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="account in value track by $index">\n                                    <a href="">[[account.name]]</a>\n                                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Campaigns\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Campaigns\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n                        <li><a href="">All Campaigns</a></li>\n                        <li>Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="campaign in pinned track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                        <li ng-show="preFlight.length">preFlight\n                            <ul>\n                                <li ng-repeat="campaign in preFlight track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                        <li ng-show="inFlight.length">inFlight\n                            <ul>\n                                <li ng-repeat="campaign in inFlight track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                        <li ng-show="completed.length">completed\n                            <ul>\n                                <li ng-repeat="campaign in completed track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in quarterMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="campaign in value track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
+define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle">Settings <i class="glyph-chevron-down"></i></a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ui-sref="cm" ui-sref-active="active">Campaign Management</a></li>\n            <li><a class="primary" ui-sref="analytics"  ui-sref-active="active">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n\n            </li>\n            <li class="dropdown" division-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Divisions\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Divisions\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list">\n                        <li><a href="">All Divisions</a></li>\n                        <li ng-if="pinned.length">Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="division in pinned track by $index">\n                                    <a href="">[[division.name]]</a>\n                                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in divisionsMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="division in value track by $index">\n                                    <a href="">[[division.name]]</a>\n                                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n            <li class="dropdown" account-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Accounts\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Accounts\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list">\n                        <li><a href="">All Accounts</a></li>\n                        <li ng-if="pinned.length">Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="account in pinned track by $index">\n                                    <a href="">[[account.name]]</a>\n                                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in accountsMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="account in value track by $index">\n                                    <a href="">[[account.name]]</a>\n                                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n                <div class="dropdown-toggle">\n                    <div class="dropdown-toggle-subtitle">\n                        Campaigns\n                    </div>\n                    <div class="dropdown-toggle-title">\n                        <i class="glyph-chevron-down"></i>\n                        All Campaigns\n                    </div>\n                </div>\n                <div class="dropdown-menu" role="menu">\n                    <label class="dropdown-search">\n                        <input class="input" placeholder="Search" type="search" />\n                    </label>\n                    <ul class="list" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n                        <li><a href="">All Campaigns</a></li>\n                        <li>Pinned\n                            <ul class="pinned">\n                                <li ng-repeat="campaign in pinned track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                        <li ng-show="preFlight.length">preFlight\n                            <ul>\n                                <li ng-repeat="campaign in preFlight track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                        <li ng-show="inFlight.length">inFlight\n                            <ul>\n                                <li ng-repeat="campaign in inFlight track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                        <li ng-show="completed.length">completed\n                            <ul>\n                                <li ng-repeat="campaign in completed track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                                </li>\n                            </ul>\n                        </li>\n                    </ul>\n                    <ul class="list">\n                        <li ng-repeat="(key, value) in quarterMap">\n                            [[key]]\n                            <ul>\n                                <li ng-repeat="campaign in value track by $index">\n                                    <a ng-click="transition(campaign.id)">[[campaign.name]]</a>\n                                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                            </ul>\n                        </li>\n                    </ul>\n                </div>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
 
 /**
  * Created by alex on 4/15/15.
@@ -46150,7 +46150,7 @@ define('core/navbar/services/division',['require','./../../module','angular'],fu
             var items = all();
             var length = items.length;
             for (var i = 0; i < length; i++) {
-                if(items[i].id === id) {
+                if (items[i].id === id) {
                     return items[i];
                 }
             }
@@ -46297,7 +46297,7 @@ define('core/navbar/services/campaign',['require','./../../module','angular'],fu
             var items = all();
             var length = items.length;
             for (var i = 0; i < length; i++) {
-                if(items[i].id === id) {
+                if (items[i].id === id) {
                     return items[i];
                 }
             }
@@ -46401,7 +46401,7 @@ define('core/navbar/services/client',['require','./../../module','angular'],func
             var items = all();
             var length = items.length;
             for (var i = 0; i < length; i++) {
-                if(items[i].id === id) {
+                if (items[i].id === id) {
                     return items[i];
                 }
             }
@@ -46502,7 +46502,7 @@ define('core/navbar/services/account',['require','./../../module','angular'],fun
             var items = all();
             var length = items.length;
             for (var i = 0; i < length; i++) {
-                if(items[i].id === id) {
+                if (items[i].id === id) {
                     return items[i];
                 }
             }
@@ -46523,27 +46523,27 @@ define('core/navbar/services/account',['require','./../../module','angular'],fun
     }]);
 });
 
-define('core/navbar/directives/clientDropdown',['require','./../../module'],function (require) {
+
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list">\n        <li><a ui-sref="cm.clients">All [[section]]</a></li>\n        <li>Pinned\n            <ul class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-repeat="(key, value) in clientsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="client in value track by $index">\n                    <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
 
     var app = require('./../../module');
+    require('tpl!./client.html');
 
     app.directive('clientDropdown', ['clientService', '$timeout', function (clients, $timeout) {
         return {
             restrict: 'A',
             scope: true,
+            templateUrl: 'core/navbar/directives/client.html',
             controller: ['$scope', function ($scope) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
-                $scope.transition = transition;
+                $scope.section = 'Clients';
+                $scope.current = 'All Clients';
 
                 clients.observe(update);
-
-                function transition(clientId) {
-                    if (window.Router) {
-                        window.Router.router.transitionTo('campaign-management.client.index', {clientId: clientId});
-                    }
-                }
 
                 function update() {
                     $timeout(function () {
@@ -46871,10 +46871,10 @@ define('core/filters/truncateNumber',['require','./../module'],function (require
                 return input;
             }
             if (input < 1000000) {
-                return Math.round(input/100)/10 + 'K';
+                return Math.round(input / 100) / 10 + 'K';
             }
             if (input < 1000000000) {
-                return Math.round(input/100000)/10 + 'M';
+                return Math.round(input / 100000) / 10 + 'M';
             }
             return input;
         };
@@ -56644,11 +56644,29 @@ define('campaign-management/controllers/campaignManagement',['require','./../mod
     var app = require('./../module');
     //var ng = require('angular');
 
-    app.controller('campaignManagementCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', function ($scope, clients, divisions, campaigns, accounts) {
-        clients.init();
-        divisions.init();
-        campaigns.init();
-        accounts.init();
+    app.controller('campaignManagementCtrl', ['$scope', function () {
+    }]);
+});
+
+/**
+ * Created by Alex on 3/2/2015.
+ */
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaign-management/controllers/index',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', function ($scope, clients, divisions, campaigns, accounts) {
+        clients.init('/narwhal/clients?dimensions=id,name,pinned');
+        divisions.init('/narwhal/divisions?dimensions=id,name,pinned');
+        campaigns.init('/narwhal/campaigns?dimensions=id,name,pinned,status,startDate');
+        accounts.init('/narwhal/accounts?dimensions=id,name,pinned');
     }]);
 });
 
@@ -56719,10 +56737,19 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
 
     return app.config(['$stateProvider', '$locationProvider', function ($stateProvider, $locationProvider) {
         $stateProvider
+            .state('analytics', {
+                url: '/analytics',
+                parent: 'index'
+            })
+            .state('index', {
+                url: '',
+                templateUrl: 'campaign-management/index.html',
+                controller: 'indexCtrl'
+            })
             .state('cm', {
                 url: '/campaign-management',
-                templateUrl: 'campaign-management/index.html',
-                controller: 'campaignManagementCtrl'
+                controller: 'campaignManagementCtrl',
+                parent: 'index'
             })
                 .state('cm.clients', {
                     url: '/clients',
@@ -56737,7 +56764,6 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                             }
                         }
                     });
-
         $locationProvider.html5Mode({ enabled: true });
     }]);
 });
@@ -56745,10 +56771,11 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
 /**activeSummary
  * Created by Alex on 3/1/2015.
  */
-define('campaign-management/index',['require','./controllers/campaignManagement','./clients/directives/activeSummary','./clients/controllers/client','./routes'],function (require) {
+define('campaign-management/index',['require','./controllers/campaignManagement','./controllers/index','./clients/directives/activeSummary','./clients/controllers/client','./routes'],function (require) {
     'use strict';
 
     require('./controllers/campaignManagement');
+    require('./controllers/index');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./routes');

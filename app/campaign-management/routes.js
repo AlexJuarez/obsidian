@@ -13,10 +13,19 @@ define(function (require) {
 
     return app.config(['$stateProvider', '$locationProvider', function ($stateProvider, $locationProvider) {
         $stateProvider
+            .state('analytics', {
+                url: '/analytics',
+                parent: 'index'
+            })
+            .state('index', {
+                url: '',
+                templateUrl: 'campaign-management/index.html',
+                controller: 'indexCtrl'
+            })
             .state('cm', {
                 url: '/campaign-management',
-                templateUrl: 'campaign-management/index.html',
-                controller: 'campaignManagementCtrl'
+                controller: 'campaignManagementCtrl',
+                parent: 'index'
             })
                 .state('cm.clients', {
                     url: '/clients',
@@ -31,7 +40,6 @@ define(function (require) {
                             }
                         }
                     });
-
-        $locationProvider.html5Mode({ enabled: true });
+        $locationProvider.html5Mode({ enabled: false });
     }]);
 });
