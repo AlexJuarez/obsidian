@@ -22,7 +22,7 @@ define(function (require) {
 
         function sortByName(data) {
             data.sort(function (a, b) {
-                if(a.name && b.name) {
+                if (a.name && b.name) {
                     return a.name.localeCompare(b.name);
                 } else {
                     return 0;
@@ -37,18 +37,20 @@ define(function (require) {
             var map = {};
 
             ng.forEach(sorted, function (item) {
-                var key = item.name.charAt(0).toLowerCase();
-                if (/\d/.test(key)) {
-                    if (typeof map['#'] === 'undefined') {
-                        map['#'] = [item];
+                if (item.name) {
+                    var key = item.name.charAt(0).toLowerCase();
+                    if (/\d/.test(key)) {
+                        if (typeof map['#'] === 'undefined') {
+                            map['#'] = [item];
+                        } else {
+                            map['#'].push(item);
+                        }
                     } else {
-                        map['#'].push(item);
-                    }
-                } else {
-                    if (typeof map[key] === 'undefined') {
-                        map[key] = [item];
-                    } else {
-                        map[key].push(item);
+                        if (typeof map[key] === 'undefined') {
+                            map[key] = [item];
+                        } else {
+                            map[key].push(item);
+                        }
                     }
                 }
             });
