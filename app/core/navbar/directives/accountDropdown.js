@@ -14,6 +14,8 @@ define(function (require) {
                 $scope.unpin = accounts.unpin;
                 $scope.section = 'Accounts';
                 $scope.current = 'All Accounts';
+                update();
+                updateCurrent();
 
                 accounts.observe(update);
 

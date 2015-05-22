@@ -14,6 +14,8 @@ define(function (require) {
                 $scope.unpin = campaigns.unpin;
                 $scope.section = 'Campaigns';
                 $scope.current = 'All Campaigns';
+                update();
+                updateCurrent();
 
                 campaigns.observe(update);
 
