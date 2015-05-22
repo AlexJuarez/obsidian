@@ -11,7 +11,7 @@
     <label class="dropdown-search">
         <input class="input" placeholder="Search" type="search" />
     </label>
-    <ul perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" class="list">
+    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">
         <li><a ui-sref="cm.divisions">All [[section]]</a></li>
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
@@ -22,7 +22,7 @@
             </ul>
         </li>
     </ul>
-    <ul perfect-scrollbar refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">
+    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">
         <li ng-repeat="(key, value) in divisionsMap">
             [[key]]
             <ul>

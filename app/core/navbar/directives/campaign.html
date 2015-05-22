@@ -11,7 +11,7 @@
     <label class="dropdown-search">
         <input class="input" placeholder="Search" type="search" />
     </label>
-    <ul class="list" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">
+    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">
         <li><a href="">All [[section]]</a></li>
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
@@ -46,7 +46,7 @@
             </ul>
         </li>
     </ul>
-    <ul perfect-scrollbar refresh-on-change="quarterMap" wheel-propagation="true" class="list">
+    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">
         <li ng-repeat="(key, value) in quarterMap">
             [[key]]
             <ul>

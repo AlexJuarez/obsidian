@@ -5,7 +5,7 @@ define(function (require) {
 
     var module = require('./../../module');
 
-    module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', function (dataFactory, clients, divisions, accounts, campaigns) {
+    module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', function (dataFactory, clients, divisions, accounts, campaigns) {
         var navInfo = dataFactory();
         navInfo.setData({});
         clients.observe(navInfo.notifyObservers);
