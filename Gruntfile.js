@@ -353,7 +353,7 @@ module.exports = function (grunt) {
 
     // Register Tasks
     // Workon
-    grunt.registerTask('workon', 'Start working on this project.', [
+    grunt.registerTask('default', 'Start working on this project.', [
         'jshint',
         'webfont',
         'less:dev',
@@ -362,6 +362,8 @@ module.exports = function (grunt) {
         //'open:editor',
         'watch'
     ]);
+
+    grunt.registerTask('workon', 'alias for default', ['default']);
 
     // Restart
     grunt.registerTask('serve', 'Restart the server.', [
