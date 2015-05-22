@@ -56856,7 +56856,7 @@ define('campaign-management/controllers/index',['require','./../module'],functio
         clients.init('/narwhal/clients?dimensions=id,name,pinned');
         divisions.init('/narwhal/divisions?dimensions=id,name,pinned,client.id');
         campaigns.init('/narwhal/campaigns?limit=500&dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
-        accounts.init('/narwhal/accounts?dimensions=id,name,pinned,division.id,client.id');
+        accounts.init('/narwhal/accounts?limit=500&dimensions=id,name,pinned,division.id,client.id');
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {
@@ -56908,6 +56908,8 @@ define('campaign-management/clients/controllers/client',['require','./../../modu
                 $scope.$apply();
             });
         });
+
+        navbar.setClient($stateParams.clientId);
     }]);
 });
 
