@@ -14,6 +14,8 @@ define(function (require) {
                 $scope.unpin = divisions.unpin;
                 $scope.section = 'Divisions';
                 $scope.current = 'All Divisions';
+                update();
+                updateCurrent();
 
                 divisions.observe(update);
 

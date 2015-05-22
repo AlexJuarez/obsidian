@@ -1,30 +1,32 @@
 <div class="header-summary">
     <h3 class="title">You Work On</h3>
     <button class="btn btn-default solid right">Edit Client</button>
+    <button class="btn btn-default solid right">New Account</button>
+    <button class="btn btn-default solid right">New Division</button>
     <ul class="list">
         <li>
             <span>accounts</span>
-            <span>[[youWorkOn.accounts|truncateNumber]]</span>
+            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>
         </li>
         <li class='border-right'>
             <span>campaigns</span>
-            <span>[[youWorkOn.campaigns|truncateNumber]]</span>
+            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>
         </li>
         <li>
             <span>pre-flight</span>
-            <span>[[youWorkOn.preFlight|truncateNumber]]</span>
+            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>
         </li>
         <li>
             <span>in-flight</span>
-            <span>[[youWorkOn.inFlight|truncateNumber]]</span>
+            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>
         </li>
         <li>
             <span>complete</span>
-            <span>[[youWorkOn.complete|truncateNumber]]</span>
+            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>
         </li>
         <li>
             <span>archive</span>
-            <span>[[youWorkOn.archived|truncateNumber]]</span>
+            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>
         </li>
     </ul>
 </div>

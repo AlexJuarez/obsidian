@@ -46,6 +46,9 @@ if (process.env.NODE_ENV === 'production') {
     app.get('/narwhal/campaigns', function (req, res, next) {
         res.sendfile('assets/fixtures/campaigns.json');
     });
+    app.get('/narwhal/clientSet', function (req, res, next) {
+        res.sendfile('assets/fixtures/clientSet.json');
+    });
 }
 
 /*

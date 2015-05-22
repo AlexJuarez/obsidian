@@ -9,7 +9,7 @@
     "immed": true,
     "indent": 4,
     "latedef": "nofunc",
-    "maxlen": 180,
+    "maxlen": 300,
     "maxstatements": 20,
     "newcap": true,
     "node": true,

@@ -5,15 +5,15 @@ define(function (require) {
     //var ng = require('angular');
 
     app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', 'navbarService', function ($scope, $http, $timeout, $stateParams, navbar) {
-
-        $http.get('fixtures/clients_youworkon.json').then(function (res) {
+        $http.get('/narwhal/clients?filters=id:eq:' + $stateParams.clientId +
+        '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
             $timeout(function () {
-                $scope.youWorkOn = res.data;
+                $scope.youWorkOn = res.data.clients[0].metrics;
+                $scope.youWorkOn.countCampaigns = $scope.youWorkOn.countCampaignsPreFlight + $scope.youWorkOn.countCampaignsInFlight;
                 $scope.$apply();
             });
         });
 
-        navbar.setClient($stateParams.id);
-        console.log($stateParams.id + '', navbar.all());
+        navbar.setClient($stateParams.clientId);
     }]);
 });

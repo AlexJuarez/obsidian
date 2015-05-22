@@ -13,6 +13,7 @@ define(function (require) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
                 $scope.section = 'Clients';
+                update();
                 updateCurrent();
 
                 clients.observe(update);
