@@ -46560,7 +46560,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 
             if (division) {
                 data.division = division.name;
-                var client = clients.get(division.client);
+                var client = clients.get(division.client.id);
                 if (client) {
                     data.client = client.name;
                 }
@@ -46581,8 +46581,8 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 
             if (account) {
                 data.account = account.name;
-                var client = clients.get(account.client);
-                var division = divisions.get(account.division);
+                var client = clients.get(account.client.id);
+                var division = divisions.get(account.division.id);
 
                 if (client) {
                     data.client = client.name;
@@ -46608,9 +46608,9 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 
             if (campaign) {
                 data.campaign = campaign.name;
-                var client = clients.get(campaign.client);
-                var division = divisions.get(campaign.division);
-                var account = accounts.get(account.division);
+                var client = clients.get(campaign.client.id);
+                var division = divisions.get(campaign.division.id);
+                var account = accounts.get(campaign.account.id);
 
                 if (client) {
                     data.client = client.name;
@@ -46666,7 +46666,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 });
 
 
-define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref=".clients.detail({ id: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-repeat="(key, value) in clientsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="client in value track by $index">\n                    <a ui-sref=".clients.detail({ id: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul perfect-scrollbar refresh-on-change="clientsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in clientsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="client in value track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
@@ -46712,7 +46712,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list">\n        <li><a ui-sref="cm.divisions">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref="cm.divisions.detail({id: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref="cm.divisions.detail({id: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref="cm.divisions">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul perfect-scrollbar refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -46759,7 +46759,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
 });
 
 
-define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list">\n        <li><a href="">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a href="">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a href="">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true"  class="list">\n        <li><a href="">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a href="">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul perfect-scrollbar refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a href="">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
     'use strict';
@@ -46806,7 +46806,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
 });
 
 
-define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n        <li><a href="">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by $index">\n                    <a>[[campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in preFlight track by $index">\n                    <a>[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in inFlight track by $index">\n                    <a>[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in completed track by $index">\n                    <a >[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-repeat="(key, value) in quarterMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="campaign in value track by $index">\n                    <a >[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n        <li><a href="">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by $index">\n                    <a>[[campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in preFlight track by $index">\n                    <a>[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in inFlight track by $index">\n                    <a>[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in completed track by $index">\n                    <a >[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul perfect-scrollbar refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in quarterMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="campaign in value track by $index">\n                    <a >[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/campaignDropdown',['require','./../../module','tpl!./campaign.html'],function (require) {
     'use strict';
@@ -56854,9 +56854,9 @@ define('campaign-management/controllers/index',['require','./../module'],functio
 
     app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
         clients.init('/narwhal/clients?dimensions=id,name,pinned');
-        divisions.init('/narwhal/divisions?dimensions=id,name,pinned,client');
-        campaigns.init('/narwhal/campaigns?dimensions=id,name,pinned,status,startDate,client,account,division');
-        accounts.init('/narwhal/accounts?dimensions=id,name,pinned,division,client');
+        divisions.init('/narwhal/divisions?dimensions=id,name,pinned,client.id');
+        campaigns.init('/narwhal/campaigns?limit=500&dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
+        accounts.init('/narwhal/accounts?dimensions=id,name,pinned,division.id,client.id');
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {
@@ -56900,8 +56900,7 @@ define('campaign-management/clients/controllers/client',['require','./../../modu
     //var ng = require('angular');
 
     app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', 'navbarService', function ($scope, $http, $timeout, $stateParams, navbar) {
-
-        $http.get('/narwhal/clients?filters=client.id:eq:' + $stateParams.id +
+        $http.get('/narwhal/clients?filters=id:eq:' + $stateParams.clientId +
         '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
             $timeout(function () {
                 $scope.youWorkOn = res.data.clients[0].metrics;
@@ -56909,9 +56908,6 @@ define('campaign-management/clients/controllers/client',['require','./../../modu
                 $scope.$apply();
             });
         });
-
-        navbar.setClient($stateParams.id);
-        console.log($stateParams.id + '', navbar.all());
     }]);
 });
 
@@ -56957,7 +56953,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                 url: '/clients'
             })
             .state('analytics.clients.detail', {
-                url: '/:id'
+                url: '/:clientId'
             })
             .state('index', {
                 template: '<ui-view />',
@@ -56974,7 +56970,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                     templateUrl: 'campaign-management/clients/index.html'
                 })
                     .state('cm.clients.detail', {
-                        url: '/:id',
+                        url: '/:clientId',
                         views: {
                             'header': {
                                 controller: 'clientCtrl',
@@ -56987,12 +56983,12 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                     template: '<ui-view />'
                 })
                     .state('cm.divisions.detail', {
-                        url: '/:id',
+                        url: '/:divisionId',
                         controller: 'divisionCtrl',
                         template: '<ui-view />'
                     });
 
-        $locationProvider.html5Mode({ enabled: true });
+        $locationProvider.html5Mode({ enabled: false });
     }]);
 });
 

@@ -36,7 +36,7 @@ define(function (require) {
 
             if (division) {
                 data.division = division.name;
-                var client = clients.get(division.client);
+                var client = clients.get(division.client.id);
                 if (client) {
                     data.client = client.name;
                 }
@@ -57,8 +57,8 @@ define(function (require) {
 
             if (account) {
                 data.account = account.name;
-                var client = clients.get(account.client);
-                var division = divisions.get(account.division);
+                var client = clients.get(account.client.id);
+                var division = divisions.get(account.division.id);
 
                 if (client) {
                     data.client = client.name;
@@ -84,9 +84,9 @@ define(function (require) {
 
             if (campaign) {
                 data.campaign = campaign.name;
-                var client = clients.get(campaign.client);
-                var division = divisions.get(campaign.division);
-                var account = accounts.get(account.division);
+                var client = clients.get(campaign.client.id);
+                var division = divisions.get(campaign.division.id);
+                var account = accounts.get(campaign.account.id);
 
                 if (client) {
                     data.client = client.name;

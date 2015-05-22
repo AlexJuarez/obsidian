@@ -20,7 +20,7 @@ define(function (require) {
                 url: '/clients'
             })
             .state('analytics.clients.detail', {
-                url: '/:id'
+                url: '/:clientId'
             })
             .state('index', {
                 template: '<ui-view />',
@@ -37,7 +37,7 @@ define(function (require) {
                     templateUrl: 'campaign-management/clients/index.html'
                 })
                     .state('cm.clients.detail', {
-                        url: '/:id',
+                        url: '/:clientId',
                         views: {
                             'header': {
                                 controller: 'clientCtrl',
@@ -50,7 +50,7 @@ define(function (require) {
                     template: '<ui-view />'
                 })
                     .state('cm.divisions.detail', {
-                        url: '/:id',
+                        url: '/:divisionId',
                         controller: 'divisionCtrl',
                         template: '<ui-view />'
                     });

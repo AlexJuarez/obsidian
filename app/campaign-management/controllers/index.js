@@ -14,9 +14,9 @@ define(function (require) {
 
     app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
         clients.init('/narwhal/clients?dimensions=id,name,pinned');
-        divisions.init('/narwhal/divisions?dimensions=id,name,pinned,client');
-        campaigns.init('/narwhal/campaigns?dimensions=id,name,pinned,status,startDate,client,account,division');
-        accounts.init('/narwhal/accounts?dimensions=id,name,pinned,division,client');
+        divisions.init('/narwhal/divisions?dimensions=id,name,pinned,client.id');
+        campaigns.init('/narwhal/campaigns?limit=500&dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
+        accounts.init('/narwhal/accounts?dimensions=id,name,pinned,division.id,client.id');
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {

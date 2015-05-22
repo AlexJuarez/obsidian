@@ -5,8 +5,7 @@ define(function (require) {
     //var ng = require('angular');
 
     app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', 'navbarService', function ($scope, $http, $timeout, $stateParams, navbar) {
-
-        $http.get('/narwhal/clients?filters=client.id:eq:' + $stateParams.id +
+        $http.get('/narwhal/clients?filters=id:eq:' + $stateParams.clientId +
         '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
             $timeout(function () {
                 $scope.youWorkOn = res.data.clients[0].metrics;
@@ -14,8 +13,5 @@ define(function (require) {
                 $scope.$apply();
             });
         });
-
-        navbar.setClient($stateParams.id);
-        console.log($stateParams.id + '', navbar.all());
     }]);
 });
