@@ -1,16 +1,102 @@
 @import "vendor";
 
+@select-blue: #8bc2e2;
+@select-hover: #004e7d;
+
+// Color styles
+.single-select-light {
+    .chosen-container {
+        & .chosen-drop {
+            & > .chosen-results li.highlighted, & > .chosen-results li:hover {
+                background: @light-gray;
+            }
+            & > .chosen-results li.no-results {
+                background: @gray;
+            }
+        }
+    }
+    .chosen-container-single {
+        background: #fff;
+        border-color: @dark-gray;
+        color: @dark-gray;
+        & .chosen-single:hover > div > b {
+            background: @light-gray;
+        }
+        & > .chosen-search > input[type="text"] {
+            border-color: inherit;
+        }
+        &.chosen-container-active.chosen-with-drop > .chosen-single > div > b {
+            background: @dark-gray;
+            &:before {
+                color: contrast(@dark-gray);
+            }
+        }
+        &.chosen-container-active .chosen-drop {
+            background: inherit;
+            border-color: inherit;
+            color: inherit;
+        }
+        &.chosen-container-active.chosen-with-drop .chosen-single {
+            border-color: inherit;
+        }
+        
+    }
+}
+.single-select-dark {
+    .chosen-container {
+        & .chosen-drop {
+            & > .chosen-results li.highlighted, & > .chosen-results li:hover {
+                background: @select-hover;
+            }
+            & > .chosen-results li.no-results {
+                background: @dark-blue;
+            }
+        }
+    }
+    .chosen-container-single {
+        background: @dark-blue;
+        border-color: @select-blue;
+        color: @select-blue;
+        & .chosen-single:hover > div > b {
+            background: @select-hover;
+        }
+        & > .chosen-search > input[type="text"] {
+            border-color: inherit;
+        }
+        &.chosen-container-active.chosen-with-drop > .chosen-single > div > b {
+            background: @select-blue;
+            &:before {
+                color: contrast(@select-blue);
+            }
+            
+        }
+        &.chosen-container-active .chosen-drop {
+            background: inherit;
+            border-color: inherit;
+            color: inherit;
+        }
+        &.chosen-container-active.chosen-with-drop .chosen-single {
+            border-color: inherit;
+        }
+    }
+}
+
+// Shared styles
 .chosen-container {
     min-width: 300px;
     .font-size(1.3);
     font-weight: normal;
     .chosen-drop {
-        border-top: 0;
-        background: #fff;
-        border: 1px solid @dark-gray;
+        //border-top: 0;
+        background: inherit;
+        border-style: solid;
+        border-color: inherit;
         border-width: 0 1px 1px 1px;
+        & > .chosen-results li.highlighted, & > .chosen-results li {
+            line-height: inherit;
+        }
         & > .chosen-results li.highlighted, & > .chosen-results li:hover {
-            background-color: @light-gray;
+            background-color: inherit;
             background-image: none;
         }
         // Dropdown Option styles
@@ -19,22 +105,54 @@
             padding: 0;
         }
         & > .chosen-results li {
-            color: @dark-gray;
+            color: inherit;
             padding: 1rem 2rem;
         }
     }
 }
+// .chosen-container-single {
+//     .smart-border-color(#fff);
+//     //color: #8bc2e2;
+//     // .chosen-container-single {
+//     //     & .chosen-single {
+//     //         //border-color: #8bc2e2;
+            
+//     //     }
+//     // }
+    
+// }
+
+// .smart-border-color (@a) when (lightness(@a) >= 50%) {
+//     //border-color: @dark-gray;
+//     border-color: darken(@a, 60%);
+// }
+// .smart-border-color (@a) when (lightness(@a) < 50%) {
+//     //border-color: #8bc2e2;
+//     color: #8bc2e2;
+//     border-color: lighten(@a, 60%);
+// }
+// .smart-border-color (@a) {
+//     background-color: @a;
+// }
+
+// .light-bg {
+//     .smart-border-color(@dark-gray);
+// }
 
 // Single Select Styles
 .chosen-container-single {
+    border-color: inherit;
+    background: inherit;
     & .chosen-single, &.chosen-container-active .chosen-single {
         // Reset bg style
         background: none;
     }
     & .chosen-single {
-        color: @dark-gray;
+        color: inherit;
         padding: 0 2rem;
-        border: 1px solid @dark-gray;
+        border-width: 1px;
+        border-style: solid;
+        border-color: inherit;
         border-radius: 0;
         box-shadow: none;
         box-sizing: border-box;
@@ -46,7 +164,9 @@
         // Down arrow button styles
         margin: 0;
         padding: 0;
-        border: 1px solid @dark-gray;
+        //border: 1px solid @dark-gray;
+        border-style: solid;
+        border-color: inherit;
         border-width: 0 0 0 1px;
         height: 100%;
         width: 3.4rem; // Matches height
@@ -54,11 +174,12 @@
             width: auto;
             margin: 0;
             padding: 0;
-            background: #fff;
+            //background: #fff;
+            background: inherit;
             &:before {
                 .glyph-chevron-down();
                 font-size: 1rem;
-                color: @dark-gray;
+                color: inherit;
                 position: absolute;
                 left: 50%;
                 top: 50%;
@@ -74,8 +195,10 @@
             .glyph-chevron-up();
         }
     }
-    &.chosen-with-drop .chosen-single {
-        border: 1px solid @dark-gray;
+    &.chosen-with-drop .chosen-single, &.chosen-container-active.chosen-with-drop .chosen-single {
+        border: 1px solid;
+        border-color: inherit;
+        box-shadow: none;
     }
     &.chosen-container-active .chosen-drop {
         border-radius: 0;
@@ -89,30 +212,39 @@
                 position: absolute;
                 left: 0.7rem;
                 top: 50%;
+                -webkit-transform: translateY(-50%);
+                -ms-transform: translateY(-50%);
                 transform: translateY(-50%);
             }
         }
         & > .chosen-search > input[type="text"] {
             font-family: 'Lato', sans-serif;
             background: none;
-            border: 1px solid @dark-gray;
+            border: 1px solid;
+            border-color: inherit;
             border-width: 0 0 1px;
             padding: 4px 20px 4px 0;
         }
     }
-    & .chosen-single:hover > div > b {
-        background: @light-gray;
-    }
-    &.chosen-container-active.chosen-with-drop > .chosen-single > div > b {
-        background: @dark-gray;
-        &:before {
-            color: contrast(@dark-gray);
-        }
+    // & .chosen-single:hover > div > b {
+    //     //background: @light-gray;
+    //     background: inherit;
+    // }
+    // &.chosen-container-active.chosen-with-drop > .chosen-single > div > b {
+    //     //background: @dark-gray;
+    //     background: inherit;
+    //     &:before {
+    //         color: contrast(@dark-gray);
+    //     }
         
-    }
+    // }
 }
 
+
 // Multiple Select Styles
+.multiple-label {
+    margin-right: 2rem;
+}
 .chosen-container-multi .chosen-choices {
     border: none;
     border-bottom: 1px solid @dark-gray;
@@ -158,5 +290,4 @@
         }
     }
 }
-
 
