@@ -17,7 +17,11 @@ define(function (require) {
 
         function sortByName(data) {
             data.sort(function (a, b) {
-                return a.name.localeCompare(b.name);
+                if(a.name && b.name) {
+                    return a.name.localeCompare(b.name);
+                } else {
+                    return 0;
+                }
             });
 
             return data;

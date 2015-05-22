@@ -46090,7 +46090,11 @@ define('core/navbar/services/division',['require','./../../module','angular'],fu
 
         function sortByName(data) {
             data.sort(function (a, b) {
-                return a.name.localeCompare(b.name);
+                if(a.name && b.name) {
+                    return a.name.localeCompare(b.name);
+                } else {
+                    return 0;
+                }
             });
 
             return data;
@@ -46345,7 +46349,11 @@ define('core/navbar/services/client',['require','./../../module','angular'],func
 
         function sortByName(data) {
             data.sort(function (a, b) {
-                return a.name.localeCompare(b.name);
+                if(a.name && b.name) {
+                    return a.name.localeCompare(b.name);
+                } else {
+                    return 0;
+                }
             });
 
             return data;
@@ -46445,7 +46453,11 @@ define('core/navbar/services/account',['require','./../../module','angular'],fun
 
         function sortByName(data) {
             data.sort(function (a, b) {
-                return a.name.localeCompare(b.name);
+                if(a.name && b.name) {
+                    return a.name.localeCompare(b.name);
+                } else {
+                    return 0;
+                }
             });
 
             return data;
