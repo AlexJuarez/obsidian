@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./client.html');
 
-    app.directive('clientDropdown', ['clientService', '$timeout', function (clients, $timeout) {
+    app.directive('clientDropdown', ['clientService', '$timeout', 'navbarService', function (clients, $timeout, navbar) {
         return {
             restrict: 'A',
             scope: true,
@@ -13,9 +13,19 @@ define(function (require) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
                 $scope.section = 'Clients';
-                $scope.current = 'All Clients';
+                updateCurrent();
 
                 clients.observe(update);
+
+                navbar.observe(updateCurrent);
+
+                function updateCurrent() {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            $scope.current = navbar.all().client || 'All Clients';
+                        });
+                    });
+                }
 
                 function update() {
                     $timeout(function () {

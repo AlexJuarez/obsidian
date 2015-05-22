@@ -10,6 +10,7 @@ define(function (require) {
     require('./navbar/services/campaign');
     require('./navbar/services/client');
     require('./navbar/services/account');
+    require('./navbar/services/navbar');
     require('./navbar/directives/clientDropdown');
     require('./navbar/directives/divisionDropdown');
     require('./navbar/directives/accountDropdown');

@@ -8,5 +8,6 @@ define(function (require) {
     require('./controllers/index');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
+    require('./divisions/controllers/division');
     require('./routes');
 });

@@ -1,0 +1,35 @@
+<div class="dropdown-toggle">
+    <div class="dropdown-toggle-subtitle">
+        [[section]]
+    </div>
+    <div class="dropdown-toggle-title">
+        <i class="glyph-chevron-down"></i>
+        [[current]]
+    </div>
+</div>
+<div class="dropdown-menu" role="menu">
+    <label class="dropdown-search">
+        <input class="input" placeholder="Search" type="search" />
+    </label>
+    <ul class="list">
+        <li><a ui-sref="cm.divisions">All [[section]]</a></li>
+        <li ng-if="pinned.length">Pinned
+            <ul class="pinned">
+                <li ng-repeat="division in pinned track by $index">
+                    <a ui-sref="cm.divisions.detail({id: division.id})">[[division.name]]</a>
+                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+    <ul class="list">
+        <li ng-repeat="(key, value) in divisionsMap">
+            [[key]]
+            <ul>
+                <li ng-repeat="division in value track by $index">
+                    <a ui-sref="cm.divisions.detail({id: division.id})">[[division.name]]</a>
+                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+            </ul>
+        </li>
+    </ul>
+</div>

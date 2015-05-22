@@ -6,7 +6,7 @@
             "pinned": true,
             "active": false,
             "lastViewed": "2015-01-01T12:00:00Z",
-            "client": {"id": "clientId0"}
+            "client": "clientId0"
         },
         {
             "id": "divisionId1",
@@ -14,7 +14,7 @@
             "pinned": false,
             "active": false,
             "lastViewed": "2015-01-01T12:00:00Z",
-            "client": {"id": "clientId0"}
+            "client": "clientId0"
         },
         {
             "id": "divisionId2",
@@ -22,7 +22,7 @@
             "pinned": false,
             "active": false,
             "lastViewed": "2015-04-01T12:00:00Z",
-            "client": {"id": "clientId0"}
+            "client": "clientId0"
         },
         {
             "id": "divisionId3",
@@ -30,7 +30,7 @@
             "pinned": false,
             "active": false,
             "lastViewed": "2015-02-01T12:00:00Z",
-            "client": {"id": "clientId0"}
+            "client": "clientId0"
         },
         {
             "id": "divisionId4",
@@ -38,7 +38,7 @@
             "pinned": false,
             "active": true,
             "lastViewed": "2015-03-01T12:00:00Z",
-            "client": {"id": "clientId0"}
+            "client": "clientId0"
         }
     ]
 }

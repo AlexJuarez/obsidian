@@ -13,13 +13,13 @@
     </label>
     <ul class="list">
         <li><a ui-sref="cm.clients">All [[section]]</a></li>
-        <li>Pinned
-            <ul class="pinned">
+        <li ng-if="pinned.length">Pinned
+            <ul  class="pinned">
                 <li ng-repeat="client in pinned track by $index">
                     <a ui-sref="cm.clients.detail({ id: client.id })">[[client.name]]</a>
                     <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
-            </ul>
+            </ul >
         </li>
     </ul>
     <ul class="list">

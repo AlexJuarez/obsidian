@@ -1,9 +1,5 @@
-/**
- * Created by Alex on 3/1/2015.
- */
-/**
- * Created by Alex on 3/1/2015.
- */
+/* jshint -W015 */
+
 define(function (require) {
     'use strict';
     var app = require('./module');
@@ -12,7 +8,9 @@ define(function (require) {
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
 
-    return app.config(['$stateProvider', '$locationProvider', function ($stateProvider, $locationProvider) {
+    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
+        $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+
         $stateProvider
             .state('analytics', {
                 url: '/analytics',
@@ -33,14 +31,24 @@ define(function (require) {
                     templateUrl: 'campaign-management/clients/index.html'
                 })
                     .state('cm.clients.detail', {
-                        url: '/:id',
+                        url: '/:clientId',
                         views: {
                             'header': {
                                 controller: 'clientCtrl',
                                 templateUrl: 'campaign-management/clients/youWorkOn.html'
                             }
                         }
+                    })
+                .state('cm.divisions', {
+                    url: '/divisions',
+                    template: '<ui-view />'
+                })
+                    .state('cm.divisions.detail', {
+                        url: '/:divisionId',
+                        controller: 'divisionCtrl',
+                        template: '<ui-view />'
                     });
+
         $locationProvider.html5Mode({ enabled: false });
     }]);
 });
