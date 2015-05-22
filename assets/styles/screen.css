@@ -53,6 +53,9 @@
   margin-right: 1rem;
   color: #fff;
 }
+.padded {
+  padding: 1rem;
+}
 .side-nav {
   position: fixed;
   top: 20px;
