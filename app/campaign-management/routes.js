@@ -55,6 +55,6 @@ define(function (require) {
                         template: '<ui-view />'
                     });
 
-        $locationProvider.html5Mode({ enabled: true });
+        $locationProvider.html5Mode({ enabled: false });
     }]);
 });
