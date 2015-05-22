@@ -56988,7 +56988,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                         template: '<ui-view />'
                     });
 
-        $locationProvider.html5Mode({ enabled: false });
+        $locationProvider.html5Mode({ enabled: true });
     }]);
 });
 
