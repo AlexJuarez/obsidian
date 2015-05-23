@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
 
-    module.service('campaignService', ['$http', 'dataFactory', function ($http, dataFactory) {
+    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
         var campaigns = dataFactory(sortByStartDate);
 
         function init(url) {
@@ -31,7 +31,7 @@ define(function (require) {
         }
 
         function quarterMap() {
-            var sorted = all();
+            var sorted = filtered();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -45,6 +45,40 @@ define(function (require) {
 
             return map;
         }
+
+        function filtered() {
+            var sorted = all();
+            var list = accounts.filtered();
+            var accountId = $state.params.accountId;
+            var output = [];
+            var item, i;
+
+            if (accountId) {
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (accountId === item.account.id) {
+                        output.push(item);
+                    }
+                }
+            } else {
+                var idSet = {};
+
+                for (i = 0; i < list.length; i++) {
+                    item = list[i];
+                    idSet[item.id] = true;
+                }
+
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (idSet[item.account.id]) {
+                        output.push(item);
+                    }
+                }
+            }
+
+            return output;
+        }
+
 
         function all() {
             return campaigns.all();

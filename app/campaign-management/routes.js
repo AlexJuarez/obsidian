@@ -53,7 +53,23 @@ define(function (require) {
                         url: '/:divisionId',
                         controller: 'divisionCtrl',
                         template: '<ui-view />'
-                    });
+                    })
+            .state('cm.accounts', {
+                url: '/accounts',
+                template: '<ui-view />'
+            })
+                .state('cm.accounts.detail', {
+                    url: '/:accountId',
+                    template: '<ui-view />'
+                })
+            .state('cm.campaigns', {
+                url: '/campaigns',
+                template: '<ui-view />'
+            })
+                .state('cm.campaigns.detail', {
+                    url: '/:campaignId',
+                    template: '<ui-view />'
+                });
 
         $locationProvider.html5Mode({ enabled: false });
     }]);

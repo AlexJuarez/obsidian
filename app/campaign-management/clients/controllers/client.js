@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     //var ng = require('angular');
 
-    app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', 'navbarService', function ($scope, $http, $timeout, $stateParams, navbar) {
+    app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', function ($scope, $http, $timeout, $stateParams) {
         $http.get('/narwhal/clients?filters=id:eq:' + $stateParams.clientId +
         '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
             $timeout(function () {

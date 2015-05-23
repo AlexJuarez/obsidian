@@ -20,6 +20,7 @@ define(function (require) {
                 accounts.observe(update);
 
                 navbar.observe(updateCurrent);
+                navbar.observe(update);
 
                 function updateCurrent() {
                     $timeout(function () {

@@ -14,7 +14,6 @@ define(function (require) {
         campaigns.observe(navInfo.notifyObservers);
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-            console.log(toParams);
             navInfo.setData(toParams);
         });
 

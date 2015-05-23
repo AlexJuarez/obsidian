@@ -38,7 +38,11 @@ if (process.env.NODE_ENV === 'production') {
         res.sendfile('assets/fixtures/accounts.json');
     });
     app.get('/narwhal/clients', function (req, res, next) {
-        res.sendfile('assets/fixtures/clients.json');
+        if (req.query.filters) {
+            res.sendfile('assets/fixtures/clients_youworkon.json');
+        } else {
+            res.sendfile('assets/fixtures/clients.json');
+        }
     });
     app.get('/narwhal/divisions', function (req, res, next) {
         res.sendfile('assets/fixtures/divisions.json');

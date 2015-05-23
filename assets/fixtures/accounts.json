@@ -7,8 +7,8 @@
             "active": false,
             "lastViewed": "2015-01-01T12:00:00Z",
             "lastViewedName": "Joe Snoopypants",
-            "client": "clientId0",
-            "division": "divisionId0"
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
         },
         {
             "id": "accountId1",
@@ -17,8 +17,8 @@
             "active": false,
             "lastViewed": "2015-01-02T12:00:00Z",
             "lastViewedName": "Joe Snoopypants",
-            "client": "clientId0",
-            "division": "divisionId0"
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
         },
         {
             "id": "accountId2",
@@ -27,8 +27,8 @@
             "active": false,
             "lastViewed": "2015-01-03T12:00:00Z",
             "lastViewedName": "Joe Snoopypants",
-            "client": "clientId0",
-            "division": "divisionId0"
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
         },
         {
             "id": "accountId3",
@@ -37,8 +37,8 @@
             "active": true,
             "lastViewed": "2015-01-04T12:00:00Z",
             "lastViewedName": "Joe Snoopypants",
-            "client": "clientId0",
-            "division": "divisionId0"
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
         },
         {
             "id": "accountId4",
@@ -47,8 +47,8 @@
             "active": true,
             "lastViewed": "2015-01-05T12:00:00Z",
             "lastViewedName": "Joe Snoopypants",
-            "client": "clientId0",
-            "division": "divisionId0"
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"}
         }
     ]
 }

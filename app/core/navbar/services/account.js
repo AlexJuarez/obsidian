@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
 
-    module.service('accountService', ['$http', 'dataFactory', function ($http, dataFactory) {
+    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', function ($http, dataFactory, divisions, $state) {
         var accounts = dataFactory(sortByName);
 
         function init(url) {
@@ -32,7 +32,7 @@ define(function (require) {
         }
 
         function alphabetMap() {
-            var sorted = all();
+            var sorted = filtered();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -56,6 +56,40 @@ define(function (require) {
 
             return map;
         }
+
+        function filtered() {
+            var sorted = all();
+            var list = divisions.filtered();
+            var divisionId = $state.params.divisionId;
+            var output = [];
+            var item, i;
+
+            if (divisionId) {
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (divisionId === item.division.id) {
+                        output.push(item);
+                    }
+                }
+            } else {
+                var divisionIdSet = {};
+
+                for (i = 0; i < list.length; i++) {
+                    item = list[i];
+                    divisionIdSet[item.id] = true;
+                }
+
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (divisionIdSet[item.division.id]) {
+                        output.push(item);
+                    }
+                }
+            }
+
+            return output;
+        }
+
 
         function pin(account) {
             account.pinned = true;
@@ -95,6 +129,7 @@ define(function (require) {
             addData: accounts.addData,
             alphabetMap: alphabetMap,
             observe: accounts.observe,
+            filtered: filtered,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

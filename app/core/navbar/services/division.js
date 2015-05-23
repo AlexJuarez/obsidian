@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
 
-    module.service('divisionService', ['$http', 'dataFactory', function ($http, dataFactory) {
+    module.service('divisionService', ['$http', 'dataFactory', '$state', function ($http, dataFactory, $state) {
         var divisions = dataFactory(sortByName);
 
         function init(url) {
@@ -28,7 +28,7 @@ define(function (require) {
         }
 
         function alphabetMap() {
-            var sorted = all();
+            var sorted = filtered();
             var map = {};
 
             ng.forEach(sorted, function (item) {
@@ -51,6 +51,26 @@ define(function (require) {
             });
 
             return map;
+        }
+
+        function filtered() {
+            var sorted = all();
+            var output = [];
+            var clientId = $state.params.clientId;
+            var item;
+
+            if (!clientId) {
+                return sorted;
+            }
+
+            for (var i = 0; i < sorted.length; i++) {
+                item = sorted[i];
+                if (clientId && item.client.id === clientId) {
+                    output.push(item);
+                }
+            }
+
+            return output;
         }
 
         function all() {
@@ -95,6 +115,7 @@ define(function (require) {
             addData: divisions.addData,
             alphabetMap: alphabetMap,
             observe: divisions.observe,
+            filtered: filtered,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

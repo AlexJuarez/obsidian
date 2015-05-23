@@ -12,11 +12,11 @@
         <input class="input" placeholder="Search" type="search" />
     </label>
     <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true"  class="list">
-        <li><a href="">All [[section]]</a></li>
+        <li><a ui-sref=".accounts">All [[section]]</a></li>
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
                 <li ng-repeat="account in pinned track by $index">
-                    <a href="">[[account.name]]</a>
+                    <a ui-sref=".accounts.detail({accountId: account.id})">[[account.name]]</a>
                     <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -27,7 +27,7 @@
             [[key]]
             <ul>
                 <li ng-repeat="account in value track by $index">
-                    <a href="">[[account.name]]</a>
+                    <a ui-sref=".accounts.detail({accountId: account.id})">[[account.name]]</a>
                     <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>
