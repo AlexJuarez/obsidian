@@ -13,7 +13,5 @@ define(function (require) {
                 $scope.$apply();
             });
         });
-
-        navbar.setClient($stateParams.clientId);
     }]);
 });

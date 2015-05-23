@@ -5,13 +5,18 @@ define(function (require) {
 
     var module = require('./../../module');
 
-    module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', function (dataFactory, clients, divisions, accounts, campaigns) {
+    module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', '$state', function (dataFactory, clients, divisions, accounts, campaigns, $rootScope, $state) {
         var navInfo = dataFactory();
-        navInfo.setData({});
+        navInfo.setData($state.params);
         clients.observe(navInfo.notifyObservers);
         accounts.observe(navInfo.notifyObservers);
         divisions.observe(navInfo.notifyObservers);
         campaigns.observe(navInfo.notifyObservers);
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+            console.log(toParams);
+            navInfo.setData(toParams);
+        });
 
         function getClient(id) {
             var data = {};
@@ -22,12 +27,6 @@ define(function (require) {
             }
 
             return data;
-        }
-
-        function setClient(id) {
-            navInfo.setData({
-                client: id
-            });
         }
 
         function getDivision(id) {
@@ -43,12 +42,6 @@ define(function (require) {
             }
 
             return data;
-        }
-
-        function setDivision(id) {
-            navInfo.setData({
-                division: id
-            });
         }
 
         function getAccount(id) {
@@ -70,12 +63,6 @@ define(function (require) {
             }
 
             return data;
-        }
-
-        function setAccount(id) {
-            navInfo.setData({
-                account: id
-            });
         }
 
         function getCampaign(id) {
@@ -104,24 +91,18 @@ define(function (require) {
             return data;
         }
 
-        function setCampaign(id) {
-            navInfo.setData({
-                campaign: id
-            });
-        }
-
         function all() {
             var data = navInfo.all();
 
             for (var x in data) {
                 switch (x) {
-                case 'client':
+                case 'clientId':
                     return getClient(data[x]);
-                case 'division':
+                case 'divisionId':
                     return getDivision(data[x]);
-                case 'account':
+                case 'accountId':
                     return getAccount(data[x]);
-                case 'campaign':
+                case 'campaignId':
                     return getCampaign(data[x]);
                 case 'default':
                     return {};
@@ -131,10 +112,7 @@ define(function (require) {
         }
 
         return {
-            setClient: setClient,
-            setDivision: setDivision,
-            setAccount: setAccount,
-            setCampaign: setCampaign,
+            setData: navInfo.setData,
             observe: navInfo.observe,
             all: all
         };
