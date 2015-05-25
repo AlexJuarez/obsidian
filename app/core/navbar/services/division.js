@@ -2,10 +2,10 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
-    var ng = require('angular');
+    var utils = require('./util');
 
     module.service('divisionService', ['$http', 'dataFactory', '$state', function ($http, dataFactory, $state) {
-        var divisions = dataFactory(sortByName);
+        var divisions = dataFactory(utils.sortByName);
 
         function init(url) {
             url = url || 'fixtures/divisions.json';
@@ -15,42 +15,8 @@ define(function (require) {
             });
         }
 
-        function sortByName(data) {
-            data.sort(function (a, b) {
-                if (a.name && b.name) {
-                    return a.name.localeCompare(b.name);
-                } else {
-                    return 0;
-                }
-            });
-
-            return data;
-        }
-
         function alphabetMap() {
-            var sorted = filtered();
-            var map = {};
-
-            ng.forEach(sorted, function (item) {
-                if (item.name) {
-                    var key = item.name.charAt(0).toLowerCase();
-                    if (/\d/.test(key)) {
-                        if (typeof map['#'] === 'undefined') {
-                            map['#'] = [item];
-                        } else {
-                            map['#'].push(item);
-                        }
-                    } else {
-                        if (typeof map[key] === 'undefined') {
-                            map[key] = [item];
-                        } else {
-                            map[key].push(item);
-                        }
-                    }
-                }
-            });
-
-            return map;
+            return utils.alphabetMap(filtered());
         }
 
         function filtered() {
@@ -88,25 +54,11 @@ define(function (require) {
         }
 
         function pinned() {
-            var output = [];
-
-            ng.forEach(all(), function (division) {
-                if (division.pinned) {
-                    output.push(division);
-                }
-            });
-
-            return output;
+            return utils.pinned(all());
         }
 
         function get(id) {
-            var items = all();
-            var length = items.length;
-            for (var i = 0; i < length; i++) {
-                if (items[i].id === id) {
-                    return items[i];
-                }
-            }
+            return utils.get(all(), id);
         }
 
         return {

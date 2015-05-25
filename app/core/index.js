@@ -6,6 +6,7 @@ define(function (require) {
 
     require('./navbar/navbar');
     require('./factories/data');
+    require('./navbar/services/util');
     require('./navbar/services/division');
     require('./navbar/services/campaign');
     require('./navbar/services/client');

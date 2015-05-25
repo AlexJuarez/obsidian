@@ -2,6 +2,7 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
+    var utils = require('./util');
     var ng = require('angular');
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
@@ -33,15 +34,17 @@ define(function (require) {
         function quarterMap() {
             var sorted = filtered();
             var map = {};
+            var item;
 
-            ng.forEach(sorted, function (item) {
+            for (var i = 0; i < sorted.length; i++) {
+                item = sorted[i];
                 var key = getYearQuarter(item.startDate);
                 if (typeof map[key] === 'undefined') {
                     map[key] = [item];
                 } else {
                     map[key].push(item);
                 }
-            });
+            }
 
             return map;
         }
@@ -61,6 +64,10 @@ define(function (require) {
                     }
                 }
             } else {
+                if (list.length === accounts.all().length) {
+                    return sorted;
+                }
+
                 var idSet = {};
 
                 for (i = 0; i < list.length; i++) {
@@ -95,15 +102,7 @@ define(function (require) {
         }
 
         function pinned() {
-            var output = [];
-
-            ng.forEach(all(), function (campaign) {
-                if (campaign.pinned) {
-                    output.push(campaign);
-                }
-            });
-
-            return output;
+            return utils.pinned(all());
         }
 
         function isInFlight(campaign) {
@@ -155,13 +154,7 @@ define(function (require) {
         }
 
         function get(id) {
-            var items = all();
-            var length = items.length;
-            for (var i = 0; i < length; i++) {
-                if (items[i].id === id) {
-                    return items[i];
-                }
-            }
+            return utils.get(all(), id);
         }
 
         return {

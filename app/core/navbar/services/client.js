@@ -3,9 +3,10 @@ define(function (require) {
 
     var module = require('./../../module');
     var ng = require('angular');
+    var utils = require('./util');
 
     module.service('clientService', ['$http', 'dataFactory', function ($http, dataFactory) {
-        var clients = dataFactory(sortByName);
+        var clients = dataFactory(utils.sortByName);
 
         function init(url) {
 
@@ -20,42 +21,8 @@ define(function (require) {
             return clients.all();
         }
 
-        function sortByName(data) {
-            data.sort(function (a, b) {
-                if (a.name && b.name) {
-                    return a.name.localeCompare(b.name);
-                } else {
-                    return 0;
-                }
-            });
-
-            return data;
-        }
-
         function alphabetMap() {
-            var sorted = all();
-            var map = {};
-
-            ng.forEach(sorted, function (item) {
-                if (item.name) {
-                    var key = item.name.charAt(0).toLowerCase();
-                    if (/\d/.test(key)) {
-                        if (typeof map['#'] === 'undefined') {
-                            map['#'] = [item];
-                        } else {
-                            map['#'].push(item);
-                        }
-                    } else {
-                        if (typeof map[key] === 'undefined') {
-                            map[key] = [item];
-                        } else {
-                            map[key].push(item);
-                        }
-                    }
-                }
-            });
-
-            return map;
+            return utils.alphabetMap(all());
         }
 
         function pin(client) {
@@ -69,25 +36,11 @@ define(function (require) {
         }
 
         function pinned() {
-            var output = [];
-
-            ng.forEach(all(), function (client) {
-                if (client.pinned) {
-                    output.push(client);
-                }
-            });
-
-            return output;
+            return utils.pinned(all());
         }
 
         function get(id) {
-            var items = all();
-            var length = items.length;
-            for (var i = 0; i < length; i++) {
-                if (items[i].id === id) {
-                    return items[i];
-                }
-            }
+            return utils.get(all(), id);
         }
 
         return {
