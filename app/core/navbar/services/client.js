@@ -20,6 +20,10 @@ define(function (require) {
             return clients.all();
         }
 
+        function search(query) {
+            return utils.search(all(), query);
+        }
+
         function alphabetMap() {
             return utils.alphabetMap(all());
         }
@@ -51,6 +55,7 @@ define(function (require) {
             pinned: pinned,
             unpin: unpin,
             pin: pin,
+            search: search,
             all: all,
             get: get
         };

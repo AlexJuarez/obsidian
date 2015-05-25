@@ -16,6 +16,10 @@ define(function (require) {
             });
         }
 
+        function search(query) {
+            return utils.search(all(), query);
+        }
+
         function sortByStartDate(data) {
             data.sort(function (a, b) {
                 return new Date(b.startDate) - new Date(a.startDate);
@@ -168,6 +172,7 @@ define(function (require) {
             observe: campaigns.observe,
             pinned: pinned,
             unpin: unpin,
+            search: search,
             pin: pin,
             all: all,
             get: get

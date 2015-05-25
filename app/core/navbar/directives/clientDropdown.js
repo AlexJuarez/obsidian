@@ -20,6 +20,14 @@ define(function (require) {
 
                 navbar.observe(updateCurrent);
 
+                $scope.$watch('query', function (newValue) {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            $scope.results = clients.search(newValue);
+                        });
+                    });
+                });
+
                 function updateCurrent() {
                     $timeout(function () {
                         $scope.$apply(function () {

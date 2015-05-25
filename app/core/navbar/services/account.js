@@ -19,6 +19,10 @@ define(function (require) {
             return accounts.all();
         }
 
+        function search(query) {
+            return utils.search(all(), query);
+        }
+
         function alphabetMap() {
             return utils.alphabetMap(filtered());
         }
@@ -86,6 +90,7 @@ define(function (require) {
             alphabetMap: alphabetMap,
             observe: accounts.observe,
             filtered: filtered,
+            search: search,
             pinned: pinned,
             unpin: unpin,
             pin: pin,

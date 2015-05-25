@@ -9,7 +9,7 @@
 </div>
 <div class="dropdown-menu" role="menu">
     <label class="dropdown-search">
-        <input class="input" placeholder="Search" type="search" />
+        <input ng-model="query" class="input" placeholder="Search" type="search" />
     </label>
     <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true"  class="list">
         <li><a ui-sref=".accounts">All [[section]]</a></li>
@@ -22,12 +22,21 @@
             </ul>
         </li>
     </ul>
-    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">
+    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">
         <li ng-repeat="(key, value) in accountsMap">
             [[key]]
             <ul>
                 <li ng-repeat="account in value track by $index">
                     <a ui-sref=".accounts.detail({accountId: account.id})">[[account.name]]</a>
+                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+            </ul>
+        </li>
+    </ul>
+    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
+        <li>Results for "{{query}}"
+            <ul>
+                <li ng-repeat="account in results track by $index">
+                    <a ui-sref=".accounts.detail({ accountId: account.id })">[[account.name]]</a>
                     <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>

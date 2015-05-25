@@ -15,6 +15,43 @@ define(function () {
         return data;
     }
 
+    function checkName(item, query) {
+        return item.name && item.name.toLowerCase().indexOf(query) > -1;
+    }
+
+    function checkId(item, query) {
+        return item.id && item.id.toLowerCase().indexOf(query) > -1;
+    }
+
+    function search(sorted, query, max) {
+        var output = [];
+        max = max || 5;
+        var item;
+
+        if (query) {
+            query = query.toLowerCase();
+            for (var i = 0; i < sorted.length; i++) {
+                item = sorted[i];
+
+                if (query.length > 3) {
+                    if (checkName(item, query) || checkId(item, query)) {
+                        output.push(item);
+                    }
+                } else {
+                    if (checkName(item, query)) {
+                        output.push(item);
+                    }
+                }
+
+                if (output.length > max) {
+                    break;
+                }
+            }
+        }
+
+        return output;
+    }
+
     function alphabetMap(sorted) {
         var map = {};
         var item;
@@ -67,6 +104,7 @@ define(function () {
 
     return {
         sortByName: sortByName,
+        search: search,
         alphabetMap: alphabetMap,
         pinned: pinned,
         get: get

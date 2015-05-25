@@ -17,6 +17,14 @@ define(function (require) {
                 update();
                 updateCurrent();
 
+                $scope.$watch('query', function (newValue) {
+                    $timeout(function () {
+                        $scope.$apply(function () {
+                            $scope.results = accounts.search(newValue);
+                        });
+                    });
+                });
+
                 accounts.observe(update);
 
                 navbar.observe(updateCurrent);
