@@ -32,7 +32,24 @@ define(function (require) {
             }
 
             function addData(d) {
-                data = sortFn(data.concat(d));
+                var uniqueSet = {};
+                var item, i;
+
+                for (i = 0; i < d.length; i++) {
+                    item = d[i];
+                    uniqueSet[item.id] = true;
+                }
+
+                var temp = [];
+
+                for (i = 0; i < data.length; i++) {
+                    item = data[i];
+                    if (!uniqueSet[item.id]) {
+                        temp.push(item);
+                    }
+                }
+
+                data = sortFn(temp.concat(d));
                 notifyObservers();
             }
 

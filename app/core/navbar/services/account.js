@@ -20,7 +20,14 @@ define(function (require) {
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            var max = 5;
+            var results = utils.search(all(), query);
+            if (query && results.length < max) {
+                $http.get('/narwhal/accounts/search?q=' + query + '&limit=5').success(function (res) {
+                    accounts.addData(res);
+                });
+            }
+            return results;
         }
 
         function alphabetMap() {
