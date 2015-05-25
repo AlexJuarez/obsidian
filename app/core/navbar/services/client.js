@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
-    var ng = require('angular');
     var utils = require('./util');
 
     module.service('clientService', ['$http', 'dataFactory', function ($http, dataFactory) {

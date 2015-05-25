@@ -10,7 +10,7 @@
     "indent": 4,
     "latedef": "nofunc",
     "maxlen": 300,
-    "maxstatements": 20,
+    "maxstatements": 30,
     "newcap": true,
     "node": true,
     "strict": true,

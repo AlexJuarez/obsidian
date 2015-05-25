@@ -1,6 +1,6 @@
 /* jshint -W101 */
 
-define(function (require) {
+define(function () {
     'use strict';
 
     function sortByName(data) {
