@@ -38,7 +38,7 @@ define(function (require) {
                     templateUrl: 'campaign-management/clients/index.html'
                 })
                     .state('cm.clients.detail', {
-                        url: '/:clientId',
+                        url: '/?clientId',
                         views: {
                             'header': {
                                 controller: 'clientCtrl',
@@ -47,28 +47,24 @@ define(function (require) {
                         }
                     })
                 .state('cm.divisions', {
-                    url: '/divisions',
+                    url: '/divisions?clientId',
                     template: '<ui-view />'
                 })
                     .state('cm.divisions.detail', {
-                        url: '/:divisionId',
+                        url: '/?divisionId',
                         controller: 'divisionCtrl',
                         template: '<ui-view />'
                     })
             .state('cm.accounts', {
-                url: '/accounts',
+                url: '/accounts?divisionId&clientId',
                 template: '<ui-view />'
             })
-                .state('cm.accounts.detail', {
-                    url: '/:accountId',
-                    template: '<ui-view />'
-                })
             .state('cm.campaigns', {
-                url: '/campaigns',
+                url: '/campaigns?accountId&divisionId&clientId',
                 template: '<ui-view />'
             })
                 .state('cm.campaigns.detail', {
-                    url: '/:campaignId',
+                    url: '/?campaignId',
                     template: '<ui-view />'
                 });
 

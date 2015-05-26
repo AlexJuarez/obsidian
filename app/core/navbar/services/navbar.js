@@ -22,7 +22,7 @@ define(function (require) {
             var client = clients.get(id);
 
             if (client) {
-                data.client = client.name;
+                data.client = client;
             }
 
             return data;
@@ -33,10 +33,10 @@ define(function (require) {
             var division = divisions.get(id);
 
             if (division) {
-                data.division = division.name;
+                data.division = division;
                 var client = clients.get(division.client.id);
                 if (client) {
-                    data.client = client.name;
+                    data.client = client;
                 }
             }
 
@@ -48,16 +48,16 @@ define(function (require) {
             var account = accounts.get(id);
 
             if (account) {
-                data.account = account.name;
+                data.account = account;
                 var client = clients.get(account.client.id);
                 var division = divisions.get(account.division.id);
 
                 if (client) {
-                    data.client = client.name;
+                    data.client = client;
                 }
 
                 if (division) {
-                    data.division = division.name;
+                    data.division = division;
                 }
             }
 
@@ -69,21 +69,21 @@ define(function (require) {
             var campaign = campaigns.get(id);
 
             if (campaign) {
-                data.campaign = campaign.name;
+                data.campaign = campaign;
                 var client = clients.get(campaign.client.id);
                 var division = divisions.get(campaign.division.id);
                 var account = accounts.get(campaign.account.id);
 
                 if (client) {
-                    data.client = client.name;
+                    data.client = client;
                 }
 
                 if (account) {
-                    data.account = account.name;
+                    data.account = account;
                 }
 
                 if (division) {
-                    data.division = division.name;
+                    data.division = division;
                 }
             }
 
@@ -93,19 +93,17 @@ define(function (require) {
         function all() {
             var data = navInfo.all();
 
-            for (var x in data) {
-                switch (x) {
-                case 'clientId':
-                    return getClient(data[x]);
-                case 'divisionId':
-                    return getDivision(data[x]);
-                case 'accountId':
-                    return getAccount(data[x]);
-                case 'campaignId':
-                    return getCampaign(data[x]);
-                case 'default':
-                    return {};
-                }
+            if (data.campaignId) {
+                return getCampaign(data.campaignId);
+            }
+            if (data.accountId) {
+                return getAccount(data.accountId);
+            }
+            if (data.divisionId) {
+                return getDivision(data.divisionId);
+            }
+            if (data.clientId) {
+                return getClient(data.clientId);
             }
             return {};
         }
@@ -113,7 +111,8 @@ define(function (require) {
         return {
             setData: navInfo.setData,
             observe: navInfo.observe,
-            all: all
+            all: all,
+            params: navInfo.all
         };
     }]);
 });

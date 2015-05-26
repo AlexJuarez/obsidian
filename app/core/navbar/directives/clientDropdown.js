@@ -31,7 +31,8 @@ define(function (require) {
                 function updateCurrent() {
                     $timeout(function () {
                         $scope.$apply(function () {
-                            $scope.current = navbar.all().client || 'All Clients';
+                            var info = navbar.all();
+                            $scope.current = info.client && info.client.name || 'All Clients';
                         });
                     });
                 }

@@ -17,6 +17,8 @@ define(function (require) {
                 update();
                 updateCurrent();
 
+                $scope.state = navbar.params();
+
                 $scope.$watch('query', function (newValue) {
                     $timeout(function () {
                         $scope.$apply(function () {
@@ -33,7 +35,13 @@ define(function (require) {
                 function updateCurrent() {
                     $timeout(function () {
                         $scope.$apply(function () {
-                            $scope.current = navbar.all().division || 'All Divisions';
+                            var info = navbar.all();
+                            $scope.current = info.division && info.division.name || 'All Divisions';
+                            if (info.division && info.client && info.client.id) {
+                                $scope.state = { clientId: info.client.id };
+                            } else {
+                                $scope.state = navbar.params();
+                            }
                         });
                     });
                 }

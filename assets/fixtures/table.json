@@ -7,11 +7,11 @@
         "avgViewer": "percent"
     },
     "headers": [
-        "Publishers",
-        "Clickthroughs",
-        "CTR",
-        "Minutes Watched",
-        "Average % Viewer"
+        {"name": "Publishers", "id": "publisher"},
+        {"name": "Clickthroughs", "id": "clickthroughs"},
+        {"name": "CTR", "id": "ctr"},
+        {"name": "Minutes Watched", "id": "minutesWatched"},
+        {"name": "Average % Viewer", "id": "avgViewer"}
     ],
     "data": [
         {
