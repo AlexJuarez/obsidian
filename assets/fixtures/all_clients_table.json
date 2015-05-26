@@ -1,0 +1,69 @@
+{
+    "clients": [
+        {
+            "metrics": {
+                "impressions": 585838234,
+                "countAccountsActive": 3242,
+                "countCampaignsPreFlight": 123,
+                "countCampaignsInFlight": 1234
+            },
+            "id": "clientId0",
+            "name": "Client 0",
+            "channel": "Advertisers",
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants"
+        },
+        {
+            "metrics": {
+                "impressions": 6588865,
+                "countAccountsActive": 3242,
+                "countCampaignsPreFlight": 65,
+                "countCampaignsInFlight": 633
+            },
+            "id": "clientId2",
+            "name": "Client 2",
+            "channel": "Resellers",
+            "lastViewed": "2015-03-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants"
+        },
+        {
+            "metrics": {
+                "impressions": 848664,
+                "countAccountsActive": 3242,
+                "countCampaignsPreFlight": 232,
+                "countCampaignsInFlight": 67
+            },
+            "id": "clientId4",
+            "name": "Client 4",
+            "channel": "Advertisers",
+            "lastViewed": "2015-04-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants"
+        },
+        {
+            "metrics": {
+                "impressions": 216126,
+                "countAccountsActive": 3242,
+                "countCampaignsPreFlight": 733,
+                "countCampaignsInFlight": 73
+            },
+            "id": "clientId3",
+            "name": "Client 3",
+            "channel": "Advertisers",
+            "lastViewed": "2015-04-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants"
+        },
+        {
+            "metrics": {
+                "impressions": 25235,
+                "countAccountsActive": 3242,
+                "countCampaignsPreFlight": 623,
+                "countCampaignsInFlight": 53
+            },
+            "id": "clientId1",
+            "name": "Client 1",
+            "channel": "Advertisers",
+            "lastViewed": "2015-02-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants"
+        }
+    ]
+}

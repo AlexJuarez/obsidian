@@ -34,6 +34,7 @@ define(function (require) {
             })
                 .state('cm.clients', {
                     url: '/clients',
+                    controller: 'clientsCtrl',
                     templateUrl: 'campaign-management/clients/index.html'
                 })
                     .state('cm.clients.detail', {

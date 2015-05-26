@@ -20,6 +20,15 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
+
+            module(function ($provide) {
+                $provide.value('$state', {
+                    params: {
+                        clientId: "clientId0"
+                    }
+                })
+            });
+
             inject(function (divisionService, $httpBackend) {
                 division = divisionService;
                 httpBackend = $httpBackend;
@@ -70,6 +79,15 @@ define(function (require) {
         it('should get an division by id', function () {
             division.setData(divisions);
             expect(division.get('divisionId0')).toEqual(divisions[0]);
+        });
+
+        it('should make a request to search', function () {
+            division.setData(divisions);
+            httpBackend.when('GET', '/narwhal/divisions/search?q=test&limit=5').respond(
+                []
+            );
+            expect(division.search('test')).toEqual([]);
+            httpBackend.flush();
         });
     });
 });

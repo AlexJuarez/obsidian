@@ -21,7 +21,7 @@ define(function (require) {
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
+    require('./filters/date');
     require('./filters/truncateNumber');
     require('./services/store');
-
 });
