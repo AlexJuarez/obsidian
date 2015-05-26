@@ -16,7 +16,7 @@
         <li ng-if="pinned.length">Pinned
             <ul  class="pinned">
                 <li ng-repeat="client in pinned track by $index">
-                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>
+                    <a ui-sref=".clients.detail({ clientId: client.id })">[[::client.name]]</a>
                     <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul >
@@ -24,19 +24,19 @@
     </ul>
     <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
         <li ng-repeat="(key, value) in clientsMap">
-            [[key]]
+            [[::key]]
             <ul>
                 <li ng-repeat="client in value track by $index">
-                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>
+                    <a ui-sref=".clients.detail({ clientId: client.id })">[[::client.name]]</a>
                     <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>
     </ul>
     <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
-        <li>Results for "{{query}}"
+        <li>Results for "[[query]]"
             <ul>
                 <li ng-repeat="client in results track by $index">
-                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>
+                    <a ui-sref=".clients.detail({ clientId: client.id })">[[::client.name]]</a>
                     <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>
