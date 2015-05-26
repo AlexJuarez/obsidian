@@ -71,5 +71,14 @@ define(function (require) {
             division.setData(divisions);
             expect(division.get('divisionId0')).toEqual(divisions[0]);
         });
+
+        it('should make a request to search', function () {
+            division.setData(divisions);
+            httpBackend.when('GET', '/narwhal/divisions/search?q=test&limit=5').respond(
+                []
+            );
+            expect(division.search('test')).toEqual([]);
+            httpBackend.flush();
+        });
     });
 });

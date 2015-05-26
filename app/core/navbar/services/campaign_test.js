@@ -97,5 +97,14 @@ define(function (require) {
             campaign.setData(campaigns);
             expect(campaign.completed()).toEqual([]);
         });
+
+        it('should make a request to search', function () {
+            campaign.setData(campaigns);
+            httpBackend.when('GET', '/narwhal/campaigns/search?q=test&limit=5').respond(
+                []
+            );
+            expect(campaign.search('test')).toEqual([]);
+            httpBackend.flush();
+        });
     });
 });
