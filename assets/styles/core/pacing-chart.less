@@ -1,0 +1,48 @@
+.meter-wrapper {
+  font-size: 100%;
+  display: flex;
+  .meter {
+    flex: 3;
+    border: solid 4px @light-gray;
+    position: relative;
+    //min-width: 50%;
+    //max-width: 80%;
+    //float: left;
+    height: 100%;
+    margin-right: 2rem;
+    box-sizing: border-box;
+
+    .target {
+      width: 3px;
+      height: calc(~'100% + 8px');
+      background: @dark-gray;
+      position: absolute;
+      top: -4px;
+      left: 0%;
+      -webkit-transition: left 0.5s ease;
+      transition: left 0.5s ease;
+    }
+    .achieved {
+      width: 0%;
+      height: 100%;
+      background: @brand-color;
+      display: block;
+      -webkit-transition: width 0.5s ease;
+      transition: width 0.5s ease;
+    }
+  }
+  &.meter-sm {
+    height: 20px;
+    line-height: 20px;
+  }
+  &.meter-reg {
+    height: 30px;
+    line-height: 30px;
+  }
+  & > span {
+    flex: 1;
+    //display: inline-block;
+    //background: #ccc;
+  }
+
+}
