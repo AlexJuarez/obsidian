@@ -14,18 +14,18 @@
         "tumblr": "number"
     },
     "headers": [
-        {"value": "Publishers", "column": "publisher"},
-        {"value": "Impressions", "column": "impressions"},
-        {"value": "View Rate", "column": "viewRate", "group": "overview"},
-        {"value": "CTR", "column": "ctr", "group": "overview"},
-        {"value": "Minutes Watched",  "column": "watched"},
-        {"value": "Average % Viewed", "column": "avg_viewed", "group": "video"},
-        {"value": "Quartiles", "column": "quartiles", "group": "video"},
-        {"value": "Social Actions", "column": "social"},
-        {"value": "Facebook", "column": "facebook", "group": "social"},
-        {"value": "Twitter",  "column": "twitter", "group": "social"},
-        {"value": "Pinterest", "column": "pininterst", "group": "social"},
-        {"value": "Tumblr", "column": "tumblr", "group": "social"}
+        {"name": "Publishers", "id": "publisher"},
+        {"name": "Impressions", "id": "impressions"},
+        {"name": "View Rate", "id": "viewRate", "group": "overview"},
+        {"name": "CTR", "id": "ctr", "group": "overview"},
+        {"name": "Minutes Watched",  "id": "watched"},
+        {"name": "Average % Viewed", "id": "avg_viewed", "group": "video"},
+        {"name": "Quartiles", "id": "quartiles", "group": "video"},
+        {"name": "Social Actions", "id": "social"},
+        {"name": "Facebook", "id": "facebook", "group": "social"},
+        {"name": "Twitter",  "id": "twitter", "group": "social"},
+        {"name": "Pinterest", "id": "pininterst", "group": "social"},
+        {"name": "Tumblr", "id": "tumblr", "group": "social"}
     ],
     "data": [
         {

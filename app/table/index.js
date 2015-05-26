@@ -5,6 +5,6 @@ define(function (require) {
     'use strict';
 
     require('./filters/format');
-    require('./directives/accordion');
+    require('./directives/accordionTable');
     require('./directives/basicTable');
 });

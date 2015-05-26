@@ -13,14 +13,14 @@
                 "edit": ""
             },
             "headers": [
-                "Account",
-                "Campaign",
-                "Impressions & Pacing",
-                "Start",
-                "End",
-                "Placements",
-                "Creatives",
-                "Edit"
+                {"name": "Account", "id": "account"},
+                {"name": "Campaign", "id": "campaign"},
+                {"name": "Impressions & Pacing", "id": "impressions"},
+                {"name": "Start", "id": "start"},
+                {"name": "End", "id": "end"},
+                {"name": "Placements", "id": "placements"},
+                {"name": "Creatives", "id": "creatives"},
+                {"name": "Edit", "id": "edit"}
             ],
             "data": [
                 {

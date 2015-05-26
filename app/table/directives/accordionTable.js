@@ -1,19 +1,16 @@
-/**
- * Created by alex on 4/23/15.
- */
 define(function (require) {
     'use strict';
 
     var app = require('./../module');
-    require('tpl!./basicTable.html');
+    require('tpl!./accordionTable.html');
 
-    app.directive('basicTable', [function () {
+    app.directive('accordionTable', [function () {
         return {
             restrict: 'A',
-            templateUrl: 'table/directives/basicTable.html',
+            templateUrl: 'table/directives/accordionTable.html',
             replace: true,
             scope: {
-                table: '=basicTable',
+                table: '=accordionTable',
                 classes: '@class'
             }
         };
