@@ -20,6 +20,15 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
+
+            module(function ($provide) {
+                $provide.value('$state', {
+                    params: {
+                        clientId: "clientId0"
+                    }
+                })
+            });
+
             inject(function (divisionService, $httpBackend) {
                 division = divisionService;
                 httpBackend = $httpBackend;
