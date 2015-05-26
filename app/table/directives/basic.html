@@ -2,15 +2,14 @@
     <thead>
     <tr>
         <th ng-repeat="header in table.headers track by $index">
-            [[header]]
+            [[header.name]]
         </th>
     </tr>
     </thead>
     <tbody>
     <tr ng-repeat="row in table.data track by $index">
-        <td ng-repeat="(key, value) in row">
-            <div class="cell">
-                [[value|format:key:table.rules]]
+        <td ng-repeat="header in table.headers">
+            <div compile="header.id|format:row:table.rules" class="cell">
             </div>
         </td>
     </tr>

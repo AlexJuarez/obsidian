@@ -24,9 +24,9 @@ define(function (require) {
             module(function ($provide) {
                 $provide.value('$state', {
                     params: {
-                        clientId: "clientId0"
+                        clientId: 'clientId0'
                     }
-                })
+                });
             });
 
             inject(function (divisionService, $httpBackend) {

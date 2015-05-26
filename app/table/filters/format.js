@@ -13,9 +13,9 @@ define(function (require) {
             return $filter('date')(input, 'longDate');
         }
 
-        return function (input, key, rules) {
-            input = input || '';
-            var rule = rules[key];
+        return function (input, row, rules) {
+            var rule = rules[input];
+            input = row[input];
             switch (rule) {
             case 'number':
                 return $filter('number')(input, 0);
@@ -29,6 +29,8 @@ define(function (require) {
                 return date(input);
             case 'bullet':
                 return '';
+            case 'link':
+                return '<a ui-sref="' + input.route + '">' + input.name + '</a>';
             default:
                 return input;
             }

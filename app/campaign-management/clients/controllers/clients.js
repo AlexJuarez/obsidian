@@ -16,19 +16,19 @@ define(function (require) {
             var outData = {
                 'rules': {
                     'channel': '',
-                    'client': '',
+                    'client': 'link',
                     'activeAccounts': 'number',
                     'activeCampaigns': 'number',
                     'impressions': 'number',
                     'lastLogin': ''
                 },
                 'headers': [
-                    'Channel',
-                    'Client',
-                    '# Active Accounts',
-                    '# Active Campaigns',
-                    'Impressions',
-                    'Last Client Login'
+                    {name: 'Channel', id: 'channel'},
+                    {name: 'Client', id: 'client'},
+                    {name: '# Active Accounts', id: 'activeAccounts'},
+                    {name: '# Active Campaigns', id: 'activeCampaigns'},
+                    {name: 'Impressions', id: 'impressions'},
+                    {name: 'Last Client Login', id: 'lastLogin'}
                 ],
                 'data': []
             };
@@ -37,8 +37,9 @@ define(function (require) {
             inData.forEach(function (client) {
                 lastLogin = client.lastViewedName + ', ' + dateFormatter(client.lastViewed);
                 outData.data.push({
+                    'id': client.id,
                     'channel': client.channel,
-                    'client': client.name,
+                    'client': {route: 'cm.clients.detail({ clientId: row.id })', name: client.name },
                     'activeAccounts': client.metrics.countAccountsActive,
                     'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
                     'impressions': client.metrics.impressions,

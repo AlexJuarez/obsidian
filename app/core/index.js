@@ -18,6 +18,7 @@ define(function (require) {
     require('./navbar/directives/campaignDropdown');
     require('./directives/dropdown');
     require('./directives/tooltip');
+    require('./directives/compile');
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
