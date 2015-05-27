@@ -1,0 +1,39 @@
+{
+    "rules": {
+        "publisher": "",
+        "clickthroughs": "number",
+        "ctr": "percent",
+        "minutesWatched": "number",
+        "avgViewer": "percent"
+    },
+    "headers": [
+        {"name": "Publishers", "id": "publisher"},
+        {"name": "Clickthroughs", "id": "clickthroughs"},
+        {"name": "CTR", "id": "ctr"},
+        {"name": "Minutes Watched", "id": "minutesWatched"},
+        {"name": "Average % Viewer", "id": "avgViewer"}
+    ],
+    "data": [
+        {
+            "publisher": "CNN",
+            "clickthroughs": 80123,
+            "ctr": 0.9,
+            "minutesWatched": 50234,
+            "avgViewer": 24.0
+        },
+        {
+            "publisher": "Google",
+            "clickthroughs": 74452,
+            "ctr": 0.9,
+            "minutesWatched": 50234,
+            "avgViewer": 24.0
+        },
+        {
+            "publisher": "MSN",
+            "clickthroughs": 65415,
+            "ctr": 0.9,
+            "minutesWatched": 50234,
+            "avgViewer": 24.0
+        }
+    ]
+}

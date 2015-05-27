@@ -45907,18 +45907,18 @@ define('text',['module'], function (module) {
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
- *     1. Redistributions of source code must retain the above copyright notice, 
+ *
+ *     1. Redistributions of source code must retain the above copyright notice,
  *        this list of conditions and the following disclaimer.
- *     
- *     2. Redistributions in binary form must reproduce the above copyright 
+ *
+ *     2. Redistributions in binary form must reproduce the above copyright
  *        notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
- * 
+ *
  *     3. Neither the name of David Hall nor the names of its contributors may be
  *        used to endorse or promote products derived from this software without
  *        specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -45940,7 +45940,7 @@ define('tpl',[
     "use strict";
 
     var tplModule = null;
-    
+
     var buildMap = {};
 
     var tpl = {
@@ -45985,6 +45985,537 @@ define('tpl',[
 });
 
 
+define('tpl!core/modal/modal.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/modal/modal.html', '<div modal-render="{{$isRendered}}" tabindex="-1" role="dialog" class="modal"\n     modal-animation-class="fade"\n     ng-class="{in: animate}" ng-style="{\'z-index\': 1050 + index*10, display: \'block\'}" ng-click="close($event)">\n    <div class="modal-dialog" ng-class="size ? \'modal-\' + size : \'\'"><div class="modal-content" modal-transclude></div></div>\n</div>\n'); });
+
+define('core/modal/directives/modalWindow',['require','./../../module','tpl!./../modal.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./../modal.html');
+
+    app.directive('modalWindow', ['$modalStack', '$q', function ($modalStack, $q) {
+        return {
+            restrict: 'EA',
+            scope: {
+                index: '@',
+                animate: '='
+            },
+            replace: true,
+            transclude: true,
+            templateUrl: function (tElement, tAttrs) {
+                return tAttrs.templateUrl || 'core/modal/modal.html';
+            },
+            link: function (scope, element, attrs) {
+                element.addClass(attrs.windowClass || '');
+                scope.size = attrs.size;
+
+                scope.close = function (evt) {
+                    var modal = $modalStack.getTop();
+                    if (modal && modal.value.backdrop && modal.value.backdrop !== 'static' && (evt.target === evt.currentTarget)) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        $modalStack.dismiss(modal.key, 'backdrop click');
+                    }
+                };
+
+                // This property is only added to the scope for the purpose of detecting when this directive is rendered.
+                // We can detect that by using this property in the template associated with this directive and then use
+                // {@link Attribute#$observe} on it.
+                scope.$isRendered = true;
+
+                // Deferred object that will be resolved when this modal is render.
+                var modalRenderDeferObj = $q.defer();
+                // Observe function will be called on next digest cycle after compilation, ensuring that the DOM is ready.
+                // In order to use this way of finding whether DOM is ready, we need to observe a scope property used in modal's template.
+                attrs.$observe('modalRender', function (value) {
+                    if (value === 'true') {
+                        modalRenderDeferObj.resolve();
+                    }
+                });
+
+                modalRenderDeferObj.promise.then(function () {
+                    // trigger CSS transitions
+                    scope.animate = true;
+
+                    var inputsWithAutofocus = element[0].querySelectorAll('[autofocus]');
+                    /**
+                     * Auto-focusing of a freshly-opened modal element causes any child elements
+                     * with the autofocus attribute to lose focus. This is an issue on touch
+                     * based devices which will show and then hide the onscreen keyboard.
+                     * Attempts to refocus the autofocus element via JavaScript will not reopen
+                     * the onscreen keyboard. Fixed by updated the focusing logic to only autofocus
+                     * the modal element if the modal does not contain an autofocus element.
+                     */
+                    if (inputsWithAutofocus.length) {
+                        inputsWithAutofocus[0].focus();
+                    } else {
+                        element[0].focus();
+                    }
+
+                    // Notify {@link $modalStack} that modal is rendered.
+                    var modal = $modalStack.getTop();
+                    if (modal) {
+                        $modalStack.modalRendered(modal.key);
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+define('core/modal/directives/modalAnimationClass',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.directive('modalAnimationClass', [function () {
+        return {
+            compile: function (tElement, tAttrs) {
+                if (tAttrs.modalAnimation) {
+                    tElement.addClass(tAttrs.modalAnimationClass);
+                }
+            }
+        };
+    }]);
+});
+
+
+define('tpl!core/modal/modalBackground.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/modal/modalBackground.html', '<div class="modal-backdrop"\n     modal-animation-class="fade"\n     ng-class="{in: animate}"\n     ng-style="{\'z-index\': 1040 + (index && 1 || 0) + index*10}"\n    ></div>\n'); });
+
+define('core/modal/directives/modalBackdrop',['require','./../../module','tpl!./../modalBackground.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./../modalBackground.html');
+
+    app.directive('modalBackdrop', ['$timeout', function ($timeout) {
+        function linkFn(scope) {
+            scope.animate = false;
+
+            //trigger CSS transitions
+            $timeout(function () {
+                scope.animate = true;
+            });
+        }
+
+        return {
+            restrict: 'EA',
+            replace: true,
+            templateUrl: 'core/modal/modalBackground.html',
+            compile: function (tElement, tAttrs) {
+                tElement.addClass(tAttrs.backdropClass);
+                return linkFn;
+            }
+        };
+    }]);
+});
+
+define('core/modal/directives/modalTransclude',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.directive('modalTransclude', [function () {
+        return {
+            link: function ($scope, $element, $attrs, controller, $transclude) {
+                $transclude($scope.$parent, function (clone) {
+                    $element.empty();
+                    $element.append(clone);
+                });
+            }
+        };
+    }]);
+});
+
+define('core/modal/factories/modalStack',['require','./../../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var ng = require('angular');
+
+    app.factory('$modalStack', ['$animate', '$timeout', '$document', '$compile', '$rootScope', '$$stackedMap',
+        function ($animate, $timeout, $document, $compile, $rootScope, $$stackedMap) {
+
+            var OPENED_MODAL_CLASS = 'modal-open';
+
+            var backdropDomEl, backdropScope;
+            var openedWindows = $$stackedMap.createNew();
+            var $modalStack = {};
+
+            function backdropIndex() {
+                var topBackdropIndex = -1;
+                var opened = openedWindows.keys();
+                for (var i = 0; i < opened.length; i++) {
+                    if (openedWindows.get(opened[i]).value.backdrop) {
+                        topBackdropIndex = i;
+                    }
+                }
+                return topBackdropIndex;
+            }
+
+            $rootScope.$watch(backdropIndex, function (newBackdropIndex) {
+                if (backdropScope) {
+                    backdropScope.index = newBackdropIndex;
+                }
+            });
+
+            function removeModalWindow(modalInstance) {
+
+                var body = $document.find('body').eq(0);
+                var modalWindow = openedWindows.get(modalInstance).value;
+
+                //clean up the stack
+                openedWindows.remove(modalInstance);
+
+                //remove window DOM element
+                removeAfterAnimate(modalWindow.modalDomEl, modalWindow.modalScope, function () {
+                    body.toggleClass(OPENED_MODAL_CLASS, openedWindows.length() > 0);
+                    checkRemoveBackdrop();
+                });
+            }
+
+            function checkRemoveBackdrop() {
+                //remove backdrop if no longer needed
+                if (backdropDomEl && backdropIndex() === -1) {
+                    var backdropScopeRef = backdropScope;
+                    removeAfterAnimate(backdropDomEl, backdropScope, function () {
+                        backdropScopeRef = null;
+                    });
+                    backdropDomEl = undefined;
+                    backdropScope = undefined;
+                }
+            }
+
+            function removeAfterAnimate(domEl, scope, done) {
+                // Closing animation
+                scope.animate = false;
+
+                if (domEl.attr('modal-animation') && $animate.enabled()) {
+                    // transition out
+                    domEl.one('$animate:close', function closeFn() {
+                        $rootScope.$evalAsync(afterAnimating);
+                    });
+                } else {
+                    // Ensure this call is async
+                    $timeout(afterAnimating);
+                }
+
+                function afterAnimating() {
+                    if (afterAnimating.done) {
+                        return;
+                    }
+                    afterAnimating.done = true;
+
+                    domEl.remove();
+                    scope.$destroy();
+                    if (done) {
+                        done();
+                    }
+                }
+            }
+
+            $document.bind('keydown', function (evt) {
+                var modal;
+
+                if (evt.which === 27) {
+                    modal = openedWindows.top();
+                    if (modal && modal.value.keyboard) {
+                        evt.preventDefault();
+                        $rootScope.$apply(function () {
+                            $modalStack.dismiss(modal.key, 'escape key press');
+                        });
+                    }
+                }
+            });
+
+            $modalStack.open = function (modalInstance, modal) {
+
+                var modalOpener = $document[0].activeElement;
+
+                openedWindows.add(modalInstance, {
+                    deferred: modal.deferred,
+                    renderDeferred: modal.renderDeferred,
+                    modalScope: modal.scope,
+                    backdrop: modal.backdrop,
+                    keyboard: modal.keyboard
+                });
+
+                var body = $document.find('body').eq(0),
+                    currBackdropIndex = backdropIndex();
+
+                if (currBackdropIndex >= 0 && !backdropDomEl) {
+                    backdropScope = $rootScope.$new(true);
+                    backdropScope.index = currBackdropIndex;
+                    var angularBackgroundDomEl = ng.element('<div modal-backdrop="modal-backdrop"></div>');
+                    angularBackgroundDomEl.attr('backdrop-class', modal.backdropClass);
+                    if (modal.animation) {
+                        angularBackgroundDomEl.attr('modal-animation', 'true');
+                    }
+                    backdropDomEl = $compile(angularBackgroundDomEl)(backdropScope);
+                    body.append(backdropDomEl);
+                }
+
+                var angularDomEl = ng.element('<div modal-window="modal-window"></div>');
+                angularDomEl.attr({
+                    'template-url': modal.windowTemplateUrl,
+                    'window-class': modal.windowClass,
+                    'size': modal.size,
+                    'index': openedWindows.length() - 1,
+                    'animate': 'animate'
+                }).html(modal.content);
+                if (modal.animation) {
+                    angularDomEl.attr('modal-animation', 'true');
+                }
+
+                var modalDomEl = $compile(angularDomEl)(modal.scope);
+                openedWindows.top().value.modalDomEl = modalDomEl;
+                openedWindows.top().value.modalOpener = modalOpener;
+                body.append(modalDomEl);
+                body.addClass(OPENED_MODAL_CLASS);
+            };
+
+            function broadcastClosing(modalWindow, resultOrReason, closing) {
+                return !modalWindow.value.modalScope.$broadcast('modal.closing', resultOrReason, closing).defaultPrevented;
+            }
+
+            $modalStack.close = function (modalInstance, result) {
+                var modalWindow = openedWindows.get(modalInstance);
+                if (modalWindow && broadcastClosing(modalWindow, result, true)) {
+                    modalWindow.value.deferred.resolve(result);
+                    removeModalWindow(modalInstance);
+                    modalWindow.value.modalOpener.focus();
+                    return true;
+                }
+                return !modalWindow;
+            };
+
+            $modalStack.dismiss = function (modalInstance, reason) {
+                var modalWindow = openedWindows.get(modalInstance);
+                if (modalWindow && broadcastClosing(modalWindow, reason, false)) {
+                    modalWindow.value.deferred.reject(reason);
+                    removeModalWindow(modalInstance);
+                    modalWindow.value.modalOpener.focus();
+                    return true;
+                }
+                return !modalWindow;
+            };
+
+            $modalStack.dismissAll = function (reason) {
+                var topModal = this.getTop();
+                while (topModal && this.dismiss(topModal.key, reason)) {
+                    topModal = this.getTop();
+                }
+            };
+
+            $modalStack.getTop = function () {
+                return openedWindows.top();
+            };
+
+            $modalStack.modalRendered = function (modalInstance) {
+                var modalWindow = openedWindows.get(modalInstance);
+                if (modalWindow) {
+                    modalWindow.value.renderDeferred.resolve();
+                }
+            };
+
+            return $modalStack;
+        }]);
+});
+
+define('core/modal/factories/stackedMap',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.factory('$$stackedMap', [function () {
+        return {
+            createNew: function () {
+                var stack = [];
+
+                return {
+                    add: function (key, value) {
+                        stack.push({
+                            key: key,
+                            value: value
+                        });
+                    },
+                    get: function (key) {
+                        for (var i = 0; i < stack.length; i++) {
+                            if (key === stack[i].key) {
+                                return stack[i];
+                            }
+                        }
+                    },
+                    keys: function () {
+                        var keys = [];
+                        for (var i = 0; i < stack.length; i++) {
+                            keys.push(stack[i].key);
+                        }
+                        return keys;
+                    },
+                    top: function () {
+                        return stack[stack.length - 1];
+                    },
+                    remove: function (key) {
+                        var idx = -1;
+                        for (var i = 0; i < stack.length; i++) {
+                            if (key === stack[i].key) {
+                                idx = i;
+                                break;
+                            }
+                        }
+                        return stack.splice(idx, 1)[0];
+                    },
+                    removeTop: function () {
+                        return stack.splice(stack.length - 1, 1)[0];
+                    },
+                    length: function () {
+                        return stack.length;
+                    }
+                };
+            }
+        };
+    }]);
+});
+
+define('core/modal/providers/modal',['require','./../../module','angular','tpl!./../modal.html','tpl!./../modalBackground.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var ng = require('angular');
+    require('tpl!./../modal.html');
+    require('tpl!./../modalBackground.html');
+
+    app.provider('$modal', function () {
+        var $modalProvider = {
+            options: {
+                animation: true,
+                backdrop: true, //can also be false or 'static'
+                keyboard: true
+            },
+            $get: ['$injector', '$rootScope', '$q', '$templateRequest', '$controller', '$modalStack',
+                function ($injector, $rootScope, $q, $templateRequest, $controller, $modalStack) {
+
+                    var $modal = {};
+
+                    function getTemplatePromise(options) {
+                        return options.template ? $q.when(options.template) :
+                            $templateRequest(ng.isFunction(options.templateUrl) ? (options.templateUrl)() : options.templateUrl);
+                    }
+
+                    function getResolvePromises(resolves) {
+                        var promisesArr = [];
+                        ng.forEach(resolves, function (value) {
+                            if (ng.isFunction(value) || ng.isArray(value)) {
+                                promisesArr.push($q.when($injector.invoke(value)));
+                            }
+                        });
+                        return promisesArr;
+                    }
+
+                    $modal.open = function (modalOptions) {
+
+                        var modalResultDeferred = $q.defer();
+                        var modalOpenedDeferred = $q.defer();
+                        var modalRenderDeferred = $q.defer();
+
+                        //prepare an instance of a modal to be injected into controllers and returned to a caller
+                        var modalInstance = {
+                            result: modalResultDeferred.promise,
+                            opened: modalOpenedDeferred.promise,
+                            rendered: modalRenderDeferred.promise,
+                            close: function (result) {
+                                return $modalStack.close(modalInstance, result);
+                            },
+                            dismiss: function (reason) {
+                                return $modalStack.dismiss(modalInstance, reason);
+                            }
+                        };
+
+                        //merge and clean up options
+                        modalOptions = ng.extend({}, $modalProvider.options, modalOptions);
+                        modalOptions.resolve = modalOptions.resolve || {};
+
+                        //verify options
+                        if (!modalOptions.template && !modalOptions.templateUrl) {
+                            throw new Error('One of template or templateUrl options is required.');
+                        }
+
+                        var templateAndResolvePromise =
+                            $q.all([getTemplatePromise(modalOptions)].concat(getResolvePromises(modalOptions.resolve)));
+
+
+                        templateAndResolvePromise.then(function resolveSuccess(tplAndVars) {
+
+                            var modalScope = (modalOptions.scope || $rootScope).$new();
+                            modalScope.$close = modalInstance.close;
+                            modalScope.$dismiss = modalInstance.dismiss;
+
+                            var ctrlInstance, ctrlLocals = {};
+                            var resolveIter = 1;
+
+                            //controllers
+                            if (modalOptions.controller) {
+                                ctrlLocals.$scope = modalScope;
+                                ctrlLocals.$modalInstance = modalInstance;
+                                ng.forEach(modalOptions.resolve, function (value, key) {
+                                    ctrlLocals[key] = tplAndVars[resolveIter++];
+                                });
+
+                                ctrlInstance = $controller(modalOptions.controller, ctrlLocals);
+                                if (modalOptions.controllerAs) {
+                                    modalScope[modalOptions.controllerAs] = ctrlInstance;
+                                }
+                            }
+
+                            $modalStack.open(modalInstance, {
+                                scope: modalScope,
+                                deferred: modalResultDeferred,
+                                renderDeferred: modalRenderDeferred,
+                                content: tplAndVars[0],
+                                animation: modalOptions.animation,
+                                backdrop: modalOptions.backdrop,
+                                keyboard: modalOptions.keyboard,
+                                backdropClass: modalOptions.backdropClass,
+                                windowClass: modalOptions.windowClass,
+                                windowTemplateUrl: modalOptions.windowTemplateUrl,
+                                size: modalOptions.size
+                            });
+
+                        }, function resolveError(reason) {
+                            modalResultDeferred.reject(reason);
+                        });
+
+                        templateAndResolvePromise.then(function () {
+                            modalOpenedDeferred.resolve(true);
+                        }, function (reason) {
+                            modalOpenedDeferred.reject(reason);
+                        });
+
+                        return modalInstance;
+                    };
+
+                    return $modal;
+                }]
+        };
+
+        return $modalProvider;
+    });
+});
+
+define('core/modal/index',['require','./directives/modalWindow','./directives/modalAnimationClass','./directives/modalBackdrop','./directives/modalTransclude','./factories/modalStack','./factories/stackedMap','./providers/modal'],function (require) {
+    'use strict';
+
+    require('./directives/modalWindow');
+    require('./directives/modalAnimationClass');
+    require('./directives/modalBackdrop');
+    require('./directives/modalTransclude');
+    require('./factories/modalStack');
+    require('./factories/stackedMap');
+    require('./providers/modal');
+});
+
+
 define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ui-sref="cm" ui-sref-active="active">Campaign Management</a></li>\n            <li><a class="primary" ui-sref="analytics"  ui-sref-active="active">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n            </li>\n            <li class="dropdown" division-dropdown>\n            </li>\n            <li class="dropdown" account-dropdown>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
 
 /**
@@ -46004,87 +46535,6 @@ define('core/navbar/navbar',['require','./../module','tpl!./navbar.html'],functi
             scope: {
                 open: '='
             }
-        };
-    }]);
-});
-
-define('core/factories/data',['require','./../module','angular'],function (require) {
-    'use strict';
-
-    var module = require('./../module');
-    var ng = require('angular');
-
-    module.factory('dataFactory', ['$http', function ($http) {
-        return function (sortFn) {
-            var initialized = false;
-            var data = [];
-            var observers = [];
-            sortFn = sortFn || function (d) { return d; };
-
-            function init(url, transform) {
-                if (initialized) {
-                    throw 'service has already been initialized';
-                }
-
-                transform = transform || function (d) { return d; };
-
-                initialized = true;
-
-                return $http.get(url).success(function (d) {
-                    data = sortFn(transform.call(this, d));
-                    notifyObservers();
-                });
-            }
-
-            function setData(d) {
-                data = sortFn(d);
-                notifyObservers();
-            }
-
-            function addData(d) {
-                var uniqueSet = {};
-                var item, i;
-
-                for (i = 0; i < d.length; i++) {
-                    item = d[i];
-                    uniqueSet[item.id] = true;
-                }
-
-                var temp = [];
-
-                for (i = 0; i < data.length; i++) {
-                    item = data[i];
-                    if (!uniqueSet[item.id]) {
-                        temp.push(item);
-                    }
-                }
-
-                data = sortFn(temp.concat(d));
-                notifyObservers();
-            }
-
-            function all() {
-                return data;
-            }
-
-            function observe(callback) {
-                observers.push(callback);
-            }
-
-            function notifyObservers() {
-                ng.forEach(observers, function (fn) {
-                    fn();
-                });
-            }
-
-            return {
-                init: init,
-                setData: setData,
-                addData: addData,
-                all: all,
-                observe: observe,
-                notifyObservers: notifyObservers
-            };
         };
     }]);
 });
@@ -47032,6 +47482,107 @@ define('core/navbar/directives/campaignDropdown',['require','./../../module','tp
     }]);
 });
 
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/navbar/index',['require','./navbar','./services/util','./services/division','./services/campaign','./services/client','./services/account','./services/navbar','./directives/clientDropdown','./directives/divisionDropdown','./directives/accountDropdown','./directives/campaignDropdown'],function (require) {
+    'use strict';
+
+    require('./navbar');
+    require('./services/util');
+    require('./services/division');
+    require('./services/campaign');
+    require('./services/client');
+    require('./services/account');
+    require('./services/navbar');
+    require('./directives/clientDropdown');
+    require('./directives/divisionDropdown');
+    require('./directives/accountDropdown');
+    require('./directives/campaignDropdown');
+
+});
+
+define('core/factories/data',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    module.factory('dataFactory', ['$http', function ($http) {
+        return function (sortFn) {
+            var initialized = false;
+            var data = [];
+            var observers = [];
+            sortFn = sortFn || function (d) { return d; };
+
+            function init(url, transform) {
+                if (initialized) {
+                    throw 'service has already been initialized';
+                }
+
+                transform = transform || function (d) { return d; };
+
+                initialized = true;
+
+                return $http.get(url).success(function (d) {
+                    data = sortFn(transform.call(this, d));
+                    notifyObservers();
+                });
+            }
+
+            function setData(d) {
+                data = sortFn(d);
+                notifyObservers();
+            }
+
+            function addData(d) {
+                var uniqueSet = {};
+                var item, i;
+
+                for (i = 0; i < d.length; i++) {
+                    item = d[i];
+                    uniqueSet[item.id] = true;
+                }
+
+                var temp = [];
+
+                for (i = 0; i < data.length; i++) {
+                    item = data[i];
+                    if (!uniqueSet[item.id]) {
+                        temp.push(item);
+                    }
+                }
+
+                data = sortFn(temp.concat(d));
+                notifyObservers();
+            }
+
+            function all() {
+                return data;
+            }
+
+            function observe(callback) {
+                observers.push(callback);
+            }
+
+            function notifyObservers() {
+                ng.forEach(observers, function (fn) {
+                    fn();
+                });
+            }
+
+            return {
+                init: init,
+                setData: setData,
+                addData: addData,
+                all: all,
+                observe: observe,
+                notifyObservers: notifyObservers
+            };
+        };
+    }]);
+});
+
 define('core/directives/dropdown',['require','./../module'],function (require) {
     'use strict';
 
@@ -47116,6 +47667,8 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
             link: function (scope, elem, attr) {
 
                 scope.updatePosition = updatePosition;
+                scope.calculateClass = calculateClass;
+                scope.calculateDims = calculateDims;
 
                 var tooltip = attr.tooltip;
                 scope.main = elem.html();
@@ -47131,38 +47684,45 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                     elem.html($compile(baseTemplate)(scope));
                 });
 
-                function updatePosition() {
-                    var elementOffset = elem[0].getBoundingClientRect();
-                    var doc = $document[0].documentElement;
-
-                    var dims = {
-                        right: doc.clientWidth - elementOffset.right,
-                        left: elementOffset.left,
-                        top: elementOffset.top,
-                        bottom: doc.clientHeight - elementOffset.bottom
-                    };
-
+                function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
                         elem.removeClass(c);
                     });
 
                     if (dims.top > 50) {
                         if (dims.left > 200 && dims.right > 200) {
-                            elem.addClass('tooltip-top-center');
+                            return 'tooltip-top-center';
                         } else if (dims.left > dims.right) {
-                            elem.addClass('tooltip-top-left');
+                            return 'tooltip-top-left';
                         } else {
-                            elem.addClass('tooltip-top-right');
+                            return 'tooltip-top-right';
                         }
                     } else {
                         if (dims.left > 200 && dims.right > 200) {
-                            elem.addClass('tooltip-bottom-center');
+                            return 'tooltip-bottom-center';
                         } else if (dims.left > dims.right) {
-                            elem.addClass('tooltip-bottom-left');
+                            return 'tooltip-bottom-left';
                         } else {
-                            elem.addClass('tooltip-bottom-right');
+                            return 'tooltip-bottom-right';
                         }
                     }
+                }
+
+                function calculateDims() {
+                    var elementOffset = elem[0].getBoundingClientRect();
+                    var doc = $document[0].documentElement;
+
+                    return {
+                        right: doc.clientWidth - elementOffset.right,
+                        left: elementOffset.left,
+                        top: elementOffset.top,
+                        bottom: doc.clientHeight - elementOffset.bottom
+                    };
+                }
+
+                function updatePosition() {
+                    var dims = calculateDims();
+                    elem.addClass(calculateClass(dims));
                 }
             }
         };
@@ -47345,21 +47905,13 @@ define('core/services/store',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./navbar/navbar','./factories/data','./navbar/services/util','./navbar/services/division','./navbar/services/campaign','./navbar/services/client','./navbar/services/account','./navbar/services/navbar','./navbar/directives/clientDropdown','./navbar/directives/divisionDropdown','./navbar/directives/accountDropdown','./navbar/directives/campaignDropdown','./directives/dropdown','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
+define('core/index',['require','./modal/index','./navbar/index','./factories/data','./directives/dropdown','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
     'use strict';
 
-    require('./navbar/navbar');
+    require('./modal/index');
+    require('./navbar/index');
+
     require('./factories/data');
-    require('./navbar/services/util');
-    require('./navbar/services/division');
-    require('./navbar/services/campaign');
-    require('./navbar/services/client');
-    require('./navbar/services/account');
-    require('./navbar/services/navbar');
-    require('./navbar/directives/clientDropdown');
-    require('./navbar/directives/divisionDropdown');
-    require('./navbar/directives/accountDropdown');
-    require('./navbar/directives/campaignDropdown');
     require('./directives/dropdown');
     require('./directives/tooltip');
     require('./directives/compile');
@@ -57285,7 +57837,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                     template: '<ui-view />'
                 });
 
-        $locationProvider.html5Mode({ enabled: true });
+        $locationProvider.html5Mode({ enabled: false });
     }]);
 });
 

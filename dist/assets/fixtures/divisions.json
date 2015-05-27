@@ -1,0 +1,44 @@
+{
+    "divisions": [
+        {
+            "id": "divisionId0",
+            "name": "Division 0",
+            "pinned": true,
+            "active": false,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "client": {"id": "clientId0"}
+        },
+        {
+            "id": "divisionId1",
+            "name": "Division 1",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "client": {"id": "clientId0"}
+        },
+        {
+            "id": "divisionId2",
+            "name": "Division 2",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-04-01T12:00:00Z",
+            "client": {"id": "clientId0"}
+        },
+        {
+            "id": "divisionId3",
+            "name": "Division 3",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-02-01T12:00:00Z",
+            "client": {"id": "clientId0"}
+        },
+        {
+            "id": "divisionId4",
+            "name": "Division 4",
+            "pinned": false,
+            "active": true,
+            "lastViewed": "2015-03-01T12:00:00Z",
+            "client": {"id": "clientId0"}
+        }
+    ]
+}

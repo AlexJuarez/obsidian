@@ -1,0 +1,152 @@
+{
+    "rules": {
+        "publisher": "",
+        "impressions": "number",
+        "viewRate": "percent",
+        "ctr": "percent",
+        "watched": "number",
+        "avg_viewed": "percent",
+        "quartiles": "quartile",
+        "social": "number",
+        "facebook": "number",
+        "twitter": "number",
+        "pininterst": "number",
+        "tumblr": "number"
+    },
+    "headers": [
+        {"name": "Publishers", "id": "publisher"},
+        {"name": "Impressions", "id": "impressions"},
+        {"name": "View Rate", "id": "viewRate", "group": "overview"},
+        {"name": "CTR", "id": "ctr", "group": "overview"},
+        {"name": "Minutes Watched",  "id": "watched"},
+        {"name": "Average % Viewed", "id": "avg_viewed", "group": "video"},
+        {"name": "Quartiles", "id": "quartiles", "group": "video"},
+        {"name": "Social Actions", "id": "social"},
+        {"name": "Facebook", "id": "facebook", "group": "social"},
+        {"name": "Twitter",  "id": "twitter", "group": "social"},
+        {"name": "Pinterest", "id": "pininterst", "group": "social"},
+        {"name": "Tumblr", "id": "tumblr", "group": "social"}
+    ],
+    "data": [
+        {
+            "row": {
+                "publisher": {"value": "CNN"},
+                "impressions": {"value": 423123, "action": "bar", "max": 423123},
+                "viewRate": {"value": 22, "group": "overview"},
+                "ctr": {"value": 5, "group": "overview"},
+                "watched": {"value": 50234, "action": "bar", "max": 502340},
+                "avg_viewed": {"value": 24, "group": "video"},
+                "quartiles": {"value": [10, 4, 3.5, 2.1], "group": "video"},
+                "social": {"value": 3256, "action": "bar", "max": 3256},
+                "facebook": {"value": 1685, "group": "social"},
+                "twitter": {"value": 1685, "group": "social"},
+                "pininterst": {"value": 1685, "group": "social"},
+                "tumblr": {"value": 1685, "group": "social"}
+            },
+            "placements": [
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 123542,
+                    "viewRate": 12,
+                    "ctr": 1,
+                    "watched": 14324,
+                    "avg_viewed": 23,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 1234,
+                    "facebook": 323,
+                    "twitter": 323,
+                    "pininterst": 323,
+                    "tumblr": 323
+                },
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 234320,
+                    "viewRate": 21,
+                    "ctr": 4,
+                    "watched": 23523,
+                    "avg_viewed": 12,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 899,
+                    "facebook": 629,
+                    "twitter": 629,
+                    "pininterst": 629,
+                    "tumblr": 629
+                },
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 13349,
+                    "viewRate": 28,
+                    "ctr": 8,
+                    "watched": 15349,
+                    "avg_viewed": 33,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 2834,
+                    "facebook": 239,
+                    "twitter": 239,
+                    "pininterst": 239,
+                    "tumblr": 239
+                }
+            ]
+        },
+        {
+            "row": {
+                "publisher": {"value": "Google"},
+                "impressions": {"value": 125312, "action": "bar", "max": 423123},
+                "viewRate": {"value": 18, "group": "overview"},
+                "ctr": {"value": 5, "group": "overview"},
+                "watched": {"value": 502340, "action": "bar", "max": 502340},
+                "avg_viewed": {"value": 24, "group": "video"},
+                "quartiles": {"value": [10, 4, 3.5, 2.1], "group": "video"},
+                "social": {"value": 1286, "action": "bar", "max": 3256},
+                "facebook": {"value": 1685, "group": "social"},
+                "twitter": {"value": 1685, "group": "social"},
+                "pininterst": {"value": 1685, "group": "social"},
+                "tumblr": {"value": 1685, "group": "social"}
+            },
+            "placements": [
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 123542,
+                    "viewRate": 12,
+                    "ctr": 1,
+                    "watched": 14324,
+                    "avg_viewed": 23,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 1234,
+                    "facebook": 323,
+                    "twitter": 323,
+                    "pininterst": 323,
+                    "tumblr": 323
+                },
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 234320,
+                    "viewRate": 21,
+                    "ctr": 4,
+                    "watched": 23523,
+                    "avg_viewed": 12,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 899,
+                    "facebook": 629,
+                    "twitter": 629,
+                    "pininterst": 629,
+                    "tumblr": 629
+                },
+                {
+                    "publisher": "AOL_Q2_EveryDay_Desktop_In-Stream_AOL On W25-54_1x1_clk",
+                    "impressions": 13349,
+                    "viewRate": 28,
+                    "ctr": 8,
+                    "watched": 15349,
+                    "avg_viewed": 33,
+                    "quartiles": [10, 4, 3.5, 2.1],
+                    "social": 2834,
+                    "facebook": 239,
+                    "twitter": 239,
+                    "pininterst": 239,
+                    "tumblr": 239
+                }
+            ]
+        }
+    ]
+}

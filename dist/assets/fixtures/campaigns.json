@@ -1,0 +1,100 @@
+{
+    "campaigns": [
+        {
+            "id": "campaignId0",
+            "name": "Campaign 0",
+            "pinned": true,
+            "status": "preFlight",
+            "goalImpressions": 1000000,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"},
+            "account": {"id": "accountId0"},
+            "metrics": {
+                "currentImpressions": 15000,
+                "placementCount": 10,
+                "creativeCount": 10
+            }
+        },
+        {
+            "id": "campaignId1",
+            "name": "Campaign 1",
+            "pinned": true,
+            "status": "preFlight",
+            "goalImpressions": 1000000,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "startDate": "2015-03-01",
+            "endDate": "2015-04-01",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId1"},
+            "account": {"id": "accountId1"},
+            "metrics": {
+                "currentImpressions": 15000,
+                "placementCount": 10,
+                "creativeCount": 10
+            }
+        },
+        {
+            "id": "campaignId2",
+            "name": "Campaign 2",
+            "pinned": false,
+            "status": "archived",
+            "goalImpressions": 2000000,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "startDate": "2015-04-01",
+            "endDate": "2015-04-06",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"},
+            "account": {"id": "accountId0"},
+            "metrics": {
+                "currentImpressions": 32000,
+                "placementCount": 6,
+                "creativeCount": 10
+            }
+        },
+        {
+            "id": "campaignId3",
+            "name": "Campaign 3",
+            "pinned": false,
+            "status": "completed",
+            "goalImpressions": 1000000,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "startDate": "2015-02-01",
+            "endDate": "2015-02-15",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"},
+            "account": {"id": "accountId0"},
+            "metrics": {
+                "currentImpressions": 15000,
+                "placementCount": 10,
+                "creativeCount": 34
+            }
+        },
+        {
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "pinned": false,
+            "status": "inFlight",
+            "goalImpressions": 500000,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "client": {"id": "clientId0"},
+            "division": {"id": "divisionId0"},
+            "account": {"id": "accountId0"},
+            "metrics": {
+                "currentImpressions": 150000,
+                "placementCount": 25,
+                "creativeCount": 4
+            }
+        }
+    ]
+
+}

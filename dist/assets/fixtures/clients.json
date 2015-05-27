@@ -1,0 +1,49 @@
+{
+    "clients": [
+        {
+            "id": "clientId0",
+            "name": "Client 0",
+            "pinned": true,
+            "active": false,
+            "lastViewed": "2015-01-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "channel": "Advertisers"
+        },
+        {
+            "id": "clientId1",
+            "name": "Client 1",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-02-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "channel": "Advertisers"
+        },
+        {
+            "id": "clientId2",
+            "name": "Client 2",
+            "pinned": true,
+            "active": false,
+            "lastViewed": "2015-03-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "channel": "Resellers"
+        },
+        {
+            "id": "clientId3",
+            "name": "Client 3",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-04-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "channel": "Advertisers"
+        },
+        {
+            "id": "clientId4",
+            "name": "Client 4",
+            "pinned": false,
+            "active": false,
+            "lastViewed": "2015-04-01T12:00:00Z",
+            "lastViewedName": "Joe Snoopypants",
+            "channel": "Advertisers"
+        }
+    ]
+}
