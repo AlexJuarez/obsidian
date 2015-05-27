@@ -47422,53 +47422,43 @@ define('table/filters/format',['require','./../module'],function (require) {
 });
 
 
-define('tpl!table/directives/accordion.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordion.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in rows track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n        </div>\n    </div>\n</div>\n'); });
 
-define('table/directives/accordion',['require','./../module','tpl!./accordion.html'],function (require) {
+define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
     'use strict';
 
     var app = require('./../module');
-    require('tpl!./accordion.html');
+    require('tpl!./accordionTable.html');
 
-    app.directive('accordion', ['$timeout', 'storeService', function ($timeout, store) {
+    app.directive('accordionTable', [function () {
         return {
             restrict: 'A',
-            scope: true,
-            transclude: true,
-            templateUrl: 'table/directives/accordion.html',
-            link: function (scope, element, attrs) {
-                var id = attrs.accordion;
-
-                store.observe(id, update);
-
-                function update() {
-                    $timeout(function () {
-                        scope.$apply(function () {
-                            scope.rows = store.all(id);
-                        });
-                    });
-                }
+            templateUrl: 'table/directives/accordionTable.html',
+            replace: true,
+            scope: {
+                table: '=accordionTable',
+                classes: '@class'
             }
         };
     }]);
 });
 
 
-define('tpl!table/directives/basic.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basic.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers">\n            <div compile="header.id|format:row:table.rules" class="cell">\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers">\n            <div compile="header.id|format:row:table.rules" class="cell">\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 /**
  * Created by alex on 4/23/15.
  */
-define('table/directives/basicTable',['require','./../module','tpl!./basic.html'],function (require) {
+define('table/directives/basicTable',['require','./../module','tpl!./basicTable.html'],function (require) {
     'use strict';
 
     var app = require('./../module');
-    require('tpl!./basic.html');
+    require('tpl!./basicTable.html');
 
     app.directive('basicTable', [function () {
         return {
             restrict: 'A',
-            templateUrl: 'table/directives/basic.html',
+            templateUrl: 'table/directives/basicTable.html',
             replace: true,
             scope: {
                 table: '=basicTable',
@@ -47481,11 +47471,11 @@ define('table/directives/basicTable',['require','./../module','tpl!./basic.html'
 /**
  * Created by Alex on 3/1/2015.
  */
-define('table/index',['require','./filters/format','./directives/accordion','./directives/basicTable'],function (require) {
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable'],function (require) {
     'use strict';
 
     require('./filters/format');
-    require('./directives/accordion');
+    require('./directives/accordionTable');
     require('./directives/basicTable');
 });
 
