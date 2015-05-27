@@ -1,0 +1,125 @@
+@modal-content-bg: white;
+@modal-backdrop-bg: #000;
+@modal-inner-padding: 3rem;
+@modal-title-padding: 2rem 3rem;
+@modal-footer-padding: 2rem 3rem;
+@modal-divider-color: #ccc;
+@modal-footer-border-color: @modal-divider-color;
+@modal-header-border-color: @modal-divider-color;
+@modal-md: 600px;
+@modal-sm: 300px;
+@modal-lg: 900px;
+
+.modal-open {
+    overflow: hidden;
+
+    .modal {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    background-color: @modal-backdrop-bg;
+
+    //used to animate the backdrop
+    &.fade {
+        opacity: 0;
+    }
+
+    &.in {
+        opacity: .5;
+    }
+}
+
+.modal {
+    display: none;
+    overflow: auto;
+    overflow-y: scroll;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    outline: 0;
+    overflow-scrolling: touch;
+    z-index: 1050;
+
+    &.fade {
+        .modal-dialog {
+            transform: translate(0, -25%);
+            transition: transform 0.3s ease-out;
+        }
+    }
+
+    &.in {
+        .modal-dialog {
+            transform: translate(0, 0);
+        }
+    }
+}
+
+.modal-dialog {
+    position: relative;
+    width: auto;
+    margin: 10px;
+    box-sizing: border-box;
+
+    @media (min-width: @screen-sm-min) {
+        width: @modal-md;
+        margin: 30px auto;
+    }
+}
+
+.modal-content {
+    position: relative;
+    background-color: @modal-content-bg;
+    background-clip: padding-box;
+    outline: 0;
+}
+
+.modal-title {
+    font-family: 'Lato', sans-serif;
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+}
+
+.modal-body {
+    padding: @modal-inner-padding;
+}
+
+.modal-footer {
+    padding: @modal-footer-padding;
+    text-align: right;
+    border-top: 1px solid @modal-footer-border-color;
+    &:extend(.clearfix all);
+
+    .btn + .btn {
+        margin-left: 5px;
+        margin-bottom: 0;
+    }
+}
+
+.modal-header {
+    padding: @modal-title-padding;
+    border-bottom: 1px solid @modal-header-border-color;
+}
+
+@media (min-width: @screen-sm-min) {
+    .modal-sm {
+        width: @modal-sm;
+    }
+}
+
+@media (min-width: @screen-md-min) {
+    .modal-lg {
+        width: @modal-lg;
+    }
+}

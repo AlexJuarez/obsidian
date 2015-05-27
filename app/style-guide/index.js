@@ -5,6 +5,7 @@ define(function (require) {
     'use strict';
 
     require('./controllers/styleGuide');
+    require('./controllers/modalInstance');
     require('./routes');
     require('./directives/toggleClass');
     require('./directives/codeSnippet');

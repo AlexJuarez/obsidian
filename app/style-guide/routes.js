@@ -23,6 +23,8 @@ define(function (require) {
     require('tpl!./forms.html');
     require('tpl!./validation.html');
     require('tpl!./pacing-chart.html');
+    require('tpl!./modal.html');
+    require('tpl!./myModalContent.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

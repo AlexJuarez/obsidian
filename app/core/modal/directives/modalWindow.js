@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./../modal.html');
 
-    app.directive('modal', ['$modalStack', '$q', function ($modalStack, $q) {
+    app.directive('modalWindow', ['$modalStack', '$q', function ($modalStack, $q) {
         return {
             restrict: 'EA',
             scope: {
@@ -13,7 +13,7 @@ define(function (require) {
             },
             replace: true,
             transclude: true,
-            templateUrl: function(tElement, tAttrs) {
+            templateUrl: function (tElement, tAttrs) {
                 return tAttrs.templateUrl || 'core/modal/modal.html';
             },
             link: function (scope, element, attrs) {
@@ -22,7 +22,7 @@ define(function (require) {
 
                 scope.close = function (evt) {
                     var modal = $modalStack.getTop();
-                    if (modal && modal.value.backdrop && modal.value.backdrop != 'static' && (evt.target === evt.currentTarget)) {
+                    if (modal && modal.value.backdrop && modal.value.backdrop !== 'static' && (evt.target === evt.currentTarget)) {
                         evt.preventDefault();
                         evt.stopPropagation();
                         $modalStack.dismiss(modal.key, 'backdrop click');
@@ -39,7 +39,7 @@ define(function (require) {
                 // Observe function will be called on next digest cycle after compilation, ensuring that the DOM is ready.
                 // In order to use this way of finding whether DOM is ready, we need to observe a scope property used in modal's template.
                 attrs.$observe('modalRender', function (value) {
-                    if (value == 'true') {
+                    if (value === 'true') {
                         modalRenderDeferObj.resolve();
                     }
                 });

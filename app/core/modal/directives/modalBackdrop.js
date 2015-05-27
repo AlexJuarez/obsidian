@@ -4,7 +4,16 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./../modalBackground.html');
 
-    app.directive('modalBackdrop', ['$document', function ($document) {
+    app.directive('modalBackdrop', ['$timeout', function ($timeout) {
+        function linkFn(scope) {
+            scope.animate = false;
+
+            //trigger CSS transitions
+            $timeout(function () {
+                scope.animate = true;
+            });
+        }
+
         return {
             restrict: 'EA',
             replace: true,
@@ -14,14 +23,5 @@ define(function (require) {
                 return linkFn;
             }
         };
-
-        function linkFn(scope, element, attrs) {
-            scope.animate = false;
-
-            //trigger CSS transitions
-            $timeout(function () {
-                scope.animate = true;
-            });
-        }
     }]);
 });
