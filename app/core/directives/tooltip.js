@@ -21,6 +21,8 @@ define(function (require) {
             link: function (scope, elem, attr) {
 
                 scope.updatePosition = updatePosition;
+                scope.calculateClass = calculateClass;
+                scope.calculateDims = calculateDims;
 
                 var tooltip = attr.tooltip;
                 scope.main = elem.html();
@@ -36,38 +38,45 @@ define(function (require) {
                     elem.html($compile(baseTemplate)(scope));
                 });
 
-                function updatePosition() {
-                    var elementOffset = elem[0].getBoundingClientRect();
-                    var doc = $document[0].documentElement;
-
-                    var dims = {
-                        right: doc.clientWidth - elementOffset.right,
-                        left: elementOffset.left,
-                        top: elementOffset.top,
-                        bottom: doc.clientHeight - elementOffset.bottom
-                    };
-
+                function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
                         elem.removeClass(c);
                     });
 
                     if (dims.top > 50) {
                         if (dims.left > 200 && dims.right > 200) {
-                            elem.addClass('tooltip-top-center');
+                            return 'tooltip-top-center';
                         } else if (dims.left > dims.right) {
-                            elem.addClass('tooltip-top-left');
+                            return 'tooltip-top-left';
                         } else {
-                            elem.addClass('tooltip-top-right');
+                            return 'tooltip-top-right';
                         }
                     } else {
                         if (dims.left > 200 && dims.right > 200) {
-                            elem.addClass('tooltip-bottom-center');
+                            return 'tooltip-bottom-center';
                         } else if (dims.left > dims.right) {
-                            elem.addClass('tooltip-bottom-left');
+                            return 'tooltip-bottom-left';
                         } else {
-                            elem.addClass('tooltip-bottom-right');
+                            return 'tooltip-bottom-right';
                         }
                     }
+                }
+
+                function calculateDims() {
+                    var elementOffset = elem[0].getBoundingClientRect();
+                    var doc = $document[0].documentElement;
+
+                    return {
+                        right: doc.clientWidth - elementOffset.right,
+                        left: elementOffset.left,
+                        top: elementOffset.top,
+                        bottom: doc.clientHeight - elementOffset.bottom
+                    };
+                }
+
+                function updatePosition() {
+                    var dims = calculateDims();
+                    elem.addClass(calculateClass(dims));
                 }
             }
         };
