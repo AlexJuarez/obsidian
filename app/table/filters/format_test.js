@@ -22,20 +22,20 @@ define(function (require) {
         });
 
         it('should be formatted as a number', function () {
-            expect(filter(2000, 'test', {'test': 'number'})).toEqual('2,000');
-            expect(filter(0, 'test', {'test': 'number'})).toEqual('0');
+            expect(filter('test', {'test': 2000}, {'test': 'number'})).toEqual('2,000');
+            expect(filter('test', {'test': 0}, {'test': 'number'})).toEqual('0');
         });
 
         it('should be formatted as a percent', function () {
-            expect(filter(24, 'test', {'test': 'percent'})).toEqual('24.00%');
+            expect(filter('test', {'test': 24}, {'test': 'percent'})).toEqual('24.00%');
         });
 
         it('should be formatted not formatted', function () {
-            expect(filter('default', '', {'test': 'percent'})).toEqual('default');
+            expect(filter('test', {'test': 'default'}, {'test': ''})).toEqual('default');
         });
 
         it('should be formatted as a multiple percents', function () {
-            expect(filter([2, 5], 'test', {'test': 'quartile'})).toEqual('2.00% 5.00%');
+            expect(filter('test', {'test': [2, 5]}, {'test': 'quartile'})).toEqual('2.00% 5.00%');
         });
     });
 });
