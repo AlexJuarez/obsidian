@@ -12,8 +12,8 @@ define(function (require) {
     var app = require('./../module');
     var ng = require('angular');
 
-    app.controller('styleGuideCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService', 'campaignService',
-        function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store, clients, divisions, campaigns) {
+    app.controller('styleGuideCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'storeService', 'clientService', 'divisionService', 'campaignService', '$modal',
+    function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, store, clients, divisions, campaigns, $modal) {
         $scope.navigation = [];
         $scope.state = '';
         $scope.sort = sort;
@@ -23,6 +23,8 @@ define(function (require) {
             name: '',
             email: 'invalid@e,'
         };
+
+        $scope.open = open;
 
         clients.init();
         divisions.init();
@@ -230,6 +232,15 @@ define(function (require) {
                         return a.localeCompare(b);
                     }
                 }
+            });
+        }
+
+        function open(size) {
+            var modalInstance = $modal.open({
+                animation: 'true',
+                templateUrl: 'style-guide/myModalContent.html',
+                controller: 'modalInstanceCtrl',
+                size: size
             });
         }
     }]);
