@@ -47351,7 +47351,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
 });
 
 
-define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true"  class="list">\n        <li><a ui-sref=".accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by $index">\n                    <a ui-sref=".campaigns({ accountId: account.id })">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by $index">\n                    <a ui-sref=".campaigns({ accountId: account.id })">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
     'use strict';
@@ -47516,18 +47516,16 @@ define('core/factories/data',['require','./../module','angular'],function (requi
             sortFn = sortFn || function (d) { return d; };
 
             function init(url, transform) {
-                if (initialized) {
-                    throw 'service has already been initialized';
+                if (!initialized) {
+                    transform = transform || function (d) { return d; };
+
+                    initialized = true;
+
+                    return $http.get(url).success(function (d) {
+                        data = sortFn(transform.call(this, d));
+                        notifyObservers();
+                    });
                 }
-
-                transform = transform || function (d) { return d; };
-
-                initialized = true;
-
-                return $http.get(url).success(function (d) {
-                    data = sortFn(transform.call(this, d));
-                    notifyObservers();
-                });
             }
 
             function setData(d) {
@@ -47583,6 +47581,52 @@ define('core/factories/data',['require','./../module','angular'],function (requi
     }]);
 });
 
+define('core/factories/pagination',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
+        return function (sortFn) {
+            var limit = 10;
+            var offset = 0;
+            var data = dataFactory(sortFn);
+            var baseUrl = '';
+            var transform;
+
+            function init(url, transformFn, perPage) {
+                baseUrl = url;
+                transform = transformFn || function (d) { return d; };
+                limit = perPage || 10;
+                data.init(baseUrl, transformFn);
+            }
+
+            function nextPage() {
+                offset = offset + limit;
+                $http.get(buildPageUrl(baseUrl, limit, offset)).success(function (res) {
+                    data.addData(transform(res.data));
+                });
+            }
+
+            return {
+                init: init,
+                observe: data.observe,
+                nextPage: nextPage
+            };
+        };
+    }]);
+});
+
+function buildPageUrl(url, limit, offset) {
+    'use strict';
+
+    if (url.indexOf('?') > -1) {
+        return url + '&limit=' + limit + '&offset=' + offset;
+    } else {
+        return url + '?limit=' + limit + '&offset=' + offset;
+    }
+}
+;
 define('core/directives/dropdown',['require','./../module'],function (require) {
     'use strict';
 
@@ -47905,13 +47949,14 @@ define('core/services/store',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./navbar/index','./factories/data','./directives/dropdown','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
+define('core/index',['require','./modal/index','./navbar/index','./factories/data','./factories/pagination','./directives/dropdown','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
     'use strict';
 
     require('./modal/index');
     require('./navbar/index');
 
     require('./factories/data');
+    require('./factories/pagination');
     require('./directives/dropdown');
     require('./directives/tooltip');
     require('./directives/compile');
@@ -57697,7 +57742,8 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
         buildGeneralRoutes('analytics');
         buildGeneralRoutes('reports');
 
-        function buildGeneralRoutes(base) {
+
+       function buildGeneralRoutes(base) {
             $stateProvider
                 .state({
                     name: base + '.clients',
@@ -57741,7 +57787,7 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                 });
         }
 
-        $locationProvider.html5Mode({ enabled: true });
+        $locationProvider.html5Mode({ enabled: !window.disableRouter });
     }]);
 });
 
@@ -57788,6 +57834,112 @@ define('campaign-management/controllers/index',['require','./../module'],functio
                 window.Router.router.handleURL($location.url());
             }
         });
+    }]);
+});
+
+define('campaign-management/services/campaignsByStatus',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    module.service('campaignsByStatus', [ '$http', 'paginationFactory', 'dataFactory', function ($http, paginationFactory, dataFactory) {
+        var header = dataFactory();
+        var campaigns = paginationFactory(sortCampaigns);
+
+        function sortCampaigns(transformedCampaigns) {
+            var sortFn = function (a, b) {
+                if (a.name && b.name) {
+                    if (a.name > b.name) {
+                        return -1;
+                    }
+                    if (a.name < b.name) {
+                        return 1;
+                    }
+                }
+                return 0;
+            };
+
+            transformedCampaigns.data.sort(sortFn);
+            return transformedCampaigns;
+        }
+
+        function init(urls) {
+            if (urls.campaigns) {
+                campaigns.init(urls.campaigns, transformCampaigns);
+            }
+            if (urls.header) {
+                header.init(urls.header, transformHeader);
+            }
+        }
+
+        function transformCampaigns(data) {
+            var campaigns = data.campaigns;
+
+            return campaigns;
+        }
+
+        function transformHeader(data) {
+            var campaignSet = data.campaignSet[0];
+            return {
+                status: campaignSet.status,
+                count: campaignSet.metrics.count,
+                hasLive: campaignSet.metrics.countLive > 0
+            };
+        }
+
+        campaigns.observe(observeCampaigns);
+
+        function observeCampaigns(callback) {
+            callback();
+        }
+
+        function getTable() {
+            var header = header.all();
+            var campaigns = campaigns.all();
+            return [
+                {
+                    header: getTableHeader(header),
+                    content: {
+                        rules: {
+                            account: '',
+                            name: '',
+                            impressions: 'bullet',
+                            start: 'date',
+                            end: 'date',
+                            placements: 'number',
+                            creatives: 'number',
+                            edit: ''
+                        },
+                        headers: [
+                            {name: 'Account', id: 'account'},
+                            {name: 'Campaign', id: 'campaign'},
+                            {name: 'Impressions & Pacing', id: 'impressions'},
+                            {name: 'Start', id: 'start'},
+                            {name: 'End', id: 'end'},
+                            {name: 'Placements', id: 'placements'},
+                            {name: 'Creatives', id: 'creatives'},
+                            {name: 'Edit', id: 'edit'}
+                        ],
+                        data: campaigns
+                    }
+                }
+            ];
+        }
+
+        function getTableHeader(data) {
+            var hasLiveHeaderClass = data.hasLive ?
+                'success' :
+                '';
+            return '<span class="icon-status' +
+                hasLiveHeaderClass + '></span> ' +
+                data.status + ' (' + data.count + ')';
+        }
+
+        return {
+            init: init,
+            observe: observeCampaigns,
+            all: getTable
+        };
     }]);
 });
 
@@ -57950,12 +58102,13 @@ define('campaign-management/divisions/controllers/division',['require','./../../
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaign-management/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./clients/directives/activeSummary','./clients/controllers/client','./clients/controllers/clients','./clients/services/topClients','./divisions/controllers/division'],function (require) {
+define('campaign-management/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./services/campaignsByStatus','./clients/directives/activeSummary','./clients/controllers/client','./clients/controllers/clients','./clients/services/topClients','./divisions/controllers/division'],function (require) {
     'use strict';
 
     require('./routes');
     require('./controllers/campaignManagement');
     require('./controllers/index');
+    require('./services/campaignsByStatus');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./clients/controllers/clients');

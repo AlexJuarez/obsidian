@@ -12,18 +12,16 @@ define(function (require) {
             sortFn = sortFn || function (d) { return d; };
 
             function init(url, transform) {
-                if (initialized) {
-                    throw 'service has already been initialized';
+                if (!initialized) {
+                    transform = transform || function (d) { return d; };
+
+                    initialized = true;
+
+                    return $http.get(url).success(function (d) {
+                        data = sortFn(transform.call(this, d));
+                        notifyObservers();
+                    });
                 }
-
-                transform = transform || function (d) { return d; };
-
-                initialized = true;
-
-                return $http.get(url).success(function (d) {
-                    data = sortFn(transform.call(this, d));
-                    notifyObservers();
-                });
             }
 
             function setData(d) {

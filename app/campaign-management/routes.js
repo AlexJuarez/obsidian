@@ -83,7 +83,8 @@ define(function (require) {
         buildGeneralRoutes('analytics');
         buildGeneralRoutes('reports');
 
-        function buildGeneralRoutes(base) {
+
+       function buildGeneralRoutes(base) {
             $stateProvider
                 .state({
                     name: base + '.clients',
@@ -127,6 +128,6 @@ define(function (require) {
                 });
         }
 
-        $locationProvider.html5Mode({ enabled: true });
+        $locationProvider.html5Mode({ enabled: !window.disableRouter });
     }]);
 });

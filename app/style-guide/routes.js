@@ -28,10 +28,10 @@ define(function (require) {
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
-            .state('root', {
+            .state('style-guide', {
                 url: '/style-guide',
                 templateUrl: 'style-guide/index.html',
                 controller: 'styleGuideCtrl'
-            });
+            })
     }]);
 });

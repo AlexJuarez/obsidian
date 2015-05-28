@@ -1,0 +1,114 @@
+{
+    "campaigns": [
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        },
+        {
+            "metrics": {
+                "impressions": 150000,
+                "spend": 30299
+            },
+            "id": "campaignId4",
+            "name": "Campaign 4",
+            "startDate": "2015-02-01",
+            "endDate": "2015-03-01",
+            "budget": "30000"
+        }
+    ]
+}
