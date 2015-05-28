@@ -8,6 +8,7 @@ define(function (require) {
     require('./navbar/index');
 
     require('./factories/data');
+    require('./factories/pagination');
     require('./directives/dropdown');
     require('./directives/tooltip');
     require('./directives/compile');
