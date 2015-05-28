@@ -32,43 +32,7 @@
         </ul>
         <ul class="nav navbar-left">
             <li class="dropdown" campaign-dropdown></li>
-            <li class="dropdown" division-dropdown>
-                <div class="dropdown-toggle">
-                    <div class="dropdown-toggle-subtitle">
-                        Divisions
-                    </div>
-                    <div class="dropdown-toggle-title">
-                        <i class="glyph-chevron-down"></i>
-                        All Divisions
-                    </div>
-                </div>
-                <div class="dropdown-menu" role="menu">
-                    <label class="dropdown-search">
-                        <input class="input" placeholder="Search" type="search" />
-                    </label>
-                    <ul class="list">
-                        <li><a href="">All Divisions</a></li>
-                        <li ng-if="pinned.length">Pinned
-                            <ul class="pinned">
-                                <li ng-repeat="division in pinned track by $index">
-                                    <a href="">[[division.name]]</a>
-                                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="list">
-                        <li ng-repeat="(key, value) in divisionsMap">
-                            [[key]]
-                            <ul>
-                                <li ng-repeat="division in value track by $index">
-                                    <a href="">[[division.name]]</a>
-                                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-            </li>
+            <li class="dropdown" division-dropdown></li>
         </ul>
     </div><!-- /.navbar-collapse -->
 </nav>
