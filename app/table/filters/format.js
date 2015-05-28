@@ -9,7 +9,7 @@ define(function (require) {
             return $filter('number')(input, 2) + '%';
         }
 
-        function date(input) {
+        function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
             return $filter('date')(input, 'longDate');
         }
 
