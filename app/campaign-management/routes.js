@@ -87,35 +87,43 @@ define(function (require) {
             $stateProvider
                 .state({
                     name: base + '.clients',
-                    url: '/clients'
+                    url: '/clients',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.clients.detail',
-                    url: '/?clientId'
+                    url: '/?clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions?clientId'
+                    url: '/divisions?clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions.detail',
-                    url: '/?divisionId'
+                    url: '/?divisionId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts',
                     url: '/accounts?divisionId&clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts.detail',
-                    url: '/accounts?accountId'
+                    url: '/accounts?accountId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns?accountId&divisionId&clientId'
+                    url: '/campaigns?accountId&divisionId&clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/?campaignId'
+                    url: '/?campaignId',
+                    template: '<ui-view />'
                 });
         }
 

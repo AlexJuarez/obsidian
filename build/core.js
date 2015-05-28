@@ -47287,7 +47287,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by $index">\n                    <a ui-sref=".divisions.detail({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by $index">\n                    <a ui-sref=".divisions.detail({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -57701,35 +57701,43 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
             $stateProvider
                 .state({
                     name: base + '.clients',
-                    url: '/clients'
+                    url: '/clients',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.clients.detail',
-                    url: '/?clientId'
+                    url: '/?clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions?clientId'
+                    url: '/divisions?clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions.detail',
-                    url: '/?divisionId'
+                    url: '/?divisionId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts',
                     url: '/accounts?divisionId&clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts.detail',
-                    url: '/accounts?accountId'
+                    url: '/accounts?accountId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns?accountId&divisionId&clientId'
+                    url: '/campaigns?accountId&divisionId&clientId',
+                    template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/?campaignId'
+                    url: '/?campaignId',
+                    template: '<ui-view />'
                 });
         }
 

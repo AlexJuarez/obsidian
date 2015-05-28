@@ -16,7 +16,7 @@
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
                 <li ng-repeat="division in pinned track by $index">
-                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>
+                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>
                     <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -27,7 +27,7 @@
             [[key]]
             <ul>
                 <li ng-repeat="division in value track by $index">
-                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>
+                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>
                     <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>
