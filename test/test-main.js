@@ -27,11 +27,11 @@ requirejs.config({
         'text': '/base/app/components/requirejs-text/text',
         'd3': '/base/app/components/d3/d3',
         'hljs': '/base/app/components/highlightjs/highlight.pack',
-        'jquery': 'components/jquery/dist/jquery',
-        'chosen': 'components/chosen/chosen.jquery',
-        'angular-chosen': 'components/angular-chosen-localytics/chosen',
-        'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
-        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
+        'jquery': '/base/app/components/jquery/dist/jquery',
+        'chosen': '/base/app/components/chosen/chosen.jquery',
+        'angular-chosen': '/base/app/components/angular-chosen-localytics/chosen',
+        'ng-perfect-scrollbar': '/base/app/components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
+        'perfect-scrollbar': '/base/app/components/perfect-scrollbar/src/perfect-scrollbar'
     },
     shim: {
         'hljs': {
@@ -44,7 +44,8 @@ requirejs.config({
             exports: 'd3'
         },
         'angular': {
-            exports: 'angular'
+            exports: 'angular',
+            deps: ['jquery']
         },
         'ui-router': {
             deps: ['angular']
@@ -70,5 +71,9 @@ requirejs.config({
     deps: allTestFiles,
 
     // start test run, once Require.js is done
-    callback: window.__karma__.start
+    callback: function() {
+        require(['domReady!'], function() {
+            window.__karma__.start();
+        }
+    )}
 });

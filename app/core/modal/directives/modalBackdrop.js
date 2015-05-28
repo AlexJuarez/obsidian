@@ -2,7 +2,7 @@ define(function (require) {
     'use strict';
 
     var app = require('./../../module');
-    require('tpl!./../modalBackground.html');
+    var template = require('tpl!./../modalBackground.html');
 
     app.directive('modalBackdrop', ['$timeout', function ($timeout) {
         function linkFn(scope) {
@@ -17,7 +17,7 @@ define(function (require) {
         return {
             restrict: 'EA',
             replace: true,
-            templateUrl: 'core/modal/modalBackground.html',
+            template: template,
             compile: function (tElement, tAttrs) {
                 tElement.addClass(tAttrs.backdropClass);
                 return linkFn;

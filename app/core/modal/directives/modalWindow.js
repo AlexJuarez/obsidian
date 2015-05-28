@@ -2,9 +2,9 @@ define(function (require) {
     'use strict';
 
     var app = require('./../../module');
-    require('tpl!./../modal.html');
+    var template = require('tpl!./../modal.html');
 
-    app.directive('modalWindow', ['$modalStack', '$q', function ($modalStack, $q) {
+    app.directive('modalWindow', ['$modalStack', '$q', '$templateCache', function ($modalStack, $q, $templateCache) {
         return {
             restrict: 'EA',
             scope: {
@@ -13,8 +13,8 @@ define(function (require) {
             },
             replace: true,
             transclude: true,
-            templateUrl: function (tElement, tAttrs) {
-                return tAttrs.templateUrl || 'core/modal/modal.html';
+            template: function (tElement, tAttrs) {
+                return tAttrs.templateUrl ? $templateCache.get(tAttrs.templateUrl) : template;
             },
             link: function (scope, element, attrs) {
                 element.addClass(attrs.windowClass || '');
