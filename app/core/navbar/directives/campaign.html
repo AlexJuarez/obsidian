@@ -41,7 +41,6 @@
             <ul>
                 <li ng-repeat="campaign in completed track by $index">
                     <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
