@@ -1,81 +1,105 @@
 define(function (require) {
     'use strict';
 
-    var module = require( './../module' );
+    var module = require('./../module');
 
-    module.service('$http', 'paginationFactory', 'dataFactory', function($http, paginationFactory, dataFactory) {
+    module.service('campaignsByStatus', [ '$http', 'paginationFactory', 'dataFactory', function ($http, paginationFactory, dataFactory) {
         var header = dataFactory();
-
-        var statusTypes = ['Pre-Flight', 'In-Flight', 'Complete', 'Archived'];
-        var campaigns = {};
-        statusTypes.forEach(function(status) {
-           campaigns[status] = paginationFactory(sortCampaigns);
-        });
+        var campaigns = paginationFactory(sortCampaigns);
 
         function sortCampaigns(transformedCampaigns) {
-            var sortFn = function(a, b) {
+            var sortFn = function (a, b) {
                 if (a.name && b.name) {
-                    if (a.name > b.name) { return -1; }
-                    if (a.name < b.name) { return 1; }
+                    if (a.name > b.name) {
+                        return -1;
+                    }
+                    if (a.name < b.name) {
+                        return 1;
+                    }
                 }
                 return 0;
-            }
+            };
 
             transformedCampaigns.data.sort(sortFn);
             return transformedCampaigns;
         }
 
         function init(urls) {
-            for (var status in campaigns) {
-                if (urls[status]) {
-                    campaigns[status].init(urls[status], transformCampaigns);
-                }
+            if (urls.campaigns) {
+                campaigns.init(urls.campaigns, transformCampaigns);
             }
-
             if (urls.header) {
                 header.init(urls.header, transformHeader);
             }
         }
 
         function transformCampaigns(data) {
-            return data.campaigns;
+            var campaigns = data.campaigns;
+
+            return campaigns;
         }
 
         function transformHeader(data) {
-            var campaignSet = data.campaignSet;
-            var outData = {};
-            campaignSet.forEach(function(campaign) {
-               outData[campaign.status] = {
-                   count: campaign.metrics.count,
-                   hasLive: campaign.metrics.countLive > 0
-               };
-            });
-
-            return outData;
+            var campaignSet = data.campaignSet[0];
+            return {
+                status: campaignSet.status,
+                count: campaignSet.metrics.count,
+                hasLive: campaignSet.metrics.countLive > 0
+            };
         }
 
-        for (var status in campaigns) {
-            campaigns[status].observe(observeAll);
-        }
+        campaigns.observe(observeCampaigns);
 
-        function observeAll(callback) {
+        function observeCampaigns(callback) {
             callback();
         }
 
-        function getTables() {
-            for (var status in campaigns) {
-                getTable(status);
-            }
+        function getTable() {
+            var header = header.all();
+            var campaigns = campaigns.all();
+            return [
+                {
+                    header: getTableHeader(header),
+                    content: {
+                        rules: {
+                            account: '',
+                            name: '',
+                            impressions: 'bullet',
+                            start: 'date',
+                            end: 'date',
+                            placements: 'number',
+                            creatives: 'number',
+                            edit: ''
+                        },
+                        headers: [
+                            {name: 'Account', id: 'account'},
+                            {name: 'Campaign', id: 'campaign'},
+                            {name: 'Impressions & Pacing', id: 'impressions'},
+                            {name: 'Start', id: 'start'},
+                            {name: 'End', id: 'end'},
+                            {name: 'Placements', id: 'placements'},
+                            {name: 'Creatives', id: 'creatives'},
+                            {name: 'Edit', id: 'edit'}
+                        ],
+                        data: campaigns
+                    }
+                }
+            ];
         }
 
-        function getTable(status) {
-            var header = header[]
+        function getTableHeader(data) {
+            var hasLiveHeaderClass = data.hasLive ?
+                'success' :
+                '';
+            return '<span class="icon-status' +
+                hasLiveHeaderClass + '></span> ' +
+                data.status + ' (' + data.count + ')';
         }
 
         return {
             init: init,
-            observe: observeAll,
-            all: getTables
+            observe: observeCampaigns,
+            all: getTable
         };
-    });
+    }]);
 });
