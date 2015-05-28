@@ -4,6 +4,7 @@
 define(function (require) {
     'use strict';
 
+    require('./routes');
     require('./controllers/campaignManagement');
     require('./controllers/index');
     require('./clients/directives/activeSummary');
@@ -11,5 +12,4 @@ define(function (require) {
     require('./clients/controllers/clients');
     require('./clients/services/topClients');
     require('./divisions/controllers/division');
-    require('./routes');
 });

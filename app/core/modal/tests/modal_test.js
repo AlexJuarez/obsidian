@@ -37,13 +37,15 @@ define(function (require) {
                 toBeResolvedWith: function (util, customEqualityTesters) {
                     return {
                         compare: function (promise, expected) {
+                            var results = {};
+
                             promise.then(function (result) {
                                 expect(result).toEqual(expected);
 
                                 if (result === expected) {
-                                    result.message = 'Expected "' + angular.mock.dump(result) + '" not to be resolved with "' + expected + '".';
+                                    results.message = 'Expected "' + angular.mock.dump(result) + '" not to be resolved with "' + expected + '".';
                                 } else {
-                                    result.message = 'Expected "' + angular.mock.dump(result) + '" to be resolved with "' + expected + '".';
+                                    results.message = 'Expected "' + angular.mock.dump(result) + '" to be resolved with "' + expected + '".';
                                 }
                             });
 
@@ -56,7 +58,7 @@ define(function (require) {
                 toBeRejectedWith: function (util, customEqualityTesters) {
                     return {
                         compare: function (promise, expected) {
-                            var result = {};
+                            var results = {};
 
                             promise.then(function () {
 
@@ -64,9 +66,9 @@ define(function (require) {
                                 expect(result).toEqual(expected);
 
                                 if (result === expected) {
-                                    result.message = 'Expected "' + angular.mock.dump(result) + '" not to be rejected with "' + expected + '".';
+                                    results.message = 'Expected "' + angular.mock.dump(result) + '" not to be rejected with "' + expected + '".';
                                 } else {
-                                    result.message = 'Expected "' + angular.mock.dump(result) + '" to be rejected with "' + expected + '".';
+                                    results.message = 'Expected "' + angular.mock.dump(result) + '" to be rejected with "' + expected + '".';
                                 }
                             });
 

@@ -19,6 +19,7 @@ define(function (require) {
         $scope.sort = sort;
         $scope.changeGlyph = changeGlyph;
         $scope.scrollTo = scrollTo;
+        $scope.navOpen = false;
         $scope.user = {
             name: '',
             email: 'invalid@e,'

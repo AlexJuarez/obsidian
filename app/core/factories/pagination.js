@@ -32,14 +32,13 @@ define(function (require) {
             };
         };
     }]);
-});
 
-function buildPageUrl(url, limit, offset) {
-    'use strict';
 
-    if (url.indexOf('?') > -1) {
-        return url + '&limit=' + limit + '&offset=' + offset;
-    } else {
-        return url + '?limit=' + limit + '&offset=' + offset;
+    function buildPageUrl(url, limit, offset) {
+        if (url.indexOf('?') > -1) {
+            return url + '&limit=' + limit + '&offset=' + offset;
+        } else {
+            return url + '?limit=' + limit + '&offset=' + offset;
+        }
     }
-}
+});

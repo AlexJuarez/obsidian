@@ -9,6 +9,7 @@ define(function (require) {
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+        $urlRouterProvider.when('/', '/analytics');
 
         $stateProvider
             .state('analytics', {
@@ -16,11 +17,10 @@ define(function (require) {
                 parent: 'index',
                 templateUrl: 'campaign-management/index.html'
             })
-            .state('analytics.clients', {
-                url: '/clients'
-            })
-            .state('analytics.clients.detail', {
-                url: '/:clientId'
+            .state('reports', {
+                url: '/analytics/reports',
+                parent: 'index',
+                templateUrl: 'campaign-management/index.html'
             })
             .state('index', {
                 template: '<ui-view />',
@@ -31,43 +31,94 @@ define(function (require) {
                 controller: 'campaignManagementCtrl',
                 templateUrl: 'campaign-management/index.html',
                 parent: 'index'
+            }).
+            state({
+                name: 'cm.clients',
+                url: '/clients',
+                controller: 'clientsCtrl',
+                templateUrl: 'campaign-management/clients/index.html'
             })
-                .state('cm.clients', {
-                    url: '/clients',
-                    controller: 'clientsCtrl',
-                    templateUrl: 'campaign-management/clients/index.html'
-                })
-                    .state('cm.clients.detail', {
-                        url: '/?clientId',
-                        views: {
-                            'header': {
-                                controller: 'clientCtrl',
-                                templateUrl: 'campaign-management/clients/youWorkOn.html'
-                            }
-                        }
-                    })
-                .state('cm.divisions', {
-                    url: '/divisions?clientId',
-                    template: '<ui-view />'
-                })
-                    .state('cm.divisions.detail', {
-                        url: '/?divisionId',
-                        controller: 'divisionCtrl',
-                        template: '<ui-view />'
-                    })
-            .state('cm.accounts', {
+            .state({
+                name: 'cm.clients.detail',
+                url: '/?clientId',
+                views: {
+                    'header': {
+                        controller: 'clientCtrl',
+                        templateUrl: 'campaign-management/clients/youWorkOn.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.divisions',
+                url: '/divisions?clientId',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.divisions.detail',
+                url: '/?divisionId',
+                controller: 'divisionCtrl',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.accounts',
                 url: '/accounts?divisionId&clientId',
                 template: '<ui-view />'
             })
-            .state('cm.campaigns', {
+            .state({
+                name: 'cm.accounts.detail',
+                url: '/accounts?accountId',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.campaigns',
                 url: '/campaigns?accountId&divisionId&clientId',
                 template: '<ui-view />'
             })
-                .state('cm.campaigns.detail', {
-                    url: '/?campaignId',
-                    template: '<ui-view />'
-                });
+            .state({
+                name: 'cm.campaigns.detail',
+                url: '/?campaignId',
+                template: '<ui-view />'
+            });
 
-        $locationProvider.html5Mode({ enabled: false });
+        buildGeneralRoutes('analytics');
+        buildGeneralRoutes('reports');
+
+        function buildGeneralRoutes(base) {
+            $stateProvider
+                .state({
+                    name: base + '.clients',
+                    url: '/clients'
+                })
+                .state({
+                    name: base + '.clients.detail',
+                    url: '/?clientId'
+                })
+                .state({
+                    name: base + '.divisions',
+                    url: '/divisions?clientId'
+                })
+                .state({
+                    name: base + '.divisions.detail',
+                    url: '/?divisionId'
+                })
+                .state({
+                    name: base + '.accounts',
+                    url: '/accounts?divisionId&clientId',
+                })
+                .state({
+                    name: base + '.accounts.detail',
+                    url: '/accounts?accountId'
+                })
+                .state({
+                    name: base + '.campaigns',
+                    url: '/campaigns?accountId&divisionId&clientId'
+                })
+                .state({
+                    name: base + '.campaigns.detail',
+                    url: '/?campaignId'
+                });
+        }
+
+        $locationProvider.html5Mode({ enabled: true });
     }]);
 });

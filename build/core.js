@@ -43206,7 +43206,7 @@ angular.module('ui.router.state')
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
 
-define("ui-router", function(){});
+define("ui-router", ["angular"], function(){});
 
 /*!
 Chosen, a Select Box Enhancer for jQuery and Prototype
@@ -45991,9 +45991,9 @@ define('core/modal/directives/modalWindow',['require','./../../module','tpl!./..
     'use strict';
 
     var app = require('./../../module');
-    require('tpl!./../modal.html');
+    var template = require('tpl!./../modal.html');
 
-    app.directive('modalWindow', ['$modalStack', '$q', function ($modalStack, $q) {
+    app.directive('modalWindow', ['$modalStack', '$q', '$templateCache', function ($modalStack, $q, $templateCache) {
         return {
             restrict: 'EA',
             scope: {
@@ -46002,8 +46002,8 @@ define('core/modal/directives/modalWindow',['require','./../../module','tpl!./..
             },
             replace: true,
             transclude: true,
-            templateUrl: function (tElement, tAttrs) {
-                return tAttrs.templateUrl || 'core/modal/modal.html';
+            template: function (tElement, tAttrs) {
+                return tAttrs.templateUrl ? $templateCache.get(tAttrs.templateUrl) : template;
             },
             link: function (scope, element, attrs) {
                 element.addClass(attrs.windowClass || '');
@@ -46086,7 +46086,7 @@ define('core/modal/directives/modalBackdrop',['require','./../../module','tpl!./
     'use strict';
 
     var app = require('./../../module');
-    require('tpl!./../modalBackground.html');
+    var template = require('tpl!./../modalBackground.html');
 
     app.directive('modalBackdrop', ['$timeout', function ($timeout) {
         function linkFn(scope) {
@@ -46101,7 +46101,7 @@ define('core/modal/directives/modalBackdrop',['require','./../../module','tpl!./
         return {
             restrict: 'EA',
             replace: true,
-            templateUrl: 'core/modal/modalBackground.html',
+            template: template,
             compile: function (tElement, tAttrs) {
                 tElement.addClass(tAttrs.backdropClass);
                 return linkFn;
@@ -47232,7 +47232,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 });
 
 
-define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[::client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in clientsMap">\n            [[::key]]\n            <ul>\n                <li ng-repeat="client in value track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[::client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[::client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in clientsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="client in value track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
@@ -47287,7 +47287,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[::division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[::key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[::division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by $index">\n                    <a ui-sref=".divisions.detail({ divisionId: division.id })">[[::division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref="cm.divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by $index">\n                    <a ui-sref=".divisions.detail({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -47351,7 +47351,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
 });
 
 
-define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true"  class="list">\n        <li><a ui-sref=".accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[::account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[::key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[::account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by $index">\n                    <a ui-sref=".campaigns({ accountId: account.id })">[[::account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true"  class="list">\n        <li><a ui-sref=".accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by $index">\n                    <a ui-sref=".campaigns({ accountId: account.id })">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
     'use strict';
@@ -47415,7 +47415,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
 });
 
 
-define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n        <li><a ui-sref=".campaigns(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[::campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in preFlight track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[::campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in inFlight track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[::campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in completed track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[::campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in quarterMap">\n            [[::key]]\n            <ul>\n                <li ng-repeat="campaign in value track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[::campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="campaign in results track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[::campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n        <li><a ui-sref=".campaigns(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in preFlight track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in inFlight track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in completed track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in quarterMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="campaign in value track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="campaign in results track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/campaignDropdown',['require','./../../module','tpl!./campaign.html'],function (require) {
     'use strict';
@@ -47945,7 +47945,7 @@ define('table/filters/format',['require','./../module'],function (require) {
             return $filter('number')(input, 2) + '%';
         }
 
-        function date(input) {
+        function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
             return $filter('date')(input, 'longDate');
         }
 
@@ -57603,6 +57603,140 @@ define('campaign-management/module',['require','angular','ui-router'],function (
     return ng.module('app.campaign-management', ['ui.router', 'app.tables', 'app.charts', 'app.core']);
 });
 
+
+define('tpl!campaign-management/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n\n</section>\n'); });
+
+
+define('tpl!campaign-management/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/index.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n<div ui-view="topClients">\n    <div basic-table="topClients" class="table table-hover"></div>\n</div>\n'); });
+
+
+define('tpl!campaign-management/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+/* jshint -W015 */
+
+define('campaign-management/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html'],function (require) {
+    'use strict';
+    var app = require('./module');
+    require('tpl!./index.html');
+    require('tpl!./clients/index.html');
+    require('tpl!./clients/youWorkOn.html');
+
+    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
+        $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+        $urlRouterProvider.when('/', '/analytics');
+
+        $stateProvider
+            .state('analytics', {
+                url: '/analytics',
+                parent: 'index',
+                templateUrl: 'campaign-management/index.html'
+            })
+            .state('reports', {
+                url: '/analytics/reports',
+                parent: 'index',
+                templateUrl: 'campaign-management/index.html'
+            })
+            .state('index', {
+                template: '<ui-view />',
+                controller: 'indexCtrl'
+            })
+            .state('cm', {
+                url: '/campaign-management',
+                controller: 'campaignManagementCtrl',
+                templateUrl: 'campaign-management/index.html',
+                parent: 'index'
+            }).
+            state({
+                name: 'cm.clients',
+                url: '/clients',
+                controller: 'clientsCtrl',
+                templateUrl: 'campaign-management/clients/index.html'
+            })
+            .state({
+                name: 'cm.clients.detail',
+                url: '/?clientId',
+                views: {
+                    'header': {
+                        controller: 'clientCtrl',
+                        templateUrl: 'campaign-management/clients/youWorkOn.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.divisions',
+                url: '/divisions?clientId',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.divisions.detail',
+                url: '/?divisionId',
+                controller: 'divisionCtrl',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.accounts',
+                url: '/accounts?divisionId&clientId',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.accounts.detail',
+                url: '/accounts?accountId',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.campaigns',
+                url: '/campaigns?accountId&divisionId&clientId',
+                template: '<ui-view />'
+            })
+            .state({
+                name: 'cm.campaigns.detail',
+                url: '/?campaignId',
+                template: '<ui-view />'
+            });
+
+        buildGeneralRoutes('analytics');
+        buildGeneralRoutes('reports');
+
+        function buildGeneralRoutes(base) {
+            $stateProvider
+                .state({
+                    name: base + '.clients',
+                    url: '/clients'
+                })
+                .state({
+                    name: base + '.clients.detail',
+                    url: '/?clientId'
+                })
+                .state({
+                    name: base + '.divisions',
+                    url: '/divisions?clientId'
+                })
+                .state({
+                    name: base + '.divisions.detail',
+                    url: '/?divisionId'
+                })
+                .state({
+                    name: base + '.accounts',
+                    url: '/accounts?divisionId&clientId',
+                })
+                .state({
+                    name: base + '.accounts.detail',
+                    url: '/accounts?accountId'
+                })
+                .state({
+                    name: base + '.campaigns',
+                    url: '/campaigns?accountId&divisionId&clientId'
+                })
+                .state({
+                    name: base + '.campaigns.detail',
+                    url: '/?campaignId'
+                });
+        }
+
+        $locationProvider.html5Mode({ enabled: true });
+    }]);
+});
+
 /**
  * Created by Alex on 3/2/2015.
  */
@@ -57699,14 +57833,55 @@ define('campaign-management/clients/controllers/client',['require','./../../modu
 define('campaign-management/clients/controllers/clients',['require','./../../module'],function (require) {
     var app = require('./../../module');
 
-    app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'dateFormatterFilter', function ($scope, $http, $timeout, dateFormatter) {
-        //$http.get('clients?dimensions=id,name,channel,lastViewedName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions&limit=10').then(function (res) {
-        $http.get('/fixtures/all_clients_table.json').then(function (res) {
+    app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'topClientsService', function ($scope, $http, $timeout, topClients) {
+        $scope.inFlightCampaigns = {};
+        $scope.preFlightCampaigns = {};
+        $scope.completeCampaigns = {};
+        $scope.archivedCampaigns = {};
+        $scope.topClients = {};
+
+        topClients.init('/fixtures/top_clients_table.json');
+        topClients.observe(updateTopClients);
+
+        function updateTopClients() {
             $timeout(function () {
-                $scope.topClients = topClientsTransform(res.data.clients);
-                $scope.$apply();
+                $scope.$apply(function () {
+                    $scope.topClients = topClients.all();
+                });
             });
-        });
+        }
+    }]);
+});
+
+define('campaign-management/clients/services/topClients',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+
+    module.service('topClientsService', ['$http', 'dataFactory', 'dateFormatterFilter', function ($http, dataFactory, dateFormatter) {
+        var topClients = dataFactory(sortClients);
+
+        function sortClients(transformedResponse) {
+            var sortFn = function (a, b) {
+                var ai = a.impressions;
+                var bi = b.impressions;
+
+                if (ai && bi) {
+                    if (ai > bi) { return -1; }
+                    if (ai < bi) { return 1; }
+                }
+                return 0;
+            };
+
+            transformedResponse.data.sort(sortFn);
+            return transformedResponse;
+        }
+
+        function init(url) {
+            return topClients.init(url, function (data) {
+                return topClientsTransform(data.clients);
+            });
+        }
 
         function topClientsTransform(inData) {
             var outData = {
@@ -57745,6 +57920,12 @@ define('campaign-management/clients/controllers/clients',['require','./../../mod
 
             return outData;
         }
+
+        return {
+            init: init,
+            observe: topClients.observe,
+            all: topClients.all
+        };
     }]);
 });
 
@@ -57758,102 +57939,20 @@ define('campaign-management/divisions/controllers/division',['require','./../../
     }]);
 });
 
-
-define('tpl!campaign-management/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n\n</section>\n'); });
-
-
-define('tpl!campaign-management/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/index.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n<div ui-view="topClients">\n    <div basic-table="topClients" class="table table-hover"></div>\n</div>\n'); });
-
-
-define('tpl!campaign-management/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaign-management/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
-
-/* jshint -W015 */
-
-define('campaign-management/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html'],function (require) {
-    'use strict';
-    var app = require('./module');
-    require('tpl!./index.html');
-    require('tpl!./clients/index.html');
-    require('tpl!./clients/youWorkOn.html');
-
-    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
-        $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
-
-        $stateProvider
-            .state('analytics', {
-                url: '/analytics',
-                parent: 'index',
-                templateUrl: 'campaign-management/index.html'
-            })
-            .state('analytics.clients', {
-                url: '/clients'
-            })
-            .state('analytics.clients.detail', {
-                url: '/:clientId'
-            })
-            .state('index', {
-                template: '<ui-view />',
-                controller: 'indexCtrl'
-            })
-            .state('cm', {
-                url: '/campaign-management',
-                controller: 'campaignManagementCtrl',
-                templateUrl: 'campaign-management/index.html',
-                parent: 'index'
-            })
-                .state('cm.clients', {
-                    url: '/clients',
-                    controller: 'clientsCtrl',
-                    templateUrl: 'campaign-management/clients/index.html'
-                })
-                    .state('cm.clients.detail', {
-                        url: '/?clientId',
-                        views: {
-                            'header': {
-                                controller: 'clientCtrl',
-                                templateUrl: 'campaign-management/clients/youWorkOn.html'
-                            }
-                        }
-                    })
-                .state('cm.divisions', {
-                    url: '/divisions?clientId',
-                    template: '<ui-view />'
-                })
-                    .state('cm.divisions.detail', {
-                        url: '/?divisionId',
-                        controller: 'divisionCtrl',
-                        template: '<ui-view />'
-                    })
-            .state('cm.accounts', {
-                url: '/accounts?divisionId&clientId',
-                template: '<ui-view />'
-            })
-            .state('cm.campaigns', {
-                url: '/campaigns?accountId&divisionId&clientId',
-                template: '<ui-view />'
-            })
-                .state('cm.campaigns.detail', {
-                    url: '/?campaignId',
-                    template: '<ui-view />'
-                });
-
-        $locationProvider.html5Mode({ enabled: false });
-    }]);
-});
-
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaign-management/index',['require','./controllers/campaignManagement','./controllers/index','./clients/directives/activeSummary','./clients/controllers/client','./clients/controllers/clients','./divisions/controllers/division','./routes'],function (require) {
+define('campaign-management/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./clients/directives/activeSummary','./clients/controllers/client','./clients/controllers/clients','./clients/services/topClients','./divisions/controllers/division'],function (require) {
     'use strict';
 
+    require('./routes');
     require('./controllers/campaignManagement');
     require('./controllers/index');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./clients/controllers/clients');
+    require('./clients/services/topClients');
     require('./divisions/controllers/division');
-    require('./routes');
 });
 
 define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-scrollbar','./core/index','./table/index','./chart/index','./campaign-management/index'],function (require) {
@@ -58036,9 +58135,9 @@ require.config({
     paths: {
         'angular': 'components/angular/angular',
         'ui-router': 'components/angular-ui-router/release/angular-ui-router',
+        'domReady': 'components/domReady/domReady',
         'tpl': 'components/requirejs-tpl-angular/tpl',
         'text': 'components/requirejs-text/text',
-        'domReady': 'components/domReady/domReady',
         'd3': 'components/d3/d3',
         'jquery': 'components/jquery/dist/jquery',
         'chosen': 'components/chosen/chosen.jquery',
@@ -58047,6 +58146,9 @@ require.config({
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
     },
     shim: {
+        'd3': {
+            exports: 'd3'
+        },
         'jquery': {
             exports: 'jquery'
         },
@@ -58062,12 +58164,12 @@ require.config({
         'chosen': {
             deps: ['jquery']
         },
-        'd3': {
-            exports: 'd3'
-        },
         'angular': {
             deps: ['jquery'],
             exports: 'angular'
+        },
+        'ui-router': {
+            deps: ['angular']
         }
     },
 
