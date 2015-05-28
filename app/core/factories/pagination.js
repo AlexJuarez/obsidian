@@ -35,8 +35,6 @@ define(function (require) {
 
 
     function buildPageUrl(url, limit, offset) {
-        'use strict';
-
         if (url.indexOf('?') > -1) {
             return url + '&limit=' + limit + '&offset=' + offset;
         } else {

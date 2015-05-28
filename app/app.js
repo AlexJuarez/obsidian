@@ -12,14 +12,11 @@ define(function (require) {
     require('./table/index');
     require('./core/index');
     require('./style-guide/index');
-    require('./campaign-management/index');
-
 
     return ng.module('app', [
         'perfect_scrollbar',
         'localytics.directives',
         'app.home',
-        'app.campaign-management',
         'tpl',
         'ui.router'
     ]);

@@ -5,9 +5,9 @@ require.config({
     paths: {
         'angular': 'components/angular/angular',
         'ui-router': 'components/angular-ui-router/release/angular-ui-router',
+        'domReady': 'components/domReady/domReady',
         'tpl': 'components/requirejs-tpl-angular/tpl',
         'text': 'components/requirejs-text/text',
-        'domReady': 'components/domReady/domReady',
         'd3': 'components/d3/d3',
         'jquery': 'components/jquery/dist/jquery',
         'chosen': 'components/chosen/chosen.jquery',
@@ -16,6 +16,9 @@ require.config({
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
     },
     shim: {
+        'd3': {
+            exports: 'd3'
+        },
         'jquery': {
             exports: 'jquery'
         },
@@ -31,12 +34,12 @@ require.config({
         'chosen': {
             deps: ['jquery']
         },
-        'd3': {
-            exports: 'd3'
-        },
         'angular': {
             deps: ['jquery'],
             exports: 'angular'
+        },
+        'ui-router': {
+            deps: ['angular']
         }
     },
 

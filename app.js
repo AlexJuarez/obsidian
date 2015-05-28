@@ -33,27 +33,27 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(__dirname + '/app'));
     app.use(express.static(__dirname + '/build'));
     app.use(express.static(__dirname + '/components'));
-
-    app.get('/narwhal/accounts', function (req, res, next) {
-        res.sendfile('assets/fixtures/accounts.json');
-    });
-    app.get('/narwhal/clients', function (req, res, next) {
-        if (req.query.filters) {
-            res.sendfile('assets/fixtures/clients_youworkon.json');
-        } else {
-            res.sendfile('assets/fixtures/clients.json');
-        }
-    });
-    app.get('/narwhal/divisions', function (req, res, next) {
-        res.sendfile('assets/fixtures/divisions.json');
-    });
-    app.get('/narwhal/campaigns', function (req, res, next) {
-        res.sendfile('assets/fixtures/campaigns.json');
-    });
-    app.get('/narwhal/clientSet', function (req, res, next) {
-        res.sendfile('assets/fixtures/clientSet.json');
-    });
 }
+
+app.get('/narwhal/accounts', function (req, res, next) {
+    res.sendfile('assets/fixtures/accounts.json');
+});
+app.get('/narwhal/clients', function (req, res, next) {
+    if (req.query.filters) {
+        res.sendfile('assets/fixtures/clients_youworkon.json');
+    } else {
+        res.sendfile('assets/fixtures/clients.json');
+    }
+});
+app.get('/narwhal/divisions', function (req, res, next) {
+    res.sendfile('assets/fixtures/divisions.json');
+});
+app.get('/narwhal/campaigns', function (req, res, next) {
+    res.sendfile('assets/fixtures/campaigns.json');
+});
+app.get('/narwhal/clientSet', function (req, res, next) {
+    res.sendfile('assets/fixtures/clientSet.json');
+});
 
 /*
  * Start it up
