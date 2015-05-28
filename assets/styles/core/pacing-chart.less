@@ -1,35 +1,23 @@
 .meter-wrapper {
-  font-size: 100%;
-  display: flex;
   .meter {
-    flex: 3;
-    border: solid 4px @light-gray;
-    position: relative;
-    //min-width: 50%;
-    //max-width: 80%;
-    //float: left;
+    width: 80%;
     height: 100%;
-    margin-right: 2rem;
     box-sizing: border-box;
-
-    .target {
-      width: 3px;
-      height: calc(~'100% + 8px');
-      background: @dark-gray;
-      position: absolute;
-      top: -4px;
-      left: 0%;
-      -webkit-transition: left 0.5s ease;
-      transition: left 0.5s ease;
+    .stroke rect {
+      stroke: #ccc;
+      stroke-width: 4px;
+      fill: none;
     }
-    .achieved {
-      width: 0%;
-      height: 100%;
-      background: @brand-color;
-      display: block;
+    .fill rect {
+      fill: @brand-color;
       -webkit-transition: width 0.5s ease;
       transition: width 0.5s ease;
     }
+    .target rect {
+      fill: @dark-gray;
+      -webkit-transition: width 0.5s ease;
+      transition: width 0.5s ease;
+    }    
   }
   &.meter-sm {
     height: 20px;
@@ -40,9 +28,8 @@
     line-height: 30px;
   }
   & > span {
-    flex: 1;
-    //display: inline-block;
-    //background: #ccc;
+    width: 18%;
+    float: right;
   }
 
 }
