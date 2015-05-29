@@ -46595,12 +46595,20 @@ define('core/navbar/services/util',[],function () {
 
     function alphabetMap(sorted) {
         var map = {};
-        var item;
+        var item, key;
 
         for (var i = 0; i < sorted.length; i++) {
             item = sorted[i];
-            if (item.name) {
-                var key = item.name.charAt(0).toLowerCase();
+            if (item.name && item.name !== null) {
+                key = item.name.trim().charAt(0).toLowerCase();
+
+                //Check non-alphanumeric
+                if (!/\d|[a-z]/.test(key)) {
+                    var name = item.name.trim();
+                    key = name.replace(/[^a-z0-9]|\W+|\r?\n|\r/gmi, '').charAt(0);
+                }
+
+                //Check if its a digit
                 if (/\d/.test(key)) {
                     if (typeof map['#'] === 'undefined') {
                         map['#'] = [item];
@@ -46617,7 +46625,20 @@ define('core/navbar/services/util',[],function () {
             }
         }
 
-        return map;
+        var output = [];
+
+        for (key in map) {
+            output.push({
+                key: key,
+                value: map[key]
+            });
+        }
+
+        output.sort(function (a, b) {
+            return a.key.localeCompare(b.key);
+        });
+
+        return output;
     }
 
     function pinned(sorted) {
@@ -46710,12 +46731,12 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
 
         function pin(division) {
             division.pinned = true;
-            divisions.notifyObservers();
+            divisions.notifyObservers('pin');
         }
 
         function unpin(division) {
             division.pinned = false;
-            divisions.notifyObservers();
+            divisions.notifyObservers('pin');
         }
 
         function pinned() {
@@ -46790,11 +46811,11 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
         function quarterMap() {
             var sorted = filtered();
             var map = {};
-            var item;
+            var item, key;
 
             for (var i = 0; i < sorted.length; i++) {
                 item = sorted[i];
-                var key = getYearQuarter(item.startDate);
+                key = getYearQuarter(item.startDate);
                 if (typeof map[key] === 'undefined') {
                     map[key] = [item];
                 } else {
@@ -46802,7 +46823,16 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
                 }
             }
 
-            return map;
+            var output = [];
+
+            for (key in map) {
+                output.push({
+                    key: key,
+                    value: map[key]
+                });
+            }
+
+            return output;
         }
 
         function filtered() {
@@ -46849,12 +46879,12 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
 
         function pin(campaign) {
             campaign.pinned = true;
-            campaigns.notifyObservers();
+            campaigns.notifyObservers('pin');
         }
 
         function unpin(campaign) {
             campaign.pinned = false;
-            campaigns.notifyObservers();
+            campaigns.notifyObservers('pin');
         }
 
         function pinned() {
@@ -46867,12 +46897,15 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
 
         function inFlight() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i in campaigns) {
+                campaign = campaigns[i];
                 if (isInFlight(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -46883,12 +46916,15 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
 
         function preFlight() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i in campaigns) {
+                campaign = campaigns[i];
                 if (isPreFlight(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -46899,12 +46935,15 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
 
         function completed() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i in campaigns) {
+                campaign = campaigns[i];
                 if (isCompleted(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -46971,12 +47010,12 @@ define('core/navbar/services/client',['require','./../../module','./util'],funct
 
         function pin(client) {
             client.pinned = true;
-            clients.notifyObservers();
+            clients.notifyObservers('pin');
         }
 
         function unpin(client) {
             client.pinned = false;
-            clients.notifyObservers();
+            clients.notifyObservers('pin');
         }
 
         function pinned() {
@@ -47079,12 +47118,12 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
 
         function pin(account) {
             account.pinned = true;
-            accounts.notifyObservers();
+            accounts.notifyObservers('pin');
         }
 
         function unpin(account) {
             account.pinned = false;
-            accounts.notifyObservers();
+            accounts.notifyObservers('pin');
         }
 
         function pinned() {
@@ -47232,7 +47271,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 });
 
 
-define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in clientsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="client in value track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="item in clientsMap">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="client in (item.value | limitTo: limit) track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by $index">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
@@ -47249,37 +47288,26 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
                 $scope.section = 'Clients';
-                update();
-                updateCurrent();
 
-                clients.observe(update);
-
-                navbar.observe(updateCurrent);
+                clients.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
 
                 $scope.$watch('query', function (newValue) {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.results = clients.search(newValue);
-                        });
-                    });
+                    $scope.results = clients.search(newValue);
                 });
 
                 function updateCurrent() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            var info = navbar.all();
-                            $scope.current = info.client && info.client.name || 'All Clients';
-                        });
-                    });
+                    var info = navbar.all();
+                    $scope.current = info.client && info.client.name || 'All Clients';
                 }
 
-                function update() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.clientsMap = clients.alphabetMap();
-                            $scope.pinned = clients.pinned();
-                        });
-                    });
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = clients.pinned();
+                    } else {
+                        $scope.clientsMap = clients.alphabetMap();
+                        $scope.pinned = clients.pinned();
+                    }
                 }
             }]
         };
@@ -47287,7 +47315,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="(key, value) in divisionsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="division in value track by $index">\n                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by $index">\n                    <a ui-sref=".divisions.detail({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by $index">\n                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="item in divisionsMap">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="division in (item.value | limitTo: limit) track by $index ">\n                    <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by $index">\n                    <a ui-sref=".divisions.detail({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -47305,45 +47333,33 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
                 $scope.unpin = divisions.unpin;
                 $scope.section = 'Divisions';
                 $scope.current = 'All Divisions';
-                update();
-                updateCurrent();
-
                 $scope.state = navbar.params();
 
+                divisions.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
+
                 $scope.$watch('query', function (newValue) {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.results = divisions.search(newValue);
-                        });
-                    });
+                    $scope.results = divisions.search(newValue);
                 });
 
-                divisions.observe(update);
-
-                navbar.observe(updateCurrent);
-                navbar.observe(update);
-
                 function updateCurrent() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            var info = navbar.all();
-                            $scope.current = info.division && info.division.name || 'All Divisions';
-                            if (info.division && info.client && info.client.id) {
-                                $scope.state = { clientId: info.client.id };
-                            } else {
-                                $scope.state = navbar.params();
-                            }
-                        });
-                    });
+                    var info = navbar.all();
+                    $scope.current = info.division && info.division.name || 'All Divisions';
+                    if (info.division && info.client && info.client.id) {
+                        $scope.state = { clientId: info.client.id };
+                    } else {
+                        $scope.state = navbar.params();
+                    }
                 }
 
-                function update() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.divisionsMap = divisions.alphabetMap();
-                            $scope.pinned = divisions.pinned();
-                        });
-                    });
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = divisions.pinned();
+                    } else {
+                        $scope.divisionsMap = divisions.alphabetMap();
+                        $scope.pinned = divisions.pinned();
+                    }
                 }
             }]
         };
@@ -47351,7 +47367,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
 });
 
 
-define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="(key, value) in accountsMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="account in value track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by $index">\n                    <a ui-sref=".campaigns({ accountId: account.id })">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="item in accountsMap">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="account in (item.value | limitTo: limit) track by $index">\n                    <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by $index">\n                    <a ui-sref=".campaigns({ accountId: account.id })">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
     'use strict';
@@ -47369,45 +47385,33 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
                 $scope.unpin = accounts.unpin;
                 $scope.section = 'Accounts';
                 $scope.current = 'All Accounts';
-                update();
-                updateCurrent();
-
                 $scope.state = navbar.params();
 
+                accounts.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
+
                 $scope.$watch('query', function (newValue) {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.results = accounts.search(newValue);
-                        });
-                    });
+                    $scope.results = accounts.search(newValue);
                 });
 
-                accounts.observe(update);
-
-                navbar.observe(updateCurrent);
-                navbar.observe(update);
-
                 function updateCurrent() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            var info = navbar.all();
-                            $scope.current = info.account && info.account.name || 'All Accounts';
-                            if (info.account && info.division && info.division.id) {
-                                $scope.state = { divisionId: info.division.id };
-                            } else {
-                                $scope.state = navbar.params();
-                            }
-                        });
-                    });
+                    var info = navbar.all();
+                    $scope.current = info.account && info.account.name || 'All Accounts';
+                    if (info.account && info.division && info.division.id) {
+                        $scope.state = { divisionId: info.division.id };
+                    } else {
+                        $scope.state = navbar.params();
+                    }
                 }
 
-                function update() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.accountsMap = accounts.alphabetMap();
-                            $scope.pinned = accounts.pinned();
-                        });
-                    });
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = accounts.pinned();
+                    } else {
+                        $scope.accountsMap = accounts.alphabetMap();
+                        $scope.pinned = accounts.pinned();
+                    }
                 }
             }]
         };
@@ -47415,7 +47419,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
 });
 
 
-define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n        <li><a ui-sref=".campaigns(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in preFlight track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in inFlight track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in completed track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="(key, value) in quarterMap">\n            [[key]]\n            <ul>\n                <li ng-repeat="campaign in value track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="campaign in results track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="pinned" wheel-propagation="true" wheel-speed="10">\n        <li><a ui-sref=".campaigns(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by $index ">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="item in (quarterMap | limitTo: quarterLimit)">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="campaign in (item.value | limitTo: limit) track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="campaign in results track by $index">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/campaignDropdown',['require','./../../module','tpl!./campaign.html'],function (require) {
     'use strict';
@@ -47433,49 +47437,41 @@ define('core/navbar/directives/campaignDropdown',['require','./../../module','tp
                 $scope.unpin = campaigns.unpin;
                 $scope.section = 'Campaigns';
                 $scope.current = 'All Campaigns';
-                update();
-                updateCurrent();
-
                 $scope.state = navbar.params();
+                $scope.quarterLimit = 5;
+                $scope.preFlightLimit = 10;
+                $scope.inFlightLimit = 10;
+                $scope.completedLimit = 10;
+
+                campaigns.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
 
                 $scope.$watch('query', function (newValue) {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.results = campaigns.search(newValue);
-                        });
-                    });
+                    $scope.results = campaigns.search(newValue);
                 });
 
-                campaigns.observe(update);
-
-                navbar.observe(updateCurrent);
-                navbar.observe(update);
-
                 function updateCurrent() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            var info = navbar.all();
+                    var info = navbar.all();
 
-                            $scope.current = info.campaign && info.campaign.name || 'All Campaigns';
-                            if (info.campaign && info.account && info.account.id) {
-                                $scope.state = { accountId: info.account.id };
-                            } else {
-                                $scope.state = navbar.params();
-                            }
-                        });
-                    });
+                    $scope.current = info.campaign && info.campaign.name || 'All Campaigns';
+                    if (info.campaign && info.account && info.account.id) {
+                        $scope.state = { accountId: info.account.id };
+                    } else {
+                        $scope.state = navbar.params();
+                    }
                 }
 
-                function update() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.quarterMap = campaigns.quarterMap();
-                            $scope.pinned = campaigns.pinned();
-                            $scope.inFlight = campaigns.inFlight();
-                            $scope.preFlight = campaigns.preFlight();
-                            $scope.completed = campaigns.completed();
-                        });
-                    });
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = campaigns.pinned();
+                    } else {
+                        $scope.pinned = campaigns.pinned();
+                        $scope.quarterMap = campaigns.quarterMap();
+                        $scope.inFlight = campaigns.inFlight();
+                        $scope.preFlight = campaigns.preFlight();
+                        $scope.completed = campaigns.completed();
+                    }
                 }
             }]
         };
@@ -47502,30 +47498,38 @@ define('core/navbar/index',['require','./navbar','./services/util','./services/d
 
 });
 
-define('core/factories/data',['require','./../module','angular'],function (require) {
+define('core/factories/data',['require','./../module'],function (require) {
     'use strict';
 
     var module = require('./../module');
-    var ng = require('angular');
 
-    module.factory('dataFactory', ['$http', function ($http) {
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', function ($http, $q, $rootScope, $timeout) {
         return function (sortFn) {
             var initialized = false;
             var data = [];
-            var observers = [];
+            var observers = {};
+            var observerId = 0;
+
             sortFn = sortFn || function (d) { return d; };
 
             function init(url, transform) {
+                var deferred = $q.defer();
+
                 if (!initialized) {
                     transform = transform || function (d) { return d; };
 
                     initialized = true;
 
-                    return $http.get(url).success(function (d) {
+                    $http.get(url).success(function (d) {
                         data = sortFn(transform.call(this, d));
+                        deferred.resolve(data);
                         notifyObservers();
                     });
+                } else {
+                    deferred.resolve(data);
                 }
+
+                return deferred.promise;
             }
 
             function setData(d) {
@@ -47559,13 +47563,29 @@ define('core/factories/data',['require','./../module','angular'],function (requi
                 return data;
             }
 
-            function observe(callback) {
-                observers.push(callback);
+            function observe(callback, $scope, preventImmediate) {
+                var id = observerId++;
+                observers[id] = callback;
+
+                if (preventImmediate !== true) {
+                    callback();
+                }
+
+                if ($scope) {
+                    $scope.$on('$destroy', function() {
+                        delete observers[id];
+                    });
+                }
             }
 
-            function notifyObservers() {
-                ng.forEach(observers, function (fn) {
-                    fn();
+            function notifyObservers(event) {
+
+                for (var x in observers) {
+                    observers[x](event);
+                }
+
+                $timeout(function () {
+                    $rootScope.$apply();
                 });
             }
 
@@ -47680,6 +47700,30 @@ define('core/directives/dropdown',['require','./../module'],function (require) {
                         element.parent().removeClass('open');
                     }
                 });
+            }
+        };
+    }]);
+});
+
+define('core/directives/limit',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.directive('limit', ['$timeout', function ($timeout) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function (scope, element, attr) {
+                scope.limit = parseInt(attr.limit);
+                scope.more = more;
+
+                function more(){
+                    scope.limit += 10;
+                    $timeout(function () {
+                        scope.$apply();
+                    });
+                }
             }
         };
     }]);
@@ -47949,7 +47993,7 @@ define('core/services/store',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./navbar/index','./factories/data','./factories/pagination','./directives/dropdown','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
+define('core/index',['require','./modal/index','./navbar/index','./factories/data','./factories/pagination','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
     'use strict';
 
     require('./modal/index');
@@ -47958,6 +48002,7 @@ define('core/index',['require','./modal/index','./navbar/index','./factories/dat
     require('./factories/data');
     require('./factories/pagination');
     require('./directives/dropdown');
+    require('./directives/limit');
     require('./directives/tooltip');
     require('./directives/compile');
     require('./filters/safe');
@@ -57742,7 +57787,6 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
         buildGeneralRoutes('analytics');
         buildGeneralRoutes('reports');
 
-
        function buildGeneralRoutes(base) {
             $stateProvider
                 .state({
@@ -57752,37 +57796,37 @@ define('campaign-management/routes',['require','./module','tpl!./index.html','tp
                 })
                 .state({
                     name: base + '.clients.detail',
-                    url: '/?clientId',
+                    url: '/:clientId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions?clientId',
+                    url: '/divisions',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions.detail',
-                    url: '/?divisionId',
+                    url: '/:divisionId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts',
-                    url: '/accounts?divisionId&clientId',
+                    url: '/accounts',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts.detail',
-                    url: '/accounts?accountId',
+                    url: '/accounts:accountId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns?accountId&divisionId&clientId',
+                    url: '/campaigns',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/?campaignId',
+                    url: '/:campaignId',
                     template: '<ui-view />'
                 });
         }
@@ -57809,9 +57853,6 @@ define('campaign-management/controllers/campaignManagement',['require','./../mod
     }]);
 });
 
-/**
- * Created by Alex on 3/2/2015.
- */
 /* jshint camelcase: false */
 /* jshint -W098 */
 /* jshint -W004 */
@@ -57994,21 +58035,12 @@ define('campaign-management/clients/controllers/clients',['require','./../../mod
     var app = require('./../../module');
 
     app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'topClientsService', function ($scope, $http, $timeout, topClients) {
-        $scope.inFlightCampaigns = {};
-        $scope.preFlightCampaigns = {};
-        $scope.completeCampaigns = {};
-        $scope.archivedCampaigns = {};
-        $scope.topClients = {};
-
         topClients.init('/fixtures/top_clients_table.json');
-        topClients.observe(updateTopClients);
+
+        topClients.observe(updateTopClients, $scope);
 
         function updateTopClients() {
-            $timeout(function () {
-                $scope.$apply(function () {
-                    $scope.topClients = topClients.all();
-                });
-            });
+            $scope.topClients = topClients.all();
         }
     }]);
 });
@@ -58084,6 +58116,7 @@ define('campaign-management/clients/services/topClients',['require','./../../mod
         return {
             init: init,
             observe: topClients.observe,
+            removeObserver: topClients.removeObserver,
             all: topClients.all
         };
     }]);
