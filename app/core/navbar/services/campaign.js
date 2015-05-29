@@ -133,7 +133,7 @@ define(function (require) {
             var campaigns = all();
             var campaign;
 
-            for (var i in campaigns) {
+            for (var i = 0; i < campaigns.length; i++) {
                 campaign = campaigns[i];
                 if (isInFlight(campaign)) {
                     output.push(campaign);
@@ -152,7 +152,7 @@ define(function (require) {
             var campaigns = all();
             var campaign;
 
-            for (var i in campaigns) {
+            for (var i = 0; i < campaigns.length; i++) {
                 campaign = campaigns[i];
                 if (isPreFlight(campaign)) {
                     output.push(campaign);
@@ -171,7 +171,7 @@ define(function (require) {
             var campaigns = all();
             var campaign;
 
-            for (var i in campaigns) {
+            for (var i = 0; i < campaigns.length; i++) {
                 campaign = campaigns[i];
                 if (isCompleted(campaign)) {
                     output.push(campaign);

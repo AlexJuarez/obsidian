@@ -46764,12 +46764,11 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
     }]);
 });
 
-define('core/navbar/services/campaign',['require','./../../module','./util','angular'],function (require) {
+define('core/navbar/services/campaign',['require','./../../module','./util'],function (require) {
     'use strict';
 
     var module = require('./../../module');
     var utils = require('./util');
-    var ng = require('angular');
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
         var campaigns = dataFactory(sortByStartDate);
@@ -46900,7 +46899,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
             var campaigns = all();
             var campaign;
 
-            for (var i in campaigns) {
+            for (var i = 0; i < campaigns.length; i++) {
                 campaign = campaigns[i];
                 if (isInFlight(campaign)) {
                     output.push(campaign);
@@ -46919,7 +46918,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
             var campaigns = all();
             var campaign;
 
-            for (var i in campaigns) {
+            for (var i = 0; i < campaigns.length; i++) {
                 campaign = campaigns[i];
                 if (isPreFlight(campaign)) {
                     output.push(campaign);
@@ -46938,7 +46937,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util','ang
             var campaigns = all();
             var campaign;
 
-            for (var i in campaigns) {
+            for (var i = 0; i < campaigns.length; i++) {
                 campaign = campaigns[i];
                 if (isCompleted(campaign)) {
                     output.push(campaign);
