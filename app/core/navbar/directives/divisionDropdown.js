@@ -15,6 +15,7 @@ define(function (require) {
                 $scope.section = 'Divisions';
                 $scope.current = 'All Divisions';
                 $scope.state = navbar.params();
+                $scope.limit = 10;
 
                 divisions.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);

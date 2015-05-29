@@ -23,7 +23,7 @@
         </li>
         <li ng-show="preFlight.length">preFlight
             <ul>
-                <li ng-repeat="campaign in preFlight track by $index">
+                <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by $index ">
                     <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
@@ -31,7 +31,7 @@
         </li>
         <li ng-show="inFlight.length">inFlight
             <ul>
-                <li ng-repeat="campaign in inFlight track by $index">
+                <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by $index">
                     <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
@@ -39,7 +39,7 @@
         </li>
         <li ng-show="completed.length">completed
             <ul>
-                <li ng-repeat="campaign in completed track by $index">
+                <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by $index">
                     <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
@@ -47,10 +47,10 @@
         </li>
     </ul>
     <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">
-        <li ng-repeat="(key, value) in quarterMap">
-            [[key]]
+        <li ng-repeat="item in (quarterMap | limitTo: quarterLimit)">
+            [[item.key]]
             <ul>
-                <li ng-repeat="campaign in value track by $index">
+                <li ng-repeat="campaign in (item.value | limitTo: limit) track by $index">
                     <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>

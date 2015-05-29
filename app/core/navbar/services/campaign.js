@@ -45,11 +45,11 @@ define(function (require) {
         function quarterMap() {
             var sorted = filtered();
             var map = {};
-            var item;
+            var item, key;
 
             for (var i = 0; i < sorted.length; i++) {
                 item = sorted[i];
-                var key = getYearQuarter(item.startDate);
+                key = getYearQuarter(item.startDate);
                 if (typeof map[key] === 'undefined') {
                     map[key] = [item];
                 } else {
@@ -57,7 +57,16 @@ define(function (require) {
                 }
             }
 
-            return map;
+            var output = [];
+
+            for (key in map) {
+                output.push({
+                    key: key,
+                    value: map[key]
+                });
+            }
+
+            return output;
         }
 
         function filtered() {

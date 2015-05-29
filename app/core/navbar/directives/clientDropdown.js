@@ -13,6 +13,7 @@ define(function (require) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
                 $scope.section = 'Clients';
+                $scope.limit = 10;
 
                 clients.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
