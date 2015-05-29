@@ -3,7 +3,6 @@ define(function (require) {
 
     var module = require('./../../module');
     var utils = require('./util');
-    var ng = require('angular');
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
         var campaigns = dataFactory(sortByStartDate);
