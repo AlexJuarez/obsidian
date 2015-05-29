@@ -5,13 +5,14 @@ define(function (require) {
     require('angularMocks');
 
     describe('dataFactory', function () {
-        var data, httpBackend;
+        var data, httpBackend, scope;
 
         beforeEach(function () {
             module('app.core');
-            inject(function (dataFactory, $httpBackend) {
+            inject(function (dataFactory, $httpBackend, $rootScope) {
                 data = dataFactory;
                 httpBackend = $httpBackend;
+                scope = $rootScope.$new();
             });
         });
 
@@ -68,9 +69,26 @@ define(function (require) {
                 expect(test1.all()).toEqual([1]);
             }
 
-            test1.observe(callback);
+            test1.observe(callback, undefined, true);
 
             test1.setData([1]);
+        });
+
+        it('should clean up the observers when a scope is destroyed', function () {
+            var test = data();
+
+            var counter = 0;
+
+            function callback() {
+                counter++;
+            }
+
+            test.observe(callback, scope);
+            test.setData([1]);
+            scope.$destroy();
+            test.addData(2);
+
+            expect(counter).toEqual(2);
         });
     });
 });

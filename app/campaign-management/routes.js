@@ -83,7 +83,6 @@ define(function (require) {
         buildGeneralRoutes('analytics');
         buildGeneralRoutes('reports');
 
-
        function buildGeneralRoutes(base) {
             $stateProvider
                 .state({

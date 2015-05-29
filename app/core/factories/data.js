@@ -4,24 +4,33 @@ define(function (require) {
     var module = require('./../module');
     var ng = require('angular');
 
-    module.factory('dataFactory', ['$http', function ($http) {
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', function ($http, $q, $rootScope, $timeout) {
         return function (sortFn) {
             var initialized = false;
             var data = [];
-            var observers = [];
+            var observers = {};
+            var observerId = 0;
+
             sortFn = sortFn || function (d) { return d; };
 
             function init(url, transform) {
+                var deferred = $q.defer();
+
                 if (!initialized) {
                     transform = transform || function (d) { return d; };
 
                     initialized = true;
 
-                    return $http.get(url).success(function (d) {
+                    $http.get(url).success(function (d) {
                         data = sortFn(transform.call(this, d));
+                        deferred.resolve(data);
                         notifyObservers();
                     });
+                } else {
+                    deferred.resolve(data);
                 }
+
+                return deferred.promise;
             }
 
             function setData(d) {
@@ -55,13 +64,27 @@ define(function (require) {
                 return data;
             }
 
-            function observe(callback) {
-                observers.push(callback);
+            function observe(callback, $scope, preventImmediate) {
+                var id = observerId++;
+                observers[id] = callback;
+
+                if (preventImmediate !== true) {
+                    callback();
+                }
+
+                if ($scope) {
+                    $scope.$on('$destroy', function() {
+                        delete observers[id];
+                    });
+                }
             }
 
             function notifyObservers() {
-                ng.forEach(observers, function (fn) {
-                    fn();
+                $timeout(function () {
+                    for (var x in observers) {
+                        observers[x]();
+                    }
+                    $rootScope.$apply();
                 });
             }
 

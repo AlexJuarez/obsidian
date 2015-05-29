@@ -13,37 +13,22 @@ define(function (require) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
                 $scope.section = 'Clients';
-                update();
-                updateCurrent();
 
-                clients.observe(update);
-
-                navbar.observe(updateCurrent);
+                clients.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
 
                 $scope.$watch('query', function (newValue) {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.results = clients.search(newValue);
-                        });
-                    });
+                    $scope.results = clients.search(newValue);
                 });
 
                 function updateCurrent() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            var info = navbar.all();
-                            $scope.current = info.client && info.client.name || 'All Clients';
-                        });
-                    });
+                    var info = navbar.all();
+                    $scope.current = info.client && info.client.name || 'All Clients';
                 }
 
                 function update() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.clientsMap = clients.alphabetMap();
-                            $scope.pinned = clients.pinned();
-                        });
-                    });
+                    $scope.clientsMap = clients.alphabetMap();
+                    $scope.pinned = clients.pinned();
                 }
             }]
         };

@@ -14,45 +14,29 @@ define(function (require) {
                 $scope.unpin = accounts.unpin;
                 $scope.section = 'Accounts';
                 $scope.current = 'All Accounts';
-                update();
-                updateCurrent();
-
                 $scope.state = navbar.params();
 
+                accounts.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
+
                 $scope.$watch('query', function (newValue) {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.results = accounts.search(newValue);
-                        });
-                    });
+                    $scope.results = accounts.search(newValue);
                 });
 
-                accounts.observe(update);
-
-                navbar.observe(updateCurrent);
-                navbar.observe(update);
-
                 function updateCurrent() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            var info = navbar.all();
-                            $scope.current = info.account && info.account.name || 'All Accounts';
-                            if (info.account && info.division && info.division.id) {
-                                $scope.state = { divisionId: info.division.id };
-                            } else {
-                                $scope.state = navbar.params();
-                            }
-                        });
-                    });
+                    var info = navbar.all();
+                    $scope.current = info.account && info.account.name || 'All Accounts';
+                    if (info.account && info.division && info.division.id) {
+                        $scope.state = { divisionId: info.division.id };
+                    } else {
+                        $scope.state = navbar.params();
+                    }
                 }
 
                 function update() {
-                    $timeout(function () {
-                        $scope.$apply(function () {
-                            $scope.accountsMap = accounts.alphabetMap();
-                            $scope.pinned = accounts.pinned();
-                        });
-                    });
+                    $scope.accountsMap = accounts.alphabetMap();
+                    $scope.pinned = accounts.pinned();
                 }
             }]
         };

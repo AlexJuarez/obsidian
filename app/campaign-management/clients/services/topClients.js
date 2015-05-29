@@ -69,6 +69,7 @@ define(function (require) {
         return {
             init: init,
             observe: topClients.observe,
+            removeObserver: topClients.removeObserver,
             all: topClients.all
         };
     }]);
