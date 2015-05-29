@@ -23,10 +23,10 @@
         </li>
     </ul>
     <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">
-        <li ng-repeat="(key, value) in accountsMap">
-            [[key]]
+        <li ng-repeat="item in accountsMap">
+            [[item.key]]
             <ul>
-                <li ng-repeat="account in value track by $index">
+                <li ng-repeat="account in (item.value | limitTo: limit) track by $index">
                     <a ui-sref=".campaigns({accountId: account.id})">[[account.name]]</a>
                     <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
