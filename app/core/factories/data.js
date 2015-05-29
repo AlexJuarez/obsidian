@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var module = require('./../module');
-    var ng = require('angular');
 
     module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', function ($http, $q, $rootScope, $timeout) {
         return function (sortFn) {

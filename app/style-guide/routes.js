@@ -32,6 +32,6 @@ define(function (require) {
                 url: '/style-guide',
                 templateUrl: 'style-guide/index.html',
                 controller: 'styleGuideCtrl'
-            })
+            });
     }]);
 });
