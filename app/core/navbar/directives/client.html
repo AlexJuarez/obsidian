@@ -15,7 +15,7 @@
         <li><a ui-sref=".clients">All [[section]]</a></li>
         <li ng-if="pinned.length">Pinned
             <ul  class="pinned">
-                <li ng-repeat="client in pinned track by $index">
+                <li ng-repeat="client in pinned track by client.id">
                     <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>
                     <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
@@ -23,10 +23,10 @@
         </li>
     </ul>
     <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
-        <li ng-repeat="item in clientsMap">
+        <li ng-repeat="item in clientsMap track by $index">
             [[item.key]]
             <ul limit="5">
-                <li ng-repeat="client in (item.value | limitTo: limit) track by $index">
+                <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">
                     <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>
                     <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                 <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
@@ -36,7 +36,7 @@
     <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
         <li>Results for "[[query]]"
             <ul>
-                <li ng-repeat="client in results track by $index">
+                <li ng-repeat="client in results track by client.id">
                     <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>
                     <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
