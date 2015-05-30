@@ -73,7 +73,7 @@ define(function (require) {
 
         it('should return a map containing a key of the first letter by name', function () {
             division.setData(divisions);
-            expect(division.alphabetMap()).toEqual([{key: "d", value: [divisions[0]]}]);
+            expect(division.alphabetMap()).toEqual([{key: 'd', value: [divisions[0]]}]);
         });
 
         it('should get an division by id', function () {
