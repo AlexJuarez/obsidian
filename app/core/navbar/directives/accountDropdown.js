@@ -15,7 +15,6 @@ define(function (require) {
                 $scope.section = 'Accounts';
                 $scope.current = 'All Accounts';
                 $scope.state = navbar.params();
-                $scope.limit = 10;
 
                 accounts.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);

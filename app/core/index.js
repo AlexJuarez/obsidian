@@ -10,6 +10,7 @@ define(function (require) {
     require('./factories/data');
     require('./factories/pagination');
     require('./directives/dropdown');
+    require('./directives/limit');
     require('./directives/tooltip');
     require('./directives/compile');
     require('./filters/safe');

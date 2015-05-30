@@ -15,7 +15,6 @@ define(function (require) {
                 $scope.section = 'Campaigns';
                 $scope.current = 'All Campaigns';
                 $scope.state = navbar.params();
-                $scope.limit = 10;
                 $scope.quarterLimit = 5;
                 $scope.preFlightLimit = 10;
                 $scope.inFlightLimit = 10;
