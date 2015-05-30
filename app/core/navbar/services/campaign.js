@@ -113,12 +113,12 @@ define(function (require) {
 
         function pin(campaign) {
             campaign.pinned = true;
-            campaigns.notifyObservers();
+            campaigns.notifyObservers('pin');
         }
 
         function unpin(campaign) {
             campaign.pinned = false;
-            campaigns.notifyObservers();
+            campaigns.notifyObservers('pin');
         }
 
         function pinned() {
@@ -131,12 +131,15 @@ define(function (require) {
 
         function inFlight() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i in campaigns) {
+                campaign = campaigns[i];
                 if (isInFlight(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -147,12 +150,15 @@ define(function (require) {
 
         function preFlight() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i in campaigns) {
+                campaign = campaigns[i];
                 if (isPreFlight(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -163,12 +169,15 @@ define(function (require) {
 
         function completed() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i in campaigns) {
+                campaign = campaigns[i];
                 if (isCompleted(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }

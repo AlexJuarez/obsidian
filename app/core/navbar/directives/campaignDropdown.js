@@ -39,12 +39,16 @@ define(function (require) {
                     }
                 }
 
-                function update() {
-                    $scope.quarterMap = campaigns.quarterMap();
-                    $scope.pinned = campaigns.pinned();
-                    $scope.inFlight = campaigns.inFlight();
-                    $scope.preFlight = campaigns.preFlight();
-                    $scope.completed = campaigns.completed();
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = campaigns.pinned();
+                    } else {
+                        $scope.pinned = campaigns.pinned();
+                        $scope.quarterMap = campaigns.quarterMap();
+                        $scope.inFlight = campaigns.inFlight();
+                        $scope.preFlight = campaigns.preFlight();
+                        $scope.completed = campaigns.completed();
+                    }
                 }
             }]
         };

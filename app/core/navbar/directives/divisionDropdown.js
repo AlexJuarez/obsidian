@@ -34,9 +34,13 @@ define(function (require) {
                     }
                 }
 
-                function update() {
-                    $scope.divisionsMap = divisions.alphabetMap();
-                    $scope.pinned = divisions.pinned();
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = divisions.pinned();
+                    } else {
+                        $scope.divisionsMap = divisions.alphabetMap();
+                        $scope.pinned = divisions.pinned();
+                    }
                 }
             }]
         };

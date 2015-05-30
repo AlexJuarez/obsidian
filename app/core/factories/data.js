@@ -78,10 +78,10 @@ define(function (require) {
                 }
             }
 
-            function notifyObservers() {
+            function notifyObservers(event) {
 
                 for (var x in observers) {
-                    observers[x]();
+                    observers[x](event);
                 }
 
                 $timeout(function () {

@@ -56,12 +56,12 @@ define(function (require) {
 
         function pin(division) {
             division.pinned = true;
-            divisions.notifyObservers();
+            divisions.notifyObservers('pin');
         }
 
         function unpin(division) {
             division.pinned = false;
-            divisions.notifyObservers();
+            divisions.notifyObservers('pin');
         }
 
         function pinned() {

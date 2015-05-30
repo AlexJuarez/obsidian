@@ -34,9 +34,13 @@ define(function (require) {
                     }
                 }
 
-                function update() {
-                    $scope.accountsMap = accounts.alphabetMap();
-                    $scope.pinned = accounts.pinned();
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = accounts.pinned();
+                    } else {
+                        $scope.accountsMap = accounts.alphabetMap();
+                        $scope.pinned = accounts.pinned();
+                    }
                 }
             }]
         };
