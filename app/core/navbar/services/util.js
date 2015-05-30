@@ -54,12 +54,20 @@ define(function () {
 
     function alphabetMap(sorted) {
         var map = {};
-        var item;
+        var item, key;
 
         for (var i = 0; i < sorted.length; i++) {
             item = sorted[i];
-            if (item.name) {
-                var key = item.name.charAt(0).toLowerCase();
+            if (item.name && item.name !== null) {
+                key = item.name.trim().charAt(0).toLowerCase();
+
+                //Check non-alphanumeric
+                if (!/\d|[a-z]/.test(key)) {
+                    var name = item.name.trim();
+                    key = name.replace(/[^a-z0-9]|\W+|\r?\n|\r/gmi, '').charAt(0);
+                }
+
+                //Check if its a digit
                 if (/\d/.test(key)) {
                     if (typeof map['#'] === 'undefined') {
                         map['#'] = [item];
@@ -76,7 +84,20 @@ define(function () {
             }
         }
 
-        return map;
+        var output = [];
+
+        for (key in map) {
+            output.push({
+                key: key,
+                value: map[key]
+            });
+        }
+
+        output.sort(function (a, b) {
+            return a.key.localeCompare(b.key);
+        });
+
+        return output;
     }
 
     function pinned(sorted) {

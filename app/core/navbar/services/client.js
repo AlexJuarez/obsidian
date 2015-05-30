@@ -37,12 +37,12 @@ define(function (require) {
 
         function pin(client) {
             client.pinned = true;
-            clients.notifyObservers();
+            clients.notifyObservers('pin');
         }
 
         function unpin(client) {
             client.pinned = false;
-            clients.notifyObservers();
+            clients.notifyObservers('pin');
         }
 
         function pinned() {

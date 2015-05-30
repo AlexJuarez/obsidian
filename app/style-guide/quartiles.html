@@ -1,0 +1,78 @@
+<h1 id="quartiles">Quartile Bar Graph</h1>
+<hr />
+<div class='vertical-bar-graph-wrapper'>
+  <span class="percentage">50.00%</span>
+  <span class="quartile">25%</span>
+  <svg class="bar-graph" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0">
+    <rect class="bg" x="0" y="0" width="100%" height="100%"/>
+    <rect class="achieved" x="0" width="100%"/>
+<!--     <svg class="achieved" viewBox="0 5 10% 10%" preserveAspectRatio="xMidYMax">
+      <rect x="0" y="0" fill="#0000FF" width="100%" height="100%"/>
+    </svg>
+ -->  </svg>
+
+
+  <!-- <span>43.3K of 65K</span> -->
+<!--   <svg class='meter' version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" enable-background="new 0 0 100% 100%">
+    <g class="target">
+      <rect width="100%" height="100%"/>
+    </g>
+    <g class="achieved">
+      <rect x="0%" y="100%" width="100%" height="30%"/>
+    </g>
+  </svg>
+ -->  
+</div>
+<script type="text/javascript">
+  var dataset = 50;
+
+  var wrapper = document.querySelector('.bar-graph');
+  // var svg = d3.select('.bar-graph');
+  
+  var w = wrapper.clientWidth,
+    h = wrapper.clientHeight;
+
+  console.log( h - dataset );
+
+  var rect = d3.selectAll('.achieved')
+    .attr('y', function() {
+      return h - (dataset / 2);
+    })
+    .attr('height', dataset / 2 );
+
+  // svg.selectAll('rect')
+  //   .data(dataset)
+  //   .enter()
+  //   .append('rect')
+  //   .attr('class', 'achieved')
+  //   .attr('x', function(d, i) {
+  //     return i * (w / dataset.length)
+  //   })
+  //   .attr('y', function(d) {
+  //     return h - (d * 4)
+  //   })
+  //   .attr('width', w / dataset.length - barPadding)
+  //   .attr('height', function(d) {
+  //     return d * 4;
+  //   });
+</script>
+<!-- <div class="highlight" highlight>
+<pre><code class="html">
+&lt;div class=&#39;meter-wrapper meter-reg&#39;&gt;
+  &lt;span&gt;43.3K of 65K&lt;/span&gt;
+  &lt;svg class=&#39;meter&#39; version=&quot;1.1&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; xmlns:xlink=&quot;http://www.w3.org/1999/xlink&quot; x=&quot;0px&quot; y=&quot;0px&quot;
+      enable-background=&quot;new 0 0 100% 100%&quot;&gt;
+    &lt;g class=&quot;fill&quot;&gt;
+      &lt;rect width=&quot;60%&quot; height=&quot;100%&quot;/&gt;
+    &lt;/g&gt;
+    &lt;g class=&quot;stroke&quot;&gt;
+      &lt;rect width=&quot;100%&quot; height=&quot;100%&quot;/&gt;
+    &lt;/g&gt;
+    &lt;g class=&quot;target&quot;&gt;
+      &lt;rect x=&quot;75%&quot; width=&quot;3&quot; height=&quot;100%&quot;/&gt;
+    &lt;/g&gt;
+  &lt;/svg&gt;
+&lt;/div&gt;
+</code></pre>
+</div>
+ -->

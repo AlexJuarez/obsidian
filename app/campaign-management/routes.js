@@ -93,37 +93,37 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.clients.detail',
-                    url: '/?clientId',
+                    url: '/:clientId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions?clientId',
+                    url: '/divisions',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.divisions.detail',
-                    url: '/?divisionId',
+                    url: '/:divisionId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts',
-                    url: '/accounts?divisionId&clientId',
+                    url: '/accounts',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.accounts.detail',
-                    url: '/accounts?accountId',
+                    url: '/accounts:accountId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns?accountId&divisionId&clientId',
+                    url: '/campaigns',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/?campaignId',
+                    url: '/:campaignId',
                     template: '<ui-view />'
                 });
         }

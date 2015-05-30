@@ -15,6 +15,10 @@ define(function (require) {
                 $scope.section = 'Campaigns';
                 $scope.current = 'All Campaigns';
                 $scope.state = navbar.params();
+                $scope.quarterLimit = 5;
+                $scope.preFlightLimit = 10;
+                $scope.inFlightLimit = 10;
+                $scope.completedLimit = 10;
 
                 campaigns.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
@@ -35,12 +39,16 @@ define(function (require) {
                     }
                 }
 
-                function update() {
-                    $scope.quarterMap = campaigns.quarterMap();
-                    $scope.pinned = campaigns.pinned();
-                    $scope.inFlight = campaigns.inFlight();
-                    $scope.preFlight = campaigns.preFlight();
-                    $scope.completed = campaigns.completed();
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = campaigns.pinned();
+                    } else {
+                        $scope.pinned = campaigns.pinned();
+                        $scope.quarterMap = campaigns.quarterMap();
+                        $scope.inFlight = campaigns.inFlight();
+                        $scope.preFlight = campaigns.preFlight();
+                        $scope.completed = campaigns.completed();
+                    }
                 }
             }]
         };

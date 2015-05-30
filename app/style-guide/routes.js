@@ -25,6 +25,7 @@ define(function (require) {
     require('tpl!./pacing-chart.html');
     require('tpl!./modal.html');
     require('tpl!./myModalContent.html');
+    require('tpl!./quartiles.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

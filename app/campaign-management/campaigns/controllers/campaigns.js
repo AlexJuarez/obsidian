@@ -11,7 +11,6 @@ define(function (require) {
                 var accordionTable = campaignsByStatus[status];
                 accordionTable.allReady.then(function () {
                     $scope[status] = accordionTable.all();
-                    debugger;
                     $timeout(function() {
                         $scope.$apply();
                     });

@@ -3,7 +3,6 @@ define(function (require) {
 
     var module = require('./../../module');
     var utils = require('./util');
-    var ng = require('angular');
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
         var campaigns = dataFactory(sortByStartDate);
@@ -45,11 +44,11 @@ define(function (require) {
         function quarterMap() {
             var sorted = filtered();
             var map = {};
-            var item;
+            var item, key;
 
             for (var i = 0; i < sorted.length; i++) {
                 item = sorted[i];
-                var key = getYearQuarter(item.startDate);
+                key = getYearQuarter(item.startDate);
                 if (typeof map[key] === 'undefined') {
                     map[key] = [item];
                 } else {
@@ -57,7 +56,16 @@ define(function (require) {
                 }
             }
 
-            return map;
+            var output = [];
+
+            for (key in map) {
+                output.push({
+                    key: key,
+                    value: map[key]
+                });
+            }
+
+            return output;
         }
 
         function filtered() {
@@ -104,12 +112,12 @@ define(function (require) {
 
         function pin(campaign) {
             campaign.pinned = true;
-            campaigns.notifyObservers();
+            campaigns.notifyObservers('pin');
         }
 
         function unpin(campaign) {
             campaign.pinned = false;
-            campaigns.notifyObservers();
+            campaigns.notifyObservers('pin');
         }
 
         function pinned() {
@@ -122,12 +130,15 @@ define(function (require) {
 
         function inFlight() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i = 0; i < campaigns.length; i++) {
+                campaign = campaigns[i];
                 if (isInFlight(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -138,12 +149,15 @@ define(function (require) {
 
         function preFlight() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i = 0; i < campaigns.length; i++) {
+                campaign = campaigns[i];
                 if (isPreFlight(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
@@ -154,12 +168,15 @@ define(function (require) {
 
         function completed() {
             var output = [];
+            var campaigns = all();
+            var campaign;
 
-            ng.forEach(all(), function (campaign) {
+            for (var i = 0; i < campaigns.length; i++) {
+                campaign = campaigns[i];
                 if (isCompleted(campaign)) {
                     output.push(campaign);
                 }
-            });
+            }
 
             return output;
         }
