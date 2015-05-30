@@ -75,7 +75,7 @@ define(function (require) {
 
         it('should return a map containing a key of correct quarter information', function () {
             campaign.setData(campaigns);
-            expect(campaign.quarterMap()).toEqual({'2015 Q1': [campaigns[0]]});
+            expect(campaign.quarterMap()).toEqual([{key: '2015 Q1', value: [campaigns[0]]}]);
         });
 
         it('should get an campaign by id', function () {

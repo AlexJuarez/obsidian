@@ -79,10 +79,12 @@ define(function (require) {
             }
 
             function notifyObservers() {
+
+                for (var x in observers) {
+                    observers[x]();
+                }
+
                 $timeout(function () {
-                    for (var x in observers) {
-                        observers[x]();
-                    }
                     $rootScope.$apply();
                 });
             }
