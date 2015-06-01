@@ -21,13 +21,13 @@ define(function (require) {
         }
 
         function search(query) {
-            var max = 5;
+            //var max = 5;
             var results = utils.search(all(), query);
-            if (query && results.length < max) {
+            /*if (query && results.length < max) {
                 $http.get('/narwhal/clients/search?q=' + query + '&limit=5').success(function (res) {
                     clients.addData(res);
                 });
-            }
+            }*/
             return results;
         }
 

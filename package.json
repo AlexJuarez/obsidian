@@ -9,6 +9,8 @@
     "less-plugin-clean-css": "^1.5.0"
   },
   "devDependencies": {
+    "body-parser": "^1.12.4",
+    "connect-restreamer": "^1.0.2",
     "grunt": "~0.4.1",
     "grunt-concurrent": "~0.3.0",
     "grunt-contrib-clean": "~0.5.0",
@@ -39,6 +41,7 @@
     "karma-phantomjs-launcher": "^0.1.4",
     "karma-requirejs": "^0.2.2",
     "load-grunt-tasks": "~0.1.0",
+    "lodash": "^3.9.3",
     "mocha": "^2.2.4",
     "requirejs": "^2.1.17",
     "time-grunt": "~0.1.1"

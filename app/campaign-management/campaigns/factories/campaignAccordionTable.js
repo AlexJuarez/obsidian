@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./../module');
+    var module = require('./../../module');
 
     module.factory('campaignAccordionTableFactory', ['$http', '$q', '$interpolate', 'dataFactory', 'paginationFactory', function ($http, $q, $interpolate, dataFactory, paginationFactory) {
         return function() {
