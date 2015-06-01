@@ -32,8 +32,25 @@ define(function (require) {
 
             function transformRows(data) {
                 var rows = data.campaigns;
+                var newRows = [];
+                var row;
 
-                return rows;
+                for(var i=0; i<rows.length; i++) {
+                    row = rows[i];
+                    newRows.push({
+                        account: row.account.name,
+                        impressions: {
+                            target: row.metrics.bookedImpressions,
+                            max: row.metrics.impressions
+                        },
+                        start: row.startDate,
+                        end: row.endDate,
+                        placements: row.metrics.countPlacements,
+                        creatives: row.metrics.countCreatives
+                    });
+                }
+
+                return newRows;
             }
 
             function transformHeader(data) {
