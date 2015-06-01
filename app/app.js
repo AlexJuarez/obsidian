@@ -12,7 +12,7 @@ define(function (require) {
     require('./table/index');
     require('./core/index');
     require('./style-guide/index');
-    require('./campaign-management/index');
+    require('./campaignManagement/index');
 
 
     return ng.module('app', [

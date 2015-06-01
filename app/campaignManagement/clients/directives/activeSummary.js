@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             replace: true,
             scope: true,
-            templateUrl: 'campaign-management/clients/directives/activeSummary.html',
+            templateUrl: 'campaignManagement/clients/directives/activeSummary.html',
             controller: ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
                 $http.get('/narwhal/clientSet?dimensions&metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
                     $timeout(function () {

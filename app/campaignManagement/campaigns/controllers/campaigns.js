@@ -8,7 +8,7 @@ define(function (require) {
     app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', function ($scope, $http, $timeout, campaignsByStatus, navbarService) {
         $scope.byStatus = [];
 
-        function updateByStatus(){
+        function updateByStatus() {
             $scope.byStatus = campaignsByStatus.all();
         }
 

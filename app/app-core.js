@@ -8,7 +8,7 @@ define(function (require) {
     require('./core/index');
     require('./table/index');
     require('./chart/index');
-    require('./campaign-management/index');
+    require('./campaignManagement/index');
 
     return ng.module('app', [
         'perfect_scrollbar',

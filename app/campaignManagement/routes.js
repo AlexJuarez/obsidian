@@ -15,12 +15,12 @@ define(function (require) {
             .state('analytics', {
                 url: '/analytics',
                 parent: 'index',
-                templateUrl: 'campaign-management/index.html'
+                templateUrl: 'campaignManagement/index.html'
             })
             .state('reports', {
                 url: '/analytics/reports',
                 parent: 'index',
-                templateUrl: 'campaign-management/index.html'
+                templateUrl: 'campaignManagement/index.html'
             })
             .state('index', {
                 template: '<ui-view />',
@@ -29,14 +29,14 @@ define(function (require) {
             .state('cm', {
                 url: '/campaign-management',
                 controller: 'campaignManagementCtrl',
-                templateUrl: 'campaign-management/index.html',
+                templateUrl: 'campaignManagement/index.html',
                 parent: 'index'
             }).
             state({
                 name: 'cm.clients',
                 url: '/clients',
                 controller: 'clientsCtrl',
-                templateUrl: 'campaign-management/clients/index.html'
+                templateUrl: 'campaignManagement/clients/index.html'
             })
             .state({
                 name: 'cm.clients.detail',
@@ -44,7 +44,7 @@ define(function (require) {
                 views: {
                     'header': {
                         controller: 'clientCtrl',
-                        templateUrl: 'campaign-management/clients/youWorkOn.html'
+                        templateUrl: 'campaignManagement/clients/youWorkOn.html'
                     }
                 }
             })
@@ -72,7 +72,7 @@ define(function (require) {
             .state({
                 name: 'cm.campaigns',
                 url: '/campaigns?accountId&divisionId&clientId',
-                templateUrl: 'campaign-management/campaigns/index.html',
+                templateUrl: 'campaignManagement/campaigns/index.html',
                 controller: 'campaignsCtrl'
             })
             .state({
