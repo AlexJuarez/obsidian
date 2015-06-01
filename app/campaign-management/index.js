@@ -8,9 +8,11 @@ define(function (require) {
     require('./controllers/campaignManagement');
     require('./controllers/index');
     require('./services/campaignsByStatus');
+    require('./factories/campaignAccordionTable');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./clients/controllers/clients');
     require('./clients/services/topClients');
+    require('./campaigns/controllers/campaigns');
     require('./divisions/controllers/division');
 });

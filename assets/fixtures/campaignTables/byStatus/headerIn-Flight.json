@@ -1,0 +1,11 @@
+{
+    "campaignSet": [
+        {
+            "status": "In-Flight",
+            "metrics": {
+                "count": 1,
+                "countLive": 5
+            }
+        }
+    ]
+}

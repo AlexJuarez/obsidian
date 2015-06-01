@@ -3,7 +3,7 @@ define(function (require) {
 
     var module = require('./../module');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', function ($http, $interpolate, dataFactory, paginationFactory) {
+    module.factory('campaignAccordionTableFactory', ['$http', '$q', '$interpolate', 'dataFactory', 'paginationFactory', function ($http, $q, $interpolate, dataFactory, paginationFactory) {
         return function() {
             var header = dataFactory();
             var rows = paginationFactory(sortRows);
@@ -15,9 +15,9 @@ define(function (require) {
                     } else {
                         return 0;
                     }
-                }
+                };
 
-                transformedRows.data.sort(sortFn);
+                transformedRows.sort(sortFn);
                 return transformedRows;
             }
 
@@ -38,25 +38,17 @@ define(function (require) {
 
             function transformHeader(data) {
                 var campaignSet = data.campaignSet[0];
-                return {
+                return [{
                     status: campaignSet.status,
                     count: campaignSet.metrics.count,
                     hasLive: campaignSet.metrics.countLive > 0
-                };
-            }
-
-            rows.observe(observeRows);
-
-            function observeRows(callback) {
-                callback();
+                }];
             }
 
             function getTable() {
-                var header = header.all();
-                var rows = rows.all();
                 return [
                     {
-                        header: getTableHeader(header),
+                        header: getTableHeader(header.all()),
                         content: {
                             rules: {
                                 account: '',
@@ -78,28 +70,46 @@ define(function (require) {
                                 {name: 'Creatives', id: 'creatives'},
                                 {name: 'Edit', id: 'edit'}
                             ],
-                            data: rows
+                            data: rows.all()
                         }
                     }
                 ];
             }
 
             function getTableHeader(data) {
-
-                var template = $interpolate('<span class="icon-status {{hasLiveHeaderClass}}"></span>{{status}} ({{count}})')
-
+                var header = data[0];
+                var template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[status]] ([[count]])');
                 return template({
-                    status: data.status,
-                    count: data.count,
-                    hasLiveHeaderClass: data.hasLive ?
+                    status: header.status,
+                    count: header.count,
+                    hasLiveHeaderClass: header.hasLive ?
                         'success' :
                         ''
                 });
             }
 
+            var headerReady = $q.defer();
+            var rowsReady = $q.defer();
+
+            header.observe(function() {
+                if (headerReady) {
+                    headerReady.resolve();
+                    headerReady = false;
+                }
+            }, undefined, true);
+            rows.observe(function() {
+                if (rowsReady) {
+                    rowsReady.resolve();
+                    rowsReady = false;
+                }
+            }, undefined, true);
+
+
             return {
                 init: init,
-                observe: observeRows,
+                allReady: $q.all([headerReady.promise, rowsReady.promise]),
+                observeRows: rows.observe,
+                getMoreCampaigns: rows.addPage,
                 all: getTable
             };
         };

@@ -1,0 +1,11 @@
+{
+    "campaignSet": [
+        {
+            "status": "Completed",
+            "metrics": {
+                "count": 1,
+                "countLive": 34
+            }
+        }
+    ]
+}

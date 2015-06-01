@@ -1,0 +1,11 @@
+{
+    "campaignSet": [
+        {
+            "status": "Pre-Flight",
+            "metrics": {
+                "count": 2,
+                "countLive": 37
+            }
+        }
+    ]
+}

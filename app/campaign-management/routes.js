@@ -72,7 +72,8 @@ define(function (require) {
             .state({
                 name: 'cm.campaigns',
                 url: '/campaigns?accountId&divisionId&clientId',
-                template: '<ui-view />'
+                templateUrl: 'campaign-management/campaigns/index.html',
+                controller: 'campaignsCtrl'
             })
             .state({
                 name: 'cm.campaigns.detail',

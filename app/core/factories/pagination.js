@@ -28,7 +28,8 @@ define(function (require) {
             return {
                 init: init,
                 observe: data.observe,
-                nextPage: nextPage
+                nextPage: nextPage,
+                all: data.all
             };
         };
     }]);
