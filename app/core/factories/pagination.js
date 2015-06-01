@@ -29,6 +29,7 @@ define(function (require) {
                 init: init,
                 observe: data.observe,
                 nextPage: nextPage,
+                limit: limit,
                 all: data.all
             };
         };

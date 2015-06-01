@@ -7,6 +7,9 @@ define(function (require) {
         return function() {
             var header = dataFactory();
             var rows = paginationFactory(sortRows);
+            var options = {
+                more: rows.nextPage
+            };
 
             function sortRows(transformedRows) {
                 var sortFn = function (a, b) {
@@ -72,70 +75,55 @@ define(function (require) {
             }
 
             function getTable() {
-                return [
-                    {
-                        header: getTableHeader(header.all()),
-                        content: {
-                            rules: {
-                                account: 'link',
-                                campaign: 'link',
-                                impressions: 'bullet',
-                                start: 'date',
-                                end: 'date',
-                                placements: 'number',
-                                creatives: 'number',
-                                edit: ''
-                            },
-                            headers: [
-                                {name: 'Account', id: 'account'},
-                                {name: 'Campaign', id: 'campaign'},
-                                {name: 'Impressions & Pacing', id: 'impressions'},
-                                {name: 'Start', id: 'start'},
-                                {name: 'End', id: 'end'},
-                                {name: 'Placements', id: 'placements'},
-                                {name: 'Creatives', id: 'creatives'},
-                                {name: 'Edit', id: 'edit'}
-                            ],
-                            data: rows.all()
-                        }
+                return {
+                    header: getTableHeader(header.all()),
+                    options: options,
+                    content: {
+                        rules: {
+                            account: 'link',
+                            campaign: 'link',
+                            impressions: 'bullet',
+                            start: 'date',
+                            end: 'date',
+                            placements: 'number',
+                            creatives: 'number',
+                            edit: ''
+                        },
+                        headers: [
+                            {name: 'Account', id: 'account'},
+                            {name: 'Campaign', id: 'campaign'},
+                            {name: 'Impressions & Pacing', id: 'impressions'},
+                            {name: 'Start', id: 'start'},
+                            {name: 'End', id: 'end'},
+                            {name: 'Placements', id: 'placements'},
+                            {name: 'Creatives', id: 'creatives'},
+                            {name: 'Edit', id: 'edit'}
+                        ],
+                        data: rows.all()
                     }
-                ];
+                };
             }
 
             function getTableHeader(data) {
                 var header = data[0];
                 var template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[status]] ([[count]])');
                 return template({
-                    status: header.status,
-                    count: header.count,
-                    hasLiveHeaderClass: header.hasLive ?
+                    status: header && header.status,
+                    count: header && header.count,
+                    hasLiveHeaderClass: header && header.hasLive ?
                         'success' :
                         ''
                 });
             }
 
-            var headerReady = $q.defer();
-            var rowsReady = $q.defer();
-
-            header.observe(function() {
-                if (headerReady) {
-                    headerReady.resolve();
-                    headerReady = false;
-                }
-            }, undefined, true);
-            rows.observe(function() {
-                if (rowsReady) {
-                    rowsReady.resolve();
-                    rowsReady = false;
-                }
-            }, undefined, true);
-
+            function observe(callback, $scope) {
+                header.observe(callback, $scope);
+                rows.observe(callback, $scope);
+            }
 
             return {
                 init: init,
-                allReady: $q.all([headerReady.promise, rowsReady.promise]),
-                observeRows: rows.observe,
-                getMoreCampaigns: rows.nextPage,
+                observe: observe,
                 all: getTable
             };
         };

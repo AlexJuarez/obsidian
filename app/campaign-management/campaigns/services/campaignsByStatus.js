@@ -1,7 +1,9 @@
 define(function (require) {
     'use strict';
 
-    var module = require('./../module');
+    var module = require('./../../module');
+    var ng = require('angular');
+    var accordionTables = {};
 
     module.service('campaignsByStatus', [ '$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
@@ -17,8 +19,6 @@ define(function (require) {
             'Archived': 'archived'
         };
 
-        var accordionTables = {};
-
         for( var status in statuses ) {
             var accordionTable = campaignAccordionTableFactory();
             accordionTable.init({
@@ -26,14 +26,28 @@ define(function (require) {
                 header: headerBaseUrl + status + '.json'
             });
 
-            accordionTables[statuses[status]] = {
-                allReady: accordionTable.allReady,
-                observeRows: accordionTable.observeRows,
-                getMoreCampaigns: accordionTable.getMoreCampaigns,
-                all: accordionTable.all
-            };
+            accordionTables[statuses[status]] = accordionTable;
         }
 
-        return accordionTables;
+        function all() {
+            var output = [];
+
+            for( var table in accordionTables ) {
+                output.push(accordionTables[table].all());
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope){
+            ng.forEach(accordionTables, function (table) {
+                table.observe(callback, $scope);
+            });
+        }
+
+        return {
+            all: all,
+            observe: observe
+        };
     }]);
 });
