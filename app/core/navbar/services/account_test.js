@@ -66,7 +66,7 @@ define(function (require) {
 
         it('should return a map containing a key of the first letter by name', function () {
             account.setData(accounts);
-            expect(account.alphabetMap()).toEqual({a: [accounts[0]]});
+            expect(account.alphabetMap()).toEqual([{key: 'a', value: [accounts[0]]}]);
         });
 
         it('should get an account by id', function () {

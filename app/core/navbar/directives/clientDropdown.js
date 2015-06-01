@@ -26,9 +26,13 @@ define(function (require) {
                     $scope.current = info.client && info.client.name || 'All Clients';
                 }
 
-                function update() {
-                    $scope.clientsMap = clients.alphabetMap();
-                    $scope.pinned = clients.pinned();
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = clients.pinned();
+                    } else {
+                        $scope.clientsMap = clients.alphabetMap();
+                        $scope.pinned = clients.pinned();
+                    }
                 }
             }]
         };

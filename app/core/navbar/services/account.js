@@ -74,12 +74,12 @@ define(function (require) {
 
         function pin(account) {
             account.pinned = true;
-            accounts.notifyObservers();
+            accounts.notifyObservers('pin');
         }
 
         function unpin(account) {
             account.pinned = false;
-            accounts.notifyObservers();
+            accounts.notifyObservers('pin');
         }
 
         function pinned() {

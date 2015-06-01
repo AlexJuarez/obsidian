@@ -78,11 +78,13 @@ define(function (require) {
                 }
             }
 
-            function notifyObservers() {
+            function notifyObservers(event) {
+
+                for (var x in observers) {
+                    observers[x](event);
+                }
+
                 $timeout(function () {
-                    for (var x in observers) {
-                        observers[x]();
-                    }
                     $rootScope.$apply();
                 });
             }

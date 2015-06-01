@@ -15,7 +15,7 @@
         <li><a ui-sref=".divisions(state)">All [[section]]</a></li>
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
-                <li ng-repeat="division in pinned track by $index">
+                <li ng-repeat="division in pinned track by division.id">
                     <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>
                     <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
@@ -23,19 +23,20 @@
         </li>
     </ul>
     <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">
-        <li ng-repeat="(key, value) in divisionsMap">
-            [[key]]
-            <ul>
-                <li ng-repeat="division in value track by $index">
+        <li ng-repeat="item in divisionsMap track by $index">
+            [[item.key]]
+            <ul limit="5">
+                <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">
                     <a ui-sref=".divisions.detail({divisionId: division.id})">[[division.name]]</a>
                     <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
             </ul>
         </li>
     </ul>
     <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
         <li>Results for "[[query]]"
             <ul>
-                <li ng-repeat="division in results track by $index">
+                <li ng-repeat="division in results track by division.id">
                     <a ui-sref=".divisions.detail({ divisionId: division.id })">[[division.name]]</a>
                     <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
