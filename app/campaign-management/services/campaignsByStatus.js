@@ -10,10 +10,10 @@ define(function (require) {
         var headerBaseUrl = '/fixtures/campaignTables/byStatus/header';
         var rowsBaseUrl = '/fixtures/campaignTables/byStatus/';
         var statuses = {
-            //'Pre-Flight': 'preFlight',
-            'In-Flight': 'inFlight'
-            //'Completed': 'completed',
-            //'Archived': 'archived'
+            'Pre-Flight': 'preFlight',
+            'In-Flight': 'inFlight',
+            'Completed': 'completed',
+            'Archived': 'archived'
         };
         var accordionTables = {};
 
