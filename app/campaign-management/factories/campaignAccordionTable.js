@@ -38,7 +38,16 @@ define(function (require) {
                 for(var i=0; i<rows.length; i++) {
                     row = rows[i];
                     newRows.push({
-                        account: row.account.name,
+                        id: row.id,
+                        account: {
+                            id: row.account.id,
+                            route: 'cm.campaigns({ accountId: row.account.id })',
+                            name: row.account.name
+                        },
+                        campaign: {
+                            route: 'cm.campaigns.detail({ campaignId: row.id })',
+                            name: row.name
+                        },
                         impressions: {
                             target: row.metrics.bookedImpressions,
                             max: row.metrics.impressions
@@ -68,8 +77,8 @@ define(function (require) {
                         header: getTableHeader(header.all()),
                         content: {
                             rules: {
-                                account: '',
-                                name: '',
+                                account: 'link',
+                                campaign: 'link',
                                 impressions: 'bullet',
                                 start: 'date',
                                 end: 'date',
@@ -126,7 +135,7 @@ define(function (require) {
                 init: init,
                 allReady: $q.all([headerReady.promise, rowsReady.promise]),
                 observeRows: rows.observe,
-                getMoreCampaigns: rows.addPage,
+                getMoreCampaigns: rows.nextPage,
                 all: getTable
             };
         };

@@ -9,12 +9,14 @@ define(function (require) {
         //var rowsBaseUrl = '/narwhal/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
         var headerBaseUrl = '/fixtures/campaignTables/byStatus/header';
         var rowsBaseUrl = '/fixtures/campaignTables/byStatus/';
+
         var statuses = {
             'Pre-Flight': 'preFlight',
             'In-Flight': 'inFlight',
             'Completed': 'completed',
             'Archived': 'archived'
         };
+
         var accordionTables = {};
 
         for( var status in statuses ) {

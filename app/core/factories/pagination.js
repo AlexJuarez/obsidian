@@ -21,7 +21,7 @@ define(function (require) {
             function nextPage() {
                 offset = offset + limit;
                 $http.get(buildPageUrl(baseUrl, limit, offset)).success(function (res) {
-                    data.addData(transform(res.data));
+                    data.addData(transform(res));
                 });
             }
 
