@@ -113,7 +113,7 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.accounts.detail',
-                    url: '/accounts:accountId',
+                    url: '/:accountId',
                     template: '<ui-view />'
                 })
                 .state({

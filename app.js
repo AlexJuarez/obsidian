@@ -4,6 +4,7 @@
  * Express Dependencies
  */
 var express = require('express');
+var server = require('./server/index');
 var app = express();
 var port = 3000;
 
@@ -33,8 +34,9 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(__dirname + '/app'));
     app.use(express.static(__dirname + '/build'));
     app.use(express.static(__dirname + '/components'));
+    server(app);
 }
-
+/*
 app.get('/narwhal/accounts', function (req, res, next) {
     res.sendfile('assets/fixtures/accounts.json');
 });
@@ -54,7 +56,7 @@ app.get('/narwhal/campaigns', function (req, res, next) {
 app.get('/narwhal/clientSet', function (req, res, next) {
     res.sendfile('assets/fixtures/clientSet.json');
 });
-
+*/
 /*
  * Start it up
  */
