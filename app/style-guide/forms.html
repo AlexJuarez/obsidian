@@ -57,11 +57,9 @@
             <input class="form-control" placeholder="Enter name" type="text">
         </label>
     </div>
-    <div class="form-group">
-      <label class="form-label">
-        <span class="sr-only">Select Options</span>
+    <div class="form-group single-select-light">
+        <label class="form-label"><span class="sr-only">Select Options</span></label>
         <select class="single-select" chosen ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
-      </label>
     </div>
     <div class="form-group">
         <label>
@@ -112,6 +110,17 @@
                     Choice 2
                 </span>
             </label>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 form-label required"><span>Channel</span></label>
+        <div class="col-sm-10 single-select-light">
+            <select class="single-select" chosen disable-search-threshold="10" ng-model="selected">
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+                <option>Option 4</option>
+            </select>
         </div>
     </div>
     <div class="form-group row">
