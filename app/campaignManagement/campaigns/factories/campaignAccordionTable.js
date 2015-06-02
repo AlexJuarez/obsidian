@@ -7,6 +7,7 @@ define(function (require) {
         return function() {
             var header = dataFactory();
             var rows = paginationFactory(sortRows);
+            var status;
             var options = {
                 more: rows.nextPage
             };
@@ -24,12 +25,13 @@ define(function (require) {
                 return transformedRows;
             }
 
-            function init(urls) {
-                if (urls.rows) {
-                    rows.init(urls.rows, transformRows);
+            function init(data) {
+                status = data.status;
+                if (data.rows) {
+                    rows.init(data.rows, transformRows);
                 }
-                if (urls.header) {
-                    header.init(urls.header, transformHeader);
+                if (data.header) {
+                    header.init(data.header, transformHeader);
                 }
             }
 
@@ -105,15 +107,24 @@ define(function (require) {
             }
 
             function getTableHeader(data) {
-                var header = data[0];
-                var template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[status]] ([[count]])');
-                return template({
-                    status: header && header.status,
-                    count: header && header.count,
-                    hasLiveHeaderClass: header && header.hasLive ?
-                        'success' :
-                        ''
-                });
+                var template;
+
+                if (data && data[0]) {
+                    var header = data[0];
+                    template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[status]] ([[count]])');
+                    return template({
+                        status: header && header.status,
+                        count: header && header.count,
+                        hasLiveHeaderClass: header && header.hasLive ?
+                            'success' :
+                            ''
+                    });
+                } else {
+                    template = $interpolate('<span class="icon-status"></span>[[status]] (0)');
+                    return template({
+                        status: status
+                    });
+                }
             }
 
             function observe(callback, $scope) {

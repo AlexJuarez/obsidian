@@ -7,10 +7,8 @@ define(function (require) {
 
     module.service('campaignsByStatus', [ '$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
-        //var headerBaseUrl = '/narwhal/campaignSet?dimensions=status&metrics=count,countLive&filters=status:eq:';
-        //var rowsBaseUrl = '/narwhal/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
-        var headerBaseUrl = '/fixtures/campaignTables/byStatus/header';
-        var rowsBaseUrl = '/fixtures/campaignTables/byStatus/';
+        var headerBaseUrl = '/narwhal/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
+        var rowsBaseUrl = '/narwhal/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
 
         var statuses = {
             'Pre-Flight': 'preFlight',
@@ -19,11 +17,12 @@ define(function (require) {
             'Archived': 'archived'
         };
 
-        for( var status in statuses ) {
+        for(var status in statuses) {
             var accordionTable = campaignAccordionTableFactory();
             accordionTable.init({
-                rows: rowsBaseUrl + status + '.json',
-                header: headerBaseUrl + status + '.json'
+                status: status,
+                rows: rowsBaseUrl + status,
+                header: headerBaseUrl + status
             });
 
             accordionTables[statuses[status]] = accordionTable;
@@ -32,7 +31,7 @@ define(function (require) {
         function all() {
             var output = [];
 
-            for( var table in accordionTables ) {
+            for(var table in accordionTables) {
                 output.push(accordionTables[table].all());
             }
 
