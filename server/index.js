@@ -52,7 +52,7 @@ function getProxyServer() {
 
                 var nextArg = process.argv[i + 1];
                 if (nextArg && nextArg.indexOf('http') > -1) {
-                    return "https://" + nextArg;
+                    return nextArg;
                 } else {
 
                     // Default if no server is set
