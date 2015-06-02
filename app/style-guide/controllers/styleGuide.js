@@ -27,10 +27,6 @@ define(function (require) {
 
         $scope.open = open;
 
-        clients.init();
-        divisions.init();
-        campaigns.init();
-
         $scope.selected = [];
 
         $scope.select = [
