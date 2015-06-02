@@ -264,10 +264,19 @@
                 box-sizing: border-box;
                 color: @nav-item-color;
                 width: 100%;
-                padding: 0 0 0 2.5rem;
+                padding: 0 2rem 0 2.5rem;
                 line-height: 2.8rem;
                 float: right;
                 font-family: "Lato", sans-serif;
+            }
+
+            .glyph-close {
+                color: @nav-item-color;
+                position: absolute;
+                line-height: 2.8rem;
+                right: 4px;
+                .font-size(1.2);
+                cursor: pointer;
             }
         }
 

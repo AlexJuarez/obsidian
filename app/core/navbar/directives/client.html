@@ -10,6 +10,7 @@
 <div class="dropdown-menu" role="menu">
     <label class="dropdown-search">
         <input ng-model="query" class="input" placeholder="Search" type="search" />
+        <i class="glyph-close" ng-click="query = ''"></i>
     </label>
     <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">
         <li><a ui-sref=".clients">All [[section]]</a></li>
