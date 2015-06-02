@@ -57869,10 +57869,10 @@ define('campaignManagement/controllers/index',['require','./../module'],function
     //var ng = require('angular');
 
     app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
-        clients.init('/narwhal/clients?dimensions=id,name,pinned');
-        divisions.init('/narwhal/divisions?dimensions=id,name,pinned,client.id');
-        campaigns.init('/narwhal/campaigns?limit=500&dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
-        accounts.init('/narwhal/accounts?limit=500&dimensions=id,name,pinned,division.id,client.id');
+        clients.init('/api/v3/clients?dimensions=id,name,pinned');
+        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
+        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
+        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {
@@ -57891,8 +57891,8 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
 
     module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
-        var headerBaseUrl = '/narwhal/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
-        var rowsBaseUrl = '/narwhal/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
+        var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
+        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
 
         var statuses = {
             'Pre-Flight': 'preFlight',
@@ -58100,7 +58100,7 @@ define('campaignManagement/clients/directives/activeSummary',['require','./../..
             scope: true,
             templateUrl: 'campaignManagement/clients/directives/activeSummary.html',
             controller: ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
-                $http.get('/narwhal/clientSet?dimensions&metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
+                $http.get('/api/v3/clientSet?dimensions&metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
                     $timeout(function () {
                         $scope.active = res.data.clientSet[0].metrics;
                         $scope.$apply();
@@ -58118,7 +58118,7 @@ define('campaignManagement/clients/controllers/client',['require','./../../modul
     //var ng = require('angular');
 
     app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', function ($scope, $http, $timeout, $stateParams) {
-        $http.get('/narwhal/clients?filters=id:eq:' + $stateParams.clientId +
+        $http.get('/api/v3/clients?filters=id:eq:' + $stateParams.clientId +
         '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
             $timeout(function () {
                 $scope.youWorkOn = res.data.clients[0].metrics;
