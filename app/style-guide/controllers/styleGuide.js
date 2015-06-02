@@ -235,7 +235,7 @@ define(function (require) {
         function open(size) {
             var modalInstance = $modal.open({
                 animation: 'true',
-                templateUrl: 'style-guide/myModalContent.html',
+                templateUrl: 'style-guide/new-client-form.html',
                 controller: 'modalInstanceCtrl',
                 size: size
             });

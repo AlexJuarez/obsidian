@@ -20,6 +20,10 @@
         background: #fff;
         border-color: @dark-gray;
         color: @dark-gray;
+        & .chosen-single {
+            // Needed to avoid left border disappearing if window is sized at a particular width
+            overflow: visible;
+        }
         & .chosen-single:hover > div > b {
             background: @light-gray;
         }
@@ -107,7 +111,7 @@
         }
         & > .chosen-results li {
             color: inherit;
-            padding: 1rem 2rem;
+            padding: 0 2rem;
         }
     }
 }
@@ -137,7 +141,6 @@
         // Down arrow button styles
         margin: 0;
         padding: 0;
-        //border: 1px solid @dark-gray;
         border-style: solid;
         border-color: inherit;
         border-width: 0 0 0 1px;
@@ -147,7 +150,6 @@
             width: auto;
             margin: 0;
             padding: 0;
-            //background: #fff;
             background: inherit;
             &:before {
                 .glyph-chevron-down();
@@ -183,11 +185,6 @@
                 .glyph-search();
                 font-size: 1.6rem;
                 position: absolute;
-                // left: 0.7rem;
-                // top: 50%;
-                // -webkit-transform: translateY(-50%);
-                // -ms-transform: translateY(-50%);
-                // transform: translateY(-50%);
             }
         }
         & > .chosen-search > input[type="text"] {
@@ -255,4 +252,10 @@
     opacity: 0.4;
 }
 
-
+// Adjust some form styles when in the small modal
+.modal-sm {
+    .single-select-light, .single-select-dark {
+        width: 100%;
+        padding: 0;
+    }
+}

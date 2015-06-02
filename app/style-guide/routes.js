@@ -24,7 +24,7 @@ define(function (require) {
     require('tpl!./validation.html');
     require('tpl!./pacing-chart.html');
     require('tpl!./modal.html');
-    require('tpl!./myModalContent.html');
+    require('tpl!./new-client-form.html');
     require('tpl!./quartiles.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
