@@ -57701,14 +57701,18 @@ define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function
 
 define('tpl!campaignManagement/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
 
+
+define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div ui-view="campaignsByStatus">\n    <h3>Campaigns By Status</h3>\n    <div accordion-table="byStatus" class="table table-hover"></div>\n</div>\n'); });
+
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html'],function (require) {
+define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html','tpl!./campaigns/index.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
+    require('tpl!./campaigns/index.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
@@ -58001,12 +58005,18 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
             }
 
             function transformHeader(data) {
-                var campaignSet = data.campaignSet[0];
-                return [{
-                    status: campaignSet.status,
-                    count: campaignSet.metrics.count,
-                    hasLive: campaignSet.metrics.countLive > 0
-                }];
+                var output = [];
+                var metrics;
+
+                for (var i = 0; i < data.campaignSet.length; i++) {
+                    metrics = data.campaignSet[i];
+                    output.push({
+                        status: metrics.status,
+                        count: metrics.metrics.count,
+                        hasLive: metrics.metrics.countLive > 0
+                    });
+                }
+                return output;
             }
 
             function getTable() {

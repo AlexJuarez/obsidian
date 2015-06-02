@@ -6,6 +6,7 @@ define(function (require) {
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
+    require('tpl!./campaigns/index.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');

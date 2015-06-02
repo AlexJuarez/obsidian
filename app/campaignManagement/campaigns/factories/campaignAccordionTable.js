@@ -68,12 +68,18 @@ define(function (require) {
             }
 
             function transformHeader(data) {
-                var campaignSet = data.campaignSet[0];
-                return [{
-                    status: campaignSet.status,
-                    count: campaignSet.metrics.count,
-                    hasLive: campaignSet.metrics.countLive > 0
-                }];
+                var output = [];
+                var metrics;
+
+                for (var i = 0; i < data.campaignSet.length; i++) {
+                    metrics = data.campaignSet[i];
+                    output.push({
+                        status: metrics.status,
+                        count: metrics.metrics.count,
+                        hasLive: metrics.metrics.countLive > 0
+                    });
+                }
+                return output;
             }
 
             function getTable() {
