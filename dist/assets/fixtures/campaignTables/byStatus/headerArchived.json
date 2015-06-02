@@ -1,0 +1,11 @@
+{
+    "campaignSet": [
+        {
+            "status": "Archived",
+            "metrics": {
+                "count": 5,
+                "countLive": 42
+            }
+        }
+    ]
+}

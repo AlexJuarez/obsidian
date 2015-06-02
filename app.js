@@ -23,7 +23,6 @@ if (process.env.NODE_ENV === 'production') {
 
     // Locate the assets
     app.use(express.static(__dirname + '/dist/assets'));
-
 } else {
     // Locate the views
     app.use(express.static(__dirname + '/views'));
@@ -34,8 +33,9 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(__dirname + '/app'));
     app.use(express.static(__dirname + '/build'));
     app.use(express.static(__dirname + '/components'));
-    server(app);
 }
+
+server(app);
 /*
 app.get('/narwhal/accounts', function (req, res, next) {
     res.sendfile('assets/fixtures/accounts.json');

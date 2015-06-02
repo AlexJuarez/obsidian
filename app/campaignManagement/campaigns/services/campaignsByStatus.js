@@ -5,7 +5,7 @@ define(function (require) {
     var ng = require('angular');
     var accordionTables = {};
 
-    module.service('campaignsByStatus', [ '$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
+    module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
         var headerBaseUrl = '/narwhal/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
         var rowsBaseUrl = '/narwhal/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
