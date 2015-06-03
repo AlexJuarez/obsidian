@@ -8,14 +8,15 @@ define(function (require) {
     require('angular-chosen');
     require('ng-perfect-scrollbar');
     require('ui-router');
+    require('ng-datepicker');
     require('./chart/index');
     require('./table/index');
     require('./core/index');
     require('./style-guide/index');
     require('./campaignManagement/index');
 
-
     return ng.module('app', [
+        'datePicker',
         'perfect_scrollbar',
         'localytics.directives',
         'app.home',

@@ -12,6 +12,7 @@ require.config({
         'hljs': 'components/highlightjs/highlight.pack',
         'jquery': 'components/jquery/dist/jquery',
         'chosen': 'components/chosen/chosen.jquery',
+        'ng-datepicker': 'components/angular-datepicker/dist/index',
         'angular-chosen': 'components/angular-chosen-localytics/chosen',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
@@ -28,6 +29,9 @@ require.config({
         },
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']
+        },
+        'ng-datepicker' : {
+            deps: ['angular']
         },
         'perfect-scrollbar': {
             deps: ['jquery']
