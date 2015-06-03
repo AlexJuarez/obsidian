@@ -8,24 +8,24 @@ define(function (require) {
     module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
         var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
-        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget&metrics=bookedImpressions,countPlacements,countCreatives,impressions,spend&filters=status:eq:';
+        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,bookedImpressions&metrics=countPlacements,countCreatives,impressions&filters=status:eq:';
 
         var statuses = {
-            'Pre-Flight': 'preFlight',
-            'In-Flight': 'inFlight',
-            'Completed': 'completed',
-            'Archived': 'archived'
+            'preFlight': 'Pre-Flight',
+            'inFlight': 'In-Flight',
+            'completed': 'Completed',
+            'archived': 'Archived'
         };
 
         for(var status in statuses) {
             var accordionTable = campaignAccordionTableFactory();
             accordionTable.init({
-                status: status,
+                status: statuses[status],
                 rows: rowsBaseUrl + status,
                 header: headerBaseUrl + status
             });
 
-            accordionTables[statuses[status]] = accordionTable;
+            accordionTables[status] = accordionTable;
         }
 
         function all() {
