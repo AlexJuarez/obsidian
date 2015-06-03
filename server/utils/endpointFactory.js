@@ -16,7 +16,7 @@ module.exports = {
 		expandParents( data.fixture );
 
 		return function( app ) {
-            app.get( "/api/v3/" + data.endpointName, function( req, res ) {
+            app.get( "/narwhal/" + data.endpointName, function( req, res ) {
 				return data.responseLogic( req, res, data.fixture );
 			} );
         };

@@ -100,7 +100,7 @@ define(function (require) {
 
         it('should make a request to search', function () {
             campaign.setData(campaigns);
-            httpBackend.when('GET', '/api/v3/campaigns/search?q=test&limit=5').respond(
+            httpBackend.when('GET', '/narwhal/campaigns/search?q=test&limit=5').respond(
                 []
             );
             expect(campaign.search('test')).toEqual([]);

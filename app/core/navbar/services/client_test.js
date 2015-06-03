@@ -75,7 +75,7 @@ define(function (require) {
 
         it('should make a request to search', function () {
             client.setData(clients);
-            httpBackend.when('GET', '/api/v3/clients/search?q=test&limit=5').respond(
+            httpBackend.when('GET', '/narwhal/clients/search?q=test&limit=5').respond(
                 []
             );
             expect(client.search('test')).toEqual([]);

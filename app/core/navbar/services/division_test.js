@@ -83,7 +83,7 @@ define(function (require) {
 
         it('should make a request to search', function () {
             division.setData(divisions);
-            httpBackend.when('GET', '/api/v3/divisions/search?q=test&limit=5').respond(
+            httpBackend.when('GET', '/narwhal/divisions/search?q=test&limit=5').respond(
                 []
             );
             expect(division.search('test')).toEqual([]);

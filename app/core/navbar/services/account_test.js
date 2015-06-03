@@ -76,7 +76,7 @@ define(function (require) {
 
         it('should make a request to search', function () {
             account.setData(accounts);
-            httpBackend.when('GET', '/api/v3/accounts/search?q=test&limit=5').respond(
+            httpBackend.when('GET', '/narwhal/accounts/search?q=test&limit=5').respond(
                 []
             );
             expect(account.search('test')).toEqual([]);

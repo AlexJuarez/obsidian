@@ -5,7 +5,7 @@ define(function (require) {
     //var ng = require('angular');
 
     app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', function ($scope, $http, $timeout, $stateParams) {
-        $http.get('/api/v3/clients?filters=id:eq:' + $stateParams.clientId +
+        $http.get('/narwhal/clients?filters=id:eq:' + $stateParams.clientId +
         '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
             $timeout(function () {
                 $scope.youWorkOn = res.data.clients[0].metrics;

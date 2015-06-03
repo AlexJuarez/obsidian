@@ -11,7 +11,7 @@ define(function (require) {
             scope: true,
             templateUrl: 'campaignManagement/clients/directives/activeSummary.html',
             controller: ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
-                $http.get('/api/v3/clientSet?dimensions&metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
+                $http.get('/narwhal/clientSet?dimensions&metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
                     $timeout(function () {
                         $scope.active = res.data.clientSet[0].metrics;
                         $scope.$apply();
