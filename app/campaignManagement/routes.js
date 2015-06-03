@@ -73,12 +73,11 @@ define(function (require) {
             })
             .state({
                 name: 'cm.campaigns',
-                url: '/campaigns',
                 templateUrl: 'campaignManagement/campaigns/index.html'
             })
             .state({
                 name: 'cm.campaigns.all',
-                url: '/all?accountId&divisionId&clientId',
+                url: '/campaigns?accountId&divisionId&clientId',
                 views: {
                     'content': {
                         controller: 'campaignsCtrl',
@@ -88,7 +87,7 @@ define(function (require) {
             })
             .state({
                 name: 'cm.campaigns.detail',
-                url: '/detail?campaignId',
+                url: '/campaigns/:campaignId',
                 views: {
                     'content': {
                         template: '<ui-view />'
