@@ -15,7 +15,7 @@ define(function (require) {
                 baseUrl = url;
                 transform = transformFn || function (d) { return d; };
                 limit = perPage || 10;
-                data.init(baseUrl, transformFn);
+                data.init(buildPageUrl(baseUrl, limit, offset), transformFn);
             }
 
             function nextPage() {

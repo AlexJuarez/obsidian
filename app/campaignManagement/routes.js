@@ -79,7 +79,11 @@ define(function (require) {
             .state({
                 name: 'cm.campaigns.detail',
                 url: '/?campaignId',
-                template: '<ui-view />'
+                views: {
+                    'content': {
+                        template: '<ui-view />'
+                    }
+                }
             });
 
         buildGeneralRoutes('analytics');
