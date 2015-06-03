@@ -7,6 +7,7 @@ define(function (require) {
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
     require('tpl!./campaigns/index.html');
+    require('tpl!./campaigns/content.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
@@ -72,13 +73,22 @@ define(function (require) {
             })
             .state({
                 name: 'cm.campaigns',
-                url: '/campaigns?accountId&divisionId&clientId',
-                templateUrl: 'campaignManagement/campaigns/index.html',
-                controller: 'campaignsCtrl'
+                url: '/campaigns',
+                templateUrl: 'campaignManagement/campaigns/index.html'
+            })
+            .state({
+                name: 'cm.campaigns.all',
+                url: '/all?accountId&divisionId&clientId',
+                views: {
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/content.html'
+                    }
+                }
             })
             .state({
                 name: 'cm.campaigns.detail',
-                url: '/?campaignId',
+                url: '/detail?campaignId',
                 views: {
                     'content': {
                         template: '<ui-view />'
