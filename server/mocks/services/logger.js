@@ -1,5 +1,5 @@
 module.exports = function( app ) {
-    app.post( "/narwhal/log", function( req, res ) {
+    app.post( "/api/v3/log", function( req, res ) {
         res.status( 200 ).end();
     } );
 };
