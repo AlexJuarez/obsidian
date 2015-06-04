@@ -59066,7 +59066,7 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
 
             var lastLogin;
             inData.forEach(function (client) {
-                lastLogin = client.lastViewedName + ', ' + dateFormatter(client.lastViewed);
+                lastLogin = client.lastViewedUserName + ', ' + dateFormatter(client.lastViewedUserDate);
                 outData.data.push({
                     'id': client.id,
                     'channel': client.channel,
