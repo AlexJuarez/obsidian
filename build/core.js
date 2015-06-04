@@ -58744,7 +58744,7 @@ define('campaignManagement/controllers/index',['require','./../module'],function
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {
-                window.Router.router.handleURL($location.url());
+                window.Router.handleURL($location.url());
             }
         });
     }]);
