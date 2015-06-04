@@ -5,7 +5,8 @@ define(function (require) {
     'use strict';
     var app = require('./app');
 
-    return app.config(['$urlRouterProvider', '$anchorScrollProvider', function ($urlRouterProvider, $anchorScrollProvider) {
+    return app.config(['$urlRouterProvider', '$anchorScrollProvider', '$httpProvider', function ($urlRouterProvider, $anchorScrollProvider, $httpProvider) {
+        $httpProvider.defaults.withCredentials = true;
         $urlRouterProvider.otherwise('/style-guide');
         $anchorScrollProvider.disableAutoScrolling();
     }]);
