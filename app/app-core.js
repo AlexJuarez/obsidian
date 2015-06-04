@@ -4,6 +4,7 @@ define(function (require) {
     var ng = require('angular');
     require('ui-router');
     require('angular-chosen');
+    require('ng-datepicker');
     require('ng-perfect-scrollbar');
     require('./core/index');
     require('./table/index');
@@ -11,6 +12,7 @@ define(function (require) {
     require('./campaignManagement/index');
 
     return ng.module('app', [
+        'datePicker',
         'perfect_scrollbar',
         'app.campaign-management',
         'localytics.directives',
