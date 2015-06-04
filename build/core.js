@@ -58968,7 +58968,7 @@ define('campaignManagement/clients/directives/activeSummary',['require','./../..
             scope: true,
             templateUrl: 'campaignManagement/clients/directives/activeSummary.html',
             controller: ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
-                $http.get('/api/v3/clientSet?dimensions&metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
+                $http.get('/api/v3/clientSet?metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
                     $timeout(function () {
                         $scope.active = res.data.clientSet[0].metrics;
                         $scope.$apply();
@@ -59003,7 +59003,7 @@ define('campaignManagement/clients/controllers/clients',['require','./../../modu
     var app = require('./../../module');
 
     app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'topClientsService', function ($scope, $http, $timeout, topClients) {
-        topClients.init('/fixtures/top_clients_table.json');
+        topClients.init('https://narwhal-studio.mixpo.com/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions&limit=10');
 
         topClients.observe(updateTopClients, $scope);
 
