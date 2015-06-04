@@ -11,8 +11,8 @@ define(function (require) {
         var statuses = {
             preFlight: 'Pre-Flight',
             inFlight: 'In-Flight',
-            'completed': 'Completed',
-            'archived': 'Archived'
+            completed: 'Completed',
+            archived: 'Archived'
         };
 
         function updateByStatus() {
