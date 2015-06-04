@@ -54,7 +54,7 @@ define(function (require) {
                             name: row.name
                         },
                         impressions: {
-                            target: row.bookedImpressions,
+                            target: row.metrics.bookedImpressions,
                             max: row.metrics.impressions
                         },
                         start: row.startDate,

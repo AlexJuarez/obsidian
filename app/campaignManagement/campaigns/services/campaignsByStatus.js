@@ -8,7 +8,7 @@ define(function (require) {
     module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
         var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
-        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,bookedImpressions,account.id,account.name&metrics=countPlacements,countCreatives,impressions&filters=status:eq:';
+        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&filters=status:eq:';
 
         var statuses = {
             'preFlight': 'Pre-Flight',

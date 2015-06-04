@@ -58760,7 +58760,7 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
     module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
 
         var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
-        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,bookedImpressions,account.id,account.name&metrics=countPlacements,countCreatives,impressions&filters=status:eq:';
+        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&filters=status:eq:';
 
         var statuses = {
             'preFlight': 'Pre-Flight',
@@ -58859,7 +58859,7 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                             name: row.name
                         },
                         impressions: {
-                            target: row.bookedImpressions,
+                            target: row.metrics.bookedImpressions,
                             max: row.metrics.impressions
                         },
                         start: row.startDate,
