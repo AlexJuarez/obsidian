@@ -1,12 +1,12 @@
 <div class="modal-header">
-    <i class="glyph-icon glyph-circle-close right" ng-click="cancel()"></i>
+    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
     <h2 class="modal-title">New Client</h2>
 </div>
 <div class="modal-body">
     <form class="form form-horizontal" role="form">
         <div class="form-group">
-            <label class="col-sm-2 form-label required"><span>Channel</span></label>
-            <div class="col-sm-10 single-select-light">
+            <label class="col-sm-3 form-label required"><span>Channel</span></label>
+            <div class="col-sm-9 single-select-light">
                 <select class="single-select" chosen disable-search-threshold="10" ng-model="selected">
                     <option>Option 1</option>
                     <option>Option 2</option>
@@ -16,22 +16,42 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="inputName" class="col-sm-2 form-label">Name</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control" id="inputName" placeholder="Name" />
+            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" id="inputName" placeholder="Name" required />
             </div>
         </div>
         <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-                <label>
-                    <input type="checkbox" class="checkbox checkbox-light" />
-                    <span>Check me out</span>
-                </label>
+            <label class="col-sm-3 form-label">Logo</label>
+            <div class="col-sm-9 file-selection-wrapper">
+                <div class="image-holder"></div>
+                <button class="btn btn-primary solid">Choose File</button>
             </div>
+        </div>
+        <div class="form-group">
+            <span class="col-sm-3 form-label">AE/Rep Name &amp; Email</span>
+            <label class="col-sm-9">
+                <input type="checkbox" class="checkbox checkbox-light" />
+                <span>Require AE/Rep Name and Email for each campaign</span>
+            </label>
+        </div>
+        <div class="form-group">
+            <span class="col-sm-3 form-label">Spanish Player</span>
+            <label class="col-sm-9">
+                <input type="checkbox" class="checkbox checkbox-light" />
+                <span>Enable Spanish player option</span>
+            </label>
+        </div>
+        <div class="form-group">
+            <span class="col-sm-3 form-label">INFO Menu</span>
+            <label class="col-sm-9">
+                <input type="checkbox" class="checkbox checkbox-light" />
+                <span>Show INFO Menu options in Player Settings</span>
+            </label>
         </div>
     </form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary solid" ng-click="ok()">OK</button>
+    <button class="btn btn-primary solid" ng-click="ok()">Add Client</button>
     <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
 </div>
