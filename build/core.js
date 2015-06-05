@@ -58666,7 +58666,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
             $stateProvider
                 .state({
                     name: base + '.clients',
-                    url: '/clients',
+                    url: '/client',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58676,7 +58676,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions',
+                    url: '/division',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58686,7 +58686,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 })
                 .state({
                     name: base + '.accounts',
-                    url: '/accounts',
+                    url: '/account',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58696,7 +58696,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns',
+                    url: '/campaign',
                     template: '<ui-view />'
                 })
                 .state({
