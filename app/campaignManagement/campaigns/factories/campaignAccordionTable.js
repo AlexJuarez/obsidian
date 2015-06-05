@@ -46,7 +46,7 @@ define(function (require) {
                         id: row.id,
                         account: {
                             id: row.account.id,
-                            route: 'cm.campaigns({ accountId: row.account.id })',
+                            route: 'cm.campaigns.all({ accountId: row.account.id })',
                             name: row.account.name
                         },
                         campaign: {
