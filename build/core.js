@@ -58608,6 +58608,9 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                     'header': {
                         controller: 'clientCtrl',
                         templateUrl: 'campaignManagement/clients/youWorkOn.html'
+                    },
+                    'topClients': {
+                        template: '<ui-view />'
                     }
                 }
             })
