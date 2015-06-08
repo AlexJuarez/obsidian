@@ -47,6 +47,9 @@ define(function (require) {
                     'header': {
                         controller: 'clientCtrl',
                         templateUrl: 'campaignManagement/clients/youWorkOn.html'
+                    },
+                    'topClients': {
+                        template: '<ui-view />'
                     }
                 }
             })
@@ -102,7 +105,7 @@ define(function (require) {
             $stateProvider
                 .state({
                     name: base + '.clients',
-                    url: '/clients',
+                    url: '/client',
                     template: '<ui-view />'
                 })
                 .state({
@@ -112,7 +115,7 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions',
+                    url: '/division',
                     template: '<ui-view />'
                 })
                 .state({
@@ -122,7 +125,7 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.accounts',
-                    url: '/accounts',
+                    url: '/account',
                     template: '<ui-view />'
                 })
                 .state({
@@ -132,7 +135,7 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns',
+                    url: '/campaign',
                     template: '<ui-view />'
                 })
                 .state({

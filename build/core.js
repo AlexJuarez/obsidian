@@ -58545,7 +58545,7 @@ define('campaignManagement/module',['require','angular','ui-router'],function (r
 });
 
 
-define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n\n</section>\n'); });
+define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n</section>\n'); });
 
 
 define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div basic-table="topClients" class="table table-hover"></div>\n</div>\n'); });
@@ -58608,6 +58608,9 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                     'header': {
                         controller: 'clientCtrl',
                         templateUrl: 'campaignManagement/clients/youWorkOn.html'
+                    },
+                    'topClients': {
+                        template: '<ui-view />'
                     }
                 }
             })
@@ -58663,7 +58666,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
             $stateProvider
                 .state({
                     name: base + '.clients',
-                    url: '/clients',
+                    url: '/client',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58673,7 +58676,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 })
                 .state({
                     name: base + '.divisions',
-                    url: '/divisions',
+                    url: '/division',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58683,7 +58686,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 })
                 .state({
                     name: base + '.accounts',
-                    url: '/accounts',
+                    url: '/account',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58693,7 +58696,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaigns',
+                    url: '/campaign',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58851,7 +58854,7 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                         id: row.id,
                         account: {
                             id: row.account.id,
-                            route: 'cm.campaigns({ accountId: row.account.id })',
+                            route: 'cm.campaigns.all({ accountId: row.account.id })',
                             name: row.account.name
                         },
                         campaign: {
@@ -59099,13 +59102,6 @@ define('campaignManagement/campaigns/controllers/campaigns',['require','./../../
 
     app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', function ($scope, $http, $timeout, campaignsByStatus, navbarService) {
         $scope.byStatus = [];
-
-        var statuses = {
-            preFlight: 'Pre-Flight',
-            inFlight: 'In-Flight',
-            completed: 'Completed',
-            archived: 'Archived'
-        };
 
         function updateByStatus() {
             $scope.byStatus = campaignsByStatus.all();
