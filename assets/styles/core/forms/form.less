@@ -98,6 +98,15 @@ textarea.form-control {
             line-height: inherit;
         }
     }
+
+    .form-group.row {
+        .form-label > span {
+            display: inline-block;
+        }
+        .form-control {
+            width: auto;
+        }
+    }
 }
 
 .form-group {
@@ -152,26 +161,4 @@ textarea.form-control {
             color: inherit;
         }
     }
-}
-
-// Adjust some form styles when in the small modal
-.modal-sm {
-    .form-horizontal {
-        .form-group {
-            .form-label, .form-control {
-                display: block;
-                width: 100%;
-                margin: 0 0 0.5rem 0;
-                padding: 0;
-                vertical-align: baseline;
-                text-align: left;
-            }
-            .col-sm-2, .col-sm-10 {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-            }
-        }
-    }
-
 }
