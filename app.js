@@ -5,6 +5,7 @@
  */
 var express = require('express');
 var server = require('./server/index');
+var compression = require('compression');
 var app = express();
 var port = 3000;
 
@@ -12,7 +13,7 @@ var port = 3000;
  * Use Handlebars for templating
  */
 // For gzip compression
-app.use(express.compress());
+app.use(compression());
 
 /*
  * Config for Production and Development
