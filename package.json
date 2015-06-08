@@ -11,10 +11,10 @@
         "glob": "^5.0.10",
         "body-parser": "^1.12.4",
         "connect-restreamer": "^1.0.2",
-        "lodash": "^3.9.3"
+        "lodash": "^3.9.3",
+        "compression": "^1.4.4"
     },
     "devDependencies": {
-        "compression": "^1.4.4",
         "grunt": "~0.4.1",
         "grunt-concurrent": "~0.3.0",
         "grunt-contrib-clean": "~0.5.0",
@@ -48,7 +48,7 @@
         "mocha": "^2.2.4",
         "requirejs": "^2.1.17",
         "time-grunt": "~0.1.1",
-        "hermes": "git@github.com:Mixpo/hermes.git#v1.0.1"
+        "hermes": "git@github.com:Mixpo/hermes.git#v1.0.2"
     },
     "engines": {
         "node": ">=0.8.0",
