@@ -189,7 +189,9 @@ module.exports = function (grunt) {
             },
             dev: {
                 options: {
-                    script: 'app.js'
+                    script: 'app.js',
+                    args: process.argv.slice(2),
+                    background:false
                 }
             },
             prod: {
