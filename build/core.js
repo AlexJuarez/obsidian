@@ -59107,6 +59107,47 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                     url: '/device',
                     parent: base + '.campaigns.detail',
                     template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report',
+                    url: '/report',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report.account',
+                    url: '/account/:accountId',
+                    parent: base + '.report',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report.campaign',
+                    url: '/campaign/:campaignId',
+                    parent: base + '.report',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report.create-custom',
+                    url: '/campaign/:campaignId/create-custom',
+                    parent: base + '.report',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report.create-standard',
+                    url: '/campaign/:campaignId/create-standard',
+                    parent: base + '.report',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report.edit-custom',
+                    url: '/edit-custom/:reportId',
+                    parent: base + '.report',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.report.edit-standard',
+                    url: '/edit-standard/:reportId',
+                    parent: base + '.report',
+                    template: '<ui-view />'
                 });
         }
 
