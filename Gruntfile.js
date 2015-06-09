@@ -88,6 +88,7 @@ module.exports = function (grunt) {
                 'app/**/*.js',
                 'assets/scripts/**/*.js',
                 '!app/components/**/*',
+                '!app/vendor/**/*',
                 '!assets/scripts/vendor/*'
             ]
         },

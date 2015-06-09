@@ -16,7 +16,7 @@ define(function (require) {
     require('./campaignManagement/index');
 
     return ng.module('app', [
-        'datePicker',
+        'ui.bootstrap.datepicker',
         'perfect_scrollbar',
         'localytics.directives',
         'app.home',

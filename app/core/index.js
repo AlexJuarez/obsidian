@@ -5,6 +5,7 @@ define(function (require) {
     'use strict';
 
     require('./modal/index');
+    require('./datepicker/index');
     require('./navbar/index');
 
     require('./factories/data');

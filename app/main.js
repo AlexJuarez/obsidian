@@ -12,10 +12,10 @@ require.config({
         'hljs': 'components/highlightjs/highlight.pack',
         'jquery': 'components/jquery/dist/jquery',
         'chosen': 'components/chosen/chosen.jquery',
-        'ng-datepicker': 'components/angular-datepicker/dist/index',
         'angular-chosen': 'components/angular-chosen-localytics/chosen',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
-        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
+        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
+        'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0'
     },
     shim: {
         'hljs': {
@@ -30,8 +30,8 @@ require.config({
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']
         },
-        'ng-datepicker' : {
-            deps: ['angular']
+        'ng-datepicker': {
+            deps: ['jquery', 'angular']
         },
         'perfect-scrollbar': {
             deps: ['jquery']

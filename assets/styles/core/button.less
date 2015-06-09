@@ -1,3 +1,5 @@
+@import "variables";
+
 .btn, button, input[type="submit"], input[type="reset"], input[type="button"] {
     display: inline-block;
     margin-bottom: 0;
@@ -35,19 +37,28 @@
     }
 }
 
+.btn-inline {
+    padding: 0;
+    background: inherit;
+    [class*="glyph"] {
+        margin-top: -2px;
+        .font-size(1.8);
+    }
+}
+
 .btn-block {
     display: block;
     width: 100%;
 }
 
 .btn-lg {
-    padding: 1rem 1.6rem;
+    padding: @padding-large-vertical @padding-large-horizontal;
     .font-size(1.8);
     line-height: 1.33;
 }
 
 .btn-sm {
-    padding: .5rem 1rem;
+    padding: @padding-small-vertical @padding-small-horizontal;
     .font-size(1.2);
     line-height: 1.5;
 }

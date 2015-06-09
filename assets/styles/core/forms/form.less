@@ -2,6 +2,7 @@
 @import "radio-buttons";
 @import "range-input";
 @import "alert";
+@import "input-group";
 
 input[disabled], input[type]:disabled {
     cursor: not-allowed;
@@ -100,25 +101,26 @@ textarea.form-control {
     }
 
     .form-group.row {
+        width: auto;
         .form-label > span {
             display: inline-block;
         }
-        .form-control {
-            width: auto;
+        .form-control, .chosen-container {
+            min-width: 100%;
         }
     }
 }
 
-.form-group {
-    input.form-control {
-        border: 1px solid @dark-gray;
-        border-width: 0 0 1px;
-        &:focus {
-            outline: none;
-            border-color: @brand-color;
-        }
+input.form-control {
+    border: 1px solid @dark-gray;
+    border-width: 0 0 1px;
+    &:focus {
+        outline: none;
+        border-color: @brand-color;
     }
+}
 
+.form-group {
     &.has-success {
         .form-control {
             border-color: @green;

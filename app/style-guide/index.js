@@ -6,6 +6,7 @@ define(function (require) {
 
     require('./controllers/styleGuide');
     require('./controllers/modalInstance');
+    require('./controllers/datepickerDemo');
     require('./routes');
     require('./directives/toggleClass');
     require('./directives/codeSnippet');
