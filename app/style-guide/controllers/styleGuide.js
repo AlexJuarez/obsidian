@@ -88,7 +88,10 @@ define(function (require) {
         });
 
         $http.get('fixtures/accordion_table.json').success(function (data) {
-            store.setData('test', data);
+            $scope.test = data;
+            $timeout(function () {
+                $scope.apply();
+            });
         });
 
         /**
