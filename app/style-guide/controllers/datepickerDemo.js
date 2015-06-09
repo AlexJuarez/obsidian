@@ -9,7 +9,7 @@ define(function (require) {
 
         $scope.openPicker = openPicker;
 
-        $scope.format = 'dd.MM.yyyy';
+        $scope.format = 'MM/dd/yyyy';
 
         $scope.dateOptions = {
             formatYear: 'yy',

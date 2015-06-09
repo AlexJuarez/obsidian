@@ -13,7 +13,8 @@ require.config({
         'chosen': 'components/chosen/chosen.jquery',
         'angular-chosen': 'components/angular-chosen-localytics/chosen',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
-        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar'
+        'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
+        'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0'
     },
     shim: {
         'd3': {
@@ -29,7 +30,7 @@ require.config({
             deps: ['jquery']
         },
         'ng-datepicker': {
-            deps: ['jquery', 'angular', 'ng-datepicker-templates']
+            deps: ['jquery', 'angular']
         },
         'angular-chosen': {
             deps: ['angular', 'chosen']
