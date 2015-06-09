@@ -13,7 +13,8 @@ define(function (require) {
 
         $scope.dateOptions = {
             formatYear: 'yy',
-            startingDay: 1
+            startingDay: 0,
+            maxMode: 'day'
         };
 
         function openPicker($event) {

@@ -2,12 +2,86 @@
 
 .datepicker {
     min-width: inherit;
-    table > thead > tr {
-        background: #fff;
+    outline: none;
+    background: #fff;
+
+    .button-bar {
+        padding:10px 9px 5px;
+        overflow: hidden;
+        border: 1px solid @dark-gray;
     }
-    table > thead > tr:last-child {
-        background: @dark-gray;
-        color: #fff;
-        text-align: center;
+
+    button:disabled {
+        cursor: default;
+    }
+
+    table {
+        outline: none;
+        > thead > tr {
+            background: #fff;
+
+            &:first-child {
+                th {
+                    border-top: 1px solid @dark-gray;
+
+                    &:first-child {
+                        .btn {
+                            border-left: 1px solid @dark-gray;
+                        }
+                    }
+
+                    &:last-child {
+                        .btn {
+                            border-right: 1px solid @dark-gray;
+                        }
+                    }
+                }
+            }
+
+            .btn.btn-default.solid {
+                background: #fff;
+                color: @dark-gray;
+
+                &:hover, &:focus {
+                    color: @brand-color;
+                }
+                &:disabled {
+                    color: @dark-gray;
+                }
+            }
+
+            &:last-child {
+                background: @dark-gray;
+                color: #fff;
+                text-align: center;
+            }
+        }
+
+        > tbody {
+            tr {
+                td:first-child {
+                    .btn {
+                        border-left: 1px solid @gray;
+                    }
+                }
+                td:last-child {
+                    .btn {
+                        border-right: 1px solid @gray;
+                    }
+                }
+            }
+
+            .btn.btn-default {
+                background: @light-gray;
+                box-shadow: none;
+                &.active {
+                    background: #fff;
+                }
+                &:hover, &:focus {
+                    background: @light-blue;
+                    color: @brand-color;
+                }
+            }
+        }
     }
 }
