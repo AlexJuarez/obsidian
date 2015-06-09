@@ -45,10 +45,10 @@ module.exports = function (grunt) {
                 ]
             },
             express: {
-                files: ['app.js', '!**/node_modules/**', '!Gruntfile.js'],
+                files: ['app.js'],
                 tasks: ['express:dev'],
                 options: {
-                    nospawn: true // Without this option specified express won't be reloaded
+                    spawn: false // Without this option specified express won't be reloaded
                 }
             }
         },
@@ -192,7 +192,8 @@ module.exports = function (grunt) {
                 options: {
                     script: 'app.js',
                     args: process.argv.slice(2),
-                    background:false
+                    background:false,
+                    livereload: 35730
                 }
             },
             prod: {
