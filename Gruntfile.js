@@ -192,8 +192,7 @@ module.exports = function (grunt) {
                 options: {
                     script: 'app.js',
                     args: process.argv.slice(2),
-                    background:false,
-                    livereload: 35730
+                    background:true
                 }
             },
             prod: {
