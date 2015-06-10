@@ -1,0 +1,103 @@
+<div class="modal-header">
+    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
+    <h2 class="modal-title">New Campaign</h2>
+</div>
+<div class="modal-body">
+    <form class="form form-horizontal" role="form">
+        <div class="form-group row">
+            <label class="col-sm-3 form-label required"><span>Account</span></label>
+            <div class="col-sm-9 single-select-light">
+                <select class="single-select-search" chosen ng-options="item.name for item in select track by item.value" disable-search-threshold="5" ng-model="selected">
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" id="campaignName" placeholder="Campaign Name" required />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />
+            </div>
+        </div>
+        
+        <!-- Date Picker Goes Here -->
+
+        <div class="form-group row">
+            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" id="budget" placeholder="Enter your budget" />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>
+            <div class="col-sm-9 single-select-light">
+                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="selected">
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <span class="col-sm-3 form-label">Reach &amp; Frequency</span>
+            <label class="col-sm-9">
+                <input type="checkbox" class="checkbox checkbox-light" />
+                <span>Measure Reach &amp; Frequency</span>
+            </label>
+        </div>
+        <div class="form-group row">
+            <span class="col-sm-3 form-label">Google Analytics</span>
+            <label class="col-sm-9">
+                <input type="checkbox" class="checkbox checkbox-light" />
+                <span>Add Google AnalyticsUTM Parameters to URLs</span>
+            </label>
+        </div>
+        <div class="form-group row">
+            <span class="col-sm-3 form-label">Conversion Tracking</span>
+            <label class="col-sm-9">
+                <input type="checkbox" class="checkbox checkbox-light" />
+                <span>Enable Conversion Tracking</span>
+            </label>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>
+            <div class="col-sm-9 single-select-light">
+                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="selected">
+                </select>
+            </div>
+        </div>
+
+        <!-- CSV File Picker goes here -->
+
+        <div class="form-group row">
+            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>
+            <div class="col-sm-9">
+                <input type="text" class="form-control" id="repName" placeholder="Enter AE/Rep Name" required />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>
+            <div class="col-sm-9">
+                <input name="email" type="email" class="form-control" id="repEmail" placeholder="Enter AE/Rep Email" required ng-model="user.email" />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 form-label"><span>Description</span></label>
+            <div class="col-sm-9">
+                <textarea class="form-control" placeholder="Enter some text"></textarea>
+            </div>
+            
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary solid" ng-click="ok()">Add Client</button>
+    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
+</div>
