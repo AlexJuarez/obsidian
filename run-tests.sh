@@ -16,7 +16,7 @@ info=$(echo "$results" | tail -1 | awk -F":" '{print $2}')
 curl -XPOST -H "Authorization: token 40da8eeed353283720cc14c7433beb5462082c53" https://api.github.com/repos/Mixpo/obsidian/statuses/$(git rev-parse HEAD) -d "{
   \"state\": \"success\",
   \"target_url\": \"${BUILD_URL}\",
-  \"description\": \"$info. ${coverage} Statement Coverage.\"
+  \"description\": \"${info}. ${coverage} Statement Coverage.\"
 }"
 else
 curl -XPOST -H "Authorization: token 40da8eeed353283720cc14c7433beb5462082c53" https://api.github.com/repos/Mixpo/obsidian/statuses/$(git rev-parse HEAD) -d "{
