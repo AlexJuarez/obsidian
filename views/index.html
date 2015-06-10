@@ -15,9 +15,12 @@
 </div>
 <div class="footer"><a ui-sref="style-guide">Style Guide</a> |
     <a ui-sref="cm.clients">Campaign Management</a></div>
-<!-- <script src="/scripts/app.js"></script> -->
+<% if (production) { %>
+<script src="/scripts/app.js"></script>
+<% } else { %>
 <script src="components/requirejs/require.js" data-main="main.js"></script>
 <script src="//localhost:35730/livereload.js"></script>
+<% } %>
 <script>
     window.disableRouter = true;
 </script>

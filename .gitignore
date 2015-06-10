@@ -6,5 +6,6 @@ app/bower_components
 **/*.iml
 app/components
 coverage
+dist
 assets/styles/core.css
 assets/styles/screen.css

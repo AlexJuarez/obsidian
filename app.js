@@ -15,19 +15,25 @@ var port = 3000;
 // For gzip compression
 app.use(compression());
 
+app.engine('.html', require('ejs').__express);
+
+app.set('view engine', 'html');
+
 /*
  * Config for Production and Development
  */
 if (process.env.NODE_ENV === 'production') {
-    // Locate the views
-    app.use(express.static(__dirname + '/dist/views'));
+
+    //Set up the views
+    app.set('views', __dirname + '/dist/views');
 
     // Locate the assets
     app.use(express.static(__dirname + '/dist/assets'));
-} else {
-    // Locate the views
-    app.use(express.static(__dirname + '/views'));
 
+} else {
+
+    //Set up the views
+    app.set('views', __dirname + '/views');
     // Locate the assets
     app.use(express.static(__dirname + '/assets'));
 
@@ -35,6 +41,12 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(__dirname + '/build'));
     app.use(express.static(__dirname + '/components'));
 }
+
+app.get('/', function(req, res) {
+    res.render('index',
+        { production: (process.env.NODE_ENV === 'production') }
+    );
+});
 
 server(app);
 /*
