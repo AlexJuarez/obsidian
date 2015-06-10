@@ -90,7 +90,7 @@ define(function (require) {
         $http.get('fixtures/accordion_table.json').success(function (data) {
             $scope.test = data;
             $timeout(function () {
-                $scope.apply();
+                $scope.$apply();
             });
         });
 
