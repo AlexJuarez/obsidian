@@ -5,6 +5,7 @@ define(function (require) {
 
     require('./../index');
     require('angularMocks');
+    var $ = require('jquery');
 
     describe('$modal', function () {
         var $controllerProvider, $rootScope, $document, $compile, $templateCache, $timeout, $q;
@@ -323,7 +324,7 @@ define(function (require) {
                 function openAndCloseModalWithAutofocusElement() {
                     var modal = open({template: '<div><input type="text" id="auto-focus-element" autofocus></div>'});
 
-                    expect(angular.element('#auto-focus-element')).toHaveFocus();
+                    expect(angular.element('#auto-focus-element')).toBeFocused();
 
                     close(modal, 'closed ok');
 

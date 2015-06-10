@@ -73,14 +73,5 @@ define(function (require) {
             account.setData(accounts);
             expect(account.get('accountId0')).toEqual(accounts[0]);
         });
-
-        it('should make a request to search', function () {
-            account.setData(accounts);
-            httpBackend.when('GET', '/api/v3/accounts/search?q=test&limit=5').respond(
-                []
-            );
-            expect(account.search('test')).toEqual([]);
-            httpBackend.flush();
-        });
     });
 });

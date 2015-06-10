@@ -72,14 +72,5 @@ define(function (require) {
             client.setData(clients);
             expect(client.get('clientId0')).toEqual(clients[0]);
         });
-
-        it('should make a request to search', function () {
-            client.setData(clients);
-            httpBackend.when('GET', '/api/v3/clients/search?q=test&limit=5').respond(
-                []
-            );
-            expect(client.search('test')).toEqual([]);
-            httpBackend.flush();
-        });
     });
 });
