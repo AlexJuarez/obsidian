@@ -385,7 +385,6 @@ module.exports = function (grunt) {
     // Build
     grunt.registerTask('build', 'Build production ready assets and views.', [
         'clean:dist',
-        'webfont',
         'less:dist',
         'concurrent:dist',
         'useminPrepare',
