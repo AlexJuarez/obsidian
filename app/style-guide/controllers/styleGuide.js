@@ -243,7 +243,7 @@ define(function (require) {
         function open(size) {
             var modalInstance = $modal.open({
                 animation: 'true',
-                templateUrl: 'style-guide/new-campaign-form.html',
+                templateUrl: 'style-guide/new-account-form.html',
                 controller: 'modalInstanceCtrl',
                 size: size
             });
