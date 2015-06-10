@@ -25,6 +25,11 @@ define(function (require) {
             email: 'invalid@e,'
         };
 
+        $timeout(function () {
+            $location.hash($location.hash());
+            $anchorScroll();
+        }, 250);
+
         $scope.open = open;
 
         $scope.selected = [];

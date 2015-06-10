@@ -10,5 +10,6 @@ define(function (require) {
         $httpProvider.defaults.useXDomain = true;
         $httpProvider.interceptors.push('domainInterceptor');
         $urlRouterProvider.otherwise('/style-guide');
+        $anchorScrollProvider.disableAutoScrolling();
     }]);
 });
