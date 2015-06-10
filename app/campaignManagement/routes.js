@@ -9,10 +9,17 @@ define(function (require) {
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/content.html');
 
-    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', function ($stateProvider, $locationProvider, $urlRouterProvider) {
+    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
+        //httpProvider settings
+        $httpProvider.defaults.withCredentials = true;
+        $httpProvider.defaults.useXDomain = true;
+        $httpProvider.interceptors.push('domainInterceptor');
+
+        //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
         $urlRouterProvider.when('/', '/analytics');
 
+        //Routes
         $stateProvider
             .state('analytics', {
                 url: '/analytics',
@@ -97,11 +104,10 @@ define(function (require) {
                     }
                 }
             });
-
         buildGeneralRoutes('analytics');
         buildGeneralRoutes('reports');
 
-       function buildGeneralRoutes(base) {
+        function buildGeneralRoutes(base) {
             $stateProvider
                 .state({
                     name: base + '.clients',

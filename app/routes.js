@@ -5,10 +5,7 @@ define(function (require) {
     'use strict';
     var app = require('./app');
 
-    return app.config(['$urlRouterProvider', '$anchorScrollProvider', '$httpProvider', function ($urlRouterProvider, $anchorScrollProvider, $httpProvider) {
-        $httpProvider.defaults.withCredentials = true;
-        $httpProvider.defaults.useXDomain = true;
-        $httpProvider.interceptors.push('domainInterceptor');
+    return app.config(['$urlRouterProvider', '$anchorScrollProvider', function ($urlRouterProvider, $anchorScrollProvider) {
         $urlRouterProvider.otherwise('/style-guide');
         $anchorScrollProvider.disableAutoScrolling();
     }]);
