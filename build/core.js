@@ -57803,6 +57803,9 @@ define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function
 define('tpl!campaignManagement/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 
+define('tpl!campaignManagement/clients/content.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/content.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div basic-table="topClients" class="table table-hover"></div>\n</div>\n'); });
+
+
 define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div ui-view="content">\n</div>\n'); });
 
 
@@ -57810,12 +57813,13 @@ define('tpl!campaignManagement/campaigns/content.html', ['angular', 'tpl'], func
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/content.html'],function (require) {
+define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html','tpl!./clients/content.html','tpl!./campaigns/index.html','tpl!./campaigns/content.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
+    require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/content.html');
 
@@ -58283,7 +58287,7 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
 });
 
 
-define('tpl!campaignManagement/clients/directives/activeSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/directives/activeSummary.html', '<div class="header-summary">\n    <h3 class="title">Active</h3>\n    <button class="btn btn-default solid right" ng-click="open(\'lg\')">Add New Client</button>\n    <ul class="list">\n        <li>\n            <span>clients</span>\n            <span>[[active.countActive|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>accounts</span>\n            <span>[[active.countAccountsActive|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>campaigns</span>\n            <span>[[active.countCampaignsActive|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[active.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[active.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!campaignManagement/clients/directives/activeSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/directives/activeSummary.html', '<div class="header-summary">\n    <h3 class="title">Active</h3>\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Client</button>\n    <ul class="list">\n        <li>\n            <span>clients</span>\n            <span>[[active.countActive|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>accounts</span>\n            <span>[[active.countAccountsActive|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>campaigns</span>\n            <span>[[active.countCampaignsActive|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[active.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[active.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('campaignManagement/clients/directives/activeSummary',['require','./../../module','tpl!./activeSummary.html'],function (require) {
     'use strict';
