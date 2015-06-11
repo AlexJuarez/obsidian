@@ -8,8 +8,6 @@ define(function (require) {
         var divisions = dataFactory(utils.sortByName);
 
         function init(url) {
-            url = url || 'fixtures/divisions.json';
-
             return divisions.init(url, function (data) {
                 return data.divisions;
             });

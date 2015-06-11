@@ -8,8 +8,6 @@ define(function (require) {
         var accounts = dataFactory(utils.sortByName);
 
         function init(url) {
-            url = url || 'fixtures/accounts.json';
-
             return accounts.init(url, function (data) {
                 return data.accounts;
             });
