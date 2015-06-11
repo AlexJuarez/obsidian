@@ -6,7 +6,7 @@ define(function (require) {
 
     app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'topClientsService', '$modal', function ($scope, $http, $timeout, topClients, $modal) {
 
-        $scope.open = open;
+        $scope.openModal = openModal;
 
         topClients.init('/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&sortBy=metrics.impressions&limit=10');
 
@@ -16,8 +16,8 @@ define(function (require) {
             $scope.topClients = topClients.all();
         }
 
-        function open(size) {
-            var modalInstance = $modal.open({
+        function openModal(size) {
+            $modal.open({
                 animation: 'true',
                 templateUrl: 'campaignManagement/clients/new-client.html',
                 controller: 'newClientCtrl',
