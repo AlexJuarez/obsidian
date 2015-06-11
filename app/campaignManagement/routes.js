@@ -17,7 +17,9 @@ define(function (require) {
 
         //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
-        $urlRouterProvider.when('/', '/analytics');
+        if (!window.disableRouter) {
+            $urlRouterProvider.when('/', '/analytics');
+        }
 
         //Routes
         $stateProvider
