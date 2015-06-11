@@ -12,6 +12,7 @@ define(function (require) {
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./clients/controllers/clients');
+    require('./clients/controllers/newClient');
     require('./clients/services/topClients');
     require('./campaigns/controllers/campaigns');
     require('./divisions/controllers/division');

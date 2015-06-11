@@ -22,15 +22,15 @@ define(function (require) {
         });
 
         it('should be one for the variable', function () {
-            expect(filter({password: 'test'})).toEqual('one');
+            expect(filter({password: 'test'})).toEqual(1);
         });
 
         it('should be two for the variable', function () {
-            expect(filter({password: 'test', email: 'test'})).toEqual('two');
+            expect(filter({password: 'test', email: 'test'})).toEqual(2);
         });
 
         it('should be three for the variable', function () {
-            expect(filter({password: 'test', email: 'test', name: 'error'})).toEqual('three');
+            expect(filter({password: 'test', email: 'test', name: 'error'})).toEqual(3);
         });
 
         it('should be 4 for the variable', function () {

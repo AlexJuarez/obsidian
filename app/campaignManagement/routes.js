@@ -45,20 +45,25 @@ define(function (require) {
             }).
             state({
                 name: 'cm.clients',
-                url: '/clients',
-                controller: 'clientsCtrl',
                 templateUrl: 'campaignManagement/clients/index.html'
+            })
+            .state({
+                name: 'cm.clients.all',
+                url: '/clients',
+                views: {
+                    'content': {
+                        controller: 'clientsCtrl',
+                        templateUrl: 'campaignManagement/clients/content.html'
+                    }
+                }
             })
             .state({
                 name: 'cm.clients.detail',
                 url: '/?clientId',
                 views: {
-                    'header': {
+                    'content': {
                         controller: 'clientCtrl',
-                        templateUrl: 'campaignManagement/clients/youWorkOn.html'
-                    },
-                    'topClients': {
-                        template: '<ui-view />'
+                        templateUrl: 'campaignManagement/clients/client.html'
                     }
                 }
             })
