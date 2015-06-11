@@ -12,8 +12,6 @@ Object.keys(window.__karma__.files).forEach(function(file) {
     }
 });
 
-console.log(allTestFiles);
-
 requirejs.config({
     // Karma serves files from '/base'
     baseUrl: '/base/',

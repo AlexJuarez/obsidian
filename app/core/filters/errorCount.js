@@ -9,19 +9,10 @@ define(function (require) {
             var count = 0;
             for (var k in input) {
                 if (input.hasOwnProperty(k)) {
-                    count++;
+                    count += input[k].length || 1;
                 }
             }
-            switch (count) {
-            case 1:
-                return 'one';
-            case 2:
-                return 'two';
-            case 3:
-                return 'three';
-            default:
-                return count;
-            }
+            return count;
         };
     }]);
 });
