@@ -8,8 +8,6 @@ define(function (require) {
         var campaigns = dataFactory(sortByStartDate);
 
         function init(url) {
-            url = url || 'fixtures/campaigns.json';
-
             return campaigns.init(url, function (data) {
                 return data.campaigns;
             });

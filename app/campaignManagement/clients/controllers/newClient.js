@@ -1,9 +1,9 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./../module');
+    var app = require('./../../module');
 
-    app.controller('modalInstanceCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+    app.controller('newClientCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
 
         $scope.select = [
             {
@@ -30,7 +30,8 @@ define(function (require) {
 
         $scope.ok = function (errors) {
             console.log(errors);
-
+            $scope.errors = errors;
+            $scope.submitted = true;
             console.log('do something');
         };
 

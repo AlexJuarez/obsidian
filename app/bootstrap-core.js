@@ -7,9 +7,9 @@ define(function (require) {
     var ng = require('angular');
     var app = require('app-core');
 
-    app.config(function ($interpolateProvider) {
+    app.config(['$interpolateProvider', function ($interpolateProvider) {
         $interpolateProvider.startSymbol('[[').endSymbol(']]');
-    });
+    }]);
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);

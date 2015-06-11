@@ -180,6 +180,20 @@ module.exports = function (grunt) {
                     include: ['main-core'],
                     name: 'components/almond/almond'
                 }
+            },
+            coremin: {
+                options: {
+                    baseUrl: 'app',
+                    mainConfigFile: 'app/main-core.js',
+                    optimize: 'uglify2',
+                    out: 'build/core.min.js',
+                    findNestedDependencies: true,
+                    preserveLicenseComments: false,
+                    wrap: true,
+                    generateSourceMaps: true,
+                    include: ['main-core'],
+                    name: 'components/almond/almond'
+                }
             }
         },
 
@@ -378,6 +392,7 @@ module.exports = function (grunt) {
         'clean:bower',
         'less:bower',
         'requirejs:core',
+        'requirejs:coremin',
         'copy:bower'
     ]);
 

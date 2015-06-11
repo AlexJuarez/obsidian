@@ -66,10 +66,17 @@ define(function (require) {
             var test1 = data();
 
             function callback() {
+                scope.test = 'test';
                 expect(test1.all()).toEqual([1]);
             }
 
-            test1.observe(callback, undefined, true);
+            scope.test = '';
+
+            scope.$watch('test', function (newValue) {
+                expect(newValue).toEqual('test');
+            });
+
+            test1.observe(callback, scope, true);
 
             test1.setData([1]);
         });

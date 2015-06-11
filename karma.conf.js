@@ -11,6 +11,7 @@ module.exports = function(config) {
             'karma-jasmine-jquery',
             'karma-jasmine',
             'karma-chrome-launcher',
+            'karma-phantomjs-launcher',
             'karma-requirejs',
             'karma-coverage'
         ],

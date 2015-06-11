@@ -30,10 +30,10 @@ define(function () {
 
         if (query) {
             query = query.toLowerCase();
-            for (var i = 0; i < sorted.length; i++) {
+            for (var i = 0; i < sorted.length && output.length < max; i++) {
                 item = sorted[i];
 
-                if (query.length > 3) {
+                if (query.length >= 3) {
                     if (checkName(item, query) || checkId(item, query)) {
                         output.push(item);
                     }
@@ -41,10 +41,6 @@ define(function () {
                     if (checkName(item, query)) {
                         output.push(item);
                     }
-                }
-
-                if (output.length > max) {
-                    break;
                 }
             }
         }

@@ -8,9 +8,6 @@ define(function (require) {
         var clients = dataFactory(utils.sortByName);
 
         function init(url) {
-
-            url = url || 'fixtures/clients.json';
-
             return clients.init(url, function (data) {
                 return data.clients;
             });
