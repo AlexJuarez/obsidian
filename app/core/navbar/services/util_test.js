@@ -1,3 +1,5 @@
+//jshint ignore:start
+
 define(function (require) {
     'use strict';
 
@@ -48,7 +50,7 @@ define(function (require) {
         });
 
         it('should return alphabet map of the data', function () {
-            var data = utils.sortByName([{"id":"divisionId0","name":"_0","pinned":true,"client":{"id":"clientId0"}},{"id":"divisionId1","name":null,"client":{"id":"clientId0"}},{"id":"divisionId1","name":"-1","client":{"id":"clientId0"}},{"id":"divisionId2","name":"Division 2","client":{"id":"clientId0"}},{"id":"divisionId3","name":"Division 3","client":{"id":"clientId0"}},{"id":"divisionId4","name":"Division 4","client":{"id":"clientId0"}}]);
+            var data = utils.sortByName([{'id':'divisionId0','name':'_0','pinned':true,'client':{'id':'clientId0'}},{'id':'divisionId1','name':null,'client':{'id':'clientId0'}},{'id':'divisionId1','name':'-1','client':{'id':'clientId0'}},{'id':'divisionId2','name':'Division 2','client':{'id':'clientId0'}},{'id':'divisionId3','name':'Division 3','client':{'id':'clientId0'}},{'id':'divisionId4','name':'Division 4','client':{'id':'clientId0'}}]);
 
             expect(utils.alphabetMap(data).length).toEqual(2);
             expect(utils.alphabetMap(data)[0].key).toEqual('#');
@@ -56,7 +58,7 @@ define(function (require) {
         });
 
         it('should get the item by id', function () {
-            var data = utils.sortByName([{"id":"divisionId0","name":"_0","pinned":true,"client":{"id":"clientId0"}},{"id":"divisionId1","name":null,"client":{"id":"clientId0"}},{"id":"divisionId1","name":"-1","client":{"id":"clientId0"}},{"id":"divisionId2","name":"Division 2","client":{"id":"clientId0"}},{"id":"divisionId3","name":"Division 3","client":{"id":"clientId0"}},{"id":"divisionId4","name":"Division 4","client":{"id":"clientId0"}}]);
+            var data = utils.sortByName([{'id':'divisionId0','name':'_0','pinned':true,'client':{'id':'clientId0'}},{'id':'divisionId1','name':null,'client':{'id':'clientId0'}},{'id':'divisionId1','name':'-1','client':{'id':'clientId0'}},{'id':'divisionId2','name':'Division 2','client':{'id':'clientId0'}},{'id':'divisionId3','name':'Division 3','client':{'id':'clientId0'}},{'id':'divisionId4','name':'Division 4','client':{'id':'clientId0'}}]);
 
             expect(utils.get(data, '')).toEqual();
         });

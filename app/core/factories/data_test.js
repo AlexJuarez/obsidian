@@ -72,7 +72,7 @@ define(function (require) {
 
             scope.test = '';
 
-            scope.$watch('test', function (newValue, oldValue) {
+            scope.$watch('test', function (newValue) {
                 expect(newValue).toEqual('test');
             });
 
