@@ -6,7 +6,7 @@ set +x
 
 export CHROME_BIN=/usr/bin/google-chrome
 
-results=$(node ./node_modules/karma/bin/karma start --single-run)
+results=$(node ./node_modules/karma/bin/karma start --browsers PhantomJS --single-run)
 
 fail=$(echo $results | tail -1 | grep FAIL)
 
