@@ -6,6 +6,7 @@ define(function (require) {
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
     require('tpl!./clients/youWorkOn.html');
+    require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/content.html');
 
