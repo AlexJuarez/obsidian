@@ -1,5 +1,5 @@
-#npm install
-#node ./node_modules/bower/bin/bower install
+npm install
+node ./node_modules/bower/bin/bower install
 
 set +e
 set +x
