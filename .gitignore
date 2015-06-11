@@ -9,3 +9,4 @@ coverage
 dist
 assets/styles/core.css
 assets/styles/screen.css
+test-results.xml

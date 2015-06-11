@@ -10,6 +10,7 @@ module.exports = function(config) {
         plugins: [
             'karma-jasmine-jquery',
             'karma-jasmine',
+            'karma-junit-reporter',
             'karma-chrome-launcher',
             'karma-phantomjs-launcher',
             'karma-requirejs',
@@ -54,6 +55,11 @@ module.exports = function(config) {
               { type: 'cobertura', subdir: '.', file: 'cobertura.xml'},
               { type: 'text-summary', subdir: '.', file: 'text-summary.txt'}
             ]
+        },
+
+        junitReporter: {
+            outputFile: 'test-results.xml',
+            suite: ''
         },
 
         // web server port
