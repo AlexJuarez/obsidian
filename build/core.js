@@ -48156,7 +48156,7 @@ define('table/directives/accordionTable',['require','./../module','tpl!./accordi
 });
 
 
-define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers">\n            <div compile="header.id|format:row:table.rules" class="cell">\n            </div>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 /**
  * Created by alex on 4/23/15.

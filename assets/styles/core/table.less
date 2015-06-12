@@ -42,28 +42,37 @@ table {
             }
             > td {
                 vertical-align: top;
-                padding: 2.2rem 2rem 2.2rem 1.5rem;
+                padding: 2.2rem 2rem 2.2rem 2rem;
             }
         }
     }
     &.table-hover {
-        > tbody > tr:hover {
-            background: @table-hover-bg;
-            > td:first-child > .cell:before {
-                position: absolute;
-                content: '';
+        > thead > tr {
+            th:first-child {
+                padding-left: 1.6rem;
+            }
+            &:before {
+                display: table-cell;
                 width: 5px;
-                background: @brand-color;
-                top: 0;
-                left: 0;
-                bottom: 0;
+                content: '';
+            }
+        }
+        > tbody > tr {
+            &:hover {
+                background: @table-hover-bg;
+                &:before {
+                    background: @brand-color;
+                }
+            }
+            &:before {
+                display: table-cell;
+                width: 5px;
+                content: '';
             }
         }
         > tbody > tr > td {
-            padding: 0;
-            > .cell {
-                padding: 2.2rem 2rem 2.2rem 1.5rem;
-                position: relative;
+            &:first-child {
+                padding-left: 1.6rem;
             }
         }
     }
