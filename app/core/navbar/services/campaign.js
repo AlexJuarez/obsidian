@@ -192,6 +192,7 @@ define(function (require) {
             inFlight: inFlight,
             preFlight: preFlight,
             observe: campaigns.observe,
+            filtered: filtered,
             pinned: pinned,
             unpin: unpin,
             search: search,
