@@ -25,6 +25,7 @@ define(function (require) {
     require('tpl!./pacing-chart.html');
     require('tpl!./modal.html');
     require('tpl!./new-client-form.html');
+    require('tpl!./new-campaign-form.html');
     require('tpl!./quartiles.html');
     require('tpl!./date-picker.html');
 
