@@ -47007,6 +47007,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
             inFlight: inFlight,
             preFlight: preFlight,
             observe: campaigns.observe,
+            filtered: filtered,
             pinned: pinned,
             unpin: unpin,
             search: search,
@@ -47697,12 +47698,16 @@ define('core/factories/domainInterceptor',['require','./../module'],function (re
 
     module.factory('domainInterceptor', [function () {
         function request(config) {
+            var apiPrefix;
+
             if(window.apiURI) {
-                apiPrefixes.forEach(function(apiPrefix) {
+                for (var i = 0; i < apiPrefixes.length; i++) {
+                    apiPrefix = apiPrefixes[i];
                     if (config.url.indexOf(apiPrefix) > -1) {
                         config.url = window.apiURI + config.url;
+                        break;
                     }
-                });
+                }
             }
             return config;
         }
@@ -47939,18 +47944,18 @@ define('core/filters/interpolate',['require','./../module'],function (require) {
     }]);
 });
 
-define('core/filters/errorCount',['require','./../module'],function (require) {
+define('core/filters/errorCount',['require','./../module','angular'],function (require) {
     'use strict';
 
     var app = require('./../module');
-    //var ng = require('angular');
+    var ng = require('angular');
 
     app.filter('errorCount', [function () {
         return function (input) {
             var count = 0;
             for (var k in input) {
                 if (input.hasOwnProperty(k)) {
-                    count += input[k].length || 1;
+                    count += ng.isArray(input[k]) && input[k].length || 1;
                 }
             }
             return count;
@@ -57800,6 +57805,9 @@ define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angula
 define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div ui-view="content">\n</div>\n'); });
 
 
+define('tpl!campaignManagement/clients/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.html', '<div ui-view="header">\n    <div ng-include="\'campaignManagement/clients/youWorkOn.html\'"></div>\n</div>\n'); });
+
+
 define('tpl!campaignManagement/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 
@@ -57813,11 +57821,12 @@ define('tpl!campaignManagement/campaigns/content.html', ['angular', 'tpl'], func
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/youWorkOn.html','tpl!./clients/content.html','tpl!./campaigns/index.html','tpl!./campaigns/content.html'],function (require) {
+define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/client.html','tpl!./clients/youWorkOn.html','tpl!./clients/content.html','tpl!./campaigns/index.html','tpl!./campaigns/content.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
+    require('tpl!./clients/client.html');
     require('tpl!./clients/youWorkOn.html');
     require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');
