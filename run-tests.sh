@@ -4,8 +4,6 @@ node ./node_modules/bower/bin/bower install
 set +e
 set +x
 
-export CHROME_BIN=/usr/bin/google-chrome
-
 results=$(node ./node_modules/karma/bin/karma start --browsers PhantomJS --single-run)
 
 fail=$(echo $results | tail -1 | grep FAIL)

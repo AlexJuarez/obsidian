@@ -5,6 +5,7 @@ define(function (require) {
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
+    require('tpl!./clients/client.html');
     require('tpl!./clients/youWorkOn.html');
     require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');

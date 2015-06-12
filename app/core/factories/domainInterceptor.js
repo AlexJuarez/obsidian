@@ -7,12 +7,16 @@ define(function (require) {
 
     module.factory('domainInterceptor', [function () {
         function request(config) {
+            var apiPrefix;
+
             if(window.apiURI) {
-                apiPrefixes.forEach(function(apiPrefix) {
+                for (var i = 0; i < apiPrefixes.length; i++) {
+                    apiPrefix = apiPrefixes[i];
                     if (config.url.indexOf(apiPrefix) > -1) {
                         config.url = window.apiURI + config.url;
+                        break;
                     }
-                });
+                }
             }
             return config;
         }
