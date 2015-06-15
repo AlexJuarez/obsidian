@@ -7,7 +7,6 @@ define(function (require) {
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
-
     require('./factories/data');
     require('./factories/pagination');
     require('./factories/domainInterceptor');

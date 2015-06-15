@@ -4,7 +4,7 @@ define(function (require) {
     require('./domainInterceptor');
     require('angularMocks');
 
-    describe('dataFactory', function () {
+    describe('domainInterceptor', function () {
         var interceptor;
 
         beforeEach(function () {

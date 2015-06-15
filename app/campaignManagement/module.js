@@ -6,6 +6,8 @@ define(function (require) {
 
     var ng = require('angular');
     require('ui-router');
+    require('./../chart/index');
+    require('./../core/index');
 
     return ng.module('app.campaign-management', ['ui.router', 'app.tables', 'app.charts', 'app.core']);
 });
