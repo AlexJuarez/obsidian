@@ -124,6 +124,11 @@ define(function (require) {
                     template: '<ui-view />'
                 })
                 .state({
+                    name: base + '.clients.all',
+                    url: '/',
+                    template: '<ui-view />'
+                })
+                .state({
                     name: base + '.clients.detail',
                     url: '/:clientId',
                     template: '<ui-view />'
@@ -131,6 +136,11 @@ define(function (require) {
                 .state({
                     name: base + '.divisions',
                     url: '/division',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.divisions.all',
+                    url: '/',
                     template: '<ui-view />'
                 })
                 .state({
@@ -151,6 +161,11 @@ define(function (require) {
                 .state({
                     name: base + '.campaigns',
                     url: '/campaign',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.all',
+                    url: '/',
                     template: '<ui-view />'
                 })
                 .state({
