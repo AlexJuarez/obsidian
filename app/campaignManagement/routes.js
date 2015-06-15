@@ -9,6 +9,7 @@ define(function (require) {
     require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/content.html');
+    require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
         //httpProvider settings
@@ -43,8 +44,8 @@ define(function (require) {
                 controller: 'campaignManagementCtrl',
                 templateUrl: 'campaignManagement/index.html',
                 parent: 'index'
-            }).
-            state({
+            })
+            .state({
                 name: 'cm.clients',
                 templateUrl: 'campaignManagement/clients/index.html'
             })
