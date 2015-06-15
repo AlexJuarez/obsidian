@@ -65,7 +65,7 @@ define(function (require) {
             });
             httpBackend.flush();
             test1.init('/test').then(function (resp) {
-                expect()
+                expect(resp).toEqual(['data']);
             });
         });
 

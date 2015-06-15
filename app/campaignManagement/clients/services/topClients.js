@@ -65,7 +65,7 @@ define(function (require) {
                     {name: 'Last Client Login', id: 'lastLogin'}
                 ],
                 'data': topClients.all()
-            }
+            };
         }
 
         return {

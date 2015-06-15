@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('navbarService', function () {
-        var navbar, state, client, division, account, campaign;
+        var navbar, state, client, division, account, campaign, scope;
 
         var clients = [
             {
@@ -69,7 +69,7 @@ define(function (require) {
         beforeEach(function () {
             module('app.core');
 
-            inject(function (navbarService, $state, clientService, divisionService, accountService, campaignService) {
+            inject(function (navbarService, $state, $rootScope, clientService, divisionService, accountService, campaignService) {
                 navbar = navbarService;
                 state = $state;
                 client = clientService;
@@ -80,6 +80,7 @@ define(function (require) {
                 division.setData(divisions);
                 account.setData(accounts);
                 campaign.setData(campaigns);
+                scope = $rootScope;
             });
         });
 
@@ -159,6 +160,21 @@ define(function (require) {
 
                 expect(navbar.all()).toEqual({});
             });
+        });
+
+        it('should change the params when the rootScope changes', function () {
+            var params = { clientId: 'testId' };
+
+            scope.$broadcast('$stateChangeSuccess', {}, params);
+
+            expect(navbar.params()).toEqual(params);
+        });
+
+        it('should not chock if params are undefined', function () {
+
+            scope.$broadcast('$stateChangeSuccess', {});
+
+            expect(navbar.all()).toEqual({});
         });
 
     });

@@ -7,19 +7,19 @@ define(function (require) {
     describe('topClients', function () {
         var topClients, httpBackend;
         var clients = [{
-            "metrics": {
-                "impressions": 50,
-                "countAccountsActive": 3242,
-                "countCampaignsPreFlight": 123,
-                "countCampaignsInFlight": 1234
-            }, "id": "clientId0", "name": "Client 0", "channel": "Advertisers"
+            'metrics': {
+                'impressions': 50,
+                'countAccountsActive': 3242,
+                'countCampaignsPreFlight': 123,
+                'countCampaignsInFlight': 1234
+            }, 'id': 'clientId0', 'name': 'Client 0', 'channel': 'Advertisers'
         }, {
-            "metrics": {
-                "impressions": 100,
-                "countAccountsActive": 3242,
-                "countCampaignsPreFlight": 623,
-                "countCampaignsInFlight": 53
-            }, "id": "clientId1", "name": "Client 1", "channel": "Advertisers"
+            'metrics': {
+                'impressions': 100,
+                'countAccountsActive': 3242,
+                'countCampaignsPreFlight': 623,
+                'countCampaignsInFlight': 53
+            }, 'id': 'clientId1', 'name': 'Client 1', 'channel': 'Advertisers'
         }];
 
         beforeEach(function () {
@@ -71,7 +71,7 @@ define(function (require) {
             expect(topClients.all().data).toBeDefined();
 
             httpBackend.flush();
-        })
+        });
 
     });
 });
