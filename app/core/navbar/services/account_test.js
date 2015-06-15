@@ -126,5 +126,11 @@ define(function (require) {
             state.params.divisionId = '';
             expect(account.all()).toEqual(account.filtered());
         });
+
+        it('should find our result by name', function () {
+            account.setData(accounts);
+
+            expect(account.search('nt 0')[0].id).toEqual('accountId0');
+        });
     });
 });

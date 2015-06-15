@@ -132,5 +132,11 @@ define(function (require) {
             state.params.accountId = '';
             expect(campaign.all()).toEqual(campaign.filtered());
         });
+
+        it('should find our result by name', function () {
+            campaign.setData(campaigns);
+
+            expect(campaign.search('ign 0')[0].id).toEqual('campaignId0');
+        });
     });
 });

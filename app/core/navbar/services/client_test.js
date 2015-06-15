@@ -72,5 +72,11 @@ define(function (require) {
             client.setData(clients);
             expect(client.get('clientId0')).toEqual(clients[0]);
         });
+
+        it('should find our result by name', function () {
+            client.setData(clients);
+
+            expect(client.search('ent 0')[0].id).toEqual('clientId0');
+        });
     });
 });
