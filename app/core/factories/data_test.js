@@ -44,7 +44,7 @@ define(function (require) {
             expect(test1.all()).toEqual([1]);
         });
 
-        it('should return get from a url', function () {
+        it('should return get from a url and transform the response', function () {
             httpBackend.when('GET', '/test')
                 .respond({test: ['data']});
 
@@ -53,6 +53,35 @@ define(function (require) {
                 expect(test1.all()).toEqual(['data']);
             });
             httpBackend.flush();
+        });
+
+        it('should return get from a url', function () {
+            httpBackend.when('GET', '/test')
+                .respond(['data']);
+
+            var test1 = data();
+            test1.init('/test').then(function () {
+                expect(test1.all()).toEqual(['data']);
+            });
+            httpBackend.flush();
+            test1.init('/test').then(function (resp) {
+                expect(resp).toEqual(['data']);
+            });
+        });
+
+        it('if initalized twice it shouldn\'t make a second http request', function () {
+            httpBackend.when('GET', '/test')
+                .respond(['data']);
+
+            var test1 = data();
+            test1.init('/test').then(function () {
+                expect(test1.all()).toEqual(['data']);
+            });
+            httpBackend.flush();
+
+            test1.init('/test').then(function (resp) {
+                expect(resp).toEqual(test1.all());
+            });
         });
 
         it('should add an array to the data', function () {

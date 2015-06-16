@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('campaignService', function () {
-        var campaign, httpBackend;
+        var campaign, httpBackend, state, accountServ;
 
         var campaigns = [
             {
@@ -31,9 +31,11 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (campaignService, $httpBackend) {
+            inject(function (campaignService, $httpBackend, $state, accountService) {
                 campaign = campaignService;
+                accountServ = accountService;
                 httpBackend = $httpBackend;
+                state = $state;
             });
         });
 
@@ -96,6 +98,45 @@ define(function (require) {
         it('should get all campaigns that are completed', function () {
             campaign.setData(campaigns);
             expect(campaign.completed()).toEqual([]);
+        });
+
+        it('should correctly fallback and populate output in filtered()', function () {
+            campaign.setData(campaigns);
+            accountServ.filtered = function(){
+                return [
+                    {
+                        'id': 'accountId0',
+                        'name': 'Account 0',
+                        'pinned': false,
+                        'active': false,
+                        'lastViewed': '2015-01-01T12:00:00Z',
+                        'lastViewedName': 'Joe Snoopypants',
+                        'client': {'id': 'clientId0'},
+                        'division': {'id': 'divisionId0'}
+                    }
+                ];
+            };
+            state.params.accountId = '';
+            state.params.divisionId = 'divisionId0';
+            expect(campaign.filtered()[0]).toEqual(campaign.get('accountId0'));
+        });
+
+        it('should return all with matching accountId', function () {
+            campaign.setData(campaigns);
+            state.params.accountId = 'accountId0';
+            expect(campaign.filtered()[0]).toEqual(campaign.get('accountId0'));
+        });
+
+        it('should return all from filter', function () {
+            campaign.setData(campaigns);
+            state.params.accountId = '';
+            expect(campaign.all()).toEqual(campaign.filtered());
+        });
+
+        it('should find our result by name', function () {
+            campaign.setData(campaigns);
+
+            expect(campaign.search('ign 0')[0].id).toEqual('campaignId0');
         });
     });
 });

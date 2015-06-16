@@ -14,14 +14,7 @@ define(function (require) {
         }
 
         function search(query) {
-            //var max = 5;
-            var results = utils.search(all(), query);
-            /*if (query && results.length < max) {
-                $http.get('/narwhal/campaigns/search?q=' + query + '&limit=5').success(function (res) {
-                    campaigns.addData(res);
-                });
-            }*/
-            return results;
+            return utils.search(all(), query);
         }
 
         function sortByStartDate(data) {
@@ -192,6 +185,7 @@ define(function (require) {
             inFlight: inFlight,
             preFlight: preFlight,
             observe: campaigns.observe,
+            filtered: filtered,
             pinned: pinned,
             unpin: unpin,
             search: search,

@@ -1,9 +1,3 @@
-/**
- * Created by Alex on 3/1/2015.
- */
-/**
- * Created by Alex on 3/1/2015.
- */
 define(function (require) {
     'use strict';
     var app = require('./module');
@@ -25,8 +19,11 @@ define(function (require) {
     require('tpl!./pacing-chart.html');
     require('tpl!./modal.html');
     require('tpl!./new-client-form.html');
+    require('tpl!./new-campaign-form.html');
+    require('tpl!./myModalContent.html');
     require('tpl!./quartiles.html');
     require('tpl!./date-picker.html');
+    require('tpl!./file-picker.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
