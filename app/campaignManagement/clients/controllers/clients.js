@@ -8,7 +8,7 @@ define(function (require) {
 
         $scope.openModal = openModal;
 
-        topClients.init('/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&sortBy=metrics.impressions&limit=10');
+        topClients.init('/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10');
 
         topClients.observe(updateTopClients, $scope);
 
