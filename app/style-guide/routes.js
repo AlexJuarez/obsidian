@@ -23,6 +23,7 @@ define(function (require) {
     require('tpl!./myModalContent.html');
     require('tpl!./quartiles.html');
     require('tpl!./date-picker.html');
+    require('tpl!./file-picker.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

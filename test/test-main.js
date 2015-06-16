@@ -29,7 +29,8 @@ requirejs.config({
         'chosen': '/base/app/components/chosen/chosen.jquery',
         'angular-chosen': '/base/app/components/angular-chosen-localytics/chosen',
         'ng-perfect-scrollbar': '/base/app/components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
-        'perfect-scrollbar': '/base/app/components/perfect-scrollbar/src/perfect-scrollbar'
+        'perfect-scrollbar': '/base/app/components/perfect-scrollbar/src/perfect-scrollbar',
+        'simpleUpload': '/base/app/components/Simple-Ajax-Uploader/SimpleAjaxUploader'
     },
     shim: {
         'hljs': {
@@ -47,6 +48,10 @@ requirejs.config({
         },
         'ui-router': {
             deps: ['angular']
+        },
+        'simpleUpload': {
+            deps: ['jquery'],
+            exports: 'ss'
         },
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']

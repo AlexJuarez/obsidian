@@ -14,7 +14,8 @@ require.config({
         'angular-chosen': 'components/angular-chosen-localytics/chosen',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
-        'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0'
+        'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0',
+        'simpleUpload': 'components/Simple-Ajax-Uploader/SimpleAjaxUploader'
     },
     shim: {
         'd3': {
@@ -25,6 +26,10 @@ require.config({
         },
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']
+        },
+        'simpleUpload': {
+            deps: ['jquery'],
+            exports: 'ss'
         },
         'perfect-scrollbar': {
             deps: ['jquery']

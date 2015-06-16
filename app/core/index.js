@@ -14,10 +14,13 @@ define(function (require) {
     require('./directives/limit');
     require('./directives/tooltip');
     require('./directives/compile');
+    require('./directives/filePicker');
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
     require('./filters/date');
     require('./filters/truncateNumber');
     require('./services/store');
+    require('./services/channel');
+    require('./constants/apiURI');
 });

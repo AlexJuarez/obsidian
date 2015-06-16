@@ -5,15 +5,15 @@ define(function (require) {
 
     var apiPrefixes = ['/api/v3', '/api/v2', '/narwhal'];
 
-    module.factory('domainInterceptor', [function () {
+    module.factory('domainInterceptor', ['API_URI', function (apiURI) {
         function request(config) {
             var apiPrefix;
 
-            if(window.apiURI) {
+            if(apiURI) {
                 for (var i = 0; i < apiPrefixes.length; i++) {
                     apiPrefix = apiPrefixes[i];
                     if (config.url.indexOf(apiPrefix) > -1) {
-                        config.url = window.apiURI + config.url;
+                        config.url = apiURI + config.url;
                         break;
                     }
                 }
