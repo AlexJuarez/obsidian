@@ -9643,7 +9643,7 @@ return jQuery;
 }));
 
 /**
- * @license AngularJS v1.4.0
+ * @license AngularJS v1.4.1
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -9701,7 +9701,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.0/' +
+    message += '\nhttp://errors.angularjs.org/1.4.1/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -10508,9 +10508,18 @@ function copy(source, destination, stackSource, stackDest) {
 
   if (!destination) {
     destination = source;
-    if (source) {
+    if (isObject(source)) {
+      var index;
+      if (stackSource && (index = stackSource.indexOf(source)) !== -1) {
+        return stackDest[index];
+      }
+
+      // TypedArray, Date and RegExp have specific copy functionality and must be
+      // pushed onto the stack before returning.
+      // Array and other objects create the base object and recurse to copy child
+      // objects. The array/object will be pushed onto the stack when recursed.
       if (isArray(source)) {
-        destination = copy(source, [], stackSource, stackDest);
+        return copy(source, [], stackSource, stackDest);
       } else if (isTypedArray(source)) {
         destination = new source.constructor(source);
       } else if (isDate(source)) {
@@ -10518,9 +10527,14 @@ function copy(source, destination, stackSource, stackDest) {
       } else if (isRegExp(source)) {
         destination = new RegExp(source.source, source.toString().match(/[^\/]*$/)[0]);
         destination.lastIndex = source.lastIndex;
-      } else if (isObject(source)) {
+      } else {
         var emptyObject = Object.create(getPrototypeOf(source));
-        destination = copy(source, emptyObject, stackSource, stackDest);
+        return copy(source, emptyObject, stackSource, stackDest);
+      }
+
+      if (stackDest) {
+        stackSource.push(source);
+        stackDest.push(destination);
       }
     }
   } else {
@@ -10531,9 +10545,6 @@ function copy(source, destination, stackSource, stackDest) {
     stackDest = stackDest || [];
 
     if (isObject(source)) {
-      var index = stackSource.indexOf(source);
-      if (index !== -1) return stackDest[index];
-
       stackSource.push(source);
       stackDest.push(destination);
     }
@@ -10542,12 +10553,7 @@ function copy(source, destination, stackSource, stackDest) {
     if (isArray(source)) {
       destination.length = 0;
       for (var i = 0; i < source.length; i++) {
-        result = copy(source[i], null, stackSource, stackDest);
-        if (isObject(source[i])) {
-          stackSource.push(source[i]);
-          stackDest.push(result);
-        }
-        destination.push(result);
+        destination.push(copy(source[i], null, stackSource, stackDest));
       }
     } else {
       var h = destination.$$hashKey;
@@ -10561,20 +10567,20 @@ function copy(source, destination, stackSource, stackDest) {
       if (isBlankObject(source)) {
         // createMap() fast path --- Safe to avoid hasOwnProperty check because prototype chain is empty
         for (key in source) {
-          putValue(key, source[key], destination, stackSource, stackDest);
+          destination[key] = copy(source[key], null, stackSource, stackDest);
         }
       } else if (source && typeof source.hasOwnProperty === 'function') {
         // Slow path, which must rely on hasOwnProperty
         for (key in source) {
           if (source.hasOwnProperty(key)) {
-            putValue(key, source[key], destination, stackSource, stackDest);
+            destination[key] = copy(source[key], null, stackSource, stackDest);
           }
         }
       } else {
         // Slowest path --- hasOwnProperty can't be called as a method
         for (key in source) {
           if (hasOwnProperty.call(source, key)) {
-            putValue(key, source[key], destination, stackSource, stackDest);
+            destination[key] = copy(source[key], null, stackSource, stackDest);
           }
         }
       }
@@ -10582,16 +10588,6 @@ function copy(source, destination, stackSource, stackDest) {
     }
   }
   return destination;
-
-  function putValue(key, val, destination, stackSource, stackDest) {
-    // No context allocation, trivial outer scope, easily inlined
-    var result = copy(val, null, stackSource, stackDest);
-    if (isObject(val)) {
-      stackSource.push(val);
-      stackDest.push(result);
-    }
-    destination[key] = result;
-  }
 }
 
 /**
@@ -11649,7 +11645,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#provider $provide.provider()}.
            */
-          provider: invokeLater('$provide', 'provider'),
+          provider: invokeLaterAndSetModuleName('$provide', 'provider'),
 
           /**
            * @ngdoc method
@@ -11660,7 +11656,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#factory $provide.factory()}.
            */
-          factory: invokeLater('$provide', 'factory'),
+          factory: invokeLaterAndSetModuleName('$provide', 'factory'),
 
           /**
            * @ngdoc method
@@ -11671,7 +11667,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#service $provide.service()}.
            */
-          service: invokeLater('$provide', 'service'),
+          service: invokeLaterAndSetModuleName('$provide', 'service'),
 
           /**
            * @ngdoc method
@@ -11706,7 +11702,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#decorator $provide.decorator()}.
            */
-          decorator: invokeLater('$provide', 'decorator'),
+          decorator: invokeLaterAndSetModuleName('$provide', 'decorator'),
 
           /**
            * @ngdoc method
@@ -11740,7 +11736,7 @@ function setupModuleLoader(window) {
            * See {@link ng.$animateProvider#register $animateProvider.register()} and
            * {@link ngAnimate ngAnimate module} for more information.
            */
-          animation: invokeLater('$animateProvider', 'register'),
+          animation: invokeLaterAndSetModuleName('$animateProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11758,7 +11754,7 @@ function setupModuleLoader(window) {
            * (`myapp_subsection_filterx`).
            * </div>
            */
-          filter: invokeLater('$filterProvider', 'register'),
+          filter: invokeLaterAndSetModuleName('$filterProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11770,7 +11766,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link ng.$controllerProvider#register $controllerProvider.register()}.
            */
-          controller: invokeLater('$controllerProvider', 'register'),
+          controller: invokeLaterAndSetModuleName('$controllerProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11783,7 +11779,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link ng.$compileProvider#directive $compileProvider.directive()}.
            */
-          directive: invokeLater('$compileProvider', 'directive'),
+          directive: invokeLaterAndSetModuleName('$compileProvider', 'directive'),
 
           /**
            * @ngdoc method
@@ -11830,6 +11826,19 @@ function setupModuleLoader(window) {
           if (!queue) queue = invokeQueue;
           return function() {
             queue[insertMethod || 'push']([provider, method, arguments]);
+            return moduleInstance;
+          };
+        }
+
+        /**
+         * @param {string} provider
+         * @param {string} method
+         * @returns {angular.Module}
+         */
+        function invokeLaterAndSetModuleName(provider, method) {
+          return function(recipeName, factoryFunction) {
+            if (factoryFunction && isFunction(factoryFunction)) factoryFunction.$$moduleName = name;
+            invokeQueue.push([provider, method, arguments]);
             return moduleInstance;
           };
         }
@@ -11976,11 +11985,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.0',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.1',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 0,
-  codeName: 'jaracimrman-existence'
+  dot: 1,
+  codeName: 'hyperionic-illumination'
 };
 
 
@@ -12304,6 +12313,13 @@ function jqLiteAcceptsData(node) {
   // Otherwise we are only interested in elements (1) and documents (9)
   var nodeType = node.nodeType;
   return nodeType === NODE_TYPE_ELEMENT || !nodeType || nodeType === NODE_TYPE_DOCUMENT;
+}
+
+function jqLiteHasData(node) {
+  for (var key in jqCache[node.ng339]) {
+    return true;
+  }
+  return false;
 }
 
 function jqLiteBuildFragment(html, context) {
@@ -12680,7 +12696,8 @@ function getAliasedAttrName(element, name) {
 
 forEach({
   data: jqLiteData,
-  removeData: jqLiteRemoveData
+  removeData: jqLiteRemoveData,
+  hasData: jqLiteHasData
 }, function(fn, name) {
   JQLite[name] = fn;
 });
@@ -13889,7 +13906,7 @@ function createInjector(modulesToLoad, strictDi) {
           }));
 
 
-  forEach(loadModules(modulesToLoad), function(fn) { instanceInjector.invoke(fn || noop); });
+  forEach(loadModules(modulesToLoad), function(fn) { if (fn) instanceInjector.invoke(fn); });
 
   return instanceInjector;
 
@@ -15112,7 +15129,7 @@ function Browser(window, document, $log, $sniffer) {
         // Do the assignment again so that those two variables are referentially identical.
         lastHistoryState = cachedState;
       } else {
-        if (!sameBase) {
+        if (!sameBase || reloadLocation) {
           reloadLocation = url;
         }
         if (replace) {
@@ -16118,12 +16135,15 @@ function $TemplateCacheProvider() {
  *   * `controller` - the directive's required controller instance(s) - Instances are shared
  *     among all directives, which allows the directives to use the controllers as a communication
  *     channel. The exact value depends on the directive's `require` property:
+ *       * no controller(s) required: the directive's own controller, or `undefined` if it doesn't have one
  *       * `string`: the controller instance
  *       * `array`: array of controller instances
- *       * no controller(s) required: `undefined`
  *
  *     If a required controller cannot be found, and it is optional, the instance is `null`,
  *     otherwise the {@link error:$compile:ctreq Missing Required Controller} error is thrown.
+ *
+ *     Note that you can also require the directive's own controller - it will be made available like
+ *     like any other controller.
  *
  *   * `transcludeFn` - A transclude linking function pre-bound to the correct transclusion scope.
  *     This is the same as the `$transclude`
@@ -16571,6 +16591,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
                 if (isObject(bindings.isolateScope)) {
                   directive.$$isolateBindings = bindings.isolateScope;
                 }
+                directive.$$moduleName = directiveFactory.$$moduleName;
                 directives.push(directive);
               } catch (e) {
                 $exceptionHandler(e);
@@ -17142,8 +17163,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
             if (nodeLinkFn.transcludeOnThisElement) {
               childBoundTranscludeFn = createBoundTranscludeFn(
-                  scope, nodeLinkFn.transclude, parentBoundTranscludeFn,
-                  nodeLinkFn.elementTranscludeOnThisElement);
+                  scope, nodeLinkFn.transclude, parentBoundTranscludeFn);
 
             } else if (!nodeLinkFn.templateOnThisElement && parentBoundTranscludeFn) {
               childBoundTranscludeFn = parentBoundTranscludeFn;
@@ -17165,7 +17185,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       }
     }
 
-    function createBoundTranscludeFn(scope, transcludeFn, previousBoundTranscludeFn, elementTransclusion) {
+    function createBoundTranscludeFn(scope, transcludeFn, previousBoundTranscludeFn) {
 
       var boundTranscludeFn = function(transcludedScope, cloneFn, controllers, futureParentElement, containingScope) {
 
@@ -17264,6 +17284,13 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           }
           break;
         case NODE_TYPE_TEXT: /* Text Node */
+          if (msie === 11) {
+            // Workaround for #11781
+            while (node.parentNode && node.nextSibling && node.nextSibling.nodeType === NODE_TYPE_TEXT) {
+              node.nodeValue = node.nodeValue + node.nextSibling.nodeValue;
+              node.parentNode.removeChild(node.nextSibling);
+            }
+          }
           addTextInterpolateDirective(directives, node.nodeValue);
           break;
         case NODE_TYPE_COMMENT: /* Comment */
@@ -17556,7 +17583,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       nodeLinkFn.scope = newScopeDirective && newScopeDirective.scope === true;
       nodeLinkFn.transcludeOnThisElement = hasTranscludeDirective;
-      nodeLinkFn.elementTranscludeOnThisElement = hasElementTranscludeDirective;
       nodeLinkFn.templateOnThisElement = hasTemplate;
       nodeLinkFn.transclude = childTranscludeFn;
 
@@ -17717,9 +17743,12 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           for (i in elementControllers) {
             controller = elementControllers[i];
             var controllerResult = controller();
+
             if (controllerResult !== controller.instance) {
+              // If the controller constructor has a return value, overwrite the instance
+              // from setupControllers and update the element data
               controller.instance = controllerResult;
-              $element.data('$' + directive.name + 'Controller', controllerResult);
+              $element.data('$' + i + 'Controller', controllerResult);
               if (controller === controllerForBindings) {
                 // Remove and re-install bindToController bindings
                 thisLinkFn.$$destroyBindings();
@@ -18019,11 +18048,18 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       return a.index - b.index;
     }
 
-
     function assertNoDuplicate(what, previousDirective, directive, element) {
+
+      function wrapModuleNameIfDefined(moduleName) {
+        return moduleName ?
+          (' (module: ' + moduleName + ')') :
+          '';
+      }
+
       if (previousDirective) {
-        throw $compileMinErr('multidir', 'Multiple directives [{0}, {1}] asking for {2} on: {3}',
-            previousDirective.name, directive.name, what, startingTag(element));
+        throw $compileMinErr('multidir', 'Multiple directives [{0}{1}, {2}{3}] asking for {4} on: {5}',
+            previousDirective.name, wrapModuleNameIfDefined(previousDirective.$$moduleName),
+            directive.name, wrapModuleNameIfDefined(directive.$$moduleName), what, startingTag(element));
       }
     }
 
@@ -18204,26 +18240,28 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       var fragment = document.createDocumentFragment();
       fragment.appendChild(firstElementToRemove);
 
-      // Copy over user data (that includes Angular's $scope etc.). Don't copy private
-      // data here because there's no public interface in jQuery to do that and copying over
-      // event listeners (which is the main use of private data) wouldn't work anyway.
-      jqLite(newNode).data(jqLite(firstElementToRemove).data());
+      if (jqLite.hasData(firstElementToRemove)) {
+        // Copy over user data (that includes Angular's $scope etc.). Don't copy private
+        // data here because there's no public interface in jQuery to do that and copying over
+        // event listeners (which is the main use of private data) wouldn't work anyway.
+        jqLite(newNode).data(jqLite(firstElementToRemove).data());
 
-      // Remove data of the replaced element. We cannot just call .remove()
-      // on the element it since that would deallocate scope that is needed
-      // for the new node. Instead, remove the data "manually".
-      if (!jQuery) {
-        delete jqLite.cache[firstElementToRemove[jqLite.expando]];
-      } else {
-        // jQuery 2.x doesn't expose the data storage. Use jQuery.cleanData to clean up after
-        // the replaced element. The cleanData version monkey-patched by Angular would cause
-        // the scope to be trashed and we do need the very same scope to work with the new
-        // element. However, we cannot just cache the non-patched version and use it here as
-        // that would break if another library patches the method after Angular does (one
-        // example is jQuery UI). Instead, set a flag indicating scope destroying should be
-        // skipped this one time.
-        skipDestroyOnNextJQueryCleanData = true;
-        jQuery.cleanData([firstElementToRemove]);
+        // Remove data of the replaced element. We cannot just call .remove()
+        // on the element it since that would deallocate scope that is needed
+        // for the new node. Instead, remove the data "manually".
+        if (!jQuery) {
+          delete jqLite.cache[firstElementToRemove[jqLite.expando]];
+        } else {
+          // jQuery 2.x doesn't expose the data storage. Use jQuery.cleanData to clean up after
+          // the replaced element. The cleanData version monkey-patched by Angular would cause
+          // the scope to be trashed and we do need the very same scope to work with the new
+          // element. However, we cannot just cache the non-patched version and use it here as
+          // that would break if another library patches the method after Angular does (one
+          // example is jQuery UI). Instead, set a flag indicating scope destroying should be
+          // skipped this one time.
+          skipDestroyOnNextJQueryCleanData = true;
+          jQuery.cleanData([firstElementToRemove]);
+        }
       }
 
       for (var k = 1, kk = elementsToRemove.length; k < kk; k++) {
@@ -18264,9 +18302,19 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         lastValue,
         parentGet, parentSet, compare;
 
+        if (!hasOwnProperty.call(attrs, attrName)) {
+          // In the case of user defined a binding with the same name as a method in Object.prototype but didn't set
+          // the corresponding attribute. We need to make sure subsequent code won't access to the prototype function
+          attrs[attrName] = undefined;
+        }
+
         switch (mode) {
 
           case '@':
+            if (!attrs[attrName] && !optional) {
+              destination[scopeName] = undefined;
+            }
+
             attrs.$observe(attrName, function(value) {
               destination[scopeName] = value;
             });
@@ -18283,6 +18331,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
               return;
             }
             parentGet = $parse(attrs[attrName]);
+
             if (parentGet.literal) {
               compare = equals;
             } else {
@@ -18321,9 +18370,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
-            // Don't assign Object.prototype method to scope
-            if (!attrs.hasOwnProperty(attrName) && optional) break;
-
             parentGet = $parse(attrs[attrName]);
 
             // Don't assign noop to destination if expression is not valid
@@ -18724,13 +18770,17 @@ function $HttpParamSerializerProvider() {
    * @name $httpParamSerializer
    * @description
    *
-   * Default $http params serializer that converts objects to a part of a request URL
+   * Default {@link $http `$http`} params serializer that converts objects to strings
    * according to the following rules:
+   *
    * * `{'foo': 'bar'}` results in `foo=bar`
    * * `{'foo': Date.now()}` results in `foo=2015-04-01T09%3A50%3A49.262Z` (`toISOString()` and encoded representation of a Date object)
    * * `{'foo': ['bar', 'baz']}` results in `foo=bar&foo=baz` (repeated key for each array element)
    * * `{'foo': {'bar':'baz'}}` results in `foo=%7B%22bar%22%3A%22baz%22%7D"` (stringified and encoded representation of an object)
+   *
+   * Note that serializer will sort the request parameters alphabetically.
    * */
+
   this.$get = function() {
     return function ngParamSerializer(params) {
       if (!params) return '';
@@ -18757,7 +18807,43 @@ function $HttpParamSerializerJQLikeProvider() {
    * @name $httpParamSerializerJQLike
    * @description
    *
-   * Alternative $http params serializer that follows jQuery's [`param()`](http://api.jquery.com/jquery.param/) method logic.
+   * Alternative {@link $http `$http`} params serializer that follows
+   * jQuery's [`param()`](http://api.jquery.com/jquery.param/) method logic.
+   * The serializer will also sort the params alphabetically.
+   *
+   * To use it for serializing `$http` request parameters, set it as the `paramSerializer` property:
+   *
+   * ```js
+   * $http({
+   *   url: myUrl,
+   *   method: 'GET',
+   *   params: myParams,
+   *   paramSerializer: '$httpParamSerializerJQLike'
+   * });
+   * ```
+   *
+   * It is also possible to set it as the default `paramSerializer` in the
+   * {@link $httpProvider#defaults `$httpProvider`}.
+   *
+   * Additionally, you can inject the serializer and use it explicitly, for example to serialize
+   * form data for submission:
+   *
+   * ```js
+   * .controller(function($http, $httpParamSerializerJQLike) {
+   *   //...
+   *
+   *   $http({
+   *     url: myUrl,
+   *     method: 'POST',
+   *     data: $httpParamSerializerJQLike(myData),
+   *     headers: {
+   *       'Content-Type': 'application/x-www-form-urlencoded'
+   *     }
+   *   });
+   *
+   * });
+   * ```
+   *
    * */
   this.$get = function() {
     return function jQueryLikeParamSerializer(params) {
@@ -18931,10 +19017,11 @@ function $HttpProvider() {
    *     - **`defaults.headers.put`**
    *     - **`defaults.headers.patch`**
    *
-   * - **`defaults.paramSerializer`** - {string|function(Object<string,string>):string} - A function used to prepare string representation
-   * of request parameters (specified as an object).
-   * If specified as string, it is interpreted as a function registered with the {@link auto.$injector $injector}.
-   * Defaults to {@link ng.$httpParamSerializer $httpParamSerializer}.
+   *
+   * - **`defaults.paramSerializer`** - `{string|function(Object<string,string>):string}` - A function
+   *  used to the prepare string representation of request parameters (specified as an object).
+   *  If specified as string, it is interpreted as a function registered with the {@link auto.$injector $injector}.
+   *  Defaults to {@link ng.$httpParamSerializer $httpParamSerializer}.
    *
    **/
   var defaults = this.defaults = {
@@ -19400,15 +19487,17 @@ function $HttpProvider() {
      * properties of either $httpProvider.defaults at config-time, $http.defaults at run-time,
      * or the per-request config object.
      *
+     * In order to prevent collisions in environments where multiple Angular apps share the
+     * same domain or subdomain, we recommend that each application uses unique cookie name.
+     *
      *
      * @param {object} config Object describing the request to be made and how it should be
      *    processed. The object has following properties:
      *
      *    - **method** – `{string}` – HTTP method (e.g. 'GET', 'POST', etc)
      *    - **url** – `{string}` – Absolute or relative URL of the resource that is being requested.
-     *    - **params** – `{Object.<string|Object>}` – Map of strings or objects which will be turned
-     *      to `?key1=value1&key2=value2` after the url. If the value is not a string, it will be
-     *      JSONified.
+     *    - **params** – `{Object.<string|Object>}` – Map of strings or objects which will be serialized
+     *      with the `paramSerializer` and appended as GET parameters.
      *    - **data** – `{string|Object}` – Data to be sent as the request message data.
      *    - **headers** – `{Object}` – Map of strings or functions which return strings representing
      *      HTTP headers to send to the server. If the return value of a function is null, the
@@ -19426,10 +19515,14 @@ function $HttpProvider() {
      *      transform function or an array of such functions. The transform function takes the http
      *      response body, headers and status and returns its transformed (typically deserialized) version.
      *      See {@link ng.$http#overriding-the-default-transformations-per-request
-     *      Overriding the Default Transformations}
-     *    - **paramSerializer** - {string|function(Object<string,string>):string} - A function used to prepare string representation
-     *      of request parameters (specified as an object).
-     *      Is specified as string, it is interpreted as function registered in with the {$injector}.
+     *      Overriding the Default TransformationjqLiks}
+     *    - **paramSerializer** - `{string|function(Object<string,string>):string}` - A function used to
+     *      prepare the string representation of request parameters (specified as an object).
+     *      If specified as string, it is interpreted as function registered with the
+     *      {@link $injector $injector}, which means you can create your own serializer
+     *      by registering it as a {@link auto.$provide#service service}.
+     *      The default serializer is the {@link $httpParamSerializer $httpParamSerializer};
+     *      alternatively, you can use the {@link $httpParamSerializerJQLike $httpParamSerializerJQLike}
      *    - **cache** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
      *      GET request, otherwise if a cache instance built with
      *      {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
@@ -22857,8 +22950,10 @@ ASTCompiler.prototype = {
               nameId.name = ast.property.name;
             }
           }
-          recursionFn(intoId);
+        }, function() {
+          self.assign(intoId, 'undefined');
         });
+        recursionFn(intoId);
       }, !!create);
       break;
     case AST.CallExpression:
@@ -22896,8 +22991,10 @@ ASTCompiler.prototype = {
             }
             expression = self.ensureSafeObject(expression);
             self.assign(intoId, expression);
-            recursionFn(intoId);
+          }, function() {
+            self.assign(intoId, 'undefined');
           });
+          recursionFn(intoId);
         });
       }
       break;
@@ -24280,6 +24377,19 @@ function qFactory(nextTick, exceptionHandler) {
 
   /**
    * @ngdoc method
+   * @name $q#resolve
+   * @kind function
+   *
+   * @description
+   * Alias of {@link ng.$q#when when} to maintain naming consistency with ES6.
+   *
+   * @param {*} value Value or a promise
+   * @returns {Promise} Returns a promise of the passed value or promise
+   */
+  var resolve = when;
+
+  /**
+   * @ngdoc method
    * @name $q#all
    * @kind function
    *
@@ -24346,6 +24456,7 @@ function qFactory(nextTick, exceptionHandler) {
   $Q.defer = defer;
   $Q.reject = reject;
   $Q.when = when;
+  $Q.resolve = resolve;
   $Q.all = all;
 
   return $Q;
@@ -27655,9 +27766,11 @@ function $FilterProvider($provide) {
  *     `{name: {first: 'John', last: 'Doe'}}` will **not** be matched by `{name: 'John'}`, but
  *     **will** be matched by `{$: 'John'}`.
  *
- *   - `function(value, index)`: A predicate function can be used to write arbitrary filters. The
- *     function is called for each element of `array`. The final result is an array of those
- *     elements that the predicate returned true for.
+ *   - `function(value, index, array)`: A predicate function can be used to write arbitrary filters.
+ *     The function is called for each element of the array, with the element, its index, and
+ *     the entire array itself as arguments.
+ *
+ *     The final result is an array of those elements that the predicate returned true for.
  *
  * @param {function(actual, expected)|true|undefined} comparator Comparator which is used in
  *     determining if the expected value (from the filter expression) and actual value (from
@@ -27958,9 +28071,10 @@ function currencyFilter($locale) {
  * @description
  * Formats a number as text.
  *
+ * If the input is null or undefined, it will just be returned.
+ * If the input is infinite (Infinity/-Infinity) the Infinity symbol '∞' is returned.
  * If the input is not a number an empty string is returned.
  *
- * If the input is an infinite (Infinity/-Infinity) the Infinity symbol '∞' is returned.
  *
  * @param {number|string} number Number to format.
  * @param {(number|string)=} fractionSize Number of decimal places to round the number to.
@@ -28589,7 +28703,7 @@ function limitToFilter() {
  * @description
  * Orders a specified `array` by the `expression` predicate. It is ordered alphabetically
  * for strings and numerically for numbers. Note: if you notice numbers are not being sorted
- * correctly, make sure they are actually being saved as numbers and not strings.
+ * as expected, make sure they are actually being saved as numbers and not strings.
  *
  * @param {Array} array The array to sort.
  * @param {function(*)|string|Array.<(function(*)|string)>=} expression A predicate to be
@@ -28664,19 +28778,40 @@ function limitToFilter() {
                   {name:'Mike', phone:'555-4321', age:21},
                   {name:'Adam', phone:'555-5678', age:35},
                   {name:'Julie', phone:'555-8765', age:29}];
-             $scope.predicate = '-age';
+             $scope.predicate = 'age';
+             $scope.reverse = true;
+             $scope.order = function(predicate) {
+               $scope.reverse = ($scope.predicate === predicate) ? !$scope.reverse : false;
+               $scope.predicate = predicate;
+             };
            }]);
        </script>
+       <style type="text/css">
+         .sortorder:after {
+           content: '\25b2';
+         }
+         .sortorder.reverse:after {
+           content: '\25bc';
+         }
+       </style>
        <div ng-controller="ExampleController">
          <pre>Sorting predicate = {{predicate}}; reverse = {{reverse}}</pre>
          <hr/>
          [ <a href="" ng-click="predicate=''">unsorted</a> ]
          <table class="friend">
            <tr>
-             <th><a href="" ng-click="predicate = 'name'; reverse=false">Name</a>
-                 (<a href="" ng-click="predicate = '-name'; reverse=false">^</a>)</th>
-             <th><a href="" ng-click="predicate = 'phone'; reverse=!reverse">Phone Number</a></th>
-             <th><a href="" ng-click="predicate = 'age'; reverse=!reverse">Age</a></th>
+             <th>
+               <a href="" ng-click="order('name')">Name</a>
+               <span class="sortorder" ng-show="predicate === 'name'" ng-class="{reverse:reverse}"></span>
+             </th>
+             <th>
+               <a href="" ng-click="order('phone')">Phone Number</a>
+               <span class="sortorder" ng-show="predicate === 'phone'" ng-class="{reverse:reverse}"></span>
+             </th>
+             <th>
+               <a href="" ng-click="order('age')">Age</a>
+               <span class="sortorder" ng-show="predicate === 'age'" ng-class="{reverse:reverse}"></span>
+             </th>
            </tr>
            <tr ng-repeat="friend in friends | orderBy:predicate:reverse">
              <td>{{friend.name}}</td>
@@ -29839,7 +29974,7 @@ var ngFormDirective = formDirectiveFactory(true);
 var ISO_DATE_REGEXP = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/;
 var URL_REGEXP = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
 var EMAIL_REGEXP = /^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+@[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i;
-var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))\s*$/;
+var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))([eE][+-]?\d+)?\s*$/;
 var DATE_REGEXP = /^(\d{4})-(\d{2})-(\d{2})$/;
 var DATETIMELOCAL_REGEXP = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d)(\.\d{1,3})?)?$/;
 var WEEK_REGEXP = /^(\d{4})-W(\d\d)$/;
@@ -30437,6 +30572,16 @@ var inputType = {
    * Be aware that a string containing a number is not enough. See the {@link ngModel:numfmt}
    * error docs for more information and an example of how to convert your model if necessary.
    * </div>
+   *
+   * ## Issues with HTML5 constraint validation
+   *
+   * In browsers that follow the
+   * [HTML5 specification](https://html.spec.whatwg.org/multipage/forms.html#number-state-%28type=number%29),
+   * `input[number]` does not work as expected with {@link ngModelOptions `ngModelOptions.allowInvalid`}.
+   * If a non-number is entered in the input, the browser will report the value as an empty string,
+   * which means the view / model values in `ngModel` and subsequently the scope value
+   * will also be an empty string.
+   *
    *
    * @param {string} ngModel Assignable angular expression to data-bind to.
    * @param {string=} name Property name of the form under which the control is published.
@@ -31974,7 +32119,7 @@ function classDirective(name, selector) {
  * @example Example that demonstrates basic bindings via ngClass directive.
    <example>
      <file name="index.html">
-       <p ng-class="{strike: deleted, bold: important, red: error}">Map Syntax Example</p>
+       <p ng-class="{strike: deleted, bold: important, 'has-error': error}">Map Syntax Example</p>
        <label>
           <input type="checkbox" ng-model="deleted">
           deleted (apply "strike" class)
@@ -31985,7 +32130,7 @@ function classDirective(name, selector) {
        </label><br>
        <label>
           <input type="checkbox" ng-model="error">
-          error (apply "red" class)
+          error (apply "has-error" class)
        </label>
        <hr>
        <p ng-class="style">Using String Syntax</p>
@@ -32014,6 +32159,10 @@ function classDirective(name, selector) {
        .red {
            color: red;
        }
+       .has-error {
+           color: red;
+           background-color: yellow;
+       }
        .orange {
            color: orange;
        }
@@ -32024,13 +32173,13 @@ function classDirective(name, selector) {
        it('should let you toggle the class', function() {
 
          expect(ps.first().getAttribute('class')).not.toMatch(/bold/);
-         expect(ps.first().getAttribute('class')).not.toMatch(/red/);
+         expect(ps.first().getAttribute('class')).not.toMatch(/has-error/);
 
          element(by.model('important')).click();
          expect(ps.first().getAttribute('class')).toMatch(/bold/);
 
          element(by.model('error')).click();
-         expect(ps.first().getAttribute('class')).toMatch(/red/);
+         expect(ps.first().getAttribute('class')).toMatch(/has-error/);
        });
 
        it('should let you toggle string example', function() {
@@ -34864,7 +35013,7 @@ var DEFAULT_REGEXP = /(\s+|^)default(\s+|$)/;
  *   - `debounce`: integer value which contains the debounce model update value in milliseconds. A
  *     value of 0 triggers an immediate update. If an object is supplied instead, you can specify a
  *     custom value for each event. For example:
- *     `ng-model-options="{ updateOn: 'default blur', debounce: {'default': 500, 'blur': 0} }"`
+ *     `ng-model-options="{ updateOn: 'default blur', debounce: { 'default': 500, 'blur': 0 } }"`
  *   - `allowInvalid`: boolean value which indicates that the model can be set with values that did
  *     not validate correctly instead of the default behavior of setting the model to undefined.
  *   - `getterSetter`: boolean value which determines whether or not to treat functions bound to
@@ -35114,7 +35263,9 @@ function addSetValidityMethod(context) {
 function isObjectEmpty(obj) {
   if (obj) {
     for (var prop in obj) {
-      return false;
+      if (obj.hasOwnProperty(prop)) {
+        return false;
+      }
     }
   }
   return true;
@@ -35457,6 +35608,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         values = values || [];
 
         Object.keys(values).forEach(function getWatchable(key) {
+          if (key.charAt(0) === '$') return;
           var locals = getLocals(values[key], key);
           var selectValue = getTrackByValueFn(values[key], locals);
           watchedArray.push(selectValue);
@@ -35860,8 +36012,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // Check to see if the value has changed due to the update to the options
         if (!ngModelCtrl.$isEmpty(previousValue)) {
           var nextValue = selectCtrl.readValue();
-          if (ngOptions.trackBy && !equals(previousValue, nextValue) ||
-                previousValue !== nextValue) {
+          if (ngOptions.trackBy ? !equals(previousValue, nextValue) : previousValue !== nextValue) {
             ngModelCtrl.$setViewValue(nextValue);
             ngModelCtrl.$render();
           }
@@ -36209,6 +36360,15 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *    </div>
  * ```
  *
+ * <div class="alert alert-warning">
+ * **Note:** `track by` must always be the last expression:
+ * </div>
+ * ```
+ * <div ng-repeat="model in collection | orderBy: 'id' as filtered_result track by model.id">
+ *     {{model.name}}
+ * </div>
+ * ```
+ *
  * # Special repeat start and end points
  * To repeat a series of elements instead of just one parent element, ngRepeat (as well as other ng directives) supports extending
  * the range of the repeater by defining explicit start and end points by using **ng-repeat-start** and **ng-repeat-end** respectively.
@@ -36280,8 +36440,9 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *     which can be used to associate the objects in the collection with the DOM elements. If no tracking expression
  *     is specified, ng-repeat associates elements by identity. It is an error to have
  *     more than one tracking expression value resolve to the same key. (This would mean that two distinct objects are
- *     mapped to the same DOM element, which is not possible.)  If filters are used in the expression, they should be
- *     applied before the tracking expression.
+ *     mapped to the same DOM element, which is not possible.)
+ *
+ *     Note that the tracking expression must come last, after any filters, and the alias expression.
  *
  *     For example: `item in items` is equivalent to `item in items track by $id(item)`. This implies that the DOM elements
  *     will be associated by item identity in the array.
@@ -45937,18 +46098,18 @@ define('text',['module'], function (module) {
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
- *     1. Redistributions of source code must retain the above copyright notice,
+ * 
+ *     1. Redistributions of source code must retain the above copyright notice, 
  *        this list of conditions and the following disclaimer.
- *
- *     2. Redistributions in binary form must reproduce the above copyright
+ *     
+ *     2. Redistributions in binary form must reproduce the above copyright 
  *        notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
- *
+ * 
  *     3. Neither the name of David Hall nor the names of its contributors may be
  *        used to endorse or promote products derived from this software without
  *        specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -45970,7 +46131,7 @@ define('tpl',[
     "use strict";
 
     var tplModule = null;
-
+    
     var buildMap = {};
 
     var tpl = {
@@ -46740,14 +46901,7 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
         }
 
         function search(query) {
-            //var max = 5;
-            var results = utils.search(all(), query);
-            /*if (query && results.length < max) {
-                $http.get('/narwhal/divisions/search?q=' + query + '&limit=5').success(function (res) {
-                    divisions.addData(res);
-                });
-            }*/
-            return results;
+            return utils.search(all(), query);
         }
 
         function alphabetMap() {
@@ -46829,14 +46983,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
         }
 
         function search(query) {
-            //var max = 5;
-            var results = utils.search(all(), query);
-            /*if (query && results.length < max) {
-                $http.get('/narwhal/campaigns/search?q=' + query + '&limit=5').success(function (res) {
-                    campaigns.addData(res);
-                });
-            }*/
-            return results;
+            return utils.search(all(), query);
         }
 
         function sortByStartDate(data) {
@@ -47038,14 +47185,7 @@ define('core/navbar/services/client',['require','./../../module','./util'],funct
         }
 
         function search(query) {
-            //var max = 5;
-            var results = utils.search(all(), query);
-            /*if (query && results.length < max) {
-                $http.get('/narwhal/clients/search?q=' + query + '&limit=5').success(function (res) {
-                    clients.addData(res);
-                });
-            }*/
-            return results;
+            return utils.search(all(), query);
         }
 
         function alphabetMap() {
@@ -47106,14 +47246,7 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
         }
 
         function search(query) {
-            //var max = 5;
-            var results = utils.search(all(), query);
-            /*if (query && results.length < max) {
-                $http.get('/narwhal/accounts/search?q=' + query + '&limit=5').success(function (res) {
-                    accounts.addData(res);
-                });
-            }*/
-            return results;
+            return utils.search(all(), query);
         }
 
         function alphabetMap() {
@@ -47286,7 +47419,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
         }
 
         function all() {
-            var data = navInfo.all();
+            var data = navInfo.all() || {};
 
             if (data.campaignId) {
                 return getCampaign(data.campaignId);
@@ -47649,6 +47782,14 @@ define('core/factories/pagination',['require','./../module'],function (require) 
     var module = require('./../module');
 
     module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
+        function buildPageUrl(url, limit, offset) {
+            if (url.indexOf('?') > -1) {
+                return url + '&limit=' + limit + '&offset=' + offset;
+            } else {
+                return url + '?limit=' + limit + '&offset=' + offset;
+            }
+        }
+
         return function (sortFn) {
             var limit = 10;
             var offset = 0;
@@ -47674,19 +47815,14 @@ define('core/factories/pagination',['require','./../module'],function (require) 
                 init: init,
                 observe: data.observe,
                 nextPage: nextPage,
+                buildUrl: buildPageUrl,
                 limit: limit,
                 all: data.all
             };
         };
     }]);
 
-    function buildPageUrl(url, limit, offset) {
-        if (url.indexOf('?') > -1) {
-            return url + '&limit=' + limit + '&offset=' + offset;
-        } else {
-            return url + '?limit=' + limit + '&offset=' + offset;
-        }
-    }
+
 });
 
 define('core/factories/domainInterceptor',['require','./../module'],function (require) {
@@ -47696,15 +47832,15 @@ define('core/factories/domainInterceptor',['require','./../module'],function (re
 
     var apiPrefixes = ['/api/v3', '/api/v2', '/narwhal'];
 
-    module.factory('domainInterceptor', [function () {
+    module.factory('domainInterceptor', ['API_URI', function (apiURI) {
         function request(config) {
             var apiPrefix;
 
-            if(window.apiURI) {
+            if(apiURI) {
                 for (var i = 0; i < apiPrefixes.length; i++) {
                     apiPrefix = apiPrefixes[i];
                     if (config.url.indexOf(apiPrefix) > -1) {
-                        config.url = window.apiURI + config.url;
+                        config.url = apiURI + config.url;
                         break;
                     }
                 }
@@ -47916,6 +48052,1914 @@ define('core/directives/compile',['require','./../module'],function (require) {
     }]);
 });
 
+/**
+ * Simple Ajax Uploader
+ * Version 2.0.1
+ * https://github.com/LPology/Simple-Ajax-Uploader
+ *
+ * Copyright 2012-2015 LPology, LLC
+ * Released under the MIT license
+ */
+
+;(function( window, document, undefined ) {
+
+    var ss = window.ss || {},
+
+        // ss.trim()
+        rLWhitespace = /^\s+/,
+        rTWhitespace = /\s+$/,
+
+        // ss.getUID
+        uidReplace = /[xy]/g,
+
+        // ss.getFilename()
+        rPath = /.*(\/|\\)/,
+
+        // ss.getExt()
+        rExt = /.*[.]/,
+
+        // ss.hasClass()
+        rHasClass = /[\t\r\n]/g,
+
+        // Check for Safari -- it doesn't like multi file uploading. At all.
+        // http://stackoverflow.com/a/9851769/1091949
+        isSafari = Object.prototype.toString.call( window.HTMLElement ).indexOf( 'Constructor' ) > 0,
+
+        isIE7 = ( navigator.userAgent.indexOf('MSIE 7') !== -1 ),
+
+        // Check whether XHR uploads are supported
+        input = document.createElement( 'input' ),
+
+        XhrOk;
+
+    input.type = 'file';
+
+    XhrOk = ( 'multiple' in input &&
+              typeof File !== 'undefined' &&
+              typeof ( new XMLHttpRequest() ).upload !== 'undefined' );
+
+
+/**
+* Converts object to query string
+*/
+ss.obj2string = function( obj, prefix ) {
+    "use strict";
+
+    var str = [];
+
+    for ( var prop in obj ) {
+        if ( obj.hasOwnProperty( prop ) ) {
+            var k = prefix ? prefix + '[' + prop + ']' : prop, v = obj[prop];
+            str.push( typeof v === 'object' ?
+                        ss.obj2string( v, k ) :
+                        encodeURIComponent( k ) + '=' + encodeURIComponent( v ) );
+        }
+    }
+
+    return str.join( '&' );
+};
+
+/**
+* Copies all missing properties from second object to first object
+*/
+ss.extendObj = function( first, second ) {
+    "use strict";
+
+    for ( var prop in second ) {
+        if ( second.hasOwnProperty( prop ) ) {
+            first[prop] = second[prop];
+        }
+    }
+};
+
+ss.addEvent = function( elem, type, fn ) {
+    "use strict";
+
+    if ( elem.addEventListener ) {
+        elem.addEventListener( type, fn, false );
+
+    } else {
+        elem.attachEvent( 'on' + type, fn );
+    }
+    return function() {
+        ss.removeEvent( elem, type, fn );
+    };
+};
+
+ss.removeEvent = function( elem, type, fn ) {
+    "use strict";
+
+    if ( elem.removeEventListener ) {
+        elem.removeEventListener( type, fn, false );
+
+    } else {
+        elem.detachEvent( 'on' + type, fn );
+    }
+};
+
+ss.newXHR = function() {
+    "use strict";
+
+    if ( typeof XMLHttpRequest !== 'undefined' ) {
+        return new window.XMLHttpRequest();
+
+    } else if ( window.ActiveXObject ) {
+        try {
+            return new window.ActiveXObject( 'Microsoft.XMLHTTP' );
+        } catch ( err ) {
+            return false;
+        }
+    }
+};
+
+ss.getIFrame = function() {
+    "use strict";
+
+    var id = ss.getUID(),
+        iframe;
+
+    // IE7 can only create an iframe this way, all others are the other way
+    if ( isIE7 ) {
+        iframe = document.createElement('<iframe src="javascript:false;" name="' + id + '">');
+
+    } else {
+        iframe = document.createElement('iframe');
+        /*jshint scripturl:true*/
+        iframe.src = 'javascript:false;';
+        iframe.name = id;
+    }
+
+    iframe.style.display = 'none';
+    iframe.id = id;
+    return iframe;
+};
+
+ss.getForm = function( opts ) {
+    "use strict";
+
+    var form = document.createElement('form');
+
+    form.encoding = 'multipart/form-data'; // IE
+    form.enctype = 'multipart/form-data';
+    form.style.display = 'none';
+
+    for ( var prop in opts ) {
+        if ( opts.hasOwnProperty( prop ) ) {
+            form[prop] = opts[prop];
+        }
+    }
+
+    return form;
+};
+
+ss.getHidden = function( name, value ) {
+    "use strict";
+
+    var input = document.createElement( 'input' );
+
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    return input;
+};
+
+/**
+* Parses a JSON string and returns a Javascript object
+* Borrowed from www.jquery.com
+*/
+ss.parseJSON = function( data ) {
+    "use strict";
+
+    if ( !data ) {
+        return false;
+    }
+
+    data = ss.trim( data + '' );
+
+    if ( window.JSON && window.JSON.parse ) {
+        try {
+            // Support: Android 2.3
+            // Workaround failure to string-cast null input
+            return window.JSON.parse( data + '' );
+        } catch ( err ) {
+            return false;
+        }
+    }
+
+    var rvalidtokens = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g,
+        depth = null,
+        requireNonComma;
+
+    // Guard against invalid (and possibly dangerous) input by ensuring that nothing remains
+    // after removing valid tokens
+    return data && !ss.trim( data.replace( rvalidtokens, function( token, comma, open, close ) {
+
+        // Force termination if we see a misplaced comma
+        if ( requireNonComma && comma ) {
+            depth = 0;
+        }
+
+        // Perform no more replacements after returning to outermost depth
+        if ( depth === 0 ) {
+            return token;
+        }
+
+        // Commas must not follow "[", "{", or ","
+        requireNonComma = open || comma;
+
+        // Determine new depth
+        // array/object open ("[" or "{"): depth += true - false (increment)
+        // array/object close ("]" or "}"): depth += false - true (decrement)
+        // other cases ("," or primitive): depth += true - true (numeric cast)
+        depth += !close - !open;
+
+        // Remove this token
+        return '';
+    }) ) ?
+        ( Function( 'return ' + data ) )() :
+        false;
+};
+
+ss.getBox = function( elem ) {
+    "use strict";
+
+    var box,
+        docElem,
+        top = 0,
+        left = 0;
+
+    if ( elem.getBoundingClientRect ) {
+        box = elem.getBoundingClientRect();
+        docElem = document.documentElement;
+        top = box.top  + ( window.pageYOffset || docElem.scrollTop )  - ( docElem.clientTop  || 0 );
+        left = box.left + ( window.pageXOffset || docElem.scrollLeft ) - ( docElem.clientLeft || 0 );
+
+    } else {
+        do {
+            left += elem.offsetLeft;
+            top += elem.offsetTop;
+        } while ( ( elem = elem.offsetParent ) );
+    }
+
+    return {
+        top: Math.round( top ),
+        left: Math.round( left )
+    };
+};
+
+/**
+* Helper that takes object literal
+* and add all properties to element.style
+* @param {Element} el
+* @param {Object} styles
+*/
+ss.addStyles = function( elem, styles ) {
+    "use strict";
+
+    for ( var name in styles ) {
+        if ( styles.hasOwnProperty( name ) ) {
+            elem.style[name] = styles[name];
+        }
+    }
+};
+
+/**
+* Function places an absolutely positioned
+* element on top of the specified element
+* copying position and dimensions.
+*/
+ss.copyLayout = function( from, to ) {
+    "use strict";
+
+    var box = ss.getBox( from );
+
+    ss.addStyles( to, {
+        position: 'absolute',
+        left : box.left + 'px',
+        top : box.top + 'px',
+        width : from.offsetWidth + 'px',
+        height : from.offsetHeight + 'px'
+    });
+};
+
+/**
+* Generates unique ID
+* Complies with RFC 4122 version 4
+* http://stackoverflow.com/a/2117523/1091949
+* ID begins with letter "a" to be safe for HTML elem ID/name attr (can't start w/ number)
+*/
+ss.getUID = function() {
+    "use strict";
+
+    /*jslint bitwise: true*/
+    return 'axxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(uidReplace, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
+};
+
+/**
+* Removes white space from left and right of string
+*/
+ss.trim = function( text ) {
+    "use strict";
+    return text.toString().replace( rLWhitespace, '' ).replace( rTWhitespace, '' );
+};
+
+/**
+* Extract file name from path
+*/
+ss.getFilename = function( path ) {
+    "use strict";
+    return path.replace( rPath, '' );
+};
+
+/**
+* Get file extension
+*/
+ss.getExt = function( file ) {
+    "use strict";
+    return ( -1 !== file.indexOf( '.' ) ) ? file.replace( rExt, '' ) : '';
+};
+
+/**
+* Check whether element has a particular CSS class
+* Parts borrowed from www.jquery.com
+*/
+ss.hasClass = function( elem, name ) {
+    "use strict";
+    return ( ' ' + elem.className + ' ' ).replace( rHasClass, ' ' ).indexOf( ' ' + name + ' ' ) >= 0;
+};
+
+/**
+* Adds CSS class to an element
+*/
+ss.addClass = function( elem, name ) {
+    "use strict";
+
+    if ( !name || name === '' ) {
+        return false;
+    }
+    if ( !ss.hasClass( elem, name ) ) {
+        elem.className += ' ' + name;
+    }
+};
+
+/**
+* Removes CSS class from an element
+*/
+ss.removeClass = (function() {
+    "use strict";
+
+    var c = {}; //cache regexps for performance
+
+    return function( e, name ) {
+        if ( !c[name] ) {
+            c[name] = new RegExp('(?:^|\\s)' + name + '(?!\\S)');
+        }
+        e.className = e.className.replace( c[name], '' );
+    };
+})();
+
+/**
+* Nulls out event handlers to prevent memory leaks in IE6/IE7
+* http://javascript.crockford.com/memory/leak.html
+* @param {Element} d
+* @return void
+*/
+ss.purge = function( d ) {
+    "use strict";
+
+    var a = d.attributes, i, l, n;
+
+    if ( a ) {
+        for ( i = a.length - 1; i >= 0; i -= 1 ) {
+            n = a[i].name;
+
+            if ( typeof d[n] === 'function' ) {
+                d[n] = null;
+            }
+        }
+    }
+
+    a = d.childNodes;
+
+    if ( a ) {
+        l = a.length;
+        for ( i = 0; i < l; i += 1 ) {
+            ss.purge( d.childNodes[i] );
+        }
+    }
+};
+
+/**
+* Removes element from the DOM
+*/
+ss.remove = function( elem ) {
+    "use strict";
+
+    if ( elem && elem.parentNode ) {
+        // null out event handlers for IE
+        ss.purge( elem );
+        elem.parentNode.removeChild( elem );
+    }
+    elem = null;
+};
+
+/**
+* Accepts either a jQuery object, a string containing an element ID, or an element,
+* verifies that it exists, and returns the element.
+* @param {Mixed} elem
+* @return {Element}
+*/
+ss.verifyElem = function( elem ) {
+    "use strict";
+
+    if ( typeof jQuery !== 'undefined' && elem instanceof jQuery ) {
+        elem = elem[0];
+
+    } else if ( typeof elem === 'string' ) {
+        if ( elem.charAt( 0 ) == '#' ) {
+            elem = elem.substr( 1 );
+        }
+        elem = document.getElementById( elem );
+    }
+
+    if ( !elem || elem.nodeType !== 1 ) {
+        return false;
+    }
+
+    if ( elem.nodeName.toUpperCase() == 'A' ) {
+        elem.style.cursor = 'pointer';
+
+        ss.addEvent( elem, 'click', function( e ) {
+            if ( e && e.preventDefault ) {
+                e.preventDefault();
+
+            } else if ( window.event ) {
+                window.event.returnValue = false;
+            }
+        });
+    }
+
+    return elem;
+};
+
+ss._options = {};
+
+ss.uploadSetup = function( options ) {
+    "use strict";
+    ss.extendObj( ss._options, options );
+};
+
+ss.SimpleUpload = function( options ) {
+    "use strict";
+
+    var i,
+        len,
+        btn;
+
+    this._opts = {
+        button: '',
+        url: '',
+        dropzone: '',
+        dragClass: '',
+        cors: false,
+        progressUrl: false,
+        sessionProgressUrl: false,
+        nginxProgressUrl: false,
+        multiple: false,
+        maxUploads: 3,
+        queue: true,
+        checkProgressInterval: 500,
+        keyParamName: 'APC_UPLOAD_PROGRESS',
+        sessionProgressName: 'PHP_SESSION_UPLOAD_PROGRESS',
+        nginxProgressHeader: 'X-Progress-ID',
+        corsInputName: 'XHR_CORS_TARGETORIGIN',
+        allowedExtensions: [],
+        accept: '',
+        maxSize: false,
+        name: '',
+        data: {},
+        noParams: false,
+        autoSubmit: true,
+        multipart: false,
+        method: 'POST',
+        responseType: '',
+        debug: false,
+        hoverClass: '',
+        focusClass: '',
+        disabledClass: '',
+        customHeaders: {},
+        onAbort: function( filename, uploadBtn ) {},
+        onChange: function( filename, extension, uploadBtn, size ) {},
+        onSubmit: function( filename, extension, uploadBtn, size ) {},
+        onProgress: function( pct ) {},
+        onUpdateFileSize: function( filesize ) {},
+        onComplete: function( filename, response, uploadBtn ) {},
+        onExtError: function( filename, extension ) {},
+        onSizeError: function( filename, fileSize ) {},
+        onError: function( filename, type, status, statusText, response, uploadBtn ) {},
+        startXHR: function( filename, fileSize, uploadBtn ) {},
+        endXHR: function( filename, fileSize, uploadBtn ) {},
+        startNonXHR: function( filename, uploadBtn ) {},
+        endNonXHR: function( filename, uploadBtn ) {}
+    };
+
+    // Include any setup options
+    ss.extendObj( this._opts, ss._options );
+
+    // Then add options for this instance
+    ss.extendObj( this._opts, options );
+
+    options = null;
+
+    this._btns = [];
+
+    // An array of buttons was passed
+    if ( this._opts.button instanceof Array ) {
+        len = this._opts.button.length;
+
+        for ( i = 0; i < len; i++ ) {
+            btn = ss.verifyElem( this._opts.button[i] );
+
+            if ( btn !== false ) {
+                this._btns.push( this.rerouteClicks( btn ) );
+
+            } else {
+                this.log( 'Button with array index ' + i + ' is invalid' );
+            }
+        }
+
+    // A single button was passed
+    } else {
+        btn = ss.verifyElem( this._opts.button );
+
+        if ( btn !== false ) {
+            this._btns.push( this.rerouteClicks( btn ) );
+        }
+    }
+
+    delete this._opts.button;
+
+    // No valid elements were passed to button option
+    if ( this._opts.dropzone === '' && ( this._btns.length < 1 || this._btns[0] === false ) ) {
+        throw new Error( "Invalid button. Make sure the element you're passing exists." );
+    }
+
+    if ( this._opts.multiple === false ) {
+        this._opts.maxUploads = 1;
+    }
+
+    // An array of objects, each containing two items, a file and a reference
+    // to the button which triggered the upload: { file: uploadFile, btn: button }
+    this._queue = [];
+
+    this._active = 0;
+    this._disabled = false; // if disabled, clicking on button won't do anything
+    this._maxFails = 10; // max allowed failed progress updates requests in iframe mode
+    this._progKeys = {}; // contains the currently active upload ID progress keys
+
+    if ( !XhrOk ) {
+        // Cache progress keys after we set sizeBox for fewer trips to the DOM
+        this._sizeFlags = {};
+    }
+
+    if ( XhrOk && this._opts.dropzone !== '' ) {
+        this.addDropZone( this._opts.dropzone );
+    }
+
+    this._createInput();
+
+    this._manDisabled = false;
+    this.enable( true );
+};
+
+ss.SimpleUpload.prototype = {
+
+    destroy: function() {
+        "use strict";
+
+        // # of upload buttons
+        var i = this._btns.length;
+
+        // Put upload buttons back to the way we found them
+        while ( i-- ) {
+            // Remove event listener
+            if ( this._btns[i].off ) {
+                this._btns[i].off();
+            }
+
+            // Remove any lingering classes
+            ss.removeClass( this._btns[i], this._opts.hoverClass );
+            ss.removeClass( this._btns[i], this._opts.focusClass );
+            ss.removeClass( this._btns[i], this._opts.disabledClass );
+
+            // In case we disabled it
+            this._btns[i].disabled = false;
+        }
+
+        // Remove div/file input combos from the DOM
+        ss.remove( this._input.parentNode );
+
+        // Now burn it all down
+        for ( var prop in this ) {
+            if ( this.hasOwnProperty( prop ) ) {
+                delete this.prop;
+            }
+        }
+    },
+
+    /**
+    * Send data to browser console if debug is set to true
+    */
+    log: function( str ) {
+        "use strict";
+
+        if ( this._opts.debug && window.console && window.console.log ) {
+            window.console.log( '[Uploader] ' + str );
+        }
+    },
+
+    /**
+    * Replaces user data
+    * Note that all previously set data is entirely removed and replaced
+    */
+    setData: function( data ) {
+        "use strict";
+        this._opts.data = data;
+    },
+
+    /**
+    * Set or change uploader options
+    * @param {Object} options
+    */
+    setOptions: function( options ) {
+        "use strict";
+        ss.extendObj( this._opts, options );
+    },
+
+    /**
+    * Designate an element as a progress bar
+    * The CSS width % of the element will be updated as the upload progresses
+    */
+    setProgressBar: function( elem ) {
+        "use strict";
+        this._progBar = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to receive a string containing progress % during upload
+    * Note: Uses innerHTML, so any existing child elements will be wiped out
+    */
+    setPctBox: function( elem ) {
+        "use strict";
+        this._pctBox = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to receive a string containing file size at start of upload
+    * Note: Uses innerHTML, so any existing child elements will be wiped out
+    */
+    setFileSizeBox: function( elem ) {
+        "use strict";
+        this._sizeBox = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to be removed from DOM when upload is completed
+    * Useful for removing progress bar, file size, etc. after upload
+    */
+    setProgressContainer: function( elem ) {
+        "use strict";
+        this._progBox = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to serve as the upload abort button
+    */
+    setAbortBtn: function( elem, remove ) {
+        "use strict";
+
+        this._abortBtn = ss.verifyElem( elem );
+        this._removeAbort = false;
+
+        if ( remove ) {
+            this._removeAbort = true;
+        }
+    },
+
+    /**
+    * Returns number of files currently in queue
+    */
+    getQueueSize: function() {
+        "use strict";
+        return this._queue.length;
+    },
+
+    /**
+    * Enables uploader and submits next file for upload
+    */
+    _cycleQueue: function() {
+        "use strict";
+
+        if ( this._queue.length > 0 && this._opts.autoSubmit ) {
+            this.submit();
+        }
+    },
+
+    /**
+    * Remove current file from upload queue, reset props, cycle to next upload
+    */
+    removeCurrent: function( id ) {
+        "use strict";
+
+        if ( id ) {
+            var i = this._queue.length;
+
+            while ( i-- ) {
+                if ( this._queue[i].id === id ) {
+                    this._queue.splice( i, 1 );
+                    break;
+                }
+            }
+
+        } else {
+            this._queue.splice( 0, 1 );
+        }
+
+        this._cycleQueue();
+    },
+
+    /**
+    * Clears Queue so only most recent select file is uploaded
+    */
+    clearQueue: function() {
+        "use strict";
+        this._queue.length = 0;
+    },
+
+    /**
+    * Disables upload functionality
+    */
+    disable: function( _self ) {
+        "use strict";
+
+        var i = this._btns.length,
+            nodeName;
+
+        // _self is always true when disable() is called internally
+        this._manDisabled = !_self || this._manDisabled === true ? true : false;
+        this._disabled = true;
+
+        while ( i-- ) {
+            nodeName = this._btns[i].nodeName.toUpperCase();
+
+            if ( nodeName == 'INPUT' || nodeName == 'BUTTON' ) {
+                this._btns[i].disabled = true;
+            }
+
+            if ( this._opts.disabledClass !== '' ) {
+                ss.addClass( this._btns[i], this._opts.disabledClass );
+            }
+        }
+
+        // Hide file input
+        if ( this._input && this._input.parentNode ) {
+            this._input.parentNode.style.visibility = 'hidden';
+        }
+    },
+
+    /**
+    * Enables upload functionality
+    */
+    enable: function( _self ) {
+        "use strict";
+
+        // _self will always be true when enable() is called internally
+        if ( !_self ) {
+            this._manDisabled = false;
+        }
+
+        // Don't enable uploader if it was manually disabled
+        if ( this._manDisabled === true ) {
+            return;
+        }
+
+        var i = this._btns.length;
+
+        this._disabled = false;
+
+        while ( i-- ) {
+            ss.removeClass( this._btns[i], this._opts.disabledClass );
+            this._btns[i].disabled = false;
+        }
+    }
+
+};
+
+ss.IframeUpload = {
+
+    /**
+    * Accepts a URI string and returns the hostname
+    */
+    _getHost: function( uri ) {
+        var a = document.createElement( 'a' );
+
+        a.href = uri;
+
+        if ( a.hostname ) {
+            return a.hostname.toLowerCase();
+        }
+        return uri;
+    },
+
+    _addFiles: function( file ) {
+        var filename = ss.getFilename( file.value ),
+            ext = ss.getExt( filename );
+
+        if ( false === this._opts.onChange.call( this, filename, ext, this._overBtn ) ) {
+            return false;
+        }
+
+        this._queue.push({
+            id: ss.getUID(),
+            file: file,
+            name: filename,
+            ext: ext,
+            btn: this._overBtn,
+            size: null
+        });
+
+        return true;
+    },
+
+    /**
+    * Handles uploading with iFrame
+    */
+    _uploadIframe: function( fileObj, progBox, sizeBox, progBar, pctBox, abortBtn, removeAbort ) {
+        "use strict";
+
+        var self = this,
+            opts = this._opts,
+            key = ss.getUID(),
+            iframe = ss.getIFrame(),
+            form,
+            url,
+            msgLoaded = false,
+            iframeLoaded = false,
+            removeMessageListener,
+            removeLoadListener,
+            cancel;
+
+        if ( opts.noParams === true ) {
+            url = opts.url;
+
+        } else {
+            // If we're using Nginx Upload Progress Module, append upload key to the URL
+            // Also, preserve query string if there is one
+            url = !opts.nginxProgressUrl ?
+                    opts.url :
+                    url + ( ( url.indexOf( '?' ) > -1 ) ? '&' : '?' ) +
+                          encodeURIComponent( opts.nginxProgressHeader ) +
+                          '=' + encodeURIComponent( key );
+        }
+
+        form = ss.getForm({
+            action: url,
+            target: iframe.name,
+            method: opts.method
+        });
+
+        // Begin progress bars at 0%
+        opts.onProgress.call( this, 0 );
+
+        if ( pctBox ) {
+            pctBox.innerHTML = '0%';
+        }
+
+        if ( progBar ) {
+            progBar.style.width = '0%';
+        }
+
+        // For CORS, add a listener for the "message" event, which will be
+        // triggered by the Javascript snippet in the server response
+        if ( opts.cors ) {
+            removeMessageListener = ss.addEvent( window, 'message', function( event ) {
+                // Make sure event.origin matches the upload URL
+                if ( self._getHost( event.origin ) != self._getHost( opts.url ) ) {
+                    self.log('Non-matching origin: ' + event.origin);
+                    return;
+                }
+
+                // Set message event success flag to true
+                msgLoaded = true;
+
+                // Remove listener for message event
+                removeMessageListener();
+
+                opts.endNonXHR.call( self, fileObj.name, fileObj.btn );
+
+                self._finish( fileObj,  '', '', event.data, sizeBox, progBox, pctBox, abortBtn, removeAbort );
+            });
+        }
+
+        var remove = ss.addEvent( iframe, 'load', function() {
+            remove();
+
+            if ( opts.sessionProgressUrl ) {
+                form.appendChild( ss.getHidden( opts.sessionProgressName, key ) );
+            }
+
+            // PHP APC upload progress key field must come before the file field
+            else if ( opts.progressUrl ) {
+                form.appendChild( ss.getHidden( opts.keyParamName, key ) );
+            }
+
+            // We get any additional data here after startNonXHR()
+            // in case the data was changed with setData() prior to submitting
+            for ( var prop in opts.data ) {
+                if ( opts.data.hasOwnProperty( prop ) ) {
+                    form.appendChild( ss.getHidden( prop, opts.data[prop] ) );
+                }
+            }
+
+            // Add a field (default name: "XHR_CORS_TRARGETORIGIN") to tell server this is a CORS request
+            // Value of the field is targetOrigin parameter of postMessage(message, targetOrigin)
+            if ( opts.cors ) {
+                form.appendChild( ss.getHidden( opts.corsInputName, window.location.href ) );
+            }
+
+            form.appendChild( fileObj.file );
+
+            removeLoadListener = ss.addEvent( iframe, 'load', function() {
+                if ( !iframe.parentNode || iframeLoaded ) {
+                    return;
+                }
+
+                iframeLoaded = true;
+
+                delete self._progKeys[key];
+                delete self._sizeFlags[key];
+
+                // Remove listener for iframe load event
+                removeLoadListener();
+
+                if ( abortBtn ) {
+                    ss.removeEvent( abortBtn, 'click', cancel );
+                }
+
+                // After a CORS response, we wait briefly for the "message" event to finish,
+                // during which time the msgLoaded var will be set to true, signalling success.
+                // If iframe loads without "message" event, we assume there was an error
+                if ( opts.cors ) {
+                    window.setTimeout(function() {
+                        ss.remove( form );
+                        ss.remove( iframe );
+
+                        // If msgLoaded has not been set to true after "message" event fires, we
+                        // infer that an error must have occurred and respond accordingly
+                        if ( !msgLoaded ) {
+                            self._errorFinish( fileObj, '', '', false, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                        }
+
+                        opts = key = form = iframe = sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+                    }, 600);
+                }
+
+                // Ordinary, non-CORS upload
+                else {
+                    try {
+                        var doc = iframe.contentDocument ? iframe.contentDocument : iframe.contentWindow.document,
+                            response = doc.body.innerHTML;
+
+                        opts.endNonXHR.call( self, fileObj.name, fileObj.btn );
+
+                        // No way to get status and statusText for an iframe so return empty strings
+                        self._finish( fileObj, '', '', response, sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+                    } catch ( e ) {
+                        self._errorFinish( fileObj, '', e.message, false, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                    }
+
+                    window.setTimeout(function() {
+                        ss.remove( form );
+                        ss.remove( iframe );
+                        form = iframe = null;
+                    }, 0);
+
+                    fileObj = opts = key = sizeBox = progBox = pctBox = null;
+                }
+            });// end load
+
+            if ( abortBtn ) {
+                cancel = function() {
+                    ss.removeEvent( abortBtn, 'click', cancel );
+
+                    delete self._progKeys[key];
+                    delete self._sizeFlags[key];
+
+                    if ( iframe ) {
+                        iframeLoaded = true;
+                        removeLoadListener();
+
+                        try {
+                            if ( iframe.contentWindow.document.execCommand ) {
+                                iframe.contentWindow.document.execCommand('Stop');
+                            }
+                        } catch( err ) {}
+
+                        try {
+                            iframe.src = 'javascript'.concat(':false;');
+                        } catch( err ) {}
+
+                        window.setTimeout(function() {
+                            ss.remove( form );
+                            ss.remove( iframe );
+                            form = iframe = null;
+                        }, 0);
+                    }
+
+                    self.log('Upload aborted');
+                    opts.onAbort.call( self, fileObj.name, fileObj.btn );
+                    self._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+                };
+
+                ss.addEvent( abortBtn, 'click', cancel );
+            }
+
+            self.log( 'Commencing upload using iframe' );
+            form.submit();
+
+            if ( self._hasProgUrl ) {
+                // Add progress key to active key array
+                self._progKeys[key] = 1;
+
+                // Start timer for first progress update
+                window.setTimeout( function() {
+                    self._getProg( key, progBar, sizeBox, pctBox, 1 );
+                    progBar = sizeBox = pctBox = null;
+                }, opts.checkProgressInterval );
+            }
+
+            // Remove this file from the queue and begin next upload
+            window.setTimeout(function() {
+                self.removeCurrent( fileObj.id );
+            }, 0);
+
+        });// end load
+
+        document.body.appendChild( form );
+        document.body.appendChild( iframe );
+    },
+
+    /**
+    * Retrieves upload progress updates from the server
+    * (For fallback upload progress support)
+    */
+    _getProg: function( key, progBar, sizeBox, pctBox, counter ) {
+        "use strict";
+
+        var self = this,
+            opts = this._opts,
+            time = new Date().getTime(),
+            xhr,
+            url,
+            callback;
+
+        if ( !key ) {
+            return;
+        }
+
+        // Nginx Upload Progress Module
+        if ( opts.nginxProgressUrl ) {
+            url = opts.nginxProgressUrl + '?' +
+                  encodeURIComponent( opts.nginxProgressHeader ) + '=' + encodeURIComponent( key ) +
+                  '&_=' + time;
+        }
+
+        else if ( opts.sessionProgressUrl ) {
+            url = opts.sessionProgressUrl;
+        }
+
+        // PHP APC upload progress
+        else if ( opts.progressUrl ) {
+            url = opts.progressUrl +
+            '?progresskey=' + encodeURIComponent( key ) +
+            '&_=' + time;
+        }
+
+        callback = function() {
+            var response,
+                size,
+                pct,
+                status,
+                statusText;
+
+            try {
+                // XDomainRequest doesn't have readyState so we
+                // just assume that it finished correctly
+                if ( callback && ( opts.cors || xhr.readyState === 4 ) ) {
+                    callback = undefined;
+                    xhr.onreadystatechange = function() {};
+
+                    try {
+                        statusText = xhr.statusText;
+                        status = xhr.status;
+                    } catch( e ) {
+                        // We normalize with Webkit giving an empty statusText
+                        statusText = '';
+                        status = '';
+                    }
+
+                    // XDomainRequest also doesn't have status, so we
+                    // again just assume that everything is fine
+                    if ( opts.cors || ( status >= 200 && status < 300 ) ) {
+                        response = ss.parseJSON( xhr.responseText );
+
+                        if ( response === false ) {
+                            self.log( 'Error parsing progress response (expecting JSON)' );
+                            return;
+                        }
+
+                        // Handle response if using Nginx Upload Progress Module
+                        if ( opts.nginxProgressUrl ) {
+
+                            if ( response.state == 'uploading' ) {
+                                size = parseInt( response.size, 10 );
+                                if ( size > 0 ) {
+                                    pct = Math.round( ( parseInt( response.received, 10 ) / size ) * 100 );
+                                    size = Math.round( size / 1024 ); // convert to kilobytes
+                                }
+
+                            } else if ( response.state == 'done' ) {
+                                pct = 100;
+
+                            } else if ( response.state == 'error' ) {
+                                self.log( 'Error requesting upload progress: ' + response.status );
+                                return;
+                            }
+                        }
+
+                        // Handle response if using PHP APC
+                        else if ( opts.sessionProgressUrl || opts.progressUrl ) {
+                            if ( response.success === true ) {
+                                size = parseInt( response.size, 10 );
+                                pct = parseInt( response.pct, 10 );
+                            }
+                        }
+
+                        // Update progress bar width
+                        if ( pct ) {
+                            if ( pctBox ) {
+                                pctBox.innerHTML = pct + '%';
+                            }
+
+                            if ( progBar ) {
+                                progBar.style.width = pct + '%';
+                            }
+
+                            opts.onProgress.call( self, pct );
+                        }
+
+                        if ( size && !self._sizeFlags[key] ) {
+                            if ( sizeBox ) {
+                                sizeBox.innerHTML = size + 'K';
+                            }
+
+                            self._sizeFlags[key] = 1;
+                            opts.onUpdateFileSize.call( self, size );
+                        }
+
+                        // Stop attempting progress checks if we keep failing
+                        if ( !pct &&
+                             !size &&
+                             counter >= self._maxFails )
+                        {
+                            counter++;
+                            self.log( 'Failed progress request limit reached. Count: ' + counter );
+                            return;
+                        }
+
+                        // Begin countdown until next progress update check
+                        if ( pct < 100 && self._progKeys[key] ) {
+                            window.setTimeout( function() {
+                                self._getProg( key, progBar, sizeBox, pctBox, counter );
+
+                                key = progBar = sizeBox = pctBox = counter = null;
+                            }, opts.checkProgressInterval );
+                        }
+
+                        // We didn't get a 2xx status so don't continue sending requests
+                    } else {
+                        delete self._progKeys[key];
+                        self.log( 'Error requesting upload progress: ' + status + ' ' + statusText );
+                    }
+
+                    xhr = size = pct = status = statusText = response = null;
+                }
+
+            } catch( e ) {
+                self.log( 'Error requesting upload progress: ' + e.message );
+            }
+        };
+
+        // CORS requests in IE8 and IE9 must use XDomainRequest
+        if ( opts.cors && !opts.sessionProgressUrl ) {
+
+            if ( window.XDomainRequest ) {
+                xhr = new window.XDomainRequest();
+                xhr.open( 'GET', url, true );
+                xhr.onprogress = xhr.ontimeout = function() {};
+                xhr.onload = callback;
+
+                xhr.onerror = function() {
+                    delete self._progKeys[key];
+                    key = null;
+                    self.log('Error requesting upload progress');
+                };
+
+                // IE7 or some other dinosaur -- just give up
+            } else {
+                return;
+            }
+
+        } else {
+            var method = !opts.sessionProgressUrl ? 'GET' : 'POST',
+                params;
+
+            xhr = ss.newXHR();
+            xhr.onreadystatechange = callback;
+            xhr.open( method, url, true );
+
+            // PHP session progress updates must be a POST request
+            if ( opts.sessionProgressUrl ) {
+                params = encodeURIComponent( opts.sessionProgressName ) + '=' + encodeURIComponent( key );
+                xhr.setRequestHeader( 'Content-type', 'application/x-www-form-urlencoded' );
+            }
+
+            // Set the upload progress header for Nginx
+            if ( opts.nginxProgressUrl ) {
+                xhr.setRequestHeader( opts.nginxProgressHeader, key );
+            }
+
+            xhr.setRequestHeader( 'X-Requested-With', 'XMLHttpRequest' );
+            xhr.setRequestHeader( 'Accept', 'application/json, text/javascript, */*; q=0.01' );
+
+           xhr.send( ( opts.sessionProgressUrl &&  params ) || null );
+        }
+    },
+
+    _initUpload: function( fileObj ) {
+        if ( false === this._opts.startNonXHR.call( this, fileObj.name, fileObj.btn ) ) {
+
+            if ( this._disabled ) {
+                this.enable( true );
+            }
+
+            this._active--;
+            return;
+        }
+
+        this._hasProgUrl = ( this._opts.progressUrl ||
+                             this._opts.sessionProgressUrl ||
+                             this._opts.nginxProgressUrl ) ?
+                             true : false;
+
+        this._uploadIframe( fileObj, this._progBox, this._sizeBox, this._progBar, this._pctBox, this._abortBtn, this._removeAbort );
+
+        this._progBox = this._sizeBox = this._progBar = this._pctBox = this._abortBtn = this._removeAbort = null;
+    }
+};
+
+ss.XhrUpload = {
+
+    _addFiles: function( files ) {
+        var total = files.length,
+            filename,
+            ext,
+            size,
+            i;
+
+        if ( !this._opts.multiple ) {
+            total = 1;
+        }
+
+        for ( i = 0; i < total; i++ ) {
+            filename = ss.getFilename( files[i].name );
+            ext = ss.getExt( filename );
+            size = Math.round( files[i].size / 1024 );
+
+            if ( false === this._opts.onChange.call( this, filename, ext, size ) ) {
+                return false;
+            }
+
+            this._queue.push({
+                id: ss.getUID(),
+                file: files[i],
+                name: filename,
+                ext: ext,
+                btn: this._overBtn,
+                size: size
+            });
+        }
+
+        return true;
+    },
+
+    /**
+    * Handles uploading with XHR
+    */
+    _uploadXhr: function( fileObj, url, params, headers, sizeBox, progBar, progBox, pctBox, abortBtn, removeAbort ) {
+        "use strict";
+
+        var self = this,
+            opts = this._opts,
+            xhr = ss.newXHR(),
+            callback,
+            cancel;
+
+        // Inject file size into size box
+        if ( sizeBox ) {
+            sizeBox.innerHTML = fileObj.size + 'K';
+        }
+
+        // Begin progress bars at 0%
+        if ( pctBox ) {
+            pctBox.innerHTML = '0%';
+        }
+
+        if ( progBar ) {
+            progBar.style.width = '0%';
+        }
+
+        opts.onProgress.call( this, 0 );
+
+        // Borrows heavily from jQuery ajax transport
+        callback = function( _, isAbort ) {
+            var status,
+                statusText;
+
+            // Firefox throws exceptions when accessing properties
+            // of an xhr when a network error occurred
+            try {
+                // Was never called and is aborted or complete
+                if ( callback && ( isAbort || xhr.readyState === 4 ) ) {
+
+                    callback = undefined;
+                    xhr.onreadystatechange = function() {};
+
+                    // If it's an abort
+                    if ( isAbort ) {
+
+                        // Abort it manually if needed
+                        if ( xhr.readyState !== 4 ) {
+                            xhr.abort();
+                        }
+
+                        opts.onAbort.call( self, fileObj.name, fileObj.btn );
+                        self._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+                    } else {
+                        if ( abortBtn ) {
+                            ss.removeEvent( abortBtn, 'click', cancel );
+                        }
+
+                        status = xhr.status;
+
+                        // Firefox throws an exception when accessing
+                        // statusText for faulty cross-domain requests
+                        try {
+                            statusText = xhr.statusText;
+
+                        } catch( e ) {
+                            // We normalize with Webkit giving an empty statusText
+                            statusText = '';
+                        }
+
+                        if ( status >= 200 && status < 300 ) {
+                            opts.endXHR.call( self, fileObj.name, fileObj.size, fileObj.btn );
+                            self._finish( fileObj, status, statusText, xhr.responseText, sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+                            // We didn't get a 2xx status so throw an error
+                        } else {
+                            self._errorFinish( fileObj, status, statusText, xhr.responseText, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                        }
+                    }
+                }
+
+            }
+            catch ( e ) {
+                if ( !isAbort ) {
+                    self._errorFinish( fileObj, -1, e.message, false, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                }
+            }
+        };
+
+        if ( abortBtn ) {
+            cancel = function() {
+                ss.removeEvent( abortBtn, 'click', cancel );
+
+                if ( callback ) {
+                    callback( undefined, true );
+                }
+            };
+
+            ss.addEvent( abortBtn, 'click', cancel );
+        }
+
+        xhr.onreadystatechange = callback;
+        xhr.open( opts.method.toUpperCase(), url, true );
+
+        ss.extendObj( headers, opts.customHeaders );
+
+        for ( var i in headers ) {
+            if ( headers.hasOwnProperty( i ) ) {
+                xhr.setRequestHeader( i, encodeURIComponent(headers[ i ]) + '' );
+            }
+        }
+
+        ss.addEvent( xhr.upload, 'progress', function( event ) {
+            if ( event.lengthComputable ) {
+                var pct = Math.round( ( event.loaded / event.total ) * 100 );
+
+                opts.onProgress.call( self, pct );
+
+                if ( pctBox ) {
+                    pctBox.innerHTML = pct + '%';
+                }
+
+                if ( progBar ) {
+                    progBar.style.width = pct + '%';
+                }
+            }
+        });
+
+        if ( opts.multipart === true ) {
+            var formData = new FormData();
+
+            for ( var prop in params ) {
+                if ( params.hasOwnProperty( prop ) ) {
+                    formData.append( prop, params[prop] );
+                }
+            }
+
+            formData.append( opts.name, fileObj.file );
+            this.log( 'Commencing upload using multipart form' );
+            xhr.send( formData );
+
+        } else {
+            this.log( 'Commencing upload using binary stream' );
+            xhr.send( fileObj.file );
+        }
+
+        // Remove file from upload queue and begin next upload
+        this.removeCurrent( fileObj.id );
+    },
+
+    _initUpload: function( fileObj ) {
+        "use strict";
+
+        var params = {},
+            headers = {},
+            url;
+
+        // Call the startXHR() callback and stop upload if it returns false
+        // We call it before _uploadXhr() in case setProgressBar, setPctBox, etc., is called
+        if ( false === this._opts.startXHR.call( this, fileObj.name, fileObj.size, fileObj.btn ) ) {
+
+            if ( this._disabled ) {
+                this.enable( true );
+            }
+
+            this._active--;
+            return;
+        }
+
+        params[this._opts.name] = fileObj.name;
+
+        headers['X-Requested-With'] = 'XMLHttpRequest';
+        headers['X-File-Name'] = fileObj.name;
+
+        if ( this._opts.responseType.toLowerCase() == 'json' ) {
+            headers['Accept'] = 'application/json, text/javascript, */*; q=0.01';
+        }
+
+        if ( !this._opts.multipart ) {
+            headers['Content-Type'] = 'application/octet-stream';
+        }
+
+        // We get the any additional data here after startXHR()
+        ss.extendObj( params, this._opts.data );
+
+        // Build query string while preserving any existing parameters
+        url = this._opts.noParams === true ?
+                this._opts.url :
+                this._opts.url + ( ( this._opts.url.indexOf( '?' ) > -1 ) ? '&' : '?' ) +ss.obj2string( params );
+
+        this._uploadXhr( fileObj, url, params, headers, this._sizeBox, this._progBar, this._progBox, this._pctBox, this._abortBtn, this._removeAbort );
+
+        this._sizeBox = this._progBar = this._progBox = this._pctBox = this._abortBtn = this._removeAbort = null;
+    }
+
+};
+
+(function(){
+    ss.extendObj( ss.SimpleUpload.prototype, {
+
+        _createInput: function() {
+            "use strict";
+
+            var self = this,
+                div = document.createElement( 'div' );
+
+            this._input = document.createElement( 'input' );
+            this._input.type = 'file';
+            this._input.name = this._opts.name;
+
+            // Don't allow multiple file selection in Safari -- it has a nasty bug
+            // http://stackoverflow.com/q/7231054/1091949
+            if ( XhrOk && !isSafari && this._opts.multiple ) {
+                this._input.multiple = true;
+            }
+
+            // Check support for file input accept attribute
+            if ( 'accept' in this._input && this._opts.accept !== '' ) {
+                this._input.accept = this._opts.accept;
+            }
+
+            ss.addStyles( div, {
+                'display' : 'block',
+                'position' : 'absolute',
+                'overflow' : 'hidden',
+                'margin' : 0,
+                'padding' : 0,
+                'opacity' : 0,
+                'direction' : 'ltr',
+                'zIndex': 2147483583
+            });
+
+            ss.addStyles( this._input, {
+                'position' : 'absolute',
+                'right' : 0,
+                'margin' : 0,
+                'padding' : 0,
+                'fontSize' : '480px',
+                'fontFamily' : 'sans-serif',
+                'cursor' : 'pointer'
+            });
+
+            if ( div.style.opacity !== '0' ) {
+                div.style.filter = 'alpha(opacity=0)';
+            }
+
+            ss.addEvent( this._input, 'change', function() {
+                if ( !self._input || self._input.value === '' ) {
+                    return;
+                }
+
+                if ( false === self._addFiles( XhrOk ? self._input.files : self._input ) ) {
+                    return;
+                }
+
+                ss.removeClass( self._overBtn, self._opts.hoverClass );
+                ss.removeClass( self._overBtn, self._opts.focusClass );
+
+                // Now that file is in upload queue, remove the file input
+                ss.remove( self._input.parentNode );
+                delete self._input;
+
+                // Then create a new file input
+                self._createInput();
+
+                // Submit if autoSubmit option is true
+                if ( self._opts.autoSubmit ) {
+                    self.submit();
+                }
+            });
+
+            if ( self._opts.hoverClass !== '' ) {
+                ss.addEvent( this._input, 'mouseover', function() {
+                    ss.addClass( self._overBtn, self._opts.hoverClass );
+                });
+
+                ss.addEvent( this._input, 'mouseout', function() {
+                    ss.removeClass( self._overBtn, self._opts.hoverClass );
+                    ss.removeClass( self._overBtn, self._opts.focusClass );
+                    self._input.parentNode.style.visibility = 'hidden';
+                });
+            }
+
+            if ( self._opts.focusClass !== '' ) {
+                ss.addEvent( this._input, 'focus', function() {
+                    ss.addClass( self._overBtn, self._opts.focusClass );
+                });
+
+                ss.addEvent( this._input, 'blur', function() {
+                    ss.removeClass( self._overBtn, self._opts.focusClass );
+                });
+            }
+
+            div.appendChild( this._input );
+            document.body.appendChild( div );
+        },
+
+        rerouteClicks: function( elem ) {
+            "use strict";
+
+            var self = this;
+
+            // ss.addEvent() returns a function to detach, which
+            // allows us to call elem.off() to remove mouseover listener
+            elem.off = ss.addEvent( elem, 'mouseover', function() {
+                if ( self._disabled ) {
+                    return;
+                }
+
+                if ( !self._input ) {
+                    self._createInput();
+                }
+
+                self._overBtn = elem;
+                ss.copyLayout( elem, self._input.parentNode );
+                self._input.parentNode.style.visibility = 'visible';
+            });
+
+            return elem;
+        },
+
+        /**
+        * Final cleanup function after upload ends
+        */
+        _last: function( sizeBox, progBox, pctBox, abortBtn, removeAbort ) {
+            "use strict";
+
+            if ( sizeBox ) {
+               sizeBox.innerHTML = '';
+            }
+
+            if ( pctBox ) {
+                pctBox.innerHTML = '';
+            }
+
+            if ( abortBtn && removeAbort ) {
+                ss.remove( abortBtn );
+            }
+
+            if ( progBox ) {
+                ss.remove( progBox );
+            }
+
+            // Decrement the active upload counter
+            this._active--;
+
+            sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+
+            if ( this._disabled ) {
+                this.enable( true );
+            }
+
+            this._cycleQueue();
+        },
+
+        /**
+        * Completes upload request if an error is detected
+        */
+        _errorFinish: function( fileObj, status, statusText, response, errorType, progBox, sizeBox, pctBox, abortBtn, removeAbort ) {
+            "use strict";
+
+            this.log( 'Upload failed: ' + status + ' ' + statusText );
+            this._opts.onError.call( this, fileObj.name, errorType, status, statusText, response, fileObj.btn );
+            this._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+            fileObj = status = statusText = response = errorType = sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+        },
+
+        /**
+        * Completes upload request if the transfer was successful
+        */
+        _finish: function( fileObj, status, statusText, response, sizeBox, progBox, pctBox, abortBtn, removeAbort ) {
+            "use strict";
+
+            this.log( 'Server response: ' + response );
+
+            if ( this._opts.responseType.toLowerCase() == 'json' ) {
+                response = ss.parseJSON( response );
+
+                if ( response === false ) {
+                    this._errorFinish( fileObj, status, statusText, false, 'parseerror', progBox, sizeBox, abortBtn, removeAbort );
+                    return;
+                }
+            }
+
+            this._opts.onComplete.call( this, fileObj.name, response, fileObj.btn );
+            this._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+            fileObj = status = statusText = response = sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+        },
+
+        /**
+        * Verifies that file is allowed
+        * Checks file extension and file size if limits are set
+        */
+        _checkFile: function( fileObj ) {
+            "use strict";
+
+            var extOk = false,
+                i = this._opts.allowedExtensions.length;
+
+            // Only file extension if allowedExtensions is set
+            if ( i > 0 ) {
+                while ( i-- ) {
+                    if ( this._opts.allowedExtensions[i].toLowerCase() == fileObj.ext.toLowerCase() ) {
+                        extOk = true;
+                        break;
+                    }
+                }
+
+                if ( !extOk ) {
+                    this.removeCurrent( fileObj.id );
+                    this.log( 'File extension not permitted' );
+                    this._opts.onExtError.call( this, fileObj.name, fileObj.ext );
+                    return false;
+                }
+            }
+
+            if ( fileObj.size &&
+                this._opts.maxSize !== false &&
+                fileObj.size > this._opts.maxSize )
+            {
+                this.removeCurrent( fileObj.id );
+                this.log( fileObj.name + ' exceeds ' + this._opts.maxSize + 'K limit' );
+                this._opts.onSizeError.call( this, fileObj.name, fileObj.size );
+                return false;
+            }
+
+            fileObj = null;
+
+            return true;
+        },
+
+        /**
+        * Validates input and directs to either XHR method or iFrame method
+        */
+        submit: function() {
+            "use strict";
+
+            if ( this._disabled ||
+                this._active >= this._opts.maxUploads ||
+                this._queue.length < 1 )
+            {
+                return;
+            }
+
+            if ( !this._checkFile( this._queue[0] ) ) {
+                return;
+            }
+
+            // User returned false to cancel upload
+            if ( false === this._opts.onSubmit.call( this, this._queue[0].name, this._queue[0].ext, this._queue[0].btn, this._queue[0].size ) ) {
+                return;
+            }
+
+            // Increment the active upload counter
+            this._active++;
+
+            // Disable uploading if multiple file uploads are not enabled
+            // or if queue is disabled and we've reached max uploads
+            if ( this._opts.multiple === false ||
+                this._opts.queue === false && this._active >= this._opts.maxUploads )
+            {
+                this.disable( true );
+            }
+
+            this._initUpload( this._queue[0] );
+        }
+    });
+
+    if ( XhrOk ) {
+        ss.extendObj( ss.SimpleUpload.prototype, ss.XhrUpload );
+
+    } else {
+        ss.extendObj( ss.SimpleUpload.prototype, ss.IframeUpload );
+    }
+
+}());
+
+ss.extendObj(ss.SimpleUpload.prototype, {
+
+    _dragFileCheck: function( e ) {
+        if ( e.dataTransfer.types ) {
+            for ( var i = 0; i < e.dataTransfer.types.length; i++ ) {
+                if ( e.dataTransfer.types[i] == 'Files' ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    },
+
+    addDropZone: function( elem ) {
+        var self = this;
+
+        elem = ss.verifyElem( elem );
+
+        if ( !elem ) {
+            self.log( 'Invalid or nonexistent element passed for drop zone' );
+            return false;
+        }
+
+        elem.ondragenter = function( e ) {
+            if ( !self._dragFileCheck( e ) ) {
+                return false;
+            }
+            ss.addClass( this, self._opts.dragClass );
+            return false;
+        };
+
+        elem.ondragover = function() {
+            return false;
+        };
+
+        elem.ondragend = function() {
+            ss.removeClass( this, self._opts.dragClass );
+            return false;
+        };
+
+        elem.ondragleave = function() {
+            ss.removeClass( this, self._opts.dragClass );
+            return false;
+        };
+
+        elem.ondrop = function( e ) {
+            e.preventDefault();
+
+            ss.removeClass( this, self._opts.dragClass );            
+            
+            if ( !self._dragFileCheck( e ) ) {
+                return false;
+            }
+
+            self._addFiles( e.dataTransfer.files );
+            self._cycleQueue();            
+        };
+    }
+});
+
+// Expose to the global window object
+window.ss = ss;
+
+})( window, document );
+
+define("simpleUpload", ["jquery"], (function (global) {
+    return function () {
+        var ret, fn;
+        return ret || global.ss;
+    };
+}(this)));
+
+
+define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="droparea">\n        <button class="btn btn-primary solid btn-sm">[[btnLabel]]</button> or drop files\n    </div>\n</div>\n'); });
+
+define('core/directives/filePicker',['require','./../module','simpleUpload','tpl!./filePicker.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //Check https://github.com/LPology/Simple-Ajax-Uploader for docs
+    var ss = require('simpleUpload');
+
+    require('tpl!./filePicker.html');
+
+    app.directive('filePicker', [function () {
+        return {
+            restrict: 'A',
+            require: ['^ngModel'],
+            scope: {
+                preview: '='
+            },
+            transclude: true,
+            templateUrl: 'core/directives/filePicker.html',
+            link: function (scope, elem) {
+                scope.btnLabel = 'Choose a File';
+
+                var uploader = new ss.SimpleUpload({
+                    button: elem.find('.btn'),
+                    name: 'filename',
+                    hoverClass: 'ui-state-hover',
+                    dropzone: elem.find('.droparea'),
+                    responseType: 'json'
+                });
+
+                scope.$on('$destroy', function () {
+                    uploader.destroy();
+                });
+
+            }
+        };
+    }]);
+});
+
 define('core/filters/safe',['require','./../module'],function (require) {
     'use strict';
 
@@ -48057,16 +50101,74 @@ define('core/services/store',['require','./../module'],function (require) {
     }]);
 });
 
+define('core/services/channel',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    module.service('channelService', ['dataFactory', '$http', function (dataFactory) {
+        var data = dataFactory(function (data) {
+            data.sort(sortFn);
+            return data;
+        });
+
+        function transform(data) {
+            data = data.clients;
+
+            var channelSet = {};
+
+            for (var i = 0; i < data.length; i++) {
+                channelSet[data[i].channel] = true;
+            }
+
+            var output = [];
+
+            ng.forEach(channelSet, function (value, key) {
+                output.push(key);
+            });
+
+            return output;
+        }
+
+        function init() {
+            return data.init('/api/v3/clients?dimensions=channel', transform);
+        }
+
+        function sortFn(a, b) {
+            return b.localeCompare(a);
+        }
+
+        return {
+            init: init,
+            all: data.all,
+            observe: data.observe,
+            notifyObservers: data.notifyObservers,
+            addData: data.addData,
+            setData: data.setData
+        };
+    }]);
+});
+
+define('core/constants/apiURI',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    var apiURI = (window.apiURI && window.apiURI) || '';
+
+    module.constant('API_URI', apiURI);
+});
+
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store'],function (require) {
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/filePicker','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store','./services/channel','./constants/apiURI'],function (require) {
     'use strict';
 
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
-
     require('./factories/data');
     require('./factories/pagination');
     require('./factories/domainInterceptor');
@@ -48074,12 +50176,15 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./directives/limit');
     require('./directives/tooltip');
     require('./directives/compile');
+    require('./directives/filePicker');
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
     require('./filters/date');
     require('./filters/truncateNumber');
     require('./services/store');
+    require('./services/channel');
+    require('./constants/apiURI');
 });
 
 /**
@@ -57789,11 +59894,13 @@ define('chart/index',['require','./directives/comparisonChart','./directives/qua
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaignManagement/module',['require','angular','ui-router'],function (require) {
+define('campaignManagement/module',['require','angular','ui-router','./../chart/index','./../core/index'],function (require) {
     'use strict';
 
     var ng = require('angular');
     require('ui-router');
+    require('./../chart/index');
+    require('./../core/index');
 
     return ng.module('app.campaign-management', ['ui.router', 'app.tables', 'app.charts', 'app.core']);
 });
@@ -57945,6 +60052,11 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                     template: '<ui-view />'
                 })
                 .state({
+                    name: base + '.clients.all',
+                    url: '/',
+                    template: '<ui-view />'
+                })
+                .state({
                     name: base + '.clients.detail',
                     url: '/:clientId',
                     template: '<ui-view />'
@@ -57952,6 +60064,11 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 .state({
                     name: base + '.divisions',
                     url: '/division',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.divisions.all',
+                    url: '/',
                     template: '<ui-view />'
                 })
                 .state({
@@ -57972,6 +60089,11 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 .state({
                     name: base + '.campaigns',
                     url: '/campaign',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.all',
+                    url: '/',
                     template: '<ui-view />'
                 })
                 .state({
@@ -58341,7 +60463,7 @@ define('campaignManagement/clients/controllers/client',['require','./../../modul
 });
 
 
-define('tpl!campaignManagement/clients/new-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.channels.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="channels" class="single-select" chosen ng-options="item.name for item in select track by item.value" disable-search-threshold="10" ng-model="client.channels" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div style="height: 12rem; width: 45%; border: 1px dashed #ccc; box-sizing: border-box; float: left; margin: 0; text-align: center; font-size: 1.5rem; line-height: 12rem;">\n                    Drop file here\n                </div>\n                <span style="width: 10%; float: left; text-align: center;">- OR -</span>\n                <div style="width: 45%; float: left;">\n                    <button class="btn btn-primary solid left" style="margin-bottom: 1rem;">Choose File</button>\n                    <input style="float: left; clear: both; width: 100%; box-sizing: border-box; padding: 1rem; border: 1px solid black; border-width: 0 0 1px 0;" placeholder="No file selected" readonly />\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newClient.$error)">Add Client</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/clients/new-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.channels.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="channels" class="single-select" chosen ng-options="item as item for item in channels track by item" disable-search-threshold="10" ng-model="client.channel" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div style="height: 12rem; width: 45%; border: 1px dashed #ccc; box-sizing: border-box; float: left; margin: 0; text-align: center; font-size: 1.5rem; line-height: 12rem;">\n                    Drop file here\n                </div>\n                <span style="width: 10%; float: left; text-align: center;">- OR -</span>\n                <div style="width: 45%; float: left;">\n                    <button class="btn btn-primary solid left" style="margin-bottom: 1rem;">Choose File</button>\n                    <input style="float: left; clear: both; width: 100%; box-sizing: border-box; padding: 1rem; border: 1px solid black; border-width: 0 0 1px 0;" placeholder="No file selected" readonly />\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="client.requireRepEmail" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newClient.$error)">Add Client</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 
 
@@ -58353,7 +60475,7 @@ define('campaignManagement/clients/controllers/clients',['require','./../../modu
 
         $scope.openModal = openModal;
 
-        topClients.init('/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&sortBy=metrics.impressions&limit=10');
+        topClients.init('/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10');
 
         topClients.observe(updateTopClients, $scope);
 
@@ -58377,41 +60499,25 @@ define('campaignManagement/clients/controllers/newClient',['require','./../../mo
 
     var app = require('./../../module');
 
-    app.controller('newClientCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+    app.controller('newClientCtrl', ['$scope', '$modalInstance', 'channelService', function ($scope, $modalInstance, channels) {
 
-        $scope.select = [
-            {
-                name: 'First Choice',
-                value: '1'
-            },
-            {
-                name: 'Second',
-                value: '2'
-            },
-            {
-                name: 'Choice #3',
-                value: '3'
-            },
-            {
-                name: 'Pick me, pick me, pick me!',
-                value: '4'
-            },
-            {
-                name: 'Sheeple',
-                value: '5'
-            }
-        ];
+        channels.init();
+
+        channels.observe(updateChannels);
 
         $scope.ok = function (errors) {
-            console.log(errors);
+            console.log($scope.client);
             $scope.errors = errors;
             $scope.submitted = true;
-            console.log('do something');
         };
 
         $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
         };
+
+        function updateChannels() {
+            $scope.channels = channels.all();
+        }
     }]);
 });
 
@@ -58423,20 +60529,18 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
     module.service('topClientsService', ['$http', 'dataFactory', 'dateFormatterFilter', function ($http, dataFactory, dateFormatter) {
         var topClients = dataFactory(sortClients);
 
-        function sortClients(transformedResponse) {
-            var sortFn = function (a, b) {
+        function sortClients(data) {
+            data.sort(function (a, b) {
                 var ai = a.impressions;
                 var bi = b.impressions;
 
                 if (ai && bi) {
-                    if (ai > bi) { return -1; }
-                    if (ai < bi) { return 1; }
+                    return bi - ai;
                 }
                 return 0;
-            };
+            });
 
-            transformedResponse.data.sort(sortFn);
-            return transformedResponse;
+            return data;
         }
 
         function init(url) {
@@ -58445,8 +60549,28 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
             });
         }
 
-        function topClientsTransform(inData) {
-            var outData = {
+        function topClientsTransform(data) {
+            var lastLogin;
+            var output = [];
+
+            data.forEach(function (client) {
+                lastLogin = client.lastViewedUserName + ', ' + dateFormatter(client.lastViewedUserDate);
+                output.push({
+                    'id': client.id,
+                    'channel': client.channel,
+                    'client': {route: 'cm.clients.detail({ clientId: row.id })', name: client.name },
+                    'activeAccounts': client.metrics.countAccountsActive,
+                    'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
+                    'impressions': client.metrics.impressions,
+                    'lastLogin': lastLogin
+                });
+            });
+
+            return output;
+        }
+
+        function all() {
+            return {
                 'rules': {
                     'channel': '',
                     'client': 'link',
@@ -58463,31 +60587,18 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
                     {name: 'Impressions', id: 'impressions'},
                     {name: 'Last Client Login', id: 'lastLogin'}
                 ],
-                'data': []
+                'data': topClients.all()
             };
-
-            var lastLogin;
-            inData.forEach(function (client) {
-                lastLogin = client.lastViewedUserName + ', ' + dateFormatter(client.lastViewedUserDate);
-                outData.data.push({
-                    'id': client.id,
-                    'channel': client.channel,
-                    'client': {route: 'cm.clients.detail({ clientId: row.id })', name: client.name },
-                    'activeAccounts': client.metrics.countAccountsActive,
-                    'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
-                    'impressions': client.metrics.impressions,
-                    'lastLogin': lastLogin
-                });
-            });
-
-            return outData;
         }
 
         return {
             init: init,
             observe: topClients.observe,
+            transform: topClientsTransform,
+            sort: sortClients,
             removeObserver: topClients.removeObserver,
-            all: topClients.all
+            data: topClients.all,
+            all: all
         };
     }]);
 });
@@ -58731,7 +60842,8 @@ require.config({
         'angular-chosen': 'components/angular-chosen-localytics/chosen',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
-        'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0'
+        'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0',
+        'simpleUpload': 'components/Simple-Ajax-Uploader/SimpleAjaxUploader'
     },
     shim: {
         'd3': {
@@ -58742,6 +60854,10 @@ require.config({
         },
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']
+        },
+        'simpleUpload': {
+            deps: ['jquery'],
+            exports: 'ss'
         },
         'perfect-scrollbar': {
             deps: ['jquery']
