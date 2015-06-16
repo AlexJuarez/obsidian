@@ -1,26 +1,30 @@
 <div class="header-summary">
-    <h3 class="title">Active</h3>
-    <button class="btn btn-default solid right" ng-click="openModal('lg')">Add New Client</button>
-    <ul class="list">
-        <li>
-            <span>clients</span>
-            <span>[[active.countActive|truncateNumber]]</span>
-        </li>
-        <li>
-            <span>accounts</span>
-            <span>[[active.countAccountsActive|truncateNumber]]</span>
-        </li>
-        <li>
-            <span>campaigns</span>
-            <span>[[active.countCampaignsActive|truncateNumber]]</span>
-        </li>
-        <li>
-            <span>pre-flight</span>
-            <span>[[active.countCampaignsPreFlight|truncateNumber]]</span>
-        </li>
-        <li>
-            <span>in-flight</span>
-            <span>[[active.countCampaignsInFlight|truncateNumber]]</span>
-        </li>
-    </ul>
+    <div class="btns">
+        <button class="btn btn-default solid right" ng-click="openModal('lg')">Add New Client</button>
+    </div>
+    <div>
+        <h3 class="title">Active</h3>
+        <ul class="list">
+            <li>
+                <span>clients</span>
+                <span>[[active.countActive|truncateNumber]]</span>
+            </li>
+            <li>
+                <span>accounts</span>
+                <span>[[active.countAccountsActive|truncateNumber]]</span>
+            </li>
+            <li>
+                <span>campaigns</span>
+                <span>[[active.countCampaignsActive|truncateNumber]]</span>
+            </li>
+            <li>
+                <span>pre-flight</span>
+                <span>[[active.countCampaignsPreFlight|truncateNumber]]</span>
+            </li>
+            <li>
+                <span>in-flight</span>
+                <span>[[active.countCampaignsInFlight|truncateNumber]]</span>
+            </li>
+        </ul>
+    </div>
 </div>
