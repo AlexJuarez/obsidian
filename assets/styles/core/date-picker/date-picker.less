@@ -6,7 +6,7 @@
     background: #fff;
 
     .button-bar {
-        padding:10px 9px 5px;
+        padding: 5px;
         overflow: hidden;
         border: 1px solid @dark-gray;
     }
@@ -22,19 +22,26 @@
 
             &:first-child {
                 th {
-                    border-top: 1px solid @dark-gray;
+                    //border-top: 1px solid @dark-gray;
 
                     &:first-child {
                         .btn {
-                            border-left: 1px solid @dark-gray;
+                            border: 1px solid @dark-gray;
+                            border-width: 0 1px;
                         }
                     }
 
                     &:last-child {
                         .btn {
-                            border-right: 1px solid @dark-gray;
+                            border: 1px solid @dark-gray;
+                            border-width: 0 1px;
                         }
                     }
+                }
+            }
+            &:last-child {
+                th {
+                    padding: 5px 0;
                 }
             }
 
