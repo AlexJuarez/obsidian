@@ -5,7 +5,8 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', function ($scope, $http, $timeout, campaignsByStatus, navbarService) {
+    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal) {
+
         $scope.byStatus = [];
 
         function updateByStatus() {
@@ -13,5 +14,19 @@ define(function (require) {
         }
 
         campaignsByStatus.observe(updateByStatus, $scope);
+
+        // Modal
+        $scope.openModal = openModal;
+
+        function openModal(size) {
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
+                controller: 'newCampaignCtrl',
+                size: size
+            });
+		}
+
+
     }]);
 });

@@ -9,6 +9,7 @@ define(function (require) {
     require('./controllers/index');
     require('./campaigns/services/campaignsByStatus');
     require('./campaigns/factories/campaignAccordionTable');
+    require('./campaigns/controllers/newCampaign');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./clients/controllers/clients');
@@ -16,4 +17,5 @@ define(function (require) {
     require('./clients/services/topClients');
     require('./campaigns/controllers/campaigns');
     require('./divisions/controllers/division');
+    require('./accounts/index');
 });

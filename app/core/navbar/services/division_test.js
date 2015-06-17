@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('divisionService', function () {
-        var division, httpBackend;
+        var division, httpBackend, state;
 
         var divisions = [
             {
@@ -29,9 +29,10 @@ define(function (require) {
                 });
             });
 
-            inject(function (divisionService, $httpBackend) {
+            inject(function (divisionService, $httpBackend, $state) {
                 division = divisionService;
                 httpBackend = $httpBackend;
+                state = $state;
             });
         });
 
@@ -73,12 +74,37 @@ define(function (require) {
 
         it('should return a map containing a key of the first letter by name', function () {
             division.setData(divisions);
-            expect(division.alphabetMap()).toEqual([{key: 'd', value: [divisions[0]]}]);
+            expect(division.alphabetMap()).toEqual([{key: 'd', value: divisions}]);
         });
 
         it('should get an division by id', function () {
             division.setData(divisions);
             expect(division.get('divisionId0')).toEqual(divisions[0]);
+        });
+
+        it('should find our result by name', function () {
+            division.setData(divisions);
+
+            expect(division.search('ion 0')[0].id).toEqual('divisionId0');
+        });
+
+        //The division filter is dependent on $state.params.clientId
+        describe('filtered function', function () {
+            it('should filter on the clientId', function () {
+                division.setData(divisions);
+
+                state.params = {clientId: 'clientId0'};
+
+                expect(division.filtered()).toEqual(divisions);
+            });
+
+            it('should return empty on clientId not in set', function () {
+                division.setData(divisions);
+
+                state.params = {clientId: 'clientId1'};
+
+                expect(division.filtered()).toEqual([]);
+            });
         });
     });
 });

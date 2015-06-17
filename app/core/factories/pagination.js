@@ -4,6 +4,14 @@ define(function (require) {
     var module = require('./../module');
 
     module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
+        function buildPageUrl(url, limit, offset) {
+            if (url.indexOf('?') > -1) {
+                return url + '&limit=' + limit + '&offset=' + offset;
+            } else {
+                return url + '?limit=' + limit + '&offset=' + offset;
+            }
+        }
+
         return function (sortFn) {
             var limit = 10;
             var offset = 0;
@@ -29,17 +37,12 @@ define(function (require) {
                 init: init,
                 observe: data.observe,
                 nextPage: nextPage,
+                buildUrl: buildPageUrl,
                 limit: limit,
                 all: data.all
             };
         };
     }]);
 
-    function buildPageUrl(url, limit, offset) {
-        if (url.indexOf('?') > -1) {
-            return url + '&limit=' + limit + '&offset=' + offset;
-        } else {
-            return url + '?limit=' + limit + '&offset=' + offset;
-        }
-    }
+
 });

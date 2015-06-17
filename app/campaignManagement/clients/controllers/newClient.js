@@ -3,40 +3,24 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('newClientCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+    app.controller('newClientCtrl', ['$scope', '$modalInstance', 'channelService', function ($scope, $modalInstance, channels) {
 
-        $scope.select = [
-            {
-                name: 'First Choice',
-                value: '1'
-            },
-            {
-                name: 'Second',
-                value: '2'
-            },
-            {
-                name: 'Choice #3',
-                value: '3'
-            },
-            {
-                name: 'Pick me, pick me, pick me!',
-                value: '4'
-            },
-            {
-                name: 'Sheeple',
-                value: '5'
-            }
-        ];
+        channels.init();
+
+        channels.observe(updateChannels, $scope);
 
         $scope.ok = function (errors) {
-            console.log(errors);
+            console.log($scope.client);
             $scope.errors = errors;
             $scope.submitted = true;
-            console.log('do something');
         };
 
         $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
         };
+
+        function updateChannels() {
+            $scope.channels = channels.all();
+        }
     }]);
 });

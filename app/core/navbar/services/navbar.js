@@ -91,7 +91,7 @@ define(function (require) {
         }
 
         function all() {
-            var data = navInfo.all();
+            var data = navInfo.all() || {};
 
             if (data.campaignId) {
                 return getCampaign(data.campaignId);

@@ -30,8 +30,28 @@
             </div>
         </div>
         
-        <!-- Date Picker Goes Here -->
-
+        <div class="form-group row">
+            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>
+            <div class="col-sm-4">
+                <span class="left">Start Date:</span>
+                <p class="input-group">
+                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="dt" is-open="opened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
+                    <span class="input-group-btn">
+                        <button class="btn btn-inline" ng-click="openPicker($event)"><i class="glyph-calendar"></i></button>
+                    </span>
+                </p>
+            </div>
+            <div class="col-sm-4">
+                <span class="left">End Date:</span>
+                <p class="input-group">
+                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="dt" is-open="opened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
+                    <span class="input-group-btn">
+                        <button class="btn btn-inline" ng-click="openPicker($event)"><i class="glyph-calendar"></i></button>
+                    </span>
+                </p>
+            </div>
+        </div>
+        
         <div class="form-group row">
             <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>
             <div class="col-sm-9">

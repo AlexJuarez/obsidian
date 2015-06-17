@@ -23,3 +23,15 @@ This project also requires
 The test runner for this project is karma.
 
 * `karma start`
+
+## Deploying to obsidian.mixpo.com
+
+To deploy you will need to install [pm2](https://github.com/Unitech/pm2)
+
+* `npm install pm2 -g` should do the trick
+
+Then to deploy to the server from the obsidian directory run
+
+* `pm2 deploy production`
+
+The deployment settings can be found in the ecosystem.json

@@ -8,10 +8,9 @@
     </thead>
     <tbody>
     <tr ng-repeat="row in table.data track by $index">
-        <td ng-repeat="header in table.headers">
-            <div compile="header.id|format:row:table.rules" class="cell">
-            </div>
+        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">
         </td>
     </tr>
     </tbody>
 </table>
+

@@ -5,9 +5,12 @@ define(function (require) {
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
+    require('tpl!./clients/client.html');
     require('tpl!./clients/youWorkOn.html');
+    require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/content.html');
+    require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
         //httpProvider settings
@@ -42,8 +45,8 @@ define(function (require) {
                 controller: 'campaignManagementCtrl',
                 templateUrl: 'campaignManagement/index.html',
                 parent: 'index'
-            }).
-            state({
+            })
+            .state({
                 name: 'cm.clients',
                 templateUrl: 'campaignManagement/clients/index.html'
             })
@@ -59,7 +62,7 @@ define(function (require) {
             })
             .state({
                 name: 'cm.clients.detail',
-                url: '/?clientId',
+                url: '/clients?clientId',
                 views: {
                     'content': {
                         controller: 'clientCtrl',
@@ -81,7 +84,8 @@ define(function (require) {
             .state({
                 name: 'cm.accounts',
                 url: '/accounts?divisionId&clientId',
-                template: '<ui-view />'
+                templateUrl: 'campaignManagement/accounts/index.html',
+                controller: 'accountsCtrl'
             })
             .state({
                 name: 'cm.accounts.detail',
@@ -122,6 +126,11 @@ define(function (require) {
                     template: '<ui-view />'
                 })
                 .state({
+                    name: base + '.clients.all',
+                    url: '/',
+                    template: '<ui-view />'
+                })
+                .state({
                     name: base + '.clients.detail',
                     url: '/:clientId',
                     template: '<ui-view />'
@@ -129,6 +138,11 @@ define(function (require) {
                 .state({
                     name: base + '.divisions',
                     url: '/division',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.divisions.all',
+                    url: '/',
                     template: '<ui-view />'
                 })
                 .state({
@@ -149,6 +163,11 @@ define(function (require) {
                 .state({
                     name: base + '.campaigns',
                     url: '/campaign',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.all',
+                    url: '/',
                     template: '<ui-view />'
                 })
                 .state({
