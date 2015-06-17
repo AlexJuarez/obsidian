@@ -40,20 +40,20 @@ define(function (require) {
         });
 
         it('should make a request to init', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10')
                 .respond({clients: []});
 
-            topClients.init('/test').then(function () {
+            topClients.init().then(function () {
                 expect(topClients.data()).toEqual([]);
             });
             httpBackend.flush();
         });
 
         it('should sort on impressions', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10')
                 .respond({clients: clients});
 
-            topClients.init('/test');
+            topClients.init();
 
             httpBackend.flush();
 
@@ -61,10 +61,10 @@ define(function (require) {
         });
 
         it('should return an object describing the table', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10')
                 .respond({clients: []});
 
-            topClients.init('/test');
+            topClients.init();
 
             expect(topClients.all().rules).toBeDefined();
             expect(topClients.all().headers).toBeDefined();
