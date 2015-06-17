@@ -12,7 +12,7 @@
         <div class="form-group row" ng-class="{'has-error': newCampaign.accounts.$invalid && submitted}">
             <label class="col-sm-3 form-label required"><span>Account</span></label>
             <div class="col-sm-9 single-select-light">
-                <select name="accounts" class="single-select" chosen ng-options="item.name for item in select track by item.value" disable-search-threshold="10" ng-model="campaign.account" required>
+                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>
                 </select>
                 <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">
                     account is required
@@ -52,7 +52,7 @@
                             </div>
                             <div class="col-sm-8">
                                 <div class="input-group">
-                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
+                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
                                     <span class="input-group-btn">
                                         <button class="btn btn-inline" ng-click="openPicker($event, 'startDateOpened')"><i class="glyph-calendar"></i></button>
                                     </span>
@@ -67,7 +67,7 @@
                             </div>
                             <div class="col-sm-8">
                                 <div class="input-group">
-                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
+                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
                                     <span class="input-group-btn">
                                         <button class="btn btn-inline" ng-click="openPicker($event, 'endDateOpened')"><i class="glyph-calendar"></i></button>
                                     </span>
@@ -122,15 +122,7 @@
         <div class="form-group row">
             <label class="col-sm-3 form-label">Upload CSV file</label>
             <div class="col-sm-9 file-selection-wrapper">
-                <div class="drop-area">
-                    Drop file here
-                </div>
-                <span class="or">- OR -</span>
-                <div class="input-group">
-                    <button class="btn btn-primary solid left">Download Profile</button>
-                    <button class="btn btn-primary solid left">Change Geotargeting Profile</button>
-                    <input class="file-name" placeholder="No file selected" readonly />
-                </div>
+                <div file-picker ng-model="campaign.csv"></div>
             </div>
         </div>
 

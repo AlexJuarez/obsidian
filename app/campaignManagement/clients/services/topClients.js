@@ -20,7 +20,9 @@ define(function (require) {
             return data;
         }
 
-        function init(url) {
+        function init() {
+            var url = '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10';
+
             return topClients.init(url, function (data) {
                 return topClientsTransform(data.clients);
             });

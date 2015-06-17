@@ -7,7 +7,7 @@ define(function (require) {
 
         channels.init();
 
-        channels.observe(updateChannels);
+        channels.observe(updateChannels, $scope);
 
         $scope.ok = function (errors) {
             console.log($scope.client);

@@ -25,12 +25,10 @@ define(function (require) {
                     hoverClass: 'ui-state-hover',
                     dropzone: elem.find('.droparea'),
                     responseType: 'json',
-                    onComplete: function (filename, response) {
-                        console.log(filename);
+                    onComplete: function (filename) {
                         ngModel.$setViewValue(filename);
                     },
-                    onError: function (filename, errorType, status, statusText, response) {
-                        console.log(filename);
+                    onError: function (filename) {
                         ngModel.$setViewValue(filename);
                     }
                 });

@@ -2,12 +2,14 @@ define(function (require) {
     'use strict';
 
     var app = require('./../../module');
+    var ng = require('angular');
 
-    app.controller('newCampaignCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+    app.controller('newCampaignCtrl', ['$scope', '$modalInstance', 'accountService', function ($scope, $modalInstance, accounts) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
         $scope.openPicker = openPicker;
+        $scope.datePickers = {};
 
         //Modal functions
         $scope.ok = ok;
@@ -24,6 +26,12 @@ define(function (require) {
             startingDay: 0,
             maxMode: 'day'
         };
+
+        accounts.observe(updateAccounts, $scope);
+
+        function updateAccounts(){
+            $scope.accounts = accounts.filtered();
+        }
 
         $scope.select = [
             {
@@ -52,7 +60,11 @@ define(function (require) {
             $event.preventDefault();
             $event.stopPropagation();
 
-            $scope[name] = true;
+            ng.forEach($scope.datePickers, function (value, key) {
+                $scope.datePickers[key] = false;
+            });
+
+            $scope.datePickers[name] = true;
         }
 
         function cancel() {
@@ -60,7 +72,7 @@ define(function (require) {
         }
 
         function ok(errors) {
-            console.log(errors);
+            console.log($scope.campaign);
             $scope.errors = errors;
             $scope.submitted = true;
             console.log('do something');

@@ -62,7 +62,7 @@ define(function (require) {
             })
             .state({
                 name: 'cm.clients.detail',
-                url: '/?clientId',
+                url: '/clients?clientId',
                 views: {
                     'content': {
                         controller: 'clientCtrl',
@@ -84,7 +84,8 @@ define(function (require) {
             .state({
                 name: 'cm.accounts',
                 url: '/accounts?divisionId&clientId',
-                template: '<ui-view />'
+                templateUrl: 'campaignManagement/accounts/index.html',
+                controller: 'accountsCtrl'
             })
             .state({
                 name: 'cm.accounts.detail',

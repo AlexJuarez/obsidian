@@ -17,4 +17,5 @@ define(function (require) {
     require('./clients/services/topClients');
     require('./campaigns/controllers/campaigns');
     require('./divisions/controllers/division');
+    require('./accounts/index');
 });

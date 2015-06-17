@@ -4,10 +4,9 @@ define(function (require) {
     'use strict';
 
     var app = require('./../../module');
-    require('tpl!./../new-campaign.html');
 
     app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal) {
-        
+
         $scope.byStatus = [];
 
         function updateByStatus() {
@@ -27,7 +26,7 @@ define(function (require) {
                 size: size
             });
 		}
- 
+
 
     }]);
 });
