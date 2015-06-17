@@ -13,7 +13,7 @@ define(function (require) {
             $modal.open({
                 animation: 'true',
                 templateUrl: 'campaignManagement/accounts/new-account.html',
-                controller: 'newCampaignCtrl',
+                controller: 'newAccountCtrl',
                 size: size
             });
         }

@@ -18,4 +18,6 @@ define(function (require) {
     require('./campaigns/controllers/campaigns');
     require('./divisions/controllers/division');
     require('./accounts/index');
+    require('./accounts/controllers/accounts');
+    require('./accounts/controllers/newAccount');
 });

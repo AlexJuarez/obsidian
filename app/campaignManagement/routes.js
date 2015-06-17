@@ -11,6 +11,8 @@ define(function (require) {
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/content.html');
     require('tpl!./campaigns/new-campaign.html');
+    require('tpl!./accounts/index.html');
+    require('tpl!./accounts/new-account.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
         //httpProvider settings
