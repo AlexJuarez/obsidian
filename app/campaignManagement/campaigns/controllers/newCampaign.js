@@ -29,13 +29,13 @@ define(function (require) {
 
         accounts.observe(updateAccounts, $scope);
 
-        function updateAccounts(){
+        function updateAccounts() {
             $scope.accounts = accounts.filtered();
         }
 
         $scope.select = [
             {
-                name: 'First Choice',
+                name: 'Uno 1',
                 value: '1'
             },
             {

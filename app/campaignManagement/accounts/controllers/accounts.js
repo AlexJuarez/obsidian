@@ -1,5 +1,3 @@
-// jshint ignore: start
-
 define(function (require) {
     'use strict';
 

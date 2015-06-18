@@ -3,38 +3,32 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('newAccountCtrl', ['$scope', '$modalInstance', 'accountService', function ($scope, $modalInstance, accounts) {
+    app.controller('newAccountCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        accounts.observe(updateAccounts, $scope);
-
-        function updateAccounts() {
-            $scope.accounts = accounts.filtered();
-        }
-
         $scope.select = [
             {
-                name: 'First Choice',
-                value: '1'
+                id: 1,
+                name: 'Industry 1'
             },
             {
-                name: 'Second',
-                value: '2'
+                id: 2,
+                name: 'Industry 2'
             },
             {
-                name: 'Choice #3',
-                value: '3'
+                id: 3,
+                name: 'Industry 3'
             },
             {
-                name: 'Pick me, pick me, pick me!',
-                value: '4'
+                id: 4,
+                name: 'Industry 4'
             },
             {
-                name: 'Sheeple',
-                value: '5'
+                id: 5,
+                name: 'Industry 5'
             }
         ];
 
@@ -43,7 +37,7 @@ define(function (require) {
         }
 
         function ok(errors) {
-            console.log($scope.campaign);
+            //console.log($scope.campaign);
             $scope.errors = errors;
             $scope.submitted = true;
             console.log('do something');
