@@ -237,9 +237,9 @@ define(function (require) {
                     template: '<ui-view />'
                 })
                 .state({
-                    name: base + '.report.edit-standard',
-                    url: '/edit-standard/:reportId',
-                    parent: base + '.report',
+                    name: base + '.container',
+                    url: '/container',
+                    parent: base,
                     template: '<ui-view />'
                 });
         }
