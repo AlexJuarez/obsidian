@@ -9,7 +9,7 @@ define(function (require) {
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        $scope.select = [
+        $scope.industries = [
             {
                 id: 1,
                 name: 'Industry 1'

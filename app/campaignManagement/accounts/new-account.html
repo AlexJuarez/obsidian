@@ -27,7 +27,7 @@
         <div class="form-group row" ng-class="{'has-error': newAccount.$invalid && submitted}">
             <label class="col-sm-3 form-label required"><span>Industry</span></label>
             <div class="col-sm-9 single-select-light">
-                <select name="industry" class="single-select" chosen ng-options="select.name for select in select" disable-search-threshold="10" ng-model="account.industry" required>
+                <select name="industry" class="single-select" chosen ng-options="industry.id as industry.name for industry in industries" disable-search-threshold="10" ng-model="account.industry" required>
                 </select>
                 <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">
                     industry is required
