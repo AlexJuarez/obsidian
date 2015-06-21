@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('clientService', ['$http', 'dataFactory', function ($http, dataFactory) {
+    module.service('clientService', ['$http', '$window', 'dataFactory', function ($http, $window, dataFactory) {
         var clients = dataFactory(utils.sortByName);
 
         function init(url) {
@@ -28,11 +28,25 @@ define(function (require) {
         function pin(client) {
             client.pinned = true;
             clients.notifyObservers('pin');
+            $http.put('/api/v2/clients/' + client.id, {pinned: true})
+                .error(function(error) {
+                    client.pinned = false;
+                    clients.notifyObservers('pin');
+                    console.log(error);
+                    $window.alert('Failed to pin client ' + client.name);
+                });
         }
 
         function unpin(client) {
             client.pinned = false;
             clients.notifyObservers('pin');
+            $http.put('/api/v2/clients/' + client.id, {pinned: false})
+                .error(function(error) {
+                    client.pinned = true;
+                    clients.notifyObservers('pin');
+                    console.log(error);
+                    $window.alert('Failed to unpin client ' + client.name);
+                });
         }
 
         function pinned() {
