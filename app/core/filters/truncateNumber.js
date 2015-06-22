@@ -15,6 +15,9 @@ define(function (require) {
             if (input < 1000000000) {
                 return Math.round(input / 100000) / 10 + 'M';
             }
+            if (input < 1000000000000) {
+                return Math.round(input / 100000000) / 10 + 'B';
+            }
             return input;
         };
     }]);

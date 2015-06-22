@@ -1,6 +1,3 @@
-/**
- * Created by paul on 5/21/15.
- */
 define(function (require) {
     'use strict';
 
