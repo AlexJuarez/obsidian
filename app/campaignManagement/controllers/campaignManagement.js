@@ -12,6 +12,9 @@ define(function (require) {
     var app = require('./../module');
     //var ng = require('angular');
 
-    app.controller('campaignManagementCtrl', ['$scope', function () {
+    app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
+        $scope.remove = function () {
+            console.log('remove clicked');
+        };
     }]);
 });

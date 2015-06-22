@@ -1,17 +1,76 @@
 @import "./../brand";
 
 .file-picker {
-    display: table;
-    height: 10rem;
     width: 100%;
-    text-align: center;
-    .droparea {
-        display: table-cell;
-        vertical-align: middle;
-        border: 1px dashed @light-gray;
+    .input-wrapper {
+        display: flex;
+        display: flexbox;
+        .droparea {
+            display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+            display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+            display: -ms-flexbox;      /* TWEENER - IE 10 */
+            display: -webkit-flex;     /* NEW - Chrome */
+            display: flex;
+            -webkit-flex-direction: row;
+            -ms-flex-direction: row;
+            flex-direction: row;
+            -webkit-align-items: baseline;
+            -ms-align-items: baseline;
+            align-items: baseline;
+            -webkit-justify-content: center;
+            -ms-justify-content: center;
+            justify-content: center;
+            flex-grow: 2;
+
+            height: 10rem;
+            line-height: 10rem; /* Used to vertically center items in coordination w/ baseline */
+            border: 1px dashed @light-gray;
+            
+            i {
+                margin: 0 1rem;
+                &.glyph-icon {
+                    font-size: 3rem;
+                    top: 5px;
+                    position: relative;
+                }
+            }
+            .btn {
+                background: none;
+                padding: 0;
+                text-decoration: underline;
+                font-weight: normal;
+                &.ui-state-hover {
+                    color: @brand-color;
+                }
+            }
+            &.drag-over {
+                border-color: @brand-color;
+            }
+        }
+        .preview {
+            flex-grow: 1;
+        }
     }
-    .preview {
-        display: table-cell;
-        width: 25%;
+    .file-name-wrapper {
+        text-align: left;
+        margin: 1rem 0 0.5rem 0;
+        .file-name {
+            margin-right: 1rem;
+        }
+        .glyph-icon {
+            font-size: 1.25rem;
+            color: @dark-gray;
+            &:hover {
+                color: @brand-color;
+            }
+        }
+    }
+    .progress-wrapper {
+        border: 1px solid @dark-gray;
+        background: @light-gray;
+        .progress-bar {
+            height: 10px;
+            background: @green;
+        }
     }
 }

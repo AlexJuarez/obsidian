@@ -35,10 +35,6 @@ define(function (require) {
         $scope.selected = [];
 
         $scope.select = [
-            // {
-            //     name: '',
-            //     value: '0'
-            // },
             {
                 name: 'First Choice',
                 value: '1'
