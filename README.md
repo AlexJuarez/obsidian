@@ -1,4 +1,4 @@
-###Frontend UI
+#Obsidian Style Guide / Frontend UI
 
 The client code lives in app
 
@@ -10,6 +10,7 @@ This project also requires
 
 * `npm install -g grunt-cli`
 * `npm install -g bower`
+* `npm install -g karma-cli`
 * `bower install`
 
 ## Current Grunt Tasks
