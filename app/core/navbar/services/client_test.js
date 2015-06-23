@@ -48,19 +48,24 @@ define(function (require) {
             httpBackend.flush();
         });
 
-        it('should pin an client', function () {
+        it('should pin a client', function () {
+            httpBackend.expect('PUT', '/api/v2/clients/clientId0')
+                .respond( 200, { pinned: true } );
             client.setData(clients);
             var a = client.all()[0];
             client.pin(a);
             expect(client.pinned().length).toEqual(1);
+            httpBackend.flush();
         });
 
-        it('should unpin an client', function () {
+        it('should unpin a client', function () {
+            httpBackend.expect('PUT', '/api/v2/clients/clientId0')
+                .respond( 200, { pinned: false } );
             client.setData(clients);
             var a = client.all()[0];
-            client.pin(a);
             client.unpin(a);
             expect(client.pinned().length).toEqual(0);
+            httpBackend.flush();
         });
 
         it('should return a map containing a key of the first letter by name', function () {

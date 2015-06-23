@@ -7,16 +7,17 @@ define(function (require) {
     var template = require('tpl!./client.html');
 
     describe('clientDropdownDirective', function () {
-        var compile, rootScope, document, client, navbar;
+        var compile, httpBackend, rootScope, document, client, navbar;
 
         beforeEach(function () {
             module('app.core');
         });
 
-        beforeEach(inject(function ($compile, $rootScope, $document, $templateCache, clientService, navbarService) {
+        beforeEach(inject(function ($compile, $httpBackend, $rootScope, $document, $templateCache, clientService, navbarService) {
             $templateCache.put('core/navbar/directives/client.html', template);
 
             compile = $compile;
+            httpBackend = $httpBackend;
             rootScope = $rootScope;
             document = $document;
             client = clientService;
@@ -59,13 +60,18 @@ define(function (require) {
             it('should change the pinned client when pin state change', function() {
                 var scope = createDropDown(clients);
 
+                httpBackend.expect('PUT', '/api/v2/clients/clientId0')
+                    .respond( 200, { pinned: false } );
                 scope.unpin(client.all()[0]);
 
                 expect(scope.pinned.length).toEqual(0);
 
+                httpBackend.expect('PUT', '/api/v2/clients/clientId0')
+                    .respond( 200, { pinned: true } );
                 scope.pin(client.all()[0]);
 
                 expect(scope.pinned.length).toEqual(1);
+                httpBackend.flush();
             });
 
             it('should have the current client', function() {
