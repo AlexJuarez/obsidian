@@ -9,7 +9,8 @@ define(function (require) {
     require('tpl!./clients/youWorkOn.html');
     require('tpl!./clients/content.html');
     require('tpl!./campaigns/index.html');
-    require('tpl!./campaigns/content.html');
+    require('tpl!./campaigns/campaigns.html');
+    require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/new-campaign.html');
     require('tpl!./accounts/index.html');
     require('tpl!./accounts/new-account.html');
@@ -104,7 +105,7 @@ define(function (require) {
                 views: {
                     'content': {
                         controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/content.html'
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
                     }
                 }
             })
@@ -113,7 +114,8 @@ define(function (require) {
                 url: '/campaigns/:campaignId',
                 views: {
                     'content': {
-                        template: '<ui-view />'
+                        controller: 'campaignCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaign.html'
                     }
                 }
             });

@@ -10,12 +10,13 @@ define(function (require) {
     require('./campaigns/services/campaignsByStatus');
     require('./campaigns/factories/campaignAccordionTable');
     require('./campaigns/controllers/newCampaign');
+    require('./campaigns/controllers/campaigns');
+    require('./campaigns/controllers/campaign');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/client');
     require('./clients/controllers/clients');
     require('./clients/controllers/newClient');
     require('./clients/services/topClients');
-    require('./campaigns/controllers/campaigns');
     require('./divisions/controllers/division');
     require('./accounts/index');
     require('./accounts/controllers/accounts');
