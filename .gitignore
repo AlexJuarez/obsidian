@@ -7,6 +7,7 @@ app/bower_components
 app/components
 coverage
 dist
+build/fonts
 assets/styles/core.css
 assets/styles/screen.css
 test-results.xml
