@@ -26,7 +26,6 @@ define(function (require) {
         }
 
         function pin(client) {
-            debugger;
             client.pinned = true;
             clients.notifyObservers('pin');
             $http.put('/api/v2/clients/' + client.id, {pinned: true})
