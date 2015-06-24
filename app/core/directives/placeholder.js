@@ -11,6 +11,7 @@ define(function (require) {
             templateUrl: 'core/directives/placeholder.html',
             link: function ($scope, elem, attr) {
                 $scope.image = attr.image;
+                $scope.style = attr.style;
             }
         };
     }]);
