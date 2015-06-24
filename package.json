@@ -37,7 +37,7 @@
     "grunt-rev": "~0.1.0",
     "grunt-svgmin": "~0.2.0",
     "grunt-usemin": "~0.1.10",
-    "grunt-webfont": "^0.5.2",
+    "grunt-webfont": "^0.5.3",
     "jasmine-core": "^2.2.0",
     "karma": "^0.12.31",
     "karma-chrome-launcher": "^0.1.8",
