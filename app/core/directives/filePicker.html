@@ -1,10 +1,15 @@
 <div class="file-picker">
     <div class="input-wrapper">
-    	<div ng-if="previewUrl" class="preview">
+    	<div ng-class="fileSelected ? 'preview show' : 'preview'">
     			<img class="image-preview" />
     	</div>
 	    <div class="droparea">
 	        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">[[btnLabel]]</button>
+	        
 	    </div>
+    </div>
+    <div ng-class="fileSelected ? 'file-name-wrapper show' : 'file-name-wrapper'">
+    	<span class="file-name"></span>
+    	<a class="glyph-icon glyph-close" ng-click="removeFile()" href=''/>
     </div>
 </div>
