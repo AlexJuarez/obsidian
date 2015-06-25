@@ -47460,7 +47460,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 });
 
 
-define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients.all">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by client.id">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="item in clientsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by client.id">\n                    <a ui-sref=".clients.detail({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients.all">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by client.id">\n                    <a ui-sref=".divisions.all({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="item in clientsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a ui-sref=".divisions.all({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by client.id">\n                    <a ui-sref=".divisions.all({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
@@ -47504,7 +47504,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by division.id">\n                    <a ui-sref=".accounts({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="item in divisionsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                    <a ui-sref=".accounts({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by division.id">\n                    <a ui-sref=".accounts({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".divisions.all(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by division.id">\n                    <a ui-sref=".accounts.all({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="item in divisionsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                    <a ui-sref=".accounts.all({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by division.id">\n                    <a ui-sref=".accounts.all({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -47517,7 +47517,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
             restrict: 'A',
             scope: true,
             templateUrl: 'core/navbar/directives/division.html',
-            controller: ['$scope', function ($scope) {
+            link: function ($scope, element) {
                 $scope.pin = divisions.pin;
                 $scope.unpin = divisions.unpin;
                 $scope.section = 'Divisions';
@@ -47546,11 +47546,16 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
                     if (event === 'pin') {
                         $scope.pinned = divisions.pinned();
                     } else {
+                        if (divisions.filtered().length <= 1) {
+                            element.hide();
+                        } else {
+                            element.show();
+                        }
                         $scope.divisionsMap = divisions.alphabetMap();
                         $scope.pinned = divisions.pinned();
                     }
                 }
-            }]
+            }
         };
     }]);
 });
@@ -49964,7 +49969,7 @@ define("simpleUpload", ["jquery"], (function (global) {
 }(this)));
 
 
-define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-if="previewUrl" class="preview">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">[[btnLabel]]</button>\n\t    </div>\n    </div>\n</div>\n'); });
+define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-class="fileSelected ? \'preview show\' : \'preview\'">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">[[btnLabel]]</button>\n\t        \n\t    </div>\n    </div>\n    <div ng-class="fileSelected ? \'file-name-wrapper show\' : \'file-name-wrapper\'">\n    \t<span class="file-name"></span>\n    \t<a class="glyph-icon glyph-close" ng-click="removeFile()" href=\'\'/>\n    </div>\n</div>\n'); });
 
 define('core/directives/filePicker',['require','./../module','simpleUpload','tpl!./filePicker.html'],function (require) {
     'use strict';
@@ -49986,9 +49991,13 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
 
             templateUrl: 'core/directives/filePicker.html',
             link: function (scope, elem, attrs, ngModel) {
+                scope.fileSelected = false;
                 scope.btnLabel = 'browse';
-                var filePickerWrapper = elem.find('.file-picker')[0];
                 
+                var filePickerWrapper = elem.find('.file-picker')[0],
+                previewImg = elem.find('.image-preview')[0],
+                fileName = elem.find('.file-name')[0];
+
                 var uploader = new ss.SimpleUpload({
                     button: elem.find('.btn'),
                     name: 'filename',
@@ -49997,54 +50006,59 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
                     dropzone: elem.find('.droparea'),
                     dragClass: 'drag-over',
                     responseType: 'json',
-                    maxSize: 1024,
+                    maxSize: 2000,
                     accept: 'image/*',
                     allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
-                    queue: false,
-                    //multipart: true,
+                    queue: true,
+                    multiple: false,
+                    multipart: true,
+                    autoSubmit: false,
                     debug: true,
                     onChange: function (filename) {
-                        console.log('onChange: ', filename);
-                        //var previewImg = elem.find('.image-preview')[0];
-                        //previewImg.src = filename;
+                        
+                        // Make sure image has no src set
+                        previewImg.src = '';
+                        // Remove any current file in the queue
+                        uploader.removeCurrent();
+                        
+                        // Needs to be synchronous...
+                        setTimeout(function () {
+                            if (uploader._queue[0].file) {
+                                var oFReader = new FileReader();
+                                oFReader.readAsDataURL(uploader._queue[0].file);
+                                oFReader.onload = function (oFREvent) {
+                                    previewImg.src = oFREvent.target.result;
 
-                        //return false;
+                                    fileName.innerHTML = filename;
+                                    scope.fileSelected = true;
+                                    scope.btnLabel = 'select new file';
+                                    scope.$apply();
+                                };
+                            }
+                        }, 0);
+                        
                     },
-                    onSubmit: function (filename) {
+                    onSubmit: function () {
 
                         var progressWrapper = document.createElement('div'),
                             progressBar = document.createElement('div'),
-                            sizeBox = document.createElement('div'),
-                            fileNameWrapper = document.createElement('div'),
-                            fileName = document.createElement('span'),
-                            removeFile = document.createElement('a'),
+                            //sizeBox = document.createElement('div'),
                             self = this;
 
                         progressWrapper.className = 'progress-wrapper';
                         progressBar.className = 'progress-bar';
-                        sizeBox.className = 'size-box';
-                        fileNameWrapper.className = 'file-name-wrapper';
-                        fileName.className = 'file-name';
-                        removeFile.className = 'glyph-icon glyph-close';
-                        removeFile.href = '';
+                        //sizeBox.className = 'size-box';
 
-                        removeFile.setAttribute('ng-click', 'remove()');
-
-                        // Not sure if this should be handled differently
-                        fileName.innerHTML = filename;
-
-                        fileNameWrapper.appendChild(fileName);
-                        fileNameWrapper.appendChild(removeFile);
-                        filePickerWrapper.appendChild(fileNameWrapper);
                         progressWrapper.appendChild(progressBar);
-                        progressWrapper.appendChild(sizeBox);
+                        //progressWrapper.appendChild(sizeBox);
                         filePickerWrapper.appendChild(progressWrapper);
 
-                        self.setFileSizeBox(sizeBox);
+                        //self.setFileSizeBox(sizeBox);
                         self.setProgressBar(progressBar);
+                        
+                        // Set this to remove progress bar when upload complete
                         //self.setProgressContainer(progressWrapper);
 
-                        //btn.value = 'Replace File';
                     },
                     onComplete: function (filename) {
                         console.log('onComplete');
@@ -50055,6 +50069,13 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
                         ngModel.$setViewValue(filename);
                     }
                 });
+
+                scope.removeFile = function () {
+                    uploader.removeCurrent();
+                    fileName.innerHTML = '';
+                    scope.btnLabel = 'browse';
+                    scope.fileSelected = false;
+                };
 
                 scope.$on('$destroy', function () {
                     uploader.destroy();
@@ -60021,13 +60042,16 @@ define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angula
 define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div ui-view="content">\n</div>\n'); });
 
 
-define('tpl!campaignManagement/clients/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.html', '<div ui-view="header">\n    <div ng-include="\'campaignManagement/clients/youWorkOn.html\'"></div>\n</div>\n'); });
-
-
-define('tpl!campaignManagement/clients/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
-
-
 define('tpl!campaignManagement/clients/content.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/content.html', '<div ui-view="header">\n    <div active-summary></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div basic-table="topClients" class="table table-hover"></div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/clients/new-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.channels.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="channels" class="single-select" chosen ng-options="item as item for item in channels track by item" disable-search-threshold="10" ng-model="client.channel" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div file-picker ng-model="client.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="client.requireRepEmail" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newClient.$error)">Add Client</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/divisions/divisions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/divisions.html', '<div ui-view="header">\n    <div ng-include="\'campaignManagement/divisions/youWorkOn.html\'"></div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/divisions/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/youWorkOn.html', '<div class="header-summary">\n    <h3 class="title">You Work On</h3>\n    <button class="btn btn-default solid right">Edit Client</button>\n    <button class="btn btn-default solid right">New Account</button>\n    <button class="btn btn-default solid right">New Division</button>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>[[youWorkOn.countAccounts|truncateNumber]]</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>[[youWorkOn.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[youWorkOn.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[youWorkOn.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>[[youWorkOn.countCampaignsCompleted|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>[[youWorkOn.countCampaignsArchived|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div ui-view="content">\n</div>\n'); });
@@ -60049,14 +60073,15 @@ define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], f
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/client.html','tpl!./clients/youWorkOn.html','tpl!./clients/content.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaign.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
+define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/content.html','tpl!./clients/new-client.html','tpl!./divisions/divisions.html','tpl!./divisions/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaign.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
-    require('tpl!./clients/client.html');
-    require('tpl!./clients/youWorkOn.html');
     require('tpl!./clients/content.html');
+    require('tpl!./clients/new-client.html');
+    require('tpl!./divisions/divisions.html');
+    require('tpl!./divisions/youWorkOn.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/campaign.html');
@@ -60113,36 +60138,27 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 }
             })
             .state({
-                name: 'cm.clients.detail',
-                url: '/clients?clientId',
+                name: 'cm.divisions',
+                templateUrl: 'campaignManagement/divisions/index.html'
+            })
+            .state({
+                name: 'cm.divisions.all',
+                url: '/divisions?clientId',
                 views: {
                     'content': {
-                        controller: 'clientCtrl',
-                        templateUrl: 'campaignManagement/clients/client.html'
+                        controller: 'divisionsCtrl',
+                        templateUrl: 'campaignManagement/divisions/divisions.html'
                     }
                 }
             })
             .state({
-                name: 'cm.divisions',
-                url: '/divisions?clientId',
-                template: '<ui-view />'
-            })
-            .state({
-                name: 'cm.divisions.detail',
-                url: '/?divisionId',
-                controller: 'divisionCtrl',
-                template: '<ui-view />'
-            })
-            .state({
                 name: 'cm.accounts',
-                url: '/accounts?divisionId&clientId',
-                templateUrl: 'campaignManagement/accounts/index.html',
-                controller: 'accountsCtrl'
+                templateUrl: 'campaignManagement/accounts/index.html'
             })
             .state({
-                name: 'cm.accounts.detail',
-                url: '/accounts?accountId',
-                template: '<ui-view />'
+                name: 'cm.accounts.all',
+                url: '/accounts?divisionId&clientId',
+                controller: 'accountsCtrl'
             })
             .state({
                 name: 'cm.campaigns',
@@ -60314,9 +60330,6 @@ define('campaignManagement/controllers/campaignManagement',['require','./../modu
     //var ng = require('angular');
 
     app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
-        $scope.remove = function () {
-            console.log('remove clicked');
-        };
     }]);
 });
 
@@ -60726,27 +60739,6 @@ define('campaignManagement/clients/directives/activeSummary',['require','./../..
 
 
 
-define('campaignManagement/clients/controllers/client',['require','./../../module'],function (require) {
-    var app = require('./../../module');
-    //var ng = require('angular');
-
-    app.controller('clientCtrl', ['$scope', '$http', '$timeout', '$stateParams', function ($scope, $http, $timeout, $stateParams) {
-        $http.get('/api/v3/clients?filters=id:eq:' + $stateParams.clientId +
-        '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
-            $timeout(function () {
-                $scope.youWorkOn = res.data.clients[0].metrics;
-                $scope.youWorkOn.countCampaigns = $scope.youWorkOn.countCampaignsPreFlight + $scope.youWorkOn.countCampaignsInFlight;
-                $scope.$apply();
-            });
-        });
-    }]);
-});
-
-
-define('tpl!campaignManagement/clients/new-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.channels.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="channels" class="single-select" chosen ng-options="item as item for item in channels track by item" disable-search-threshold="10" ng-model="client.channel" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div file-picker ng-model="client.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="client.requireRepEmail" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newClient.$error)">Add Client</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
-
-
-
 define('campaignManagement/clients/controllers/clients',['require','./../../module','tpl!./../new-client.html'],function (require) {
     var app = require('./../../module');
     require('tpl!./../new-client.html');
@@ -60887,11 +60879,19 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
 
 
 
-define('campaignManagement/divisions/controllers/division',['require','./../../module'],function (require) {
+define('campaignManagement/divisions/controllers/divisions',['require','./../../module'],function (require) {
     var app = require('./../../module');
     //var ng = require('angular');
 
-    app.controller('divisionCtrl', ['$state', function () {
+    app.controller('divisionsCtrl', ['$scope', '$http', '$timeout', '$stateParams', function ($scope, $http, $timeout, $stateParams) {
+        $http.get('/api/v3/clients?filters=id:eq:' + $stateParams.clientId +
+        '&dimensions=id,name&metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived').then(function (res) {
+            $timeout(function () {
+                $scope.youWorkOn = res.data.clients[0].metrics;
+                $scope.youWorkOn.countCampaigns = $scope.youWorkOn.countCampaignsPreFlight + $scope.youWorkOn.countCampaignsInFlight;
+                $scope.$apply();
+            });
+        });
     }]);
 });
 
@@ -60976,7 +60976,7 @@ define('campaignManagement/accounts/controllers/newAccount',['require','./../../
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./clients/directives/activeSummary','./clients/controllers/client','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/division','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
+define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
     'use strict';
 
     require('./routes');
@@ -60988,11 +60988,10 @@ define('campaignManagement/index',['require','./routes','./controllers/campaignM
     require('./campaigns/controllers/campaigns');
     require('./campaigns/controllers/campaign');
     require('./clients/directives/activeSummary');
-    require('./clients/controllers/client');
     require('./clients/controllers/clients');
     require('./clients/controllers/newClient');
     require('./clients/services/topClients');
-    require('./divisions/controllers/division');
+    require('./divisions/controllers/divisions');
     require('./accounts/index');
     require('./accounts/controllers/accounts');
     require('./accounts/controllers/newAccount');
