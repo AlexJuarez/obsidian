@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             templateUrl: 'core/navbar/directives/division.html',
-            controller: ['$scope', function ($scope) {
+            link: function ($scope, element) {
                 $scope.pin = divisions.pin;
                 $scope.unpin = divisions.unpin;
                 $scope.section = 'Divisions';
@@ -38,11 +38,16 @@ define(function (require) {
                     if (event === 'pin') {
                         $scope.pinned = divisions.pinned();
                     } else {
+                        if (divisions.filtered().length <= 1) {
+                            element.hide();
+                        } else {
+                            element.show();
+                        }
                         $scope.divisionsMap = divisions.alphabetMap();
                         $scope.pinned = divisions.pinned();
                     }
                 }
-            }]
+            }
         };
     }]);
 });
