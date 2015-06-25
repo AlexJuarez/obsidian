@@ -65,7 +65,7 @@ define(function (require) {
                         }, 0);
                         
                     },
-                    onSubmit: function (filename) {
+                    onSubmit: function () {
 
                         var progressWrapper = document.createElement('div'),
                             progressBar = document.createElement('div'),
