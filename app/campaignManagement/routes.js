@@ -5,9 +5,10 @@ define(function (require) {
     var app = require('./module');
     require('tpl!./index.html');
     require('tpl!./clients/index.html');
-    require('tpl!./clients/client.html');
-    require('tpl!./clients/youWorkOn.html');
     require('tpl!./clients/content.html');
+    require('tpl!./clients/new-client.html');
+    require('tpl!./divisions/divisions.html');
+    require('tpl!./divisions/youWorkOn.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/campaign.html');
@@ -64,36 +65,27 @@ define(function (require) {
                 }
             })
             .state({
-                name: 'cm.clients.detail',
-                url: '/clients?clientId',
+                name: 'cm.divisions',
+                templateUrl: 'campaignManagement/divisions/index.html'
+            })
+            .state({
+                name: 'cm.divisions.all',
+                url: '/divisions?clientId',
                 views: {
                     'content': {
-                        controller: 'clientCtrl',
-                        templateUrl: 'campaignManagement/clients/client.html'
+                        controller: 'divisionsCtrl',
+                        templateUrl: 'campaignManagement/divisions/divisions.html'
                     }
                 }
             })
             .state({
-                name: 'cm.divisions',
-                url: '/divisions?clientId',
-                template: '<ui-view />'
-            })
-            .state({
-                name: 'cm.divisions.detail',
-                url: '/?divisionId',
-                controller: 'divisionCtrl',
-                template: '<ui-view />'
-            })
-            .state({
                 name: 'cm.accounts',
-                url: '/accounts?divisionId&clientId',
-                templateUrl: 'campaignManagement/accounts/index.html',
-                controller: 'accountsCtrl'
+                templateUrl: 'campaignManagement/accounts/index.html'
             })
             .state({
-                name: 'cm.accounts.detail',
-                url: '/accounts?accountId',
-                template: '<ui-view />'
+                name: 'cm.accounts.all',
+                url: '/accounts?divisionId&clientId',
+                controller: 'accountsCtrl'
             })
             .state({
                 name: 'cm.campaigns',

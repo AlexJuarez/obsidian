@@ -13,11 +13,10 @@ define(function (require) {
     require('./campaigns/controllers/campaigns');
     require('./campaigns/controllers/campaign');
     require('./clients/directives/activeSummary');
-    require('./clients/controllers/client');
     require('./clients/controllers/clients');
     require('./clients/controllers/newClient');
     require('./clients/services/topClients');
-    require('./divisions/controllers/division');
+    require('./divisions/controllers/divisions');
     require('./accounts/index');
     require('./accounts/controllers/accounts');
     require('./accounts/controllers/newAccount');
