@@ -13,8 +13,5 @@ define(function (require) {
     //var ng = require('angular');
 
     app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
-        $scope.remove = function () {
-            console.log('remove clicked');
-        };
     }]);
 });

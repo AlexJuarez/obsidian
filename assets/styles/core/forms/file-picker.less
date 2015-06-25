@@ -21,6 +21,7 @@
             -ms-justify-content: center;
             justify-content: center;
             flex-grow: 2;
+            box-sizing: border-box;
 
             height: 10rem;
             line-height: 10rem; /* Used to vertically center items in coordination w/ baseline */
@@ -48,12 +49,28 @@
             }
         }
         .preview {
-            flex-grow: 1;
+            //
+            display: none;
+            &.show {
+                display: flex;
+                height: 10rem;
+                margin-right: 1rem;
+                //max-width: 25%;
+                //flex-grow: 1;
+            }
+            //
+            img {
+                max-height: 100%;
+            }
         }
     }
     .file-name-wrapper {
+        display: none;
         text-align: left;
         margin: 1rem 0 0.5rem 0;
+        &.show {
+            display: block;
+        }
         .file-name {
             margin-right: 1rem;
         }

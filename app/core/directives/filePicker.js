@@ -18,9 +18,13 @@ define(function (require) {
 
             templateUrl: 'core/directives/filePicker.html',
             link: function (scope, elem, attrs, ngModel) {
+                scope.fileSelected = false;
                 scope.btnLabel = 'browse';
-                var filePickerWrapper = elem.find('.file-picker')[0];
                 
+                var filePickerWrapper = elem.find('.file-picker')[0],
+                previewImg = elem.find('.image-preview')[0],
+                fileName = elem.find('.file-name')[0];
+
                 var uploader = new ss.SimpleUpload({
                     button: elem.find('.btn'),
                     name: 'filename',
@@ -29,54 +33,59 @@ define(function (require) {
                     dropzone: elem.find('.droparea'),
                     dragClass: 'drag-over',
                     responseType: 'json',
-                    maxSize: 1024,
+                    maxSize: 2000,
                     accept: 'image/*',
                     allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
-                    queue: false,
-                    //multipart: true,
+                    queue: true,
+                    multiple: false,
+                    multipart: true,
+                    autoSubmit: false,
                     debug: true,
                     onChange: function (filename) {
-                        console.log('onChange: ', filename);
-                        //var previewImg = elem.find('.image-preview')[0];
-                        //previewImg.src = filename;
+                        
+                        // Make sure image has no src set
+                        previewImg.src = '';
+                        // Remove any current file in the queue
+                        uploader.removeCurrent();
+                        
+                        // Needs to be synchronous...
+                        setTimeout(function () {
+                            if (uploader._queue[0].file) {
+                                var oFReader = new FileReader();
+                                oFReader.readAsDataURL(uploader._queue[0].file);
+                                oFReader.onload = function (oFREvent) {
+                                    previewImg.src = oFREvent.target.result;
 
-                        //return false;
+                                    fileName.innerHTML = filename;
+                                    scope.fileSelected = true;
+                                    scope.btnLabel = 'select new file';
+                                    scope.$apply();
+                                };
+                            }
+                        }, 0);
+                        
                     },
                     onSubmit: function (filename) {
 
                         var progressWrapper = document.createElement('div'),
                             progressBar = document.createElement('div'),
-                            sizeBox = document.createElement('div'),
-                            fileNameWrapper = document.createElement('div'),
-                            fileName = document.createElement('span'),
-                            removeFile = document.createElement('a'),
+                            //sizeBox = document.createElement('div'),
                             self = this;
 
                         progressWrapper.className = 'progress-wrapper';
                         progressBar.className = 'progress-bar';
-                        sizeBox.className = 'size-box';
-                        fileNameWrapper.className = 'file-name-wrapper';
-                        fileName.className = 'file-name';
-                        removeFile.className = 'glyph-icon glyph-close';
-                        removeFile.href = '';
+                        //sizeBox.className = 'size-box';
 
-                        removeFile.setAttribute('ng-click', 'remove()');
-
-                        // Not sure if this should be handled differently
-                        fileName.innerHTML = filename;
-
-                        fileNameWrapper.appendChild(fileName);
-                        fileNameWrapper.appendChild(removeFile);
-                        filePickerWrapper.appendChild(fileNameWrapper);
                         progressWrapper.appendChild(progressBar);
-                        progressWrapper.appendChild(sizeBox);
+                        //progressWrapper.appendChild(sizeBox);
                         filePickerWrapper.appendChild(progressWrapper);
 
-                        self.setFileSizeBox(sizeBox);
+                        //self.setFileSizeBox(sizeBox);
                         self.setProgressBar(progressBar);
+                        
+                        // Set this to remove progress bar when upload complete
                         //self.setProgressContainer(progressWrapper);
 
-                        //btn.value = 'Replace File';
                     },
                     onComplete: function (filename) {
                         console.log('onComplete');
@@ -87,6 +96,13 @@ define(function (require) {
                         ngModel.$setViewValue(filename);
                     }
                 });
+
+                scope.removeFile = function () {
+                    uploader.removeCurrent();
+                    fileName.innerHTML = '';
+                    scope.btnLabel = 'browse';
+                    scope.fileSelected = false;
+                };
 
                 scope.$on('$destroy', function () {
                     uploader.destroy();
