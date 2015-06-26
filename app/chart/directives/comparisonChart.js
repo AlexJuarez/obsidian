@@ -22,10 +22,10 @@ define(function (require) {
 
                         d3.select(elem[0])
                             .selectAll('div')
-                                .data(data)
+                            .data(data)
                             .enter().append('div')
-                                    .style('width', function (d) { return x(d) + 'px'; })
-                                .style('height', height + 'px');
+                            .style('width', function (d) { return x(d) + 'px'; })
+                            .style('height', height + 'px');
                     }
                 });
             }
