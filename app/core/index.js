@@ -16,6 +16,7 @@ define(function (require) {
     require('./directives/compile');
     require('./directives/placeholder');
     require('./directives/filePicker');
+    require('./directives/pacingChart');
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
