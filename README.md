@@ -18,6 +18,7 @@ This project also requires
 * `grunt workon` - starts a local server
 * `grunt build` builds the distribution version
 * `grunt build:bower` builds the core version
+* `grunt --proxy https://narwhal-dev-api.mixpo.com` Proxy API requests to a server of your choosing
 
 ## Running tests
 
