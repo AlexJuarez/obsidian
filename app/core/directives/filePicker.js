@@ -7,7 +7,7 @@ define(function (require) {
 
     require('tpl!./filePicker.html');
 
-    app.directive('filePicker', [function () {
+    app.directive('filePicker', ['$timeout', function ($timeout) {
         return {
             restrict: 'A',
             require: '?ngModel',
@@ -20,7 +20,7 @@ define(function (require) {
             link: function (scope, elem, attrs, ngModel) {
                 scope.fileSelected = false;
                 scope.btnLabel = 'browse';
-                
+
                 var filePickerWrapper = elem.find('.file-picker')[0],
                 previewImg = elem.find('.image-preview')[0],
                 fileName = elem.find('.file-name')[0];
@@ -42,14 +42,14 @@ define(function (require) {
                     autoSubmit: false,
                     debug: true,
                     onChange: function (filename) {
-                        
+
                         // Make sure image has no src set
                         previewImg.src = '';
                         // Remove any current file in the queue
                         uploader.removeCurrent();
-                        
+
                         // Needs to be synchronous...
-                        setTimeout(function () {
+                        $timeout(function () {
                             if (uploader._queue[0].file) {
                                 var oFReader = new FileReader();
                                 oFReader.readAsDataURL(uploader._queue[0].file);
@@ -63,7 +63,7 @@ define(function (require) {
                                 };
                             }
                         }, 0);
-                        
+
                     },
                     onSubmit: function () {
 
@@ -82,7 +82,7 @@ define(function (require) {
 
                         //self.setFileSizeBox(sizeBox);
                         self.setProgressBar(progressBar);
-                        
+
                         // Set this to remove progress bar when upload complete
                         //self.setProgressContainer(progressWrapper);
 

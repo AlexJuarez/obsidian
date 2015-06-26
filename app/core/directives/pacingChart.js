@@ -11,10 +11,10 @@ define(function (require) {
 			scope: {},
 			require: '?ngModel',
 			templateUrl: 'core/directives/pacingChart.html',
-			link: function (scope, elem, attrs, ngModel) {
-				var fill = d3.select(elem.find('.fill > rect')[0])
+			link: function (scope, elem) {
+				d3.select(elem.find('.fill > rect')[0])
 					.attr('width', '60%');
-				var target = d3.select(elem.find('.target > rect')[0])
+                d3.select(elem.find('.target > rect')[0])
 					.attr('x', '80%');
 			}
 		};

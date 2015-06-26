@@ -361,7 +361,7 @@ module.exports = function (grunt) {
         // Concurrent Config
         concurrent: {
             dist: [
-                'requirejs',
+                'requirejs:compile',
                 'copy:styles',
                 'svgmin',
                 'htmlmin'
