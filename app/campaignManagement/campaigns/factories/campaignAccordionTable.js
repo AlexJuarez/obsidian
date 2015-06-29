@@ -3,11 +3,12 @@ define(function (require) {
 
     var module = require('./../../module');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$q', '$interpolate', 'dataFactory', 'paginationFactory', function ($http, $q, $interpolate, dataFactory, paginationFactory) {
+    module.factory('campaignAccordionTableFactory', ['$http', '$q', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $q, $interpolate, dataFactory, paginationFactory, $state) {
         return function() {
-            var header = dataFactory();
+            var header;
             var rows = paginationFactory(sortRows);
             var status;
+            var title;
             var options = {
                 more: rows.nextPage
             };
@@ -27,11 +28,10 @@ define(function (require) {
 
             function init(data) {
                 status = data.status;
+                header = data.header;
+                title = data.title;
                 if (data.rows) {
                     rows.init(data.rows, transformRows);
-                }
-                if (data.header) {
-                    header.init(data.header, transformHeader);
                 }
             }
 
@@ -67,46 +67,40 @@ define(function (require) {
                 return newRows;
             }
 
-            function transformHeader(data) {
-                var output = [];
-                var metrics;
-
-                for (var i = 0; i < data.campaignSet.length; i++) {
-                    metrics = data.campaignSet[i];
-                    output.push({
-                        status: metrics.status,
-                        count: metrics.metrics.count,
-                        hasLive: metrics.metrics.countLive > 0
-                    });
-                }
-                return output;
-            }
-
             function getTable() {
+                var rules = {
+                    account: 'link',
+                    campaign: 'link',
+                    impressions: 'bullet',
+                    start: 'date',
+                    end: 'date',
+                    placements: 'number',
+                    creatives: 'number',
+                    edit: ''
+                };
+
+                var headers = [
+                    {name: 'Account', id: 'account'},
+                    {name: 'Campaign', id: 'campaign'},
+                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Start', id: 'start'},
+                    {name: 'End', id: 'end'},
+                    {name: 'Placements', id: 'placements'},
+                    {name: 'Creatives', id: 'creatives'},
+                    {name: '', id: 'edit'}
+                ];
+
+                if ($state.params.accountId) {
+                    delete rules.account;
+                    headers.shift();
+                }
+
                 return {
                     header: getTableHeader(header.all()),
                     options: options,
                     content: {
-                        rules: {
-                            account: 'link',
-                            campaign: 'link',
-                            impressions: 'bullet',
-                            start: 'date',
-                            end: 'date',
-                            placements: 'number',
-                            creatives: 'number',
-                            edit: ''
-                        },
-                        headers: [
-                            {name: 'Account', id: 'account'},
-                            {name: 'Campaign', id: 'campaign'},
-                            {name: 'Impressions & Pacing', id: 'impressions'},
-                            {name: 'Start', id: 'start'},
-                            {name: 'End', id: 'end'},
-                            {name: 'Placements', id: 'placements'},
-                            {name: 'Creatives', id: 'creatives'},
-                            {name: 'Edit', id: 'edit'}
-                        ],
+                        rules: rules,
+                        headers: headers,
                         data: rows.all()
                     }
                 };
@@ -115,22 +109,25 @@ define(function (require) {
             function getTableHeader(data) {
                 var template;
 
-                if (data && data[0]) {
-                    var header = data[0];
-                    template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[status]] ([[count]])');
-                    return template({
-                        status: header && header.status,
-                        count: header && header.count,
-                        hasLiveHeaderClass: header && header.hasLive ?
-                            'success' :
-                            ''
-                    });
-                } else {
-                    template = $interpolate('<span class="icon-status"></span>[[status]] (0)');
-                    return template({
-                        status: status
-                    });
+                for (var i = 0; i < data.length; i++) {
+                    var header = data[i];
+                    if (header.status === status) {
+                        template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[title]] ([[count]])');
+                        return template({
+                            status: status,
+                            title: title,
+                            count: header && header.count,
+                            hasLiveHeaderClass: header && header.hasLive ?
+                                'success' :
+                                ''
+                        });
+                    }
                 }
+
+                template = $interpolate('<span class="icon-status"></span>[[title]] (0)');
+                return template({
+                    title: title
+                });
             }
 
             function observe(callback, $scope) {

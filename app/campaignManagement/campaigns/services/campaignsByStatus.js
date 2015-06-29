@@ -3,35 +3,88 @@ define(function (require) {
 
     var module = require('./../../module');
     var ng = require('angular');
-    var accordionTables = {};
+    var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
+    var tableBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions';
+    var cache = {};
 
-    module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
+    var statuses = {
+        'preFlight': 'Pre-Flight',
+        'inFlight': 'In-Flight',
+        'completed': 'Completed',
+        'archived': 'Archived'
+    };
 
-        var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
-        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&filters=status:eq:';
+    module.service('campaignsByStatus', ['dataFactory', 'campaignAccordionTableFactory', '$state', function (data, campaignAccordionTableFactory, $state) {
+        function idFilter() {
+            var idFilter = '';
+            var params = $state.params;
 
-        var statuses = {
-            'preFlight': 'Pre-Flight',
-            'inFlight': 'In-Flight',
-            'completed': 'Completed',
-            'archived': 'Archived'
-        };
+            if (params.accountId) {
+                idFilter = ',account.id:eq:' + params.accountId
+            } else if (params.divisionId) {
+                idFilter = ',division.id:eq:' + params.divisionId;
+            } else if (params.clientId) {
+                idFilter = ',client.id:eq:' + params.clientId;
+            }
 
-        ng.forEach(statuses, function(title, status) {
-            var accordionTable = campaignAccordionTableFactory();
-            accordionTable.init({
-                status: title,
-                rows: rowsBaseUrl + status,
-                header: headerBaseUrl + status
-            });
+            return idFilter;
+        }
 
-            accordionTables[status] = accordionTable;
-        });
+        function headerUrl() {
+            return headerBaseUrl + idFilter();
+        }
+
+        function tableUrl(status) {
+            return tableBaseUrl + '&filters=status:eq:' + status + idFilter();
+        }
+
+        function transformHeader(data) {
+            var output = [];
+            var metrics;
+
+            for (var i = 0; i < data.campaignSet.length; i++) {
+                metrics = data.campaignSet[i];
+                output.push({
+                    status: metrics.status,
+                    count: metrics.metrics.count,
+                    hasLive: metrics.metrics.countLive > 0
+                });
+            }
+            return output;
+        }
+
+        function init() {
+            var accordionTables = cache[idFilter()];
+
+            if (!accordionTables) {
+                accordionTables = cache[idFilter()] = {};
+
+                accordionTables.header = data(transformHeader);
+                accordionTables.header.init(headerUrl());
+                accordionTables.rows = {};
+
+                ng.forEach(statuses, function(title, status) {
+                    var accordionTable = campaignAccordionTableFactory();
+
+                    accordionTable.init({
+                        header: accordionTables.header,
+                        title: title,
+                        status: status,
+                        rows: tableUrl(status)
+                    });
+
+                    accordionTables.rows[status] = accordionTable;
+                });
+            }
+        }
+
 
         function all() {
+            init();
+
             var output = [];
 
-            ng.forEach(accordionTables, function (table) {
+            ng.forEach(cache[idFilter()].rows, function (table) {
                 output.push(table.all());
             });
 
@@ -39,7 +92,9 @@ define(function (require) {
         }
 
         function observe(callback, $scope){
-            ng.forEach(accordionTables, function (table) {
+            init();
+
+            ng.forEach(cache[idFilter()].rows, function (table) {
                 table.observe(callback, $scope);
             });
         }
