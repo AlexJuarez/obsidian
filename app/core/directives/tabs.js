@@ -8,10 +8,7 @@ define(function (require) {
             restrict: 'E',
             scope: {},
             templateUrl: 'core/directives/tabs.html',
-            transclude: true,
-            link: function() {
-                debugger;
-            }
+            transclude: true
         };
     }]);
 });

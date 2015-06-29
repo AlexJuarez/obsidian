@@ -3,16 +3,16 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.directive('tabs', ['$compile', function ($compile) {
+    app.directive('tab', ['$compile', function ($compile) {
         var uniqueId = 1;
         return {
             restrict: 'E',
-            require: 'templateUrl',
+            //require: ['name'],
             templateUrl: 'core/directives/tab.html',
             scope: {},
             link: function ($scope, elem, attr) {
-                debugger;
                 $scope.uniqueId = uniqueId++;
+                $scope.name = attr.name;
                 $scope.templateUrl = attr.templateUrl;
             }
         };
