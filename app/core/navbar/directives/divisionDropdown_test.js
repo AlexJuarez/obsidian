@@ -104,15 +104,19 @@ define(function (require) {
                 expect(scope.results).toEqual([]);
             });
 
-            it('should hide the elment when there are <=1 divisions', function () {
+            it('should hide the elment when there is one division with an empty name', function () {
                 var elementArray = createDropDown([{
-                    'id': 'divisionId1',
-                    'name': 'Division 1',
-                    'pinned': false,
-                    'active': false,
-                    'lastViewed': '2015-01-01T12:00:00Z',
+                    'name': '',
                     'client': {'id': 'clientId3'}
                 }]);
+                var scope = elementArray.scope();
+
+                scope.$digest();
+                expect(elementArray[0].style.display).toEqual('none');
+            });
+
+            it('should hide the elment when there are no divisions', function () {
+                var elementArray = createDropDown([]);
                 var scope = elementArray.scope();
 
                 scope.$digest();

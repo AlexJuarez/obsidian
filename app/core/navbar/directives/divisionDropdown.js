@@ -38,7 +38,7 @@ define(function (require) {
                     if (event === 'pin') {
                         $scope.pinned = divisions.pinned();
                     } else {
-                        if (divisions.filtered().length <= 1) {
+                        if (hideDivisionTab()) {
                             element.hide();
                         } else {
                             element.show();
@@ -46,6 +46,18 @@ define(function (require) {
                         $scope.divisionsMap = divisions.alphabetMap();
                         $scope.pinned = divisions.pinned();
                     }
+                }
+
+                function hideDivisionTab() {
+                    // Some users have a default division with a blank name,
+                    // and some users have no divisions. Hide the divisions
+                    // tab for these users
+
+                    var allDivisions = divisions.all();
+                    var numDivisions = allDivisions.length;
+                    return ( numDivisions === 1 &&
+                            allDivisions[0].name === '' ) ||
+                        numDivisions === 0;
                 }
             }
         };
