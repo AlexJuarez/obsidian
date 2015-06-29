@@ -1,7 +1,7 @@
 <li>
-    <input type="radio" name="tabs" id="{{ 'tab-' + uniqueId }}" />
+    <input type="radio" ng-checked="selected" name="tabs" id="{{ 'tab-' + uniqueId }}" />
     <label for="{{ 'tab-' + uniqueId }}">{{name}}</label>
-    <div class="{{ 'tab-content' + uniqueId }}">
+    <div id="{{ 'tab-content' + uniqueId }}" class="tab-content">
         <p><ng-include src="{{templateUrl}}"></ng-include></p>
     </div>
 </li>

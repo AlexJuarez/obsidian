@@ -7,11 +7,11 @@ define(function (require) {
         var uniqueId = 1;
         return {
             restrict: 'E',
-            //require: ['name'],
             templateUrl: 'core/directives/tab.html',
             scope: {},
             link: function ($scope, elem, attr) {
                 $scope.uniqueId = uniqueId++;
+                $scope.selected = attr.selected === '';
                 $scope.name = attr.name;
                 $scope.templateUrl = attr.templateUrl;
             }
