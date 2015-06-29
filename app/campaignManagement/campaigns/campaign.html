@@ -2,17 +2,7 @@
     <button class="btn btn-default solid right">Edit Campaign</button>
 </div>
 <placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>
-<h3>Placements</h3>
-<ul class="nav nav-tabs" data-tabs="tabs">
-    <li class="active"><a href="#" data-toggle="tab">Placements</a></li>
-    <li><a href="#" data-toggle="tab">Creatives</a></li>
-</ul>
-<div id="my-tab-content" class="tab-content">
-    <div class="tab-pane active" id="placements">
-        <h1>Placements</h1>
-    </div>
-    <div class="tab-pane" id="creatives">
-        <h1>Creatives</h1>
-    </div>
-</div>
-<div accordion-table="placements"></div>
+<tabs>
+    <tab name="Placements" template-url="campaignManagement/placements/accordion.html"></tab>
+    <tab name="Creatives" template-url="campaignManagement/creatives/accordion.html"></tab>
+</tabs>
