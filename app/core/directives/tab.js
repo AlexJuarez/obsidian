@@ -3,7 +3,7 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.directive('tab', ['$compile', function ($compile) {
+    app.directive('tab', [function () {
         var uniqueId = 1;
         return {
             restrict: 'E',
