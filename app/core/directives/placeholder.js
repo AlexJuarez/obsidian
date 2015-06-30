@@ -9,6 +9,7 @@ define(function (require) {
         return {
             restrict: 'E',
             templateUrl: 'core/directives/placeholder.html',
+            scope: {},
             link: function ($scope, elem, attr) {
                 if (attr.image) {
                     $scope.image = attr.image;

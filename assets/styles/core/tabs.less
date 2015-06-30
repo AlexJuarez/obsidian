@@ -1,0 +1,59 @@
+@import "variables";
+@import "brand";
+
+@background: white;
+@tabs-border-color: @light-gray;
+@blur-tab-text-color: @light-gray;
+
+.nav-tabs {
+    position: relative;
+    list-style: none;
+    text-align: left;
+    padding-left: 2.857rem;
+    li {
+        float: left;
+        display: block;
+    }
+    input[type="radio"] {
+        display:none;
+    }
+    label {
+        top: 1px;
+        z-index: 2;
+        line-height: 1;
+        border: 1px solid @tabs-border-color;
+        border-bottom: none;
+        display: block;
+        padding: 1.5rem 2.5rem;
+        margin-left: 1rem;
+        border-radius: 1px 1px 0 0;
+        font-size: 1.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        position: relative;
+    }
+    .tab-content {
+        border-top: 1px solid @tabs-border-color;
+        display: none;
+        overflow: hidden;
+        padding: 3.5rem;
+        position: absolute;
+        background-color: @background;
+        left: 0;
+        right: 0;
+        z-index: 1;
+        .transition(background 0.2s ease-in-out);
+    }
+    [id^="tab"]:not(:checked) + label {
+        z-index: 0;
+        border-bottom: 1px solid @tabs-border-color;
+        color: @blur-tab-text-color;
+    }
+    [id^="tab"]:checked + label {
+        background: @background;
+    }
+    [id^="tab"]:checked ~ [id^="tab-content"] {
+        display: block;
+    }
+}
