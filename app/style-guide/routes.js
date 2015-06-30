@@ -8,6 +8,7 @@ define(function (require) {
     require('tpl!./button.html');
     require('tpl!./table.html');
     require('tpl!./range-input.html');
+    require('tpl!./tabs.html');
     require('tpl!./dropdown.html');
     require('tpl!./checkboxes.html');
     require('tpl!./radio-buttons.html');

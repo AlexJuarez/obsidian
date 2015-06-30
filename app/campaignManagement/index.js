@@ -20,4 +20,5 @@ define(function (require) {
     require('./accounts/index');
     require('./accounts/controllers/accounts');
     require('./accounts/controllers/newAccount');
+    require('./placements/controllers/placementList.js');
 });
