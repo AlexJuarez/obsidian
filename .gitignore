@@ -8,7 +8,6 @@ app/components
 coverage
 dist
 build/fonts
-assets/fonts
 assets/styles/core.css
 assets/styles/screen.css
 test-results.xml

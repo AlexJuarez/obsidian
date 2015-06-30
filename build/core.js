@@ -47546,7 +47546,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
                     if (event === 'pin') {
                         $scope.pinned = divisions.pinned();
                     } else {
-                        if (divisions.filtered().length <= 1) {
+                        if (hideDivisionTab()) {
                             element.hide();
                         } else {
                             element.show();
@@ -47554,6 +47554,18 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
                         $scope.divisionsMap = divisions.alphabetMap();
                         $scope.pinned = divisions.pinned();
                     }
+                }
+
+                function hideDivisionTab() {
+                    // Some users have a default division with a blank name,
+                    // and some users have no divisions. Hide the divisions
+                    // tab for these users
+
+                    var allDivisions = divisions.all();
+                    var numDivisions = allDivisions.length;
+                    return ( numDivisions === 1 &&
+                            allDivisions[0].name === '' ) ||
+                        numDivisions === 0;
                 }
             }
         };
@@ -48085,6 +48097,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
         return {
             restrict: 'E',
             templateUrl: 'core/directives/placeholder.html',
+            scope: {},
             link: function ($scope, elem, attr) {
                 if (attr.image) {
                     $scope.image = attr.image;
@@ -49969,7 +49982,7 @@ define("simpleUpload", ["jquery"], (function (global) {
 }(this)));
 
 
-define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-class="fileSelected ? \'preview show\' : \'preview\'">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">[[btnLabel]]</button>\n\t        \n\t    </div>\n    </div>\n    <div ng-class="fileSelected ? \'file-name-wrapper show\' : \'file-name-wrapper\'">\n    \t<span class="file-name"></span>\n    \t<a class="glyph-icon glyph-close" ng-click="removeFile()" href=\'\'/>\n    </div>\n</div>\n'); });
+define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-class="fileSelected ? \'preview show\' : \'preview\'">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">[[btnLabel]]</button>\n\n\t    </div>\n    </div>\n    <div ng-class="fileSelected ? \'file-name-wrapper show\' : \'file-name-wrapper\'">\n    \t<span class="file-name"></span>\n    \t<a class="glyph-icon glyph-close" ng-click="removeFile()" href=\'\'/>\n    </div>\n</div>\n'); });
 
 define('core/directives/filePicker',['require','./../module','simpleUpload','tpl!./filePicker.html'],function (require) {
     'use strict';
@@ -49980,7 +49993,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
 
     require('tpl!./filePicker.html');
 
-    app.directive('filePicker', [function () {
+    app.directive('filePicker', ['$timeout', function ($timeout) {
         return {
             restrict: 'A',
             require: '?ngModel',
@@ -49993,7 +50006,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
             link: function (scope, elem, attrs, ngModel) {
                 scope.fileSelected = false;
                 scope.btnLabel = 'browse';
-                
+
                 var filePickerWrapper = elem.find('.file-picker')[0],
                 previewImg = elem.find('.image-preview')[0],
                 fileName = elem.find('.file-name')[0];
@@ -50015,14 +50028,14 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
                     autoSubmit: false,
                     debug: true,
                     onChange: function (filename) {
-                        
+
                         // Make sure image has no src set
                         previewImg.src = '';
                         // Remove any current file in the queue
                         uploader.removeCurrent();
-                        
+
                         // Needs to be synchronous...
-                        setTimeout(function () {
+                        $timeout(function () {
                             if (uploader._queue[0].file) {
                                 var oFReader = new FileReader();
                                 oFReader.readAsDataURL(uploader._queue[0].file);
@@ -50036,7 +50049,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
                                 };
                             }
                         }, 0);
-                        
+
                     },
                     onSubmit: function () {
 
@@ -50055,7 +50068,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
 
                         //self.setFileSizeBox(sizeBox);
                         self.setProgressBar(progressBar);
-                        
+
                         // Set this to remove progress bar when upload complete
                         //self.setProgressContainer(progressWrapper);
 
@@ -50086,355 +50099,40 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     }]);
 });
 
-define('core/filters/safe',['require','./../module'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.filter('safe', ['$sce', function ($sce) {
-        return function (input) {
-            return $sce.trustAsHtml(input);
-        };
-    }]);
-});
-
-define('core/filters/interpolate',['require','./../module'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.filter('interpolate', ['$interpolate', function ($interpolate) {
-        return function (input, scope) {
-            if (input) {
-                return $interpolate(input)(scope);
-            }
-        };
-    }]);
-});
-
-define('core/filters/errorCount',['require','./../module','angular'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-    var ng = require('angular');
-
-    app.filter('errorCount', [function () {
-        return function (input) {
-            var count = 0;
-            for (var k in input) {
-                if (input.hasOwnProperty(k)) {
-                    count += ng.isArray(input[k]) && input[k].length || 1;
-                }
-            }
-            return count;
-        };
-    }]);
-});
-
-var minute = 360000;
-var hour = minute * 60;
-var day = hour * 24;
-var month = day * 30;
-var year = month * 12;
-
-define('core/filters/date',['require','./../module'],function (require) {
+define('core/directives/tabs',['require','./../module'],function (require) {
     'use strict';
 
     var app = require('./../module');
 
-    app.filter('dateFormatter', [function () {
-        return function (date) {
-            var then = new Date(date);
-            var now = new Date();
-            var timePassed = now - then;
-
-            if (timePassed < minute) {
-                return 'moments ago';
-            }
-            if (timePassed < hour) {
-                return Math.floor(timePassed / minute) + ' minutes';
-            }
-            if (timePassed < day) {
-                return Math.floor(timePassed / hour) + ' hours ago';
-            }
-            if (timePassed < month) {
-                return Math.floor(timePassed / day) + ' days ago';
-            }
-            if (timePassed < year) {
-                return Math.floor(timePassed / month) + ' months ago';
-            }
-            return Math.floor(timePassed / year) + ' years ago';
-        };
-    }]);
-});
-
-define('core/filters/truncateNumber',['require','./../module'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.filter('truncateNumber', [function () {
-        return function (input) {
-            if (input < 1000) {
-                return input;
-            }
-            if (input < 1000000) {
-                return Math.round(input / 100) / 10 + 'K';
-            }
-            if (input < 1000000000) {
-                return Math.round(input / 100000) / 10 + 'M';
-            }
-            if (input < 1000000000000) {
-                return Math.round(input / 100000000) / 10 + 'B';
-            }
-            return input;
-        };
-    }]);
-});
-
-define('core/services/store',['require','./../module'],function (require) {
-    'use strict';
-
-    var module = require('./../module');
-
-    var store = {};
-
-    module.service('storeService', ['dataFactory', function (dataFactory) {
-        function setData(id, data) {
-            if (typeof store[id] === 'undefined') {
-                store[id] = dataFactory();
-            }
-            store[id].setData(data);
-            store[id].notifyObservers();
-        }
-
-        function all(id) {
-            return store[id].all();
-        }
-
-        function observe(id, callback) {
-            if (typeof store[id] === 'undefined') {
-                store[id] = dataFactory();
-            }
-            store[id].observe(callback);
-        }
-
+    app.directive('tabs', [function () {
         return {
-            setData: setData,
-            observe: observe,
-            all: all
+            restrict: 'E',
+            scope: {},
+            templateUrl: 'core/directives/tabs.html',
+            transclude: true
         };
     }]);
 });
 
-define('core/services/channel',['require','./../module','angular'],function (require) {
-    'use strict';
-
-    var module = require('./../module');
-    var ng = require('angular');
-
-    module.service('channelService', ['dataFactory', '$http', function (dataFactory) {
-        var data = dataFactory(function (data) {
-            data.sort(sortFn);
-            return data;
-        });
-
-        function transform(data) {
-            data = data.clients;
-
-            var channelSet = {};
-
-            for (var i = 0; i < data.length; i++) {
-                channelSet[data[i].channel] = true;
-            }
-
-            var output = [];
-
-            ng.forEach(channelSet, function (value, key) {
-                output.push(key);
-            });
-
-            return output;
-        }
-
-        function init() {
-            return data.init('/api/v3/clients?dimensions=channel', transform);
-        }
-
-        function sortFn(a, b) {
-            return b.localeCompare(a);
-        }
-
-        return {
-            init: init,
-            all: data.all,
-            observe: data.observe,
-            notifyObservers: data.notifyObservers,
-            addData: data.addData,
-            setData: data.setData
-        };
-    }]);
-});
-
-define('core/constants/apiURI',['require','./../module'],function (require) {
-    'use strict';
-
-    var module = require('./../module');
-
-    var apiURI = (window.apiURI && window.apiURI) || '';
-
-    module.constant('API_URI', apiURI);
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store','./services/channel','./constants/apiURI'],function (require) {
-    'use strict';
-
-    require('./modal/index');
-    require('./datepicker/index');
-    require('./navbar/index');
-    require('./factories/data');
-    require('./factories/pagination');
-    require('./factories/domainInterceptor');
-    require('./directives/dropdown');
-    require('./directives/limit');
-    require('./directives/tooltip');
-    require('./directives/compile');
-    require('./directives/placeholder');
-    require('./directives/filePicker');
-    require('./filters/safe');
-    require('./filters/interpolate');
-    require('./filters/errorCount');
-    require('./filters/date');
-    require('./filters/truncateNumber');
-    require('./services/store');
-    require('./services/channel');
-    require('./constants/apiURI');
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('table/module',['require','angular'],function (require) {
-    'use strict';
-
-    var ng = require('angular');
-
-    return ng.module('app.tables', []);
-});
-
-define('table/filters/format',['require','./../module'],function (require) {
+define('core/directives/tab',['require','./../module'],function (require) {
     'use strict';
 
     var app = require('./../module');
-    //var ng = require('angular');
 
-    app.filter('format', ['$filter', function ($filter) {
-        function percent(input) {
-            return $filter('number')(input, 2) + '%';
-        }
-
-        function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
-            return $filter('date')(input, 'longDate');
-        }
-
-        return function (input, row, rules) {
-            var rule = rules[input];
-            input = row[input];
-            switch (rule) {
-            case 'number':
-                return $filter('number')(input, 0);
-            case 'percent':
-                return percent(input);
-            case 'quartile':
-                return input.map(function (d) {
-                    return percent(d);
-                }).join(' ');
-            case 'date':
-                return date(input);
-            case 'bullet':
-                return '';
-            case 'link':
-                return '<a ui-sref="' + input.route + '">' + input.name + '</a>';
-            default:
-                return input;
-            }
-        };
-    }]);
-});
-
-
-define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n            <a ng-if="row.options.more" ng-click="row.options.more()">Get More</a>\n        </div>\n    </div>\n</div>\n'); });
-
-define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-    require('tpl!./accordionTable.html');
-
-    app.directive('accordionTable', [function () {
+    app.directive('tab', [function () {
+        var uniqueId = 1;
         return {
-            restrict: 'A',
-            templateUrl: 'table/directives/accordionTable.html',
-            replace: true,
-            scope: {
-                table: '=accordionTable',
-                classes: '@class'
+            restrict: 'E',
+            templateUrl: 'core/directives/tab.html',
+            scope: {},
+            link: function ($scope, elem, attr) {
+                $scope.uniqueId = uniqueId++;
+                $scope.selected = attr.selected === '';
+                $scope.name = attr.name;
+                $scope.templateUrl = attr.templateUrl;
             }
         };
     }]);
-});
-
-
-define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
-
-/**
- * Created by alex on 4/23/15.
- */
-define('table/directives/basicTable',['require','./../module','tpl!./basicTable.html'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-    require('tpl!./basicTable.html');
-
-    app.directive('basicTable', [function () {
-        return {
-            restrict: 'A',
-            templateUrl: 'table/directives/basicTable.html',
-            replace: true,
-            scope: {
-                table: '=basicTable',
-                classes: '@class'
-            }
-        };
-    }]);
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable'],function (require) {
-    'use strict';
-
-    require('./filters/format');
-    require('./directives/accordionTable');
-    require('./directives/basicTable');
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('chart/module',['require','angular'],function (require) {
-    'use strict';
-
-    var ng = require('angular');
-
-    return ng.module('app.charts', []);
 });
 
 !function() {
@@ -59941,6 +59639,387 @@ define('chart/module',['require','angular'],function (require) {
   if (typeof define === "function" && define.amd) define('d3',d3); else if (typeof module === "object" && module.exports) module.exports = d3;
   this.d3 = d3;
 }();
+
+define('tpl!core/directives/pacingChart.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/pacingChart.html', '<span>43.3K of 65K</span>\n<svg class=\'meter\' version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\n    enable-background="new 0 0 100% 100%">\n  <g class="fill">\n    <rect width="0%" height="100%"/>\n  </g>\n  <g class="stroke">\n    <rect width="100%" height="100%"/>\n  </g>\n  <g class="target">\n    <rect x="0%" width="3" height="100%"/>\n  </g>\n</svg>\n'); });
+
+define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacingChart.html'],function (require) {
+	'use strict';
+
+	var app = require('./../module');
+	var d3 = require('d3');
+	require('tpl!./pacingChart.html');
+
+	app.directive('pacingChart', [function () {
+		return {
+			restrict: 'A',
+			scope: {},
+			require: '?ngModel',
+			templateUrl: 'core/directives/pacingChart.html',
+			link: function (scope, elem) {
+				d3.select(elem.find('.fill > rect')[0])
+					.attr('width', '60%');
+                d3.select(elem.find('.target > rect')[0])
+					.attr('x', '80%');
+			}
+		};
+	}]);
+
+});
+
+define('core/filters/safe',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('safe', ['$sce', function ($sce) {
+        return function (input) {
+            return $sce.trustAsHtml(input);
+        };
+    }]);
+});
+
+define('core/filters/interpolate',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('interpolate', ['$interpolate', function ($interpolate) {
+        return function (input, scope) {
+            if (input) {
+                return $interpolate(input)(scope);
+            }
+        };
+    }]);
+});
+
+define('core/filters/errorCount',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    var ng = require('angular');
+
+    app.filter('errorCount', [function () {
+        return function (input) {
+            var count = 0;
+            for (var k in input) {
+                if (input.hasOwnProperty(k)) {
+                    count += ng.isArray(input[k]) && input[k].length || 1;
+                }
+            }
+            return count;
+        };
+    }]);
+});
+
+var minute = 360000;
+var hour = minute * 60;
+var day = hour * 24;
+var month = day * 30;
+var year = month * 12;
+
+define('core/filters/date',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.filter('dateFormatter', [function () {
+        return function (date) {
+            var then = new Date(date);
+            var now = new Date();
+            var timePassed = now - then;
+
+            if (timePassed < minute) {
+                return 'moments ago';
+            }
+            if (timePassed < hour) {
+                return Math.floor(timePassed / minute) + ' minutes';
+            }
+            if (timePassed < day) {
+                return Math.floor(timePassed / hour) + ' hours ago';
+            }
+            if (timePassed < month) {
+                return Math.floor(timePassed / day) + ' days ago';
+            }
+            if (timePassed < year) {
+                return Math.floor(timePassed / month) + ' months ago';
+            }
+            return Math.floor(timePassed / year) + ' years ago';
+        };
+    }]);
+});
+
+define('core/filters/truncateNumber',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('truncateNumber', [function () {
+        return function (input) {
+            if (input < 1000) {
+                return input;
+            }
+            if (input < 1000000) {
+                return Math.round(input / 100) / 10 + 'K';
+            }
+            if (input < 1000000000) {
+                return Math.round(input / 100000) / 10 + 'M';
+            }
+            if (input < 1000000000000) {
+                return Math.round(input / 100000000) / 10 + 'B';
+            }
+            return input;
+        };
+    }]);
+});
+
+define('core/services/store',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    var store = {};
+
+    module.service('storeService', ['dataFactory', function (dataFactory) {
+        function setData(id, data) {
+            if (typeof store[id] === 'undefined') {
+                store[id] = dataFactory();
+            }
+            store[id].setData(data);
+            store[id].notifyObservers();
+        }
+
+        function all(id) {
+            return store[id].all();
+        }
+
+        function observe(id, callback) {
+            if (typeof store[id] === 'undefined') {
+                store[id] = dataFactory();
+            }
+            store[id].observe(callback);
+        }
+
+        return {
+            setData: setData,
+            observe: observe,
+            all: all
+        };
+    }]);
+});
+
+define('core/services/channel',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    module.service('channelService', ['dataFactory', '$http', function (dataFactory) {
+        var data = dataFactory(function (data) {
+            data.sort(sortFn);
+            return data;
+        });
+
+        function transform(data) {
+            data = data.clients;
+
+            var channelSet = {};
+
+            for (var i = 0; i < data.length; i++) {
+                channelSet[data[i].channel] = true;
+            }
+
+            var output = [];
+
+            ng.forEach(channelSet, function (value, key) {
+                output.push(key);
+            });
+
+            return output;
+        }
+
+        function init() {
+            return data.init('/api/v3/clients?dimensions=channel', transform);
+        }
+
+        function sortFn(a, b) {
+            return b.localeCompare(a);
+        }
+
+        return {
+            init: init,
+            all: data.all,
+            observe: data.observe,
+            notifyObservers: data.notifyObservers,
+            addData: data.addData,
+            setData: data.setData
+        };
+    }]);
+});
+
+define('core/constants/apiURI',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    var apiURI = (window.apiURI && window.apiURI) || '';
+
+    module.constant('API_URI', apiURI);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/tabs','./directives/tab','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store','./services/channel','./constants/apiURI'],function (require) {
+    'use strict';
+
+    require('./modal/index');
+    require('./datepicker/index');
+    require('./navbar/index');
+    require('./factories/data');
+    require('./factories/pagination');
+    require('./factories/domainInterceptor');
+    require('./directives/dropdown');
+    require('./directives/limit');
+    require('./directives/tooltip');
+    require('./directives/compile');
+    require('./directives/placeholder');
+    require('./directives/filePicker');
+    require('./directives/tabs');
+    require('./directives/tab');
+    require('./directives/pacingChart');
+    require('./filters/safe');
+    require('./filters/interpolate');
+    require('./filters/errorCount');
+    require('./filters/date');
+    require('./filters/truncateNumber');
+    require('./services/store');
+    require('./services/channel');
+    require('./constants/apiURI');
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('table/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.tables', []);
+});
+
+define('table/filters/format',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('format', ['$filter', function ($filter) {
+        function percent(input) {
+            return $filter('number')(input, 2) + '%';
+        }
+
+        function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
+            return $filter('date')(input, 'longDate');
+        }
+
+        return function (input, row, rules) {
+            var rule = rules[input];
+            input = row[input];
+            switch (rule) {
+            case 'number':
+                return $filter('number')(input, 0);
+            case 'percent':
+                return percent(input);
+            case 'quartile':
+                return input.map(function (d) {
+                    return percent(d);
+                }).join(' ');
+            case 'date':
+                return date(input);
+            case 'bullet':
+                return '';
+            case 'link':
+                return '<a ui-sref="' + input.route + '">' + input.name + '</a>';
+            default:
+                return input;
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n            <a ng-if="row.options.more" ng-click="row.options.more()">Get More</a>\n        </div>\n    </div>\n</div>\n'); });
+
+define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./accordionTable.html');
+
+    app.directive('accordionTable', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/accordionTable.html',
+            replace: true,
+            scope: {
+                table: '=accordionTable',
+                classes: '@class'
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
+
+/**
+ * Created by alex on 4/23/15.
+ */
+define('table/directives/basicTable',['require','./../module','tpl!./basicTable.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./basicTable.html');
+
+    app.directive('basicTable', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/basicTable.html',
+            replace: true,
+            scope: {
+                table: '=basicTable',
+                classes: '@class'
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable'],function (require) {
+    'use strict';
+
+    require('./filters/format');
+    require('./directives/accordionTable');
+    require('./directives/basicTable');
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('chart/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.charts', []);
+});
+
 define('chart/directives/comparisonChart',['require','./../module','d3'],function (require) {
     'use strict';
 
@@ -59965,10 +60044,10 @@ define('chart/directives/comparisonChart',['require','./../module','d3'],functio
 
                         d3.select(elem[0])
                             .selectAll('div')
-                                .data(data)
+                            .data(data)
                             .enter().append('div')
-                                    .style('width', function (d) { return x(d) + 'px'; })
-                                .style('height', height + 'px');
+                            .style('width', function (d) { return x(d) + 'px'; })
+                            .style('height', height + 'px');
                     }
                 });
             }
@@ -60000,10 +60079,10 @@ define('chart/directives/quartileBarGraph',['require','./../module','d3'],functi
 
                         d3.select(elem[0])
                             .selectAll('div')
-                                .data(data)
+                            .data(data)
                             .enter().append('div')
-                                    .style('width', function (d) { return x(d) + 'px'; })
-                                .style('height', height + 'px');
+                            .style('width', function (d) { return x(d) + 'px'; })
+                            .style('height', height + 'px');
                     }
                 });
             }
@@ -60060,7 +60139,7 @@ define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], functi
 define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="header-summary">\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Campaign</button>\n</div>\n<h3>Campaigns By Status</h3>\n<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n<h3>Placements</h3>\n<div accordion-table="placements"></div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n<tabs>\n    <tab name="Placements" selected template-url="campaignManagement/placements/list.html"></tab>\n    <tab name="Creatives" template-url="campaignManagement/creatives/accordion.html"></tab>\n</tabs>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
@@ -60973,10 +61052,20 @@ define('campaignManagement/accounts/controllers/newAccount',['require','./../../
     }]);
 });
 
+
+
+define('campaignManagement/placements/controllers/placementList.js',['require','./../../module'],function (require) {
+    var app = require('./../../module');
+
+    app.controller('placementListCtrl', ['$scope', function ($scope) {
+        $scope.placements = 'hello';
+    }]);
+});
+
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
+define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount','./placements/controllers/placementList.js'],function (require) {
     'use strict';
 
     require('./routes');
@@ -60995,6 +61084,7 @@ define('campaignManagement/index',['require','./routes','./controllers/campaignM
     require('./accounts/index');
     require('./accounts/controllers/accounts');
     require('./accounts/controllers/newAccount');
+    require('./placements/controllers/placementList.js');
 });
 
 define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index'],function (require) {
