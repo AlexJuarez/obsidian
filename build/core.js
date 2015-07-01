@@ -59613,17 +59613,20 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
 	var d3 = require('d3');
 	require('tpl!./pacingChart.html');
 
-	app.directive('pacingChart', [function () {
+	app.directive('pacingChart', ['$timeout', function ($timeout) {
 		return {
 			restrict: 'A',
 			scope: {},
 			require: '?ngModel',
 			templateUrl: 'core/directives/pacingChart.html',
 			link: function (scope, elem) {
-				d3.select(elem.find('.fill > rect')[0])
-					.attr('width', '60%');
-                d3.select(elem.find('.target > rect')[0])
-					.attr('x', '80%');
+				$timeout(function () {
+					var fill = d3.select(elem.find('.fill > rect')[0]);
+					fill.attr('width', '60%');
+					var target = d3.select(elem.find('.target > rect')[0]);
+					target.attr('x', '80%');
+					scope.$apply();
+				});
 			}
 		};
 	}]);
@@ -60077,7 +60080,7 @@ define('campaignManagement/module',['require','angular','ui-router','./../chart/
 });
 
 
-define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n</section>\n'); });
+define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section ui-view>\n</section>\n'); });
 
 
 define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div ui-view="content">\n</div>\n'); });
@@ -60101,7 +60104,7 @@ define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], functi
 define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="header-summary">\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Campaign</button>\n</div>\n<h3>Campaigns By Status</h3>\n<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</li>\n    <li ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</li>\n</ul>\n<div class="nav-tabs-content" ui-view="tabs"></div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</li>\n    <li ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</li>\n</ul>\n<div class="nav-tabs-content" ui-view="tabs"></div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div>\n    [[placements]]\n</div>\n'); });
@@ -60481,6 +60484,63 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
     }]);
 });
 
+
+define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<ul class="campaign-details">\n  <li>\n    <span>status</span>\n    <span class="status"><i class="glyph-icon glyph-dot" ng-class="{\'success\': isLive}"></i>[[campaignStatus]]</span>\n  </li>\n  <li class="border-right">\n    <span>flight dates</span>\n    <span>[[details.startDate|date:\'MMM d, yy\']] - [[details.endDate|date:\'MMM d, yy\']]</span>\n  </li>\n  <li ng-if="showImpressions">\n    <span>total impressions</span>\n    <span>[[details.metrics.impressions|truncateNumber]]</span>\n  </li>\n  <li class="border-right" ng-if="showImpressions">\n    <span>booked impressions</span>\n    <span>[[details.metrics.bookedImpressions|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>publishers</span>\n    <span>[[details.distinctPublishers|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>creatives</span>\n    <span>[[details.countCreatives|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>placements</span>\n    <span>[[details.countPlacements|truncateNumber]]</span>\n  </li>\n</ul>\n'); });
+
+define('campaignManagement/campaigns/directives/campaignDetails',['require','./../../module','tpl!./campaignDetails.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./campaignDetails.html');
+
+    app.directive('campaignDetails', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/directives/campaignDetails.html',
+            controller: ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
+                var campaignID = $state.params.campaignId;
+                $http.get('/api/v3/campaigns?dimensions=status,startDate,endDate,distinctPublishers,countPlacements,countCreatives&metrics=impressions,bookedImpressions&filters=id:' + campaignID)
+                .then(function (res) {
+                    $timeout(function () {
+                        $scope.details = res.data.campaigns[0];
+                        $scope.showImpressions = false;
+                        $scope.isLive = false;
+                        switch ($scope.details.status) {
+                        case 'preFlight':
+                            $scope.campaignStatus = 'Pre-Flight';
+                            break;
+                        case 'inFlight':
+                            $scope.campaignStatus = 'In-Flight';
+                            $scope.showImpressions = true;
+                            $scope.isLive = true;
+                            break;
+                        case 'live':
+                            $scope.campaignStatus = 'Live';
+                            $scope.showImpressions = true;
+                            $scope.isLive = true;
+                            break;
+                        case 'completed':
+                            $scope.campaignStatus = 'Completed';
+                            $scope.showImpressions = true;
+                            break;
+                        case 'archived':
+                            $scope.campaignStatus = 'Archived';
+                            $scope.showImpressions = true;
+                            break;
+                        default:
+                            $scope.campaignStatus = 'Unknown';
+                        }
+                        $scope.$apply();
+                    });
+                });
+
+            }]
+        };
+    }]);
+});
+
 define('campaignManagement/campaigns/factories/campaignAccordionTable',['require','./../../module'],function (require) {
     'use strict';
 
@@ -60777,6 +60837,8 @@ define('campaignManagement/campaigns/controllers/campaign',['require','./../../m
                 }
             }
         ];
+
+
     }]);
 });
 
@@ -61066,13 +61128,14 @@ define('campaignManagement/accounts/controllers/newAccount',['require','./../../
 /**
  * Created by Alex on 3/1/2015.
  */
-define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./campaigns/placements/controllers/list','./campaigns/creatives/controllers/list','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
+define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/directives/campaignDetails','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./campaigns/placements/controllers/list','./campaigns/creatives/controllers/list','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
     'use strict';
 
     require('./routes');
     require('./controllers/campaignManagement');
     require('./controllers/index');
     require('./campaigns/services/campaignsByStatus');
+    require('./campaigns/directives/campaignDetails');
     require('./campaigns/factories/campaignAccordionTable');
     require('./campaigns/controllers/newCampaign');
     require('./campaigns/controllers/campaigns');
