@@ -13,6 +13,8 @@ define(function (require) {
     require('./campaigns/controllers/newCampaign');
     require('./campaigns/controllers/campaigns');
     require('./campaigns/controllers/campaign');
+    require('./campaigns/placements/controllers/list');
+    require('./campaigns/creatives/controllers/list');
     require('./clients/directives/activeSummary');
     require('./clients/controllers/clients');
     require('./clients/controllers/newClient');
@@ -21,5 +23,4 @@ define(function (require) {
     require('./accounts/index');
     require('./accounts/controllers/accounts');
     require('./accounts/controllers/newAccount');
-    require('./placements/controllers/placementList.js');
 });

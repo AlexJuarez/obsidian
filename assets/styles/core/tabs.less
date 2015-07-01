@@ -2,59 +2,48 @@
 @import "brand";
 
 @background: white;
-@tabs-border-color: @light-gray;
+@tab-border-color: @light-gray;
 @blur-tab-text-color: @light-gray;
+@tab-text-color: @dark-gray;
 
 .nav-tabs {
-    position: relative;
+    display: block;
+    margin: 0;
+    padding: 0;
     list-style: none;
     text-align: left;
-    padding-left: 2.857rem;
+    border-bottom: 1px solid @tab-border-color;
     li {
-        float: left;
-        display: block;
-    }
-    input[type="radio"] {
-        display:none;
-    }
-    label {
         .noselect;
-        top: 1px;
-        z-index: 2;
-        line-height: 1;
-        border: 1px solid @tabs-border-color;
-        border-bottom: none;
-        display: block;
+        display: inline-block;
+
         padding: 1.5rem 2.5rem;
         margin-left: 1rem;
+        margin-bottom: -1px;
+
         border-radius: 1px 1px 0 0;
+        border: 1px solid @tab-border-color;
+        border-bottom-color: transparent;
+
+        color: @blur-tab-text-color;
         font-size: 1.8rem;
+        line-height: 1;
         font-weight: bold;
         text-transform: uppercase;
         cursor: pointer;
-        position: relative;
+
+        &:first-child {
+            margin-left: 2rem;
+        }
     }
-    .tab-content {
-        border-top: 1px solid @tabs-border-color;
-        display: none;
-        overflow: hidden;
-        padding: 3.5rem;
-        position: absolute;
-        background-color: @background;
-        left: 0;
-        right: 0;
-        z-index: 1;
-        .transition(background 0.2s ease-in-out);
+    li.active {
+        color: @tab-text-color;
+        border-bottom-color: white;
+        z-index: 2;
     }
-    [id^="tab"]:not(:checked) + label {
-        z-index: 0;
-        border-bottom: 1px solid @tabs-border-color;
-        color: @blur-tab-text-color;
-    }
-    [id^="tab"]:checked + label {
-        background: @background;
-    }
-    [id^="tab"]:checked ~ [id^="tab-content"] {
-        display: block;
-    }
+}
+
+.nav-tabs-content {
+    padding:3.5rem 0;
+    background-color: @background;
 }

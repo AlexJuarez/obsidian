@@ -9,6 +9,8 @@ define(function (require) {
     require('tpl!./table.html');
     require('tpl!./range-input.html');
     require('tpl!./tabs.html');
+    require('tpl!./tab1.html');
+    require('tpl!./tab2.html');
     require('tpl!./dropdown.html');
     require('tpl!./checkboxes.html');
     require('tpl!./radio-buttons.html');
@@ -26,12 +28,30 @@ define(function (require) {
     require('tpl!./date-picker.html');
     require('tpl!./file-picker.html');
 
-    return app.config(['$stateProvider', function ($stateProvider) {
+    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
+        $urlRouterProvider.when('/style-guide', '/style-guide/tab1' );
+
         $stateProvider
             .state('style-guide', {
                 url: '/style-guide',
                 templateUrl: 'style-guide/index.html',
                 controller: 'styleGuideCtrl'
+            })
+            .state('style-guide.tab1', {
+                url: '/tab1',
+                views: {
+                    tabs: {
+                        templateUrl: 'style-guide/tab1.html'
+                    }
+                }
+            })
+            .state('style-guide.tab2', {
+                url: '/tab2',
+                views: {
+                    tabs: {
+                        templateUrl: 'style-guide/tab2.html'
+                    }
+                }
             });
     }]);
 });

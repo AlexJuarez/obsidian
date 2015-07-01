@@ -12,6 +12,8 @@ define(function (require) {
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/campaign.html');
+    require('tpl!./campaigns/placements/list.html');
+    require('tpl!./campaigns/creatives/list.html');
     require('tpl!./campaigns/new-campaign.html');
     require('tpl!./accounts/index.html');
     require('tpl!./accounts/new-account.html');
@@ -24,6 +26,7 @@ define(function (require) {
 
         //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+        $urlRouterProvider.when('/campaign-management/campaigns/:campaignId', '/campaign-management/campaigns/:campaignId/placements');
         if (!window.disableRouter) {
             $urlRouterProvider.when('/', '/analytics');
         }
@@ -108,6 +111,26 @@ define(function (require) {
                     'content': {
                         controller: 'campaignCtrl',
                         templateUrl: 'campaignManagement/campaigns/campaign.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.placements',
+                url: '/placements',
+                views: {
+                    'tabs': {
+                        controller: 'placementListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/placements/list.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives',
+                url: '/creatives',
+                views: {
+                    'tabs': {
+                        controller: 'creativeListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/list.html'
                     }
                 }
             });
