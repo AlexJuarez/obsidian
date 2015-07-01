@@ -8,6 +8,7 @@ define(function (require) {
     require('./controllers/campaignManagement');
     require('./controllers/index');
     require('./campaigns/services/campaignsByStatus');
+    require('./campaigns/directives/campaignDetails');
     require('./campaigns/factories/campaignAccordionTable');
     require('./campaigns/controllers/newCampaign');
     require('./campaigns/controllers/campaigns');
