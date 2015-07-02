@@ -25,6 +25,7 @@ define(function (require) {
     require('tpl!./quartiles.html');
     require('tpl!./date-picker.html');
     require('tpl!./file-picker.html');
+    require('tpl!./creative-thumbnail-view.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider
