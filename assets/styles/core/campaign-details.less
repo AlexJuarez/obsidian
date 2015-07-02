@@ -1,0 +1,25 @@
+.campaign-details {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+
+    li {
+        flex-direction: column;
+        span {
+            display: block;
+        }
+        span:first-child {
+            .font-size(1.2);
+            font-family: 'Lato', sans-serif;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        span:last-child {
+            .font-size(2.6);
+            font-family: 'Oswald', sans-serif;
+            color: @brand-color;
+        }
+    }
+}

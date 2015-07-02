@@ -1,7 +1,65 @@
+.campaign-details {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    @media (max-width: 1060px) {
+        flex-wrap: wrap;
+    }
+    li {
+        white-space: nowrap;
+        padding-left: 20px;
+        padding-right: 30px;
+        min-height: 67px; // Minimize the layout from jumping down
+        &:first-child {
+            padding-left: 0;
+        }
+        span {
+            display: flex;
+            &:first-child {
+                .font-size(1.2);
+                font-family: 'Lato', sans-serif;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+            &:last-child {
+                min-height: 4.8rem; // Minimize the layout from jumping down
+                .font-size(3);
+                font-family: 'Oswald', sans-serif;
+                color: @brand-color;
+                @media (max-width: 1280px) {
+                    .font-size(2);
+                }
+            }
+            &.status {
+                .glyph-dot {
+                    position: relative;
+                    width: 2.5rem;
+                    .font-size(1.4);
+                    color: @gray;
+                    &:before {
+                        position: absolute;
+                        top: 50%;
+                        left: 0;
+                        -webkit-transform: translateY(-50%);
+                        transform: translateY(-50%);
+                    }
+                    &.success {
+                        color: #00a651;
+                    }
+                }
+            }
+        }
+        &.border-right {
+            border-right: 1px solid @light-gray;
+        }
+    }
+}
+
 .header-summary {
-    margin-top: 1rem;
+    margin-top: 4rem;
     margin-bottom: 1rem;
-    //text-align: left;
 
     .title, .list {
         padding: 0;

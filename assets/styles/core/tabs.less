@@ -1,0 +1,56 @@
+@import "variables";
+@import "brand";
+
+@background: white;
+@tab-border-color: @dark-gray;
+@tab-text-color: @dark-gray;
+@blur-tab-border-color: @light-gray;
+@blur-tab-text-color: @light-gray;
+
+.nav-tabs {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+    border-bottom: 1px solid @tab-border-color;
+
+    li { // blurred
+        user-select: none;
+        display: inline-block;
+        z-index: 1;
+
+        padding: 1.5rem 2.5rem;
+        margin-left: 1rem;
+
+        border-radius: 1px 1px 0 0;
+        border: 1px solid @blur-tab-border-color;
+        border-bottom: 0;
+
+        color: @blur-tab-text-color;
+        font-size: 1.8rem;
+        line-height: 1;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+
+        &:first-child {
+            margin-left: 2rem;
+        }
+
+        &.active {
+            color: @tab-text-color;
+            border: 1px solid @tab-border-color;
+            border-bottom: 0;
+            background: white;
+            padding-bottom: ~"calc(1.5rem + 1px)";
+            margin-bottom: -2px;
+            z-index: 2;
+        }
+    }
+}
+
+.nav-tabs-content {
+    padding:3.5rem 0;
+    background-color: @background;
+}

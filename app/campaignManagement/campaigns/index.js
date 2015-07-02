@@ -8,4 +8,8 @@ define(function (require) {
     require('./controllers/newCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');
+
+    require('./directives/campaignDetails');
+    require('./placements/controllers/list');
+    require('./creatives/controllers/list');
 });

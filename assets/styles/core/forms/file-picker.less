@@ -4,29 +4,16 @@
     width: 100%;
     .input-wrapper {
         display: flex;
-        display: flexbox;
         .droparea {
-            display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
-            display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
-            display: -ms-flexbox;      /* TWEENER - IE 10 */
-            display: -webkit-flex;     /* NEW - Chrome */
             display: flex;
-            -webkit-flex-direction: row;
-            -ms-flex-direction: row;
             flex-direction: row;
-            -webkit-align-items: baseline;
-            -ms-align-items: baseline;
             align-items: baseline;
-            -webkit-justify-content: center;
-            -ms-justify-content: center;
             justify-content: center;
             flex-grow: 2;
             box-sizing: border-box;
-
             height: 10rem;
             line-height: 10rem; /* Used to vertically center items in coordination w/ baseline */
             border: 1px dashed @light-gray;
-            
             i {
                 margin: 0 1rem;
                 &.glyph-icon {
@@ -55,10 +42,7 @@
                 display: flex;
                 height: 10rem;
                 margin-right: 1rem;
-                //max-width: 25%;
-                //flex-grow: 1;
             }
-            //
             img {
                 max-height: 100%;
             }
