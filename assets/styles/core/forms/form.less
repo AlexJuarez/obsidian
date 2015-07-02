@@ -79,12 +79,20 @@ textarea.form-control {
     .form-control {
         width: 100%;
     }
+    .form-group.right {
+        float: right;
+    }
     @media (min-width: @screen-sm-min) {
         .form-group {
             display: inline-block;
             margin-bottom: 0;
             vertical-align: middle;
             margin-right: 2rem;
+        }
+    }
+    @media (max-width: @screen-lg-min) {
+        .form-group.right {
+            float: none;
         }
     }
 }
