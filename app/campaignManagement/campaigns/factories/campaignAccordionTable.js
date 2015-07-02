@@ -3,7 +3,7 @@ define(function (require) {
 
     var module = require('./../../module');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$q', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $q, $interpolate, dataFactory, paginationFactory, $state) {
+    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
         return function() {
             var header;
             var rows = paginationFactory(sortRows);

@@ -86,12 +86,10 @@ define(function (require) {
             }
 
             function expectDestroyed(){
-                expect(scope).toBeFalsy();
+                expect(scope.destroyed).toBe(true);
             }
 
             destroyAndDigest(expectDestroyed);
-
-
         });
 
     });

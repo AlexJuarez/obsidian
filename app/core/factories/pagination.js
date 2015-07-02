@@ -12,9 +12,18 @@ define(function (require) {
             }
         }
 
-        return function (sortFn) {
-            var limit = 10;
-            var offset = 0;
+        /**
+         * Create a Pagination Factory Object
+         * @param {function} sortFn - Optional sorting function, the data is stored after the sortFn is applied
+         * @param {number} [limit=10] - Limit the number of results
+         * @param {number} [offset=0] - The starting offset usually should not need to be changed.
+         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildPageUrl, limit: (number), all: (Object[])}}
+         */
+
+        function create(sortFn, limit, offset) {
+            limit = limit || 10;
+            offset = offset || 0;
+
             var data = dataFactory(sortFn);
             var baseUrl = '';
             var transform;
@@ -41,7 +50,9 @@ define(function (require) {
                 limit: limit,
                 all: data.all
             };
-        };
+        }
+
+        return create;
     }]);
 
 
