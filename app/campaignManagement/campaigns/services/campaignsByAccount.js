@@ -29,7 +29,9 @@ define(function (require) {
         {name: '', id: 'edit'}
     ];
 
-    module.service('campaignsByAccount', ['campaignCacheService', '$state', '$interpolate', function (cache, $state, $interpolate) {
+    var limits = {};
+
+    module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
         function idFilter() {
             var filter = '';
             var params = $state.params;
@@ -41,6 +43,10 @@ define(function (require) {
             }
 
             return filter;
+        }
+
+        function accountUrl() {
+            return headerUrl + '&filters=' + idFilter();
         }
 
         function url() {
@@ -58,7 +64,7 @@ define(function (require) {
         }
 
         function getAccountIds() {
-            var campaignHeader = cache.get(headerUrl, headerTransform);
+            var campaignHeader = cache.get(accountUrl(), headerTransform);
             var accounts = campaignHeader.all();
             var ids = [];
 
@@ -90,22 +96,62 @@ define(function (require) {
         }
 
         function header(account) {
-            return headerTemplate(account);
+            return $interpolate(headerTemplate)(account);
+        }
+
+        function transformRows(campaigns, accountId) {
+            if(campaigns) {
+                var output = [];
+                var campaign;
+                var limit = limits[accountId] || 10;
+
+                for (var i = 0; i < campaigns.length && i < limit; i++) {
+                    campaign = campaigns[i];
+
+                    output.push(ng.extend({
+                        campaign: {
+                            id: campaign.id,
+                            route: 'cm.campaigns.all({ accountId: row.campaign.id })',
+                            name: campaign.name
+                        },
+                        impressions: campaign.metrics.impressions,
+                        start: campaign.startDate,
+                        end: campaign.endDate,
+                        creatives: campaign.metrics.countCreatives,
+                        placements: campaign.metrics.countPlacements
+                    }));
+                }
+
+                return output;
+            }
+        }
+
+        function showMore(accountId) {
+            return function () {
+                if (!limits[accountId]) {
+                    limits[accountId] = 10;
+                }
+
+                limits[accountId] += 10;
+            };
         }
 
         function all() {
-            var headers = cache.get(headerUrl, headerTransform).all();
+            var accountInfo = cache.get(accountUrl(), headerTransform).all();
             var accounts = groupByAccount();
             var output = [];
 
-            for (var i = 0; i < headers.length; i++) {
-                var account = headers[i];
+            for (var i = 0; i < accountInfo.length; i++) {
+                var account = accountInfo[i];
                 output.push({
                     header: header(account),
+                    options: {
+                        more: showMore(account.id)
+                    },
                     content: {
                         rules: rules,
                         headers: headers,
-                        data: accounts[account.id]
+                        data: transformRows(accounts[account.id], account.id)
                     }
                 })
             }
@@ -114,9 +160,13 @@ define(function (require) {
         }
 
         function observe(callback, $scope){
-            ng.forEach(cache[idFilter()].rows, function (table) {
-                table.observe(callback, $scope);
-            });
+            var campaignHeader = cache.get(accountUrl(), headerTransform);
+
+            campaignHeader.observe(callback, $scope);
+            campaignHeader.observe(function() {
+                var campaignCache = cache.get(url(), campaignTransform);
+                campaignCache.observe(callback, $scope);
+            }, $scope);
         }
 
         return {

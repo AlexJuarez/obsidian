@@ -62,7 +62,8 @@ define(function (require) {
         function filtered() {
             var sorted = all();
             var list = accounts.filtered();
-            var accountId = $state.params.accountId;
+            var campaign = get($state.params.campaignId);
+            var accountId = $state.params.accountId || campaign && campaign.account.id;
             var output = [];
             var item, i;
 
@@ -121,7 +122,7 @@ define(function (require) {
 
         function inFlight() {
             var output = [];
-            var campaigns = all();
+            var campaigns = filtered();
             var campaign;
 
             for (var i = 0; i < campaigns.length; i++) {
@@ -140,7 +141,7 @@ define(function (require) {
 
         function preFlight() {
             var output = [];
-            var campaigns = all();
+            var campaigns = filtered();
             var campaign;
 
             for (var i = 0; i < campaigns.length; i++) {
@@ -159,7 +160,7 @@ define(function (require) {
 
         function completed() {
             var output = [];
-            var campaigns = all();
+            var campaigns = filtered();
             var campaign;
 
             for (var i = 0; i < campaigns.length; i++) {

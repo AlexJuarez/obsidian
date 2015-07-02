@@ -28,7 +28,8 @@ define(function (require) {
         function filtered() {
             var sorted = all();
             var list = divisions.filtered();
-            var divisionId = $state.params.divisionId;
+            var account = get($state.params.accountId);
+            var divisionId = $state.params.divisionId || account && account.division.id;
             var output = [];
             var item, i;
 

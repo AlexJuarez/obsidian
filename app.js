@@ -9,9 +9,6 @@ var compression = require('compression');
 var app = express();
 var port = 3000;
 
-/*
- * Use Handlebars for templating
- */
 // For gzip compression
 app.use(compression());
 

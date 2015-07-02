@@ -24,7 +24,8 @@ define(function (require) {
         function filtered() {
             var sorted = all();
             var output = [];
-            var clientId = $state.params.clientId;
+            var division = get($state.params.divisionId);
+            var clientId = $state.params.clientId || division && division.client.id;
             var item;
 
             if (!clientId) {

@@ -5,6 +5,8 @@ define(function (require) {
     var cache = {};
 
     module.service('campaignCache', ['paginationFactory', function (paginationFactory) {
+        var limit = 10;
+
         function createCache(url, transform) {
             var paginate = paginationFactory();
             paginate.init(url, transform);
@@ -26,6 +28,7 @@ define(function (require) {
 
         return {
             get: get,
+            limit: limit,
             clear: clear
         };
     }]);

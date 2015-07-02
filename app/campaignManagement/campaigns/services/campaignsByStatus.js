@@ -20,22 +20,22 @@ define(function (require) {
             var params = $state.params;
 
             if (params.accountId) {
-                filter = ',account.id:eq:' + params.accountId;
+                filter = 'account.id:eq:' + params.accountId;
             } else if (params.divisionId) {
-                filter = ',division.id:eq:' + params.divisionId;
+                filter = 'division.id:eq:' + params.divisionId;
             } else if (params.clientId) {
-                filter = ',client.id:eq:' + params.clientId;
+                filter = 'client.id:eq:' + params.clientId;
             }
 
             return filter;
         }
 
         function headerUrl() {
-            return headerBaseUrl + idFilter();
+            return headerBaseUrl + '&filters=' + idFilter();
         }
 
         function tableUrl(status) {
-            return tableBaseUrl + '&filters=status:eq:' + status + idFilter();
+            return tableBaseUrl + '&filters=status:eq:' + status + ',' +idFilter();
         }
 
         function transformHeader(data) {
