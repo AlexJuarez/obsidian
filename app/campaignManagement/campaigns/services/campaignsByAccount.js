@@ -20,7 +20,13 @@ define(function (require) {
     };
 
     var headers = [
-
+        {name: 'Campaign', id: 'campaign'},
+        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Start', id: 'start'},
+        {name: 'End', id: 'end'},
+        {name: 'Placements', id: 'placements'},
+        {name: 'Creatives', id: 'creatives'},
+        {name: '', id: 'edit'}
     ];
 
     module.service('campaignsByAccount', ['campaignCacheService', '$state', '$interpolate', function (cache, $state, $interpolate) {
@@ -90,10 +96,21 @@ define(function (require) {
         function all() {
             var headers = cache.get(headerUrl, headerTransform).all();
             var accounts = groupByAccount();
+            var output = [];
 
             for (var i = 0; i < headers.length; i++) {
-
+                var account = headers[i];
+                output.push({
+                    header: header(account),
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: accounts[account.id]
+                    }
+                })
             }
+
+            return output;
         }
 
         function observe(callback, $scope){
