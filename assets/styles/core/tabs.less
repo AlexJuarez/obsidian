@@ -15,7 +15,11 @@
     text-align: left;
     border-bottom: 1px solid @tab-border-color;
 
-    li { // blurred
+    li {
+        display: inline-block;
+    }
+
+    a { // blurred
         user-select: none;
         display: inline-block;
         z-index: 1;
@@ -37,16 +41,16 @@
         &:first-child {
             margin-left: 2rem;
         }
+    }
 
-        &.active {
-            color: @tab-text-color;
-            border: 1px solid @tab-border-color;
-            border-bottom: 0;
-            background: white;
-            padding-bottom: ~"calc(1.5rem + 1px)";
-            margin-bottom: -2px;
-            z-index: 2;
-        }
+    .active {
+        color: @tab-text-color;
+        border: 1px solid @tab-border-color;
+        border-bottom: 0;
+        background: white;
+        padding-bottom: ~"calc(1.5rem + 1px)";
+        margin-bottom: -1px;
+        z-index: 2;
     }
 }
 

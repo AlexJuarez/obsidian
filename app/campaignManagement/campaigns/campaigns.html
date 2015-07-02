@@ -1,10 +1,10 @@
 <div class="header-summary">
     <button class="btn btn-default solid right" ng-click="openModal('lg')">Add New Campaign</button>
 </div>
-<h3>Campaigns By Status</h3>
-<ul class="nav-tabs">
-    <li><a ui-sref="cm.campaigns.all">Status</a></li>
-    <li><a ui-sref="cm.campaigns.all.account">Account</a></li>
-</ul>
-<div accordion-table="byStatus" class="table table-hover"></div>
-<div accordion-table="byAccount" class="table table-hover"></div>
+<p>
+    View By: <a ui-sref="cm.campaigns.all" ui-sref-active="active">Status</a> or <a ui-sref="cm.campaigns.all.account" ui-sref-active="active">Account</a>
+</p>
+<br />
+<div ui-view="tab-content">
+    <div accordion-table="byStatus" class="table table-hover"></div>
+</div>

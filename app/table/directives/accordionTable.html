@@ -4,7 +4,9 @@
         </div>
         <div class="content">
             <div class="table-hover" basic-table="row.content"></div>
-            <a ng-if="row.options.more" ng-click="row.options.more()">Get More</a>
+            <div class="table-footer">
+                <a ng-if="row.options.more" ng-click="row.options.more()">Show More</a>
+            </div>
         </div>
     </div>
 </div>

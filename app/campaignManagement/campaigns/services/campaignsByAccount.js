@@ -101,6 +101,12 @@ define(function (require) {
 
         function transformRows(campaigns, accountId) {
             if(campaigns) {
+                campaigns.sort(function(a, b){
+                    if (b.name && a.name) {
+                        return a.name.localeCompare(b.name);
+                    }
+                });
+
                 var output = [];
                 var campaign;
                 var limit = limits[accountId] || 10;

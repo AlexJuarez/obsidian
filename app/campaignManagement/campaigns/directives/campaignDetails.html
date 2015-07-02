@@ -1,9 +1,9 @@
-<ul class="campaign-details">
+<ul class="list">
   <li>
     <span>status</span>
-    <span class="status"><i class="glyph-icon glyph-dot" ng-class="{'success': isLive}"></i>[[campaignStatus]]</span>
+    <span class="status"><i class="icon-status" ng-class="{'success': isLive}"></i>[[campaignStatus]]</span>
   </li>
-  <li class="border-right">
+  <li>
     <span>flight dates</span>
     <span>[[details.startDate|date:'MMM d, yy']] - [[details.endDate|date:'MMM d, yy']]</span>
   </li>
@@ -11,7 +11,7 @@
     <span>total impressions</span>
     <span>[[details.metrics.impressions|truncateNumber]]</span>
   </li>
-  <li class="border-right" ng-if="showImpressions">
+  <li ng-if="showImpressions">
     <span>booked impressions</span>
     <span>[[details.metrics.bookedImpressions|truncateNumber]]</span>
   </li>

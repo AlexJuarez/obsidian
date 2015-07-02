@@ -11,6 +11,7 @@ define(function (require) {
     require('tpl!./divisions/youWorkOn.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaigns.html');
+    require('tpl!./campaigns/campaignsByAccount.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/placements/list.html');
     require('tpl!./campaigns/creatives/list.html');
@@ -26,7 +27,7 @@ define(function (require) {
 
         //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
-        $urlRouterProvider.when('/campaign-management/campaigns/:campaignId', '/campaign-management/campaigns/:campaignId/placements');
+        $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
         if (!window.disableRouter) {
             $urlRouterProvider.when('/', '/analytics');
         }
@@ -105,8 +106,17 @@ define(function (require) {
                 }
             })
             .state({
+                name: 'cm.campaigns.all.account',
+                url: '/account',
+                views: {
+                    'tab-content': {
+                        templateUrl: 'campaignManagement/campaigns/campaignsByAccount.html'
+                    }
+                }
+            })
+            .state({
                 name: 'cm.campaigns.detail',
-                url: '/campaigns/:campaignId',
+                url: '/campaign/:campaignId',
                 views: {
                     'content': {
                         controller: 'campaignCtrl',

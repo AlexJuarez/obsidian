@@ -1,9 +1,11 @@
 @table-header-bg: @dark-gray;
+@table-footer-bg: @dark-gray;
 @table-striping: @white;
 @table-bg: #fff;
 @table-hover-bg: #cde4f2;
 @table-hover-accent: @brand-color;
 @table-collapse-border: #707274;
+@table-header-color: #fff;
 
 table {
     max-width: 100%;
@@ -23,7 +25,7 @@ table {
         text-align: left;
         > tr {
             background: @table-header-bg;
-            color: #fff;
+            color: @table-header-color;
             > th {
                 padding: 1.2rem 2rem;
             }
@@ -171,6 +173,14 @@ table {
                 margin-bottom: 0;
             }
         }
+    }
+}
+
+.table-footer {
+    padding: 0.3rem 1.6rem;
+    background: @table-footer-bg;
+    a {
+        color: @table-header-color;
     }
 }
 
