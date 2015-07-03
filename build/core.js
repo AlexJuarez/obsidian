@@ -46098,18 +46098,18 @@ define('text',['module'], function (module) {
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
- *     1. Redistributions of source code must retain the above copyright notice, 
+ *
+ *     1. Redistributions of source code must retain the above copyright notice,
  *        this list of conditions and the following disclaimer.
- *     
- *     2. Redistributions in binary form must reproduce the above copyright 
+ *
+ *     2. Redistributions in binary form must reproduce the above copyright
  *        notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
- * 
+ *
  *     3. Neither the name of David Hall nor the names of its contributors may be
  *        used to endorse or promote products derived from this software without
  *        specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46131,7 +46131,7 @@ define('tpl',[
     "use strict";
 
     var tplModule = null;
-    
+
     var buildMap = {};
 
     var tpl = {
@@ -46911,7 +46911,8 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
         function filtered() {
             var sorted = all();
             var output = [];
-            var clientId = $state.params.clientId;
+            var division = get($state.params.divisionId);
+            var clientId = $state.params.clientId || division && division.client.id;
             var item;
 
             if (!clientId) {
@@ -47031,7 +47032,8 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
         function filtered() {
             var sorted = all();
             var list = accounts.filtered();
-            var accountId = $state.params.accountId;
+            var campaign = get($state.params.campaignId);
+            var accountId = $state.params.accountId || campaign && campaign.account.id;
             var output = [];
             var item, i;
 
@@ -47090,7 +47092,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
 
         function inFlight() {
             var output = [];
-            var campaigns = all();
+            var campaigns = filtered();
             var campaign;
 
             for (var i = 0; i < campaigns.length; i++) {
@@ -47109,7 +47111,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
 
         function preFlight() {
             var output = [];
-            var campaigns = all();
+            var campaigns = filtered();
             var campaign;
 
             for (var i = 0; i < campaigns.length; i++) {
@@ -47128,7 +47130,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
 
         function completed() {
             var output = [];
-            var campaigns = all();
+            var campaigns = filtered();
             var campaign;
 
             for (var i = 0; i < campaigns.length; i++) {
@@ -47270,7 +47272,8 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
         function filtered() {
             var sorted = all();
             var list = divisions.filtered();
-            var divisionId = $state.params.divisionId;
+            var account = get($state.params.accountId);
+            var divisionId = $state.params.divisionId || account && account.division.id;
             var output = [];
             var item, i;
 
@@ -47821,9 +47824,18 @@ define('core/factories/pagination',['require','./../module'],function (require) 
             }
         }
 
-        return function (sortFn) {
-            var limit = 10;
-            var offset = 0;
+        /**
+         * Create a Pagination Factory Object
+         * @param {function} sortFn - Optional sorting function, the data is stored after the sortFn is applied
+         * @param {number} [limit=10] - Limit the number of results
+         * @param {number} [offset=0] - The starting offset usually should not need to be changed.
+         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildPageUrl, limit: (number), all: (Object[])}}
+         */
+
+        function create(sortFn, limit, offset) {
+            limit = limit || 10;
+            offset = offset || 0;
+
             var data = dataFactory(sortFn);
             var baseUrl = '';
             var transform;
@@ -47850,7 +47862,9 @@ define('core/factories/pagination',['require','./../module'],function (require) 
                 limit: limit,
                 all: data.all
             };
-        };
+        }
+
+        return create;
     }]);
 
 
@@ -50099,45 +50113,6 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     }]);
 });
 
-<<<<<<< HEAD
-=======
-define('core/directives/tabs',['require','./../module'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-
-    app.directive('tabs', [function () {
-        return {
-            restrict: 'E',
-            scope: {},
-            templateUrl: 'core/directives/tabs.html',
-            transclude: true
-        };
-    }]);
-});
-
-define('core/directives/tab',['require','./../module'],function (require) {
-    'use strict';
-
-    var app = require('./../module');
-
-    app.directive('tab', [function () {
-        var uniqueId = 1;
-        return {
-            restrict: 'E',
-            templateUrl: 'core/directives/tab.html',
-            scope: {},
-            link: function ($scope, elem, attr) {
-                $scope.uniqueId = uniqueId++;
-                $scope.selected = attr.selected === '';
-                $scope.name = attr.name;
-                $scope.templateUrl = attr.templateUrl;
-            }
-        };
-    }]);
-});
-
->>>>>>> TH-212
 !function() {
   var d3 = {
     version: "3.5.5"
@@ -59878,11 +59853,7 @@ define('core/constants/apiURI',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-<<<<<<< HEAD
 define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store','./services/channel','./constants/apiURI'],function (require) {
-=======
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/tabs','./directives/tab','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store','./services/channel','./constants/apiURI'],function (require) {
->>>>>>> TH-212
     'use strict';
 
     require('./modal/index');
@@ -59897,11 +59868,6 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./directives/compile');
     require('./directives/placeholder');
     require('./directives/filePicker');
-<<<<<<< HEAD
-=======
-    require('./directives/tabs');
-    require('./directives/tab');
->>>>>>> TH-212
     require('./directives/pacingChart');
     require('./filters/safe');
     require('./filters/interpolate');
@@ -59965,7 +59931,7 @@ define('table/filters/format',['require','./../module'],function (require) {
 });
 
 
-define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n            <a ng-if="row.options.more" ng-click="row.options.more()">Get More</a>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n            <div class="table-footer">\n                <a ng-if="row.options.more" ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
 
 define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
     'use strict';
@@ -60128,7 +60094,7 @@ define('campaignManagement/module',['require','angular','ui-router','./../chart/
 });
 
 
-define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section ui-view>\n</section>\n'); });
+define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<section class="container-fluid" ui-view>\n</section>\n'); });
 
 
 define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div ui-view="content">\n</div>\n'); });
@@ -60149,20 +60115,19 @@ define('tpl!campaignManagement/divisions/youWorkOn.html', ['angular', 'tpl'], fu
 define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div ui-view="content">\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="header-summary">\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Campaign</button>\n</div>\n<h3>Campaigns By Status</h3>\n<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
+define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="header-summary">\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Campaign</button>\n</div>\n<p>\n    View By: <a ui-sref="cm.campaigns.all" ui-sref-active="active">Status</a> or <a ui-sref="cm.campaigns.all.account" ui-sref-active="active">Account</a>\n</p>\n<br />\n<div ui-view="tab-content">\n    <div accordion-table="byStatus" class="table table-hover"></div>\n</div>\n'); });
 
 
-<<<<<<< HEAD
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</li>\n    <li ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</li>\n</ul>\n<div class="nav-tabs-content" ui-view="tabs"></div>\n'); });
+define('tpl!campaignManagement/campaigns/campaignsByAccount.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByAccount.html', '<div accordion-table="byAccount" class="table table-hover"></div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div class="nav-tabs-content" ui-view="tabs"></div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div>\n    [[placements]]\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div>\n    [[creatives]]\n</div>\n'); });
-=======
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n<tabs>\n    <tab name="Placements" selected template-url="campaignManagement/placements/list.html"></tab>\n    <tab name="Creatives" template-url="campaignManagement/creatives/accordion.html"></tab>\n</tabs>\n'); });
->>>>>>> TH-212
 
 
 define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
@@ -60175,11 +60140,7 @@ define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], f
 
 /* jshint -W015 */
 
-<<<<<<< HEAD
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/content.html','tpl!./clients/new-client.html','tpl!./divisions/divisions.html','tpl!./divisions/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
-=======
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/content.html','tpl!./clients/new-client.html','tpl!./divisions/divisions.html','tpl!./divisions/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaign.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
->>>>>>> TH-212
+define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/content.html','tpl!./clients/new-client.html','tpl!./divisions/divisions.html','tpl!./divisions/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaignsByAccount.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
@@ -60190,12 +60151,10 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
     require('tpl!./divisions/youWorkOn.html');
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaigns.html');
+    require('tpl!./campaigns/campaignsByAccount.html');
     require('tpl!./campaigns/campaign.html');
-<<<<<<< HEAD
     require('tpl!./campaigns/placements/list.html');
     require('tpl!./campaigns/creatives/list.html');
-=======
->>>>>>> TH-212
     require('tpl!./campaigns/new-campaign.html');
     require('tpl!./accounts/index.html');
     require('tpl!./accounts/new-account.html');
@@ -60208,10 +60167,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
 
         //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
-<<<<<<< HEAD
-        $urlRouterProvider.when('/campaign-management/campaigns/:campaignId', '/campaign-management/campaigns/:campaignId/placements');
-=======
->>>>>>> TH-212
+        $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
         if (!window.disableRouter) {
             $urlRouterProvider.when('/', '/analytics');
         }
@@ -60290,15 +60246,23 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 }
             })
             .state({
+                name: 'cm.campaigns.all.account',
+                url: '/account',
+                views: {
+                    'tab-content': {
+                        templateUrl: 'campaignManagement/campaigns/campaignsByAccount.html'
+                    }
+                }
+            })
+            .state({
                 name: 'cm.campaigns.detail',
-                url: '/campaigns/:campaignId',
+                url: '/campaign/:campaignId',
                 views: {
                     'content': {
                         controller: 'campaignCtrl',
                         templateUrl: 'campaignManagement/campaigns/campaign.html'
                     }
                 }
-<<<<<<< HEAD
             })
             .state({
                 name: 'cm.campaigns.detail.placements',
@@ -60319,8 +60283,6 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                         templateUrl: 'campaignManagement/campaigns/creatives/list.html'
                     }
                 }
-=======
->>>>>>> TH-212
             });
         buildGeneralRoutes('analytics');
         buildGeneralRoutes('reports');
@@ -60453,83 +60415,93 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
     }]);
 });
 
-/**
- * Created by Alex on 3/2/2015.
- */
-/* jshint camelcase: false */
-/* jshint -W098 */
-/* jshint -W004 */
-/* jshint -W101 */
-
-
-
-define('campaignManagement/controllers/campaignManagement',['require','./../module'],function (require) {
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
-    }]);
-});
-
-/* jshint camelcase: false */
-/* jshint -W098 */
-/* jshint -W004 */
-/* jshint -W101 */
-
-
-
-define('campaignManagement/controllers/index',['require','./../module'],function (require) {
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
-        clients.init('/api/v3/clients?dimensions=id,name,pinned');
-        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
-        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
-        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
-
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            if (window.Router) {
-                window.Router.handleURL($location.url());
-            }
-        });
-    }]);
-});
-
 define('campaignManagement/campaigns/services/campaignsByStatus',['require','./../../module','angular'],function (require) {
     'use strict';
 
     var module = require('./../../module');
     var ng = require('angular');
-    var accordionTables = {};
+    var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
+    var tableBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions';
+    var cache = {};
 
-    module.service('campaignsByStatus', ['$http', 'campaignAccordionTableFactory', function ($http, campaignAccordionTableFactory) {
+    var statuses = {
+        'preFlight': 'Pre-Flight',
+        'inFlight': 'In-Flight',
+        'completed': 'Completed',
+        'archived': 'Archived'
+    };
 
-        var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=status:eq:';
-        var rowsBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&filters=status:eq:';
+    module.service('campaignsByStatus', ['dataFactory', 'campaignAccordionTableFactory', '$state', function (data, campaignAccordionTableFactory, $state) {
+        function idFilter() {
+            var filter = '';
+            var params = $state.params;
 
-        var statuses = {
-            'preFlight': 'Pre-Flight',
-            'inFlight': 'In-Flight',
-            'completed': 'Completed',
-            'archived': 'Archived'
-        };
+            if (params.accountId) {
+                filter = 'account.id:eq:' + params.accountId;
+            } else if (params.divisionId) {
+                filter = 'division.id:eq:' + params.divisionId;
+            } else if (params.clientId) {
+                filter = 'client.id:eq:' + params.clientId;
+            }
 
-        ng.forEach(statuses, function(title, status) {
-            var accordionTable = campaignAccordionTableFactory();
-            accordionTable.init({
-                status: title,
-                rows: rowsBaseUrl + status,
-                header: headerBaseUrl + status
-            });
+            return filter;
+        }
 
-            accordionTables[status] = accordionTable;
-        });
+        function headerUrl() {
+            return headerBaseUrl + '&filters=' + idFilter();
+        }
+
+        function tableUrl(status) {
+            return tableBaseUrl + '&filters=status:eq:' + status + ',' +idFilter();
+        }
+
+        function transformHeader(data) {
+            var output = [];
+            var metrics;
+
+            for (var i = 0; i < data.campaignSet.length; i++) {
+                metrics = data.campaignSet[i];
+                output.push({
+                    status: metrics.status,
+                    count: metrics.metrics.count,
+                    hasLive: metrics.metrics.countLive > 0
+                });
+            }
+            return output;
+        }
+
+        function init() {
+            var accordionTables = cache[idFilter()];
+
+            if (!accordionTables) {
+                accordionTables = cache[idFilter()] = {};
+
+                accordionTables.header = data(transformHeader);
+                accordionTables.header.init(headerUrl());
+                accordionTables.rows = {};
+
+                ng.forEach(statuses, function(title, status) {
+                    var accordionTable = campaignAccordionTableFactory();
+
+                    accordionTable.init({
+                        header: accordionTables.header,
+                        title: title,
+                        status: status,
+                        rows: tableUrl(status)
+                    });
+
+                    accordionTables.rows[status] = accordionTable;
+                });
+            }
+        }
+
 
         function all() {
+            init();
+
             var output = [];
 
-            ng.forEach(accordionTables, function (table) {
+            ng.forEach(cache[idFilter()].rows, function (table) {
                 output.push(table.all());
             });
 
@@ -60537,7 +60509,9 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
         }
 
         function observe(callback, $scope){
-            ng.forEach(accordionTables, function (table) {
+            init();
+
+            ng.forEach(cache[idFilter()].rows, function (table) {
                 table.observe(callback, $scope);
             });
         }
@@ -60549,59 +60523,225 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
     }]);
 });
 
-
-define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<ul class="campaign-details">\n  <li>\n    <span>status</span>\n    <span class="status"><i class="glyph-icon glyph-dot" ng-class="{\'success\': isLive}"></i>[[campaignStatus]]</span>\n  </li>\n  <li class="border-right">\n    <span>flight dates</span>\n    <span>[[details.startDate|date:\'MMM d, yy\']] - [[details.endDate|date:\'MMM d, yy\']]</span>\n  </li>\n  <li ng-if="showImpressions">\n    <span>total impressions</span>\n    <span>[[details.metrics.impressions|truncateNumber]]</span>\n  </li>\n  <li class="border-right" ng-if="showImpressions">\n    <span>booked impressions</span>\n    <span>[[details.metrics.bookedImpressions|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>publishers</span>\n    <span>[[details.distinctPublishers|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>creatives</span>\n    <span>[[details.countCreatives|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>placements</span>\n    <span>[[details.countPlacements|truncateNumber]]</span>\n  </li>\n</ul>\n'); });
-
-define('campaignManagement/campaigns/directives/campaignDetails',['require','./../../module','tpl!./campaignDetails.html'],function (require) {
+define('campaignManagement/campaigns/services/campaignCache',['require','./../../module'],function (require) {
     'use strict';
 
-    var app = require('./../../module');
-    require('tpl!./campaignDetails.html');
+    var module = require('./../../module');
+    var cache = {};
 
-    app.directive('campaignDetails', [function () {
+    module.service('campaignCache', ['paginationFactory', function (paginationFactory) {
+        var limit = 10;
+
+        function createCache(url, transform) {
+            var paginate = paginationFactory();
+            paginate.init(url, transform);
+            return paginate;
+        }
+
+        function get(url, transform) {
+            if (!cache[url]) {
+                cache[url] = createCache(url, transform);
+            }
+
+            return cache[url];
+        }
+
+        //TODO: manage the destroyed artifacts... Currently the items removed can persist in memory via external references
+        function clear() {
+            cache = {};
+        }
+
         return {
-            restrict: 'A',
-            replace: true,
-            scope: true,
-            templateUrl: 'campaignManagement/campaigns/directives/campaignDetails.html',
-            controller: ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
-                var campaignID = $state.params.campaignId;
-                $http.get('/api/v3/campaigns?dimensions=status,startDate,endDate,distinctPublishers,countPlacements,countCreatives&metrics=impressions,bookedImpressions&filters=id:' + campaignID)
-                .then(function (res) {
-                    $timeout(function () {
-                        $scope.details = res.data.campaigns[0];
-                        $scope.showImpressions = false;
-                        $scope.isLive = false;
-                        switch ($scope.details.status) {
-                        case 'preFlight':
-                            $scope.campaignStatus = 'Pre-Flight';
-                            break;
-                        case 'inFlight':
-                            $scope.campaignStatus = 'In-Flight';
-                            $scope.showImpressions = true;
-                            $scope.isLive = true;
-                            break;
-                        case 'live':
-                            $scope.campaignStatus = 'Live';
-                            $scope.showImpressions = true;
-                            $scope.isLive = true;
-                            break;
-                        case 'completed':
-                            $scope.campaignStatus = 'Completed';
-                            $scope.showImpressions = true;
-                            break;
-                        case 'archived':
-                            $scope.campaignStatus = 'Archived';
-                            $scope.showImpressions = true;
-                            break;
-                        default:
-                            $scope.campaignStatus = 'Unknown';
-                        }
-                        $scope.$apply();
-                    });
+            get: get,
+            limit: limit,
+            clear: clear
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/services/campaignAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignAccountHeader.html', '<span>[[name]] </span><span>[[metrics.countCampaigns]] live campaigns | [[metrics.countCampaignsPreFlight]] work in progress | [[metrics.countCampaignsCompleted]] completed</span>\n'); });
+
+//jshint ignore:start
+define('campaignManagement/campaigns/services/campaignsByAccount',['require','./../../module','angular','tpl!./campaignAccountHeader.html'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var ng = require('angular');
+    var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
+    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns,countCampaignsPreFlight,countCampaignsCompleted';
+    var headerTemplate = require('tpl!./campaignAccountHeader.html');
+
+    var rules = {
+        'campaign': 'link',
+        'status': '',
+        'impressions': 'bullet',
+        'start': 'date',
+        'end': 'date',
+        'placements': 'number',
+        'creatives': 'number',
+        'edit': ''
+    };
+
+    var headers = [
+        {name: 'Campaign', id: 'campaign'},
+        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Start', id: 'start'},
+        {name: 'End', id: 'end'},
+        {name: 'Placements', id: 'placements'},
+        {name: 'Creatives', id: 'creatives'},
+        {name: '', id: 'edit'}
+    ];
+
+    var limits = {};
+
+    module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
+        function idFilter() {
+            var filter = '';
+            var params = $state.params;
+
+            if (params.divisionId) {
+                filter = 'division.id:eq:' + params.divisionId + ',';
+            } else if (params.clientId) {
+                filter = 'client.id:eq:' + params.clientId + ',';
+            }
+
+            return filter;
+        }
+
+        function accountUrl() {
+            return headerUrl + '&filters=' + idFilter();
+        }
+
+        function url() {
+            var accountIds = getAccountIds();
+
+            return baseUrl + '&filters=' + idFilter() + 'account.id:eq:' + accountIds.join(':eq:');
+        }
+
+        function headerTransform(data) {
+            return data.accounts || data;
+        }
+
+        function campaignTransform(data) {
+            return data.campaigns || data;
+        }
+
+        function getAccountIds() {
+            var campaignHeader = cache.get(accountUrl(), headerTransform);
+            var accounts = campaignHeader.all();
+            var ids = [];
+
+            for (var i = 0; i < accounts.length; i++){
+                ids.push(accounts[i].id);
+            }
+
+            return ids;
+        }
+
+        function groupByAccount() {
+            var campaignCache = cache.get(url(), campaignTransform);
+
+            var accounts = {};
+            var campaigns = campaignCache.all();
+
+            for (var i = 0; i < campaigns.length; i++) {
+                var campaign = campaigns[i];
+                var accountId = campaign.account.id;
+
+                if (!accounts[accountId]) {
+                    accounts[accountId] = [];
+                }
+
+                accounts[accountId].push(campaign);
+            }
+
+            return accounts;
+        }
+
+        function header(account) {
+            return $interpolate(headerTemplate)(account);
+        }
+
+        function transformRows(campaigns, accountId) {
+            if(campaigns) {
+                campaigns.sort(function(a, b){
+                    if (b.name && a.name) {
+                        return a.name.localeCompare(b.name);
+                    }
                 });
 
-            }]
+                var output = [];
+                var campaign;
+                var limit = limits[accountId] || 10;
+
+                for (var i = 0; i < campaigns.length && i < limit; i++) {
+                    campaign = campaigns[i];
+
+                    output.push(ng.extend({
+                        campaign: {
+                            id: campaign.id,
+                            route: 'cm.campaigns.all({ accountId: row.campaign.id })',
+                            name: campaign.name
+                        },
+                        impressions: campaign.metrics.impressions,
+                        start: campaign.startDate,
+                        end: campaign.endDate,
+                        creatives: campaign.metrics.countCreatives,
+                        placements: campaign.metrics.countPlacements
+                    }));
+                }
+
+                return output;
+            }
+        }
+
+        function showMore(accountId) {
+            return function () {
+                if (!limits[accountId]) {
+                    limits[accountId] = 10;
+                }
+
+                limits[accountId] += 10;
+            };
+        }
+
+        function all() {
+            var accountInfo = cache.get(accountUrl(), headerTransform).all();
+            var accounts = groupByAccount();
+            var output = [];
+
+            for (var i = 0; i < accountInfo.length; i++) {
+                var account = accountInfo[i];
+                output.push({
+                    header: header(account),
+                    options: {
+                        more: showMore(account.id)
+                    },
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: transformRows(accounts[account.id], account.id)
+                    }
+                })
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope){
+            var campaignHeader = cache.get(accountUrl(), headerTransform);
+
+            campaignHeader.observe(callback, $scope);
+            campaignHeader.observe(function() {
+                var campaignCache = cache.get(url(), campaignTransform);
+                campaignCache.observe(callback, $scope);
+            }, $scope);
+        }
+
+        return {
+            all: all,
+            observe: observe
         };
     }]);
 });
@@ -60611,11 +60751,12 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
 
     var module = require('./../../module');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$q', '$interpolate', 'dataFactory', 'paginationFactory', function ($http, $q, $interpolate, dataFactory, paginationFactory) {
+    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
         return function() {
-            var header = dataFactory();
+            var header;
             var rows = paginationFactory(sortRows);
             var status;
+            var title;
             var options = {
                 more: rows.nextPage
             };
@@ -60635,11 +60776,10 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
 
             function init(data) {
                 status = data.status;
+                header = data.header;
+                title = data.title;
                 if (data.rows) {
                     rows.init(data.rows, transformRows);
-                }
-                if (data.header) {
-                    header.init(data.header, transformHeader);
                 }
             }
 
@@ -60675,46 +60815,40 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                 return newRows;
             }
 
-            function transformHeader(data) {
-                var output = [];
-                var metrics;
-
-                for (var i = 0; i < data.campaignSet.length; i++) {
-                    metrics = data.campaignSet[i];
-                    output.push({
-                        status: metrics.status,
-                        count: metrics.metrics.count,
-                        hasLive: metrics.metrics.countLive > 0
-                    });
-                }
-                return output;
-            }
-
             function getTable() {
+                var rules = {
+                    account: 'link',
+                    campaign: 'link',
+                    impressions: 'bullet',
+                    start: 'date',
+                    end: 'date',
+                    placements: 'number',
+                    creatives: 'number',
+                    edit: ''
+                };
+
+                var headers = [
+                    {name: 'Account', id: 'account'},
+                    {name: 'Campaign', id: 'campaign'},
+                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Start', id: 'start'},
+                    {name: 'End', id: 'end'},
+                    {name: 'Placements', id: 'placements'},
+                    {name: 'Creatives', id: 'creatives'},
+                    {name: '', id: 'edit'}
+                ];
+
+                if ($state.params.accountId) {
+                    delete rules.account;
+                    headers.shift();
+                }
+
                 return {
                     header: getTableHeader(header.all()),
                     options: options,
                     content: {
-                        rules: {
-                            account: 'link',
-                            campaign: 'link',
-                            impressions: 'bullet',
-                            start: 'date',
-                            end: 'date',
-                            placements: 'number',
-                            creatives: 'number',
-                            edit: ''
-                        },
-                        headers: [
-                            {name: 'Account', id: 'account'},
-                            {name: 'Campaign', id: 'campaign'},
-                            {name: 'Impressions & Pacing', id: 'impressions'},
-                            {name: 'Start', id: 'start'},
-                            {name: 'End', id: 'end'},
-                            {name: 'Placements', id: 'placements'},
-                            {name: 'Creatives', id: 'creatives'},
-                            {name: 'Edit', id: 'edit'}
-                        ],
+                        rules: rules,
+                        headers: headers,
                         data: rows.all()
                     }
                 };
@@ -60723,22 +60857,25 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
             function getTableHeader(data) {
                 var template;
 
-                if (data && data[0]) {
-                    var header = data[0];
-                    template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[status]] ([[count]])');
-                    return template({
-                        status: header && header.status,
-                        count: header && header.count,
-                        hasLiveHeaderClass: header && header.hasLive ?
-                            'success' :
-                            ''
-                    });
-                } else {
-                    template = $interpolate('<span class="icon-status"></span>[[status]] (0)');
-                    return template({
-                        status: status
-                    });
+                for (var i = 0; i < data.length; i++) {
+                    var header = data[i];
+                    if (header.status === status) {
+                        template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[title]] ([[count]])');
+                        return template({
+                            status: status,
+                            title: title,
+                            count: header && header.count,
+                            hasLiveHeaderClass: header && header.hasLive ?
+                                'success' :
+                                ''
+                        });
+                    }
                 }
+
+                template = $interpolate('<span class="icon-status"></span>[[title]] (0)');
+                return template({
+                    title: title
+                });
             }
 
             function observe(callback, $scope) {
@@ -60845,7 +60982,7 @@ define('campaignManagement/campaigns/controllers/campaigns',['require','./../../
 
     var app = require('./../../module');
 
-    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal) {
+    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', 'campaignsByAccount', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal, campaignsByAccount) {
 
         $scope.byStatus = [];
 
@@ -60853,7 +60990,12 @@ define('campaignManagement/campaigns/controllers/campaigns',['require','./../../
             $scope.byStatus = campaignsByStatus.all();
         }
 
+        function updateByAccount() {
+            $scope.byAccount = campaignsByAccount.all();
+        }
+
         campaignsByStatus.observe(updateByStatus, $scope);
+        campaignsByAccount.observe(updateByAccount, $scope);
 
         // Modal
         $scope.openModal = openModal;
@@ -60908,7 +61050,63 @@ define('campaignManagement/campaigns/controllers/campaign',['require','./../../m
 });
 
 
-<<<<<<< HEAD
+define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<ul class="list">\n  <li>\n    <span>status</span>\n    <span class="status"><i class="icon-status" ng-class="{\'success\': isLive}"></i>[[campaignStatus]]</span>\n  </li>\n  <li>\n    <span>flight dates</span>\n    <span>[[details.startDate|date:\'MMM d, yy\']] - [[details.endDate|date:\'MMM d, yy\']]</span>\n  </li>\n  <li ng-if="showImpressions">\n    <span>total impressions</span>\n    <span>[[details.metrics.impressions|truncateNumber]]</span>\n  </li>\n  <li ng-if="showImpressions">\n    <span>booked impressions</span>\n    <span>[[details.metrics.bookedImpressions|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>publishers</span>\n    <span>[[details.distinctPublishers|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>creatives</span>\n    <span>[[details.countCreatives|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>placements</span>\n    <span>[[details.countPlacements|truncateNumber]]</span>\n  </li>\n</ul>\n'); });
+
+define('campaignManagement/campaigns/directives/campaignDetails',['require','./../../module','tpl!./campaignDetails.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./campaignDetails.html');
+
+    app.directive('campaignDetails', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/directives/campaignDetails.html',
+            controller: ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
+                var campaignID = $state.params.campaignId;
+                $http.get('/api/v3/campaigns?dimensions=status,startDate,endDate,distinctPublishers,countPlacements,countCreatives&metrics=impressions,bookedImpressions&filters=id:' + campaignID)
+                .then(function (res) {
+                    $timeout(function () {
+                        $scope.details = res.data.campaigns[0];
+                        $scope.showImpressions = false;
+                        $scope.isLive = false;
+                        switch ($scope.details.status) {
+                        case 'preFlight':
+                            $scope.campaignStatus = 'Pre-Flight';
+                            break;
+                        case 'inFlight':
+                            $scope.campaignStatus = 'In-Flight';
+                            $scope.showImpressions = true;
+                            $scope.isLive = true;
+                            break;
+                        case 'live':
+                            $scope.campaignStatus = 'Live';
+                            $scope.showImpressions = true;
+                            $scope.isLive = true;
+                            break;
+                        case 'completed':
+                            $scope.campaignStatus = 'Completed';
+                            $scope.showImpressions = true;
+                            break;
+                        case 'archived':
+                            $scope.campaignStatus = 'Archived';
+                            $scope.showImpressions = true;
+                            break;
+                        default:
+                            $scope.campaignStatus = 'Unknown';
+                        }
+                        $scope.$apply();
+                    });
+                });
+
+            }]
+        };
+    }]);
+});
+
+
 
 define('campaignManagement/campaigns/placements/controllers/list',['require','./../../../module'],function (require) {
     var app = require('./../../../module');
@@ -60928,9 +61126,66 @@ define('campaignManagement/campaigns/creatives/controllers/list',['require','./.
     }]);
 });
 
+define('campaignManagement/campaigns/index',['require','./services/campaignsByStatus','./services/campaignCache','./services/campaignsByAccount','./factories/campaignAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./placements/controllers/list','./creatives/controllers/list'],function (require) {
+    'use strict';
 
-=======
->>>>>>> TH-212
+    require('./services/campaignsByStatus');
+    require('./services/campaignCache');
+    require('./services/campaignsByAccount');
+    require('./factories/campaignAccordionTable');
+    require('./controllers/newCampaign');
+    require('./controllers/campaigns');
+    require('./controllers/campaign');
+
+    require('./directives/campaignDetails');
+    require('./placements/controllers/list');
+    require('./creatives/controllers/list');
+});
+
+/**
+ * Created by Alex on 3/2/2015.
+ */
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaignManagement/controllers/campaignManagement',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
+    }]);
+});
+
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaignManagement/controllers/index',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
+        clients.init('/api/v3/clients?dimensions=id,name,pinned');
+        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
+        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
+        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            if (window.Router) {
+                window.Router.handleURL($location.url());
+            }
+        });
+    }]);
+});
+
+
 define('tpl!campaignManagement/clients/directives/activeSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/directives/activeSummary.html', '<div class="header-summary">\n    <div class="btns">\n        <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Client</button>\n    </div>\n    <div>\n        <h3 class="title">Active</h3>\n        <ul class="list">\n            <li>\n                <span>clients</span>\n                <span>[[active.countActive|truncateNumber]]</span>\n            </li>\n            <li>\n                <span>accounts</span>\n                <span>[[active.countAccountsActive|truncateNumber]]</span>\n            </li>\n            <li>\n                <span>campaigns</span>\n                <span>[[active.countCampaignsActive|truncateNumber]]</span>\n            </li>\n            <li>\n                <span>pre-flight</span>\n                <span>[[active.countCampaignsPreFlight|truncateNumber]]</span>\n            </li>\n            <li>\n                <span>in-flight</span>\n                <span>[[active.countCampaignsInFlight|truncateNumber]]</span>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('campaignManagement/clients/directives/activeSummary',['require','./../../module','tpl!./activeSummary.html'],function (require) {
@@ -61193,43 +61448,13 @@ define('campaignManagement/accounts/controllers/newAccount',['require','./../../
     }]);
 });
 
-<<<<<<< HEAD
-/**
- * Created by Alex on 3/1/2015.
- */
-define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/directives/campaignDetails','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./campaigns/placements/controllers/list','./campaigns/creatives/controllers/list','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
-=======
-
-
-define('campaignManagement/placements/controllers/placementList.js',['require','./../../module'],function (require) {
-    var app = require('./../../module');
-
-    app.controller('placementListCtrl', ['$scope', function ($scope) {
-        $scope.placements = 'hello';
-    }]);
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('campaignManagement/index',['require','./routes','./controllers/campaignManagement','./controllers/index','./campaigns/services/campaignsByStatus','./campaigns/directives/campaignDetails','./campaigns/factories/campaignAccordionTable','./campaigns/controllers/newCampaign','./campaigns/controllers/campaigns','./campaigns/controllers/campaign','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount','./placements/controllers/placementList.js'],function (require) {
->>>>>>> TH-212
+define('campaignManagement/index',['require','./routes','./campaigns/index','./controllers/campaignManagement','./controllers/index','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./divisions/controllers/divisions','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
     'use strict';
 
     require('./routes');
+    require('./campaigns/index');
     require('./controllers/campaignManagement');
     require('./controllers/index');
-    require('./campaigns/services/campaignsByStatus');
-    require('./campaigns/directives/campaignDetails');
-    require('./campaigns/factories/campaignAccordionTable');
-    require('./campaigns/controllers/newCampaign');
-    require('./campaigns/controllers/campaigns');
-    require('./campaigns/controllers/campaign');
-<<<<<<< HEAD
-    require('./campaigns/placements/controllers/list');
-    require('./campaigns/creatives/controllers/list');
-=======
->>>>>>> TH-212
     require('./clients/directives/activeSummary');
     require('./clients/controllers/clients');
     require('./clients/controllers/newClient');
@@ -61238,10 +61463,6 @@ define('campaignManagement/index',['require','./routes','./controllers/campaignM
     require('./accounts/index');
     require('./accounts/controllers/accounts');
     require('./accounts/controllers/newAccount');
-<<<<<<< HEAD
-=======
-    require('./placements/controllers/placementList.js');
->>>>>>> TH-212
 });
 
 define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index'],function (require) {
