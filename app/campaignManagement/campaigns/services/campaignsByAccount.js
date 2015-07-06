@@ -32,7 +32,7 @@ define(function (require) {
     var limits = {};
 
     module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
-        function idFilter() {
+        function idFilter(opt) {
             var filter = '';
             var params = $state.params;
 
@@ -42,17 +42,21 @@ define(function (require) {
                 filter = 'client.id:eq:' + params.clientId + ',';
             }
 
-            return filter;
+            if (filter || opt) {
+                return '&filters=' + filter + opt;
+            }
+
+            return '';
         }
 
         function accountUrl() {
-            return headerUrl + '&filters=' + idFilter();
+            return headerUrl + idFilter();
         }
 
         function url() {
             var accountIds = getAccountIds();
 
-            return baseUrl + '&filters=' + idFilter() + 'account.id:eq:' + accountIds.join(':eq:');
+            return baseUrl + idFilter('account.id:eq:' + accountIds.join(':eq:'));
         }
 
         function headerTransform(data) {

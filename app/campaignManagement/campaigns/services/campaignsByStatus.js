@@ -15,27 +15,31 @@ define(function (require) {
     };
 
     module.service('campaignsByStatus', ['dataFactory', 'campaignAccordionTableFactory', '$state', function (data, campaignAccordionTableFactory, $state) {
-        function idFilter() {
+        function idFilter(opt) {
             var filter = '';
             var params = $state.params;
 
             if (params.accountId) {
-                filter = 'account.id:eq:' + params.accountId;
+                filter = 'account.id:eq:' + params.accountId + ',';
             } else if (params.divisionId) {
-                filter = 'division.id:eq:' + params.divisionId;
+                filter = 'division.id:eq:' + params.divisionId + ',';
             } else if (params.clientId) {
-                filter = 'client.id:eq:' + params.clientId;
+                filter = 'client.id:eq:' + params.clientId + ',';
             }
 
-            return filter;
+            if (filter || opt) {
+                return '&filters=' + filter + opt
+            }
+
+            return '';
         }
 
         function headerUrl() {
-            return headerBaseUrl + '&filters=' + idFilter();
+            return headerBaseUrl + idFilter();
         }
 
         function tableUrl(status) {
-            return tableBaseUrl + '&filters=status:eq:' + status + ',' +idFilter();
+            return tableBaseUrl + idFilter('status:eq:' + status );
         }
 
         function transformHeader(data) {
