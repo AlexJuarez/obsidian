@@ -28,7 +28,7 @@ define(function (require) {
             }
 
             if (filter || opt) {
-                return '&filters=' + filter + opt
+                return '&filters=' + filter + opt;
             }
 
             return '';

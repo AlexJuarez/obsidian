@@ -60407,7 +60407,7 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
             }
 
             if (filter || opt) {
-                return '&filters=' + filter + opt
+                return '&filters=' + filter + opt;
             }
 
             return '';
@@ -61399,7 +61399,7 @@ define('campaignManagement/campaigns/creatives/controllers/list',['require','./.
 
     app.controller('creativeListCtrl', [
         '$scope', function($scope) {
-            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>'
+            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
             $scope.creatives = {
                 rules: {
                     checked: '',
@@ -61479,7 +61479,7 @@ define('campaignManagement/campaigns/creatives/controllers/thumbnails',['require
     var app = require('./../../../module');
 
     app.controller('creativeThumbnailsCtrl', [
-        '$scope', function($scope) {
+        '$scope', function() {
 
         }
     ]);

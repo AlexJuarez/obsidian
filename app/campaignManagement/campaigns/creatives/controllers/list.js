@@ -5,7 +5,7 @@ define(function(require) {
 
     app.controller('creativeListCtrl', [
         '$scope', function($scope) {
-            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>'
+            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
             $scope.creatives = {
                 rules: {
                     checked: '',
