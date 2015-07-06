@@ -5,7 +5,7 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', 'campaignsByAccount', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal, campaignsByAccount) {
+    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', 'campaignsByAccount', '$state', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal, campaignsByAccount, $state) {
 
         $scope.byStatus = [];
 
@@ -22,6 +22,8 @@ define(function (require) {
 
         // Modal
         $scope.openModal = openModal;
+
+        $scope.params = $state.params;
 
         function openModal(size) {
             $modal.open({
