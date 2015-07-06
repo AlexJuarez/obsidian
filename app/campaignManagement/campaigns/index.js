@@ -12,4 +12,5 @@ define(function (require) {
     require('./directives/campaignDetails');
     require('./placements/controllers/list');
     require('./creatives/controllers/list');
+    require('./creatives/controllers/thumbnails');
 });

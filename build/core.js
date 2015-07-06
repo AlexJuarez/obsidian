@@ -46098,18 +46098,18 @@ define('text',['module'], function (module) {
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
- *     1. Redistributions of source code must retain the above copyright notice,
+ * 
+ *     1. Redistributions of source code must retain the above copyright notice, 
  *        this list of conditions and the following disclaimer.
- *
- *     2. Redistributions in binary form must reproduce the above copyright
+ *     
+ *     2. Redistributions in binary form must reproduce the above copyright 
  *        notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
- *
+ * 
  *     3. Neither the name of David Hall nor the names of its contributors may be
  *        used to endorse or promote products derived from this software without
  *        specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46131,7 +46131,7 @@ define('tpl',[
     "use strict";
 
     var tplModule = null;
-
+    
     var buildMap = {};
 
     var tpl = {
@@ -60094,7 +60094,7 @@ define('campaignManagement/module',['require','angular','ui-router','./../chart/
 });
 
 
-define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<section class="container-fluid" ui-view>\n</section>\n'); });
+define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n</section>\n'); });
 
 
 define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div ui-view="content">\n</div>\n'); });
@@ -60121,13 +60121,22 @@ define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], fu
 define('tpl!campaignManagement/campaigns/campaignsByAccount.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByAccount.html', '<div accordion-table="byAccount" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div class="nav-tabs-content" ui-view="tabs"></div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div>\n    [[placements]]\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div>\n    [[creatives]]\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".publisher">Publisher (4)</a>\n        <a ui-sref=".ad-unit">Ad unit (15)</a>\n        <a ui-sref=".ad-type">Ad type (3)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-lg-3 col-lg-offset-1" style="padding-bottom: 1rem;">\n                <label class="form-label">\n                    <div class="dropdown">\n                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                        <ul class="dropdown-menu" role="menu">\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                        </ul>\n                    </div>\n                </label>\n            </div>\n            <div class="col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/thumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/thumbnails.html', '<div class="thumbnail-view row ng-scope">\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot active"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <div>\n                <span>Placements:</span><span>13</span>\n            </div>\n            <div>\n                <span>Last Modified:</span><span>10/1/2014</span>\n            </div>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/180" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
@@ -60140,7 +60149,7 @@ define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], f
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/content.html','tpl!./clients/new-client.html','tpl!./divisions/divisions.html','tpl!./divisions/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaignsByAccount.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
+define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl!./clients/index.html','tpl!./clients/content.html','tpl!./clients/new-client.html','tpl!./divisions/divisions.html','tpl!./divisions/youWorkOn.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaignsByAccount.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/placements/header.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/creatives/thumbnails.html','tpl!./campaigns/creatives/header.html','tpl!./campaigns/new-campaign.html','tpl!./accounts/index.html','tpl!./accounts/new-account.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('tpl!./index.html');
@@ -60154,7 +60163,10 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
     require('tpl!./campaigns/campaignsByAccount.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/placements/list.html');
+    require('tpl!./campaigns/placements/header.html');
     require('tpl!./campaigns/creatives/list.html');
+    require('tpl!./campaigns/creatives/thumbnails.html');
+    require('tpl!./campaigns/creatives/header.html');
     require('tpl!./campaigns/new-campaign.html');
     require('tpl!./accounts/index.html');
     require('tpl!./accounts/new-account.html');
@@ -60167,6 +60179,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
 
         //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+        $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/list');
         $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
         if (!window.disableRouter) {
             $urlRouterProvider.when('/', '/analytics');
@@ -60176,11 +60189,6 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
         $stateProvider
             .state('analytics', {
                 url: '/analytics',
-                parent: 'index',
-                templateUrl: 'campaignManagement/index.html'
-            })
-            .state('reports', {
-                url: '/analytics/reports',
                 parent: 'index',
                 templateUrl: 'campaignManagement/index.html'
             })
@@ -60268,7 +60276,10 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 name: 'cm.campaigns.detail.placements',
                 url: '/placements',
                 views: {
-                    'tabs': {
+                    'tab-header': {
+                        templateUrl: 'campaignManagement/campaigns/placements/header.html'
+                    },
+                    'table': {
                         controller: 'placementListCtrl',
                         templateUrl: 'campaignManagement/campaigns/placements/list.html'
                     }
@@ -60276,11 +60287,31 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
             })
             .state({
                 name: 'cm.campaigns.detail.creatives',
-                url: '/creatives',
+                url: '/creatives'
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives.list',
+                url: '/list',
                 views: {
-                    'tabs': {
+                    'tab-header@cm.campaigns.detail': {
+                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                    },
+                    'table@cm.campaigns.detail': {
                         controller: 'creativeListCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/list.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives.thumbnails',
+                url: '/thumbnails',
+                views: {
+                    'tab-header@cm.campaigns.detail': {
+                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                    },
+                    'table@cm.campaigns.detail': {
+                        controller: 'creativeThumbnailsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/thumbnails.html'
                     }
                 }
             });
@@ -60344,69 +60375,8 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                     url: '/:campaignId',
                     template: '<ui-view />'
                 })
-                .state({
-                    name: base + '.campaigns.detail.adtype',
-                    url: '/adtype',
-                    parent: base + '.campaigns.detail',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.detail.adunits',
-                    url: '/adunits',
-                    parent: base + '.campaigns.detail',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.detail.components',
-                    url: '/components',
-                    parent: base + '.campaigns.detail',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.detail.device',
-                    url: '/device',
-                    parent: base + '.campaigns.detail',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.report',
-                    url: '/report',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.report.account',
-                    url: '/account/:accountId',
-                    parent: base + '.report',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.report.campaign',
-                    url: '/campaign/:campaignId',
-                    parent: base + '.report',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.report.create-custom',
-                    url: '/campaign/:campaignId/create-custom',
-                    parent: base + '.report',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.report.create-standard',
-                    url: '/campaign/:campaignId/create-standard',
-                    parent: base + '.report',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.report.edit-custom',
-                    url: '/edit-custom/:reportId',
-                    parent: base + '.report',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.container',
-                    url: '/container',
-                    parent: base,
+                .state(base + '.catch', {
+                    url: '/*path',
                     template: '<ui-view />'
                 });
         }
@@ -60432,27 +60402,31 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
     };
 
     module.service('campaignsByStatus', ['dataFactory', 'campaignAccordionTableFactory', '$state', function (data, campaignAccordionTableFactory, $state) {
-        function idFilter() {
+        function idFilter(opt) {
             var filter = '';
             var params = $state.params;
 
             if (params.accountId) {
-                filter = 'account.id:eq:' + params.accountId;
+                filter = 'account.id:eq:' + params.accountId + ',';
             } else if (params.divisionId) {
-                filter = 'division.id:eq:' + params.divisionId;
+                filter = 'division.id:eq:' + params.divisionId + ',';
             } else if (params.clientId) {
-                filter = 'client.id:eq:' + params.clientId;
+                filter = 'client.id:eq:' + params.clientId + ',';
             }
 
-            return filter;
+            if (filter || opt) {
+                return '&filters=' + filter + opt;
+            }
+
+            return '';
         }
 
         function headerUrl() {
-            return headerBaseUrl + '&filters=' + idFilter();
+            return headerBaseUrl + idFilter();
         }
 
         function tableUrl(status) {
-            return tableBaseUrl + '&filters=status:eq:' + status + ',' +idFilter();
+            return tableBaseUrl + idFilter('status:eq:' + status );
         }
 
         function transformHeader(data) {
@@ -60596,7 +60570,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
     var limits = {};
 
     module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
-        function idFilter() {
+        function idFilter(opt) {
             var filter = '';
             var params = $state.params;
 
@@ -60606,17 +60580,21 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
                 filter = 'client.id:eq:' + params.clientId + ',';
             }
 
-            return filter;
+            if (filter || opt) {
+                return '&filters=' + filter + opt;
+            }
+
+            return '';
         }
 
         function accountUrl() {
-            return headerUrl + '&filters=' + idFilter();
+            return headerUrl + idFilter();
         }
 
         function url() {
             var accountIds = getAccountIds();
 
-            return baseUrl + '&filters=' + idFilter() + 'account.id:eq:' + accountIds.join(':eq:');
+            return baseUrl + idFilter('account.id:eq:' + accountIds.join(':eq:'));
         }
 
         function headerTransform(data) {
@@ -61112,21 +61090,410 @@ define('campaignManagement/campaigns/placements/controllers/list',['require','./
     var app = require('./../../../module');
 
     app.controller('placementListCtrl', ['$scope', function ($scope) {
-        $scope.placements = 'placements go here';
+        $scope.placementTypes = [
+            {
+                name: 'Add Manually',
+                value: '1'
+            },
+            {
+                name: 'Upload Media Plan',
+                value: '2'
+            }
+        ];
+
+
+        var options = '<span style="font-size: 2rem"><a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
+        $scope.placements = [
+            {
+                header: '<input type="checkbox"> <a>Brightroll</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            },
+            {
+                header: '<input type="checkbox"> <a>Google</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            },
+            {
+                header: '<input type="checkbox"> <a>NBCU</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            },
+            {
+                header: '<input type="checkbox"> <a>MSN</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            }
+        ];
     }]);
 });
 
 
 
-define('campaignManagement/campaigns/creatives/controllers/list',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/creatives/controllers/list',['require','./../../../module'],function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeListCtrl', ['$scope', function ($scope) {
-        $scope.creatives = 'creatives go here';
-    }]);
+    app.controller('creativeListCtrl', [
+        '$scope', function($scope) {
+            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
+            $scope.creatives = {
+                rules: {
+                    checked: '',
+                    name: '',
+                    delivering: '',
+                    type: '',
+                    device: '',
+                    size: '',
+                    expandedSize: '',
+                    numPlacements: '',
+                    options: ''
+                },
+                headers: [
+                    {name: '', id: 'checked'},
+                    {name: 'CREATIVE NAME', id: 'name'},
+                    {name: 'DELIVERING', id: 'delivering'},
+                    {name: 'DEVICE', id: 'device'},
+                    {name: 'SIZE', id: 'size'},
+                    {name: 'EXPANDABLE', id: 'expandedSize'},
+                    {name: 'NO PLACEMENTS', id: 'numPlacements'},
+                    {name: 'OPTIONS', id: 'options'}
+                ],
+                data: [
+                    {
+                        checked: '<input type="checkbox" checked>',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status success"></span>',
+                        type: 'RM',
+                        device: 'Tablet',
+                        size: '300x600',
+                        expandedSize: '600x600',
+                        numPlacements: 15,
+                        options: options
+                    },
+                    {
+                        checked: '<input type="checkbox">',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status success"></span>',
+                        type: 'IBV',
+                        device: 'Desktop',
+                        size: '300x600',
+                        expandedSize: 'N/A',
+                        numPlacements: 13,
+                        options: options
+                    },
+                    {
+                        checked: '<input type="checkbox">',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status"></span>',
+                        type: 'IBV',
+                        device: 'Multidevice',
+                        size: '300x600',
+                        expandedSize: '600x600',
+                        numPlacements: 11,
+                        options: options
+                    },
+                    {
+                        checked: '<input type="checkbox">',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status"></span>',
+                        type: 'IS',
+                        device: 'Mobile',
+                        size: '300x600',
+                        expandedSize: 'N/A',
+                        numPlacements: 10,
+                        options: options
+                    }
+                ]
+            };
+        }
+    ]);
 });
 
-define('campaignManagement/campaigns/index',['require','./services/campaignsByStatus','./services/campaignCache','./services/campaignsByAccount','./factories/campaignAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./placements/controllers/list','./creatives/controllers/list'],function (require) {
+
+
+define('campaignManagement/campaigns/creatives/controllers/thumbnails',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('creativeThumbnailsCtrl', [
+        '$scope', function() {
+
+        }
+    ]);
+});
+
+define('campaignManagement/campaigns/index',['require','./services/campaignsByStatus','./services/campaignCache','./services/campaignsByAccount','./factories/campaignAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./placements/controllers/list','./creatives/controllers/list','./creatives/controllers/thumbnails'],function (require) {
     'use strict';
 
     require('./services/campaignsByStatus');
@@ -61140,6 +61507,7 @@ define('campaignManagement/campaigns/index',['require','./services/campaignsBySt
     require('./directives/campaignDetails');
     require('./placements/controllers/list');
     require('./creatives/controllers/list');
+    require('./creatives/controllers/thumbnails');
 });
 
 /**
