@@ -60121,7 +60121,7 @@ define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], fu
 define('tpl!campaignManagement/campaigns/campaignsByAccount.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByAccount.html', '<div accordion-table="byAccount" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="header-summary">\n    <button class="btn btn-default solid right">Edit Campaign</button>\n    <div campaign-details />\n</div>\n<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
@@ -60268,7 +60268,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 name: 'cm.campaigns.detail.placements',
                 url: '/placements',
                 views: {
-                    'header': {
+                    'tab-header': {
                         templateUrl: 'campaignManagement/campaigns/placements/header.html'
                     },
                     'table': {
@@ -60285,7 +60285,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 name: 'cm.campaigns.detail.creatives.list',
                 url: '/list',
                 views: {
-                    'header@cm.campaigns.detail': {
+                    'tab-header@cm.campaigns.detail': {
                         templateUrl: 'campaignManagement/campaigns/creatives/header.html'
                     },
                     'table@cm.campaigns.detail': {
@@ -60298,7 +60298,7 @@ define('campaignManagement/routes',['require','./module','tpl!./index.html','tpl
                 name: 'cm.campaigns.detail.creatives.thumbnails',
                 url: '/thumbnails',
                 views: {
-                    'header@cm.campaigns.detail': {
+                    'tab-header@cm.campaigns.detail': {
                         templateUrl: 'campaignManagement/campaigns/creatives/header.html'
                     },
                     'table@cm.campaigns.detail': {
