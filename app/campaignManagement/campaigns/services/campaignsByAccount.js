@@ -125,7 +125,7 @@ define(function (require) {
                     output.push(ng.extend({
                         campaign: {
                             id: campaign.id,
-                            route: 'cm.campaigns.all({ accountId: row.campaign.id })',
+                            route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
                             name: campaign.name
                         },
                         impressions: campaign.metrics.impressions,
