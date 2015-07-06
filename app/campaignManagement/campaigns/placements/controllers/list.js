@@ -6,27 +6,17 @@ define(function (require) {
     app.controller('placementListCtrl', ['$scope', function ($scope) {
         $scope.placementTypes = [
             {
-                name: 'Placement Type 1',
+                name: 'Add Manually',
                 value: '1'
             },
             {
-                name: 'Placement Type 2',
+                name: 'Upload Media Plan',
                 value: '2'
-            },
-            {
-                name: 'Placement Type 3',
-                value: '3'
-            },
-            {
-                name: 'Placement Type 4',
-                value: '4'
-            },
-            {
-                name: 'Placement Type 5',
-                value: '5'
             }
         ];
 
+
+        var options = '<span style="font-size: 2rem"><a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
         $scope.placements = [
             {
                 header: '<input type="checkbox"> <a>Brightroll</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
@@ -63,7 +53,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -74,7 +64,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -85,7 +75,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -96,7 +86,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         }
                     ]
                 }
@@ -136,7 +126,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -147,7 +137,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -158,7 +148,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -169,7 +159,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         }
                     ]
                 }
@@ -209,7 +199,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -220,7 +210,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -231,7 +221,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -242,7 +232,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         }
                     ]
                 }
@@ -282,7 +272,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -293,7 +283,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -304,7 +294,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         },
                         {
                             checked: '<input type="checkbox">',
@@ -315,7 +305,7 @@ define(function (require) {
                             end: '08/20/2014',
                             assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
                             pacingAndImpressions: '100,000 booked impressions',
-                            options: '<a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a>'
+                            options: options
                         }
                     ]
                 }

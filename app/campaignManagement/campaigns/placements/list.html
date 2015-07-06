@@ -1,6 +1,6 @@
 <nav class="row" role="form">
     <div class="form-group col-lg-3">
-        View By:
+        <b>View By:</b>
         <a ui-sref=".publisher">Publisher (4)</a>
         <a ui-sref=".ad-unit">Ad unit (15)</a>
         <a ui-sref=".ad-type">Ad type (3)</a>
@@ -14,7 +14,13 @@
         <div class="row">
             <div class="col-lg-3 col-lg-offset-1">
                 <label class="form-label">
-                    <select chosen data-placeholder="Add Placements" ng-model="selected" ng-options="placementType.name for placementType in placementTypes track by placementType.value"></select>
+                    <div class="dropdown">
+                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>
+                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>
+                        </ul>
+                    </div>
                 </label>
             </div>
             <div class="col-lg-8">
@@ -25,5 +31,6 @@
         </div>
     </div>
 </nav>
-
-<div accordion-table="placements" class="table table-hover"></div>
+<div style="min-height: 500px">
+    <div accordion-table="placements" class="table table-hover"></div>
+</div>
