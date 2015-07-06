@@ -73,23 +73,10 @@ define(function (require) {
             element.find('.dropdown-toggle').click();
 
             var scope = element.find('.dropdown-toggle').isolateScope();
-            expect(scope.clicked).toEqual(true); //ensure it exists.
+            expect(scope.clicked).toBeTruthy(); //ensure it exists.
 
-            function destroyAndDigest(callbackExpect) {
-                setTimeout(function(){
-                    scope.$destroy();
-                    scope.$digest();
-                    if(typeof callbackExpect === 'function'){
-                        callbackExpect();
-                    }
-                },3000);
-            }
-
-            function expectDestroyed(){
-                expect(scope.destroyed).toBe(true);
-            }
-
-            destroyAndDigest(expectDestroyed);
+            scope.$destroy();
+            expect(scope.$$destroyed).toBeTruthy();
         });
 
     });

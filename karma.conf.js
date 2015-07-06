@@ -25,6 +25,7 @@ module.exports = function(config) {
         files: [
             {pattern: 'app/**/*_test.js', included: false},
             {pattern: 'app/**/*.js', included: false},
+            {pattern: 'assets/**/*.json', included: false},
             {pattern: 'app/**/*.html', included: false},
             'app/app.js',
             'test/test-main.js'

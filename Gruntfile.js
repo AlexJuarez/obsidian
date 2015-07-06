@@ -75,8 +75,7 @@ module.exports = function (grunt) {
                     ]
                 }]
             },
-            server: ['.tmp'],
-            fonts: ['assets/fonts']
+            server: ['.tmp']
         },
 
         // Hint Config
@@ -373,7 +372,6 @@ module.exports = function (grunt) {
     // Workon
     grunt.registerTask('default', 'Start working on this project.', [
         'jshint',
-        'clean:fonts',
         'webfont',
         'less:dev',
         'express:dev',

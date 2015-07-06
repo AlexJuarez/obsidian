@@ -11,15 +11,14 @@ define(function (require) {
         });
 
         function transform(data) {
-            data = data.clients;
-
             var channelSet = {};
+            var output = [];
+
+            data = data.clientSet;
 
             for (var i = 0; i < data.length; i++) {
                 channelSet[data[i].channel] = true;
             }
-
-            var output = [];
 
             ng.forEach(channelSet, function (value, key) {
                 output.push(key);
@@ -29,7 +28,7 @@ define(function (require) {
         }
 
         function init() {
-            return data.init('/api/v3/clients?dimensions=channel', transform);
+            return data.init('/api/v3/clientSet?dimensions=channel', transform);
         }
 
         function sortFn(a, b) {

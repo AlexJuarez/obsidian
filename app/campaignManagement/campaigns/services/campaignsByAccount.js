@@ -33,17 +33,21 @@ define(function (require) {
 
     module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
         function idFilter(opt) {
-            var filter = '';
+            var filters = [];
             var params = $state.params;
 
             if (params.divisionId) {
-                filter = 'division.id:eq:' + params.divisionId + ',';
+                filters.push('division.id:eq:' + params.divisionId);
             } else if (params.clientId) {
-                filter = 'client.id:eq:' + params.clientId + ',';
+                filters.push('client.id:eq:' + params.clientId);
             }
 
-            if (filter || opt) {
-                return '&filters=' + filter + opt;
+            if (opt) {
+                filters.push(opt);
+            }
+
+            if (filters.length) {
+                return '&filters=' + filters.join(',');
             }
 
             return '';
@@ -169,17 +173,20 @@ define(function (require) {
             return output;
         }
 
-        function observe(callback, $scope){
+        function observe(callback, $scope, preventImmediate){
             var campaignHeader = cache.get(accountUrl(), headerTransform);
 
-            campaignHeader.observe(callback, $scope);
+            campaignHeader.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(function() {
                 var campaignCache = cache.get(url(), campaignTransform);
                 campaignCache.observe(callback, $scope);
-            }, $scope);
+            }, $scope, true);
         }
 
         return {
+            _idFilter: idFilter,
+            _getAccountIds: getAccountIds,
+            _groupByAccount: groupByAccount,
             all: all,
             observe: observe
         };

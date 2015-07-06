@@ -16,19 +16,23 @@ define(function (require) {
 
     module.service('campaignsByStatus', ['dataFactory', 'campaignAccordionTableFactory', '$state', function (data, campaignAccordionTableFactory, $state) {
         function idFilter(opt) {
-            var filter = '';
+            var filters = [];
             var params = $state.params;
 
             if (params.accountId) {
-                filter = 'account.id:eq:' + params.accountId + ',';
+                filters.push('account.id:eq:' + params.accountId);
             } else if (params.divisionId) {
-                filter = 'division.id:eq:' + params.divisionId + ',';
+                filters.push('division.id:eq:' + params.divisionId);
             } else if (params.clientId) {
-                filter = 'client.id:eq:' + params.clientId + ',';
+                filters.push('client.id:eq:' + params.clientId);
             }
 
-            if (filter || opt) {
-                return '&filters=' + filter + opt
+            if (opt) {
+                filters.push(opt);
+            }
+
+            if (filters.length) {
+                return '&filters=' + filters.join(',');
             }
 
             return '';
