@@ -14,8 +14,10 @@ define(function (require) {
     require('tpl!./campaigns/campaignsByAccount.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/placements/list.html');
+    require('tpl!./campaigns/placements/header.html');
     require('tpl!./campaigns/creatives/list.html');
     require('tpl!./campaigns/creatives/thumbnails.html');
+    require('tpl!./campaigns/creatives/header.html');
     require('tpl!./campaigns/new-campaign.html');
     require('tpl!./accounts/index.html');
     require('tpl!./accounts/new-account.html');
