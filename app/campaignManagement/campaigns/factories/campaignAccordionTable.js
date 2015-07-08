@@ -2,6 +2,7 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
+    var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
 
     module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
         return function() {
@@ -109,17 +110,17 @@ define(function (require) {
             function getTableHeader(data) {
                 var template;
 
+                console.log(data);
+
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {
-                        template = $interpolate('<span class="icon-status [[hasLiveHeaderClass]]"></span>[[title]] ([[count]])');
+                        template = $interpolate(headerTemplate);
                         return template({
                             status: status,
                             title: title,
-                            count: header && header.count,
-                            hasLiveHeaderClass: header && header.hasLive ?
-                                'success' :
-                                ''
+                            count: header.metrics.count,
+                            countPlacementsLive: header.metrics.countPlacementsLive
                         });
                     }
                 }

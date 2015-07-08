@@ -56,8 +56,13 @@ define(function (require) {
             return cache.observe(url(), callback, $scope, preventImmediate);
         }
 
+        function data() {
+            return cache.get(url(), true);
+        }
+
         return {
             all: all,
+            data: data,
             observe: observe
         };
     }]);

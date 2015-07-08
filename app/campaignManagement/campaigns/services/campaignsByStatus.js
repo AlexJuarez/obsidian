@@ -3,7 +3,6 @@ define(function (require) {
 
     var module = require('./../../module');
     var ng = require('angular');
-    var headerBaseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
     var tableBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions';
     var cache = {};
 
@@ -14,7 +13,7 @@ define(function (require) {
         'archived': 'Archived'
     };
 
-    module.service('campaignsByStatus', ['dataFactory', 'campaignAccordionTableFactory', '$state', function (data, campaignAccordionTableFactory, $state) {
+    module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', '$state', function (campaignsHeader, campaignAccordionTableFactory, $state) {
         function idFilter(opt) {
             var filters = [];
             var params = $state.params;
@@ -38,27 +37,8 @@ define(function (require) {
             return '';
         }
 
-        function headerUrl() {
-            return headerBaseUrl + idFilter();
-        }
-
         function tableUrl(status) {
             return tableBaseUrl + idFilter('status:eq:' + status );
-        }
-
-        function transformHeader(data) {
-            var output = [];
-            var metrics;
-
-            for (var i = 0; i < data.campaignSet.length; i++) {
-                metrics = data.campaignSet[i];
-                output.push({
-                    status: metrics.status,
-                    count: metrics.metrics.count,
-                    hasLive: metrics.metrics.countLive > 0
-                });
-            }
-            return output;
         }
 
         function init() {
@@ -67,8 +47,7 @@ define(function (require) {
             if (!accordionTables) {
                 accordionTables = cache[idFilter()] = {};
 
-                accordionTables.header = data(transformHeader);
-                accordionTables.header.init(headerUrl());
+                accordionTables.header = campaignsHeader.data();
                 accordionTables.rows = {};
 
                 ng.forEach(statuses, function(title, status) {

@@ -1,4 +1,3 @@
-//jshint ignore:start
 define(function (require) {
     'use strict';
 
@@ -6,7 +5,7 @@ define(function (require) {
     var ng = require('angular');
     var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
     var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns,countCampaignsPreFlight,countCampaignsCompleted';
-    var headerTemplate = require('tpl!./campaignAccountHeader.html');
+    var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
         'campaign': 'link',
@@ -167,13 +166,13 @@ define(function (require) {
                         headers: headers,
                         data: transformRows(accounts[account.id], account.id)
                     }
-                })
+                });
             }
 
             return output;
         }
 
-        function observe(callback, $scope, preventImmediate){
+        function observe(callback, $scope, preventImmediate) {
             var campaignHeader = cache.get(accountUrl(), headerTransform);
 
             campaignHeader.observe(callback, $scope, preventImmediate);
