@@ -3,44 +3,35 @@ define(function (require) {
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/clientSet?';
-    var defaultMetrics = ['countCampaignsArchived', 'countAccounts', 'countCampaignsPreFlight', 'countCampaignsInFlight', 'countCampaignsCompleted', 'count'];
+    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
             transform: function (data) {
-                return data.clientSet;
+                return data.divisionSet;
             }
         });
 
         function filter() {
             var output = '';
 
-            if ($state.params.clientId) {
-                output = '&filters=id:eq:' + $state.params.clientId;
-            }
-
-            return output;
-        }
-
-        function metrics() {
-            var output = 'metrics=' + defaultMetrics.join(',');
-
-            if (!$state.params.clientId) {
-                output += ',countClients';
+            if ($state.params.divisionId) {
+                output = '&filters=id:eq:' + $state.params.divisionId;
+            } else if ($state.params.clientId) {
+                output = '&filters=client.id:eq:' + $state.params.clientId;
             }
 
             return output;
         }
 
         function url() {
-            return baseUrl + metrics() + filter();
+            return baseUrl + filter();
         }
 
         function all() {
             var datum = cache.all(url());
             var output = {
-                'countClients': 0,
+                'count': 0,
                 'countCampaignsPreFlight': 0,
                 'countCampaignsInFlight': 0,
                 'countCampaigns': 0,

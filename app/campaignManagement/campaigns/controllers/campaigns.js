@@ -20,8 +20,6 @@ define(function (require) {
 
         $scope.params = $state.params;
 
-        console.log($scope.params);
-
         function openModal(size) {
             $modal.open({
                 animation: 'true',

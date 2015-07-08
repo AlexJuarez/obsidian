@@ -58,7 +58,7 @@ define(function (require) {
             })
             .state({
                 name: 'cm.campaigns.all',
-                url: '/campaigns?clientId&divisonId&accountId',
+                url: '/campaigns?clientId&divisionId&accountId',
                 views: {
                     'summary': {
                         controller: 'campaignsCtrl',
@@ -102,6 +102,20 @@ define(function (require) {
                 views: {
                     'summary': {
                         templateUrl: 'campaignManagement/divisions/divisions.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.account',
+                url: '/account/:accountId',
+                views: {
+                    'summary': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
                     },
                     'content': {
                         controller: 'campaignsCtrl',
@@ -180,64 +194,76 @@ define(function (require) {
                     }
                 }
             });
-        buildGeneralRoutes('analytics');
-        buildGeneralRoutes('reports');
 
-        function buildGeneralRoutes(base) {
+        buildAnalyticsRoutes('analytics');
+        buildReportRoutes('reports');
+
+        function buildReportRoutes(base) {
             $stateProvider
                 .state({
-                    name: base + '.clients',
-                    url: '/client',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.clients.all',
-                    url: '/',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.clients.detail',
-                    url: '/:clientId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.divisions',
-                    url: '/division',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.divisions.all',
-                    url: '/',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.divisions.detail',
-                    url: '/:divisionId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.accounts',
-                    url: '/account',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.accounts.detail',
-                    url: '/:accountId',
+                    name: base,
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns',
-                    url: '/campaign',
                     template: '<ui-view />'
                 })
                 .state({
-                    name: base + '.campaigns.all',
-                    url: '/',
+                    name: base + '.campaigns.account',
+                    url: '/analytics/reports/account/:accountId',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/:campaignId',
+                    url: '/analytics/reports/campaign/:campaignId',
+                    template: '<ui-view />'
+                })
+        }
+
+        function buildAnalyticsRoutes(base) {
+            $stateProvider
+                .state({
+                    name: base + '.clients',
+                    url: '',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns',
+                    template: '<ui-view/>'
+                })
+                .state({
+                    name: base + '.campaigns.client',
+                    url: '/dashboard/client/:clientId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.division',
+                    url: '/dashboard/division/:divisionId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.account',
+                    url: '/dashboard/account/:accountId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.detail',
+                    url: '/campaign/:campaignId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.divisions',
+                    url: '/dashboard/client/:clientId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.accounts',
+                    url: '/dashboard/division/:divisionId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns',
+                    url: '/dashboard/account/:accountId',
                     template: '<ui-view />'
                 })
                 .state(base + '.catch', {
