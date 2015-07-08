@@ -4,6 +4,5 @@
 define(function (require) {
     'use strict';
 
-    require('tpl!./index.html');
     require('./controllers/accounts');
 });

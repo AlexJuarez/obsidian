@@ -25,5 +25,6 @@ define(function (require) {
     require('./filters/truncateNumber');
     require('./services/store');
     require('./services/channel');
+    require('./services/clientSet');
     require('./constants/apiURI');
 });
