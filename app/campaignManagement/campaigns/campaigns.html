@@ -1,8 +1,28 @@
+<h1>All Campaigns for Account: {accountName}</h1>
 <div class="header-summary">
-    <button class="btn btn-default solid right" ng-click="openModal('lg')">Add New Campaign</button>
+    <ul class="list">
+        <li>
+            <span>Pre-Flight</span>
+            <span>[[summary.preFlight]]</span>
+        </li>
+        <li>
+            <span>In-Flight</span>
+            <span>[[summary.inFlight]]</span>
+        </li>
+        <li>
+            <span>Completed</span>
+            <span>[[summary.completed]]</span>
+        </li>
+        <li>
+            <span>Archived</span>
+            <span>[[summary.archived]]</span>
+        </li>
+    </ul>
+    <button class="btn btn-default solid right" ng-click="openModal('lg')">New Campaign</button>
+    <button class="btn btn-default solid right">New Account</button>
 </div>
 <p>
-    View By: <a ui-sref="cm.campaigns.all.status" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref="cm.campaigns.all.account" ui-sref-active="active">Account</a></span>
+    View By: <a ui-sref="cm.campaigns.all" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref="cm.campaigns.all.account" ui-sref-active="active">Account</a></span>
 </p>
 <br />
 <div ui-view="tab-content">
