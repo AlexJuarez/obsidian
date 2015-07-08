@@ -81,8 +81,8 @@ define(function (require) {
                 };
 
                 var headers = [
-                    {name: 'Account', id: 'account'},
                     {name: 'Campaign', id: 'campaign'},
+                    {name: 'Account', id: 'account'},
                     {name: 'Impressions & Pacing', id: 'impressions'},
                     {name: 'Start', id: 'start'},
                     {name: 'End', id: 'end'},
@@ -109,8 +109,6 @@ define(function (require) {
 
             function getTableHeader(data) {
                 var template;
-
-                console.log(data);
 
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];

@@ -39,5 +39,18 @@ define(function (require) {
         it('should return an empty data object', function () {
             expect(cache.get('/test', false)).not.toEqual(null);
         });
+
+        it('should initialize on the second get call', function () {
+            expect(cache.get('/test', false).all()).toEqual([]);
+
+            httpBackend.when('GET', '/test')
+                .respond(['success']);
+
+            var data = cache.get('/test', true);
+
+            httpBackend.flush();
+
+            expect(data.all()).toEqual(['success']);
+        });
     });
 });

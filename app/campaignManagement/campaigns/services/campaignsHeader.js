@@ -4,35 +4,15 @@ define(function (require) {
     var module = require('./../../module');
     var baseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
 
-    module.service('campaignsHeader', ['cacheFactory', '$state', function (cacheFactory, $state) {
+    module.service('campaignsHeader', ['cacheFactory', 'campaignsFilter', function (cacheFactory, filter) {
         var cache = cacheFactory({
             transform: function (data) {
                 return data.campaignSet;
             }
         });
 
-        function idFilter() {
-            var filters = [];
-            var params = $state.params;
-
-            if (params.accountId) {
-                filters.push('account.id:eq:' + params.accountId);
-            } else if (params.divisionId) {
-                filters.push('division.id:eq:' + params.divisionId);
-            } else if (params.clientId) {
-                filters.push('client.id:eq:' + params.clientId);
-            }
-
-
-            if (filters.length) {
-                return '&filters=' + filters.join(',');
-            }
-
-            return '';
-        }
-
         function url() {
-            return baseUrl + idFilter();
+            return baseUrl + filter();
         }
 
         function all() {
@@ -56,11 +36,17 @@ define(function (require) {
             return cache.observe(url(), callback, $scope, preventImmediate);
         }
 
-        function data() {
-            return cache.get(url(), true);
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
         }
 
         return {
+            url: url,
             all: all,
             data: data,
             observe: observe

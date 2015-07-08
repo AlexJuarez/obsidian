@@ -30,36 +30,15 @@ define(function (require) {
 
     var limits = {};
 
-    module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
-        function idFilter(opt) {
-            var filters = [];
-            var params = $state.params;
-
-            if (params.divisionId) {
-                filters.push('division.id:eq:' + params.divisionId);
-            } else if (params.clientId) {
-                filters.push('client.id:eq:' + params.clientId);
-            }
-
-            if (opt) {
-                filters.push(opt);
-            }
-
-            if (filters.length) {
-                return '&filters=' + filters.join(',');
-            }
-
-            return '';
-        }
-
+    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', function (cache, filter, $interpolate) {
         function accountUrl() {
-            return headerUrl + idFilter();
+            return headerUrl + filter();
         }
 
         function url() {
             var accountIds = getAccountIds();
 
-            return baseUrl + idFilter('account.id:eq:' + accountIds.join(':eq:'));
+            return baseUrl + filter('account.id:eq:' + accountIds.join(':eq:'));
         }
 
         function headerTransform(data) {
@@ -146,6 +125,8 @@ define(function (require) {
                 }
 
                 limits[accountId] += 10;
+
+                return limits[accountId];
             };
         }
 
@@ -183,7 +164,6 @@ define(function (require) {
         }
 
         return {
-            _idFilter: idFilter,
             _getAccountIds: getAccountIds,
             _groupByAccount: groupByAccount,
             all: all,
