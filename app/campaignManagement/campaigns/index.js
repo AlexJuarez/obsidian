@@ -4,6 +4,7 @@ define(function (require) {
     require('./services/campaignsByStatus');
     require('./services/campaignCache');
     require('./services/campaignsByAccount');
+    require('./services/campaignsHeader');
     require('./factories/campaignAccordionTable');
     require('./controllers/newCampaign');
     require('./controllers/campaigns');

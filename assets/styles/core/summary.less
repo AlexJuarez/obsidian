@@ -14,22 +14,23 @@
 
     .list {
         list-style: none;
-        font-weight: bold;
-        font-family: 'Lato', sans-serif;
         li {
             display: inline-block;
-            margin-left: 2.5rem;
+            margin-left: 3.5rem;
             span {
                 &:first-child {
                     font-size: 1.2rem; //TODO: fix
+                    font-family: 'Lato', sans-serif;
                     text-transform: uppercase;
+                    font-weight: bold;
                 }
                 &:last-child {
+                    font-family: 'Oswald', sans-serif;
                     color: @brand-color;
                 }
                 font-size: 3rem; //TODO: fix
                 display: block;
-                text-align: center;
+                text-align: left;
             }
         }
     }

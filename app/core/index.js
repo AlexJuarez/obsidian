@@ -8,6 +8,7 @@ define(function (require) {
     require('./datepicker/index');
     require('./navbar/index');
     require('./factories/data');
+    require('./factories/cache');
     require('./factories/pagination');
     require('./factories/domainInterceptor');
     require('./directives/dropdown');
