@@ -262,7 +262,7 @@ define(function (require) {
                     template: '<ui-view />'
                 })
                 .state({
-                    name: base + '.campaigns',
+                    name: base + '.campaigns.all',
                     url: '/dashboard/account/:accountId',
                     template: '<ui-view />'
                 })
