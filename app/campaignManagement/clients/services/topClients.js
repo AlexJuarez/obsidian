@@ -38,7 +38,7 @@ define(function (require) {
                 output.push({
                     'id': client.id,
                     'channel': client.channel,
-                    'client': {route: 'cm.clients.detail({ clientId: row.id })', name: client.name },
+                    'client': {route: 'cm.campaigns.client({ clientId: row.id })', name: client.name },
                     'activeAccounts': client.metrics.countAccountsActive,
                     'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
                     'impressions': client.metrics.impressions,

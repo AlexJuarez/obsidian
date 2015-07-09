@@ -37,8 +37,13 @@ define(function (require) {
 
         function url() {
             var accountIds = getAccountIds();
+            var opt = '';
 
-            return baseUrl + filter('account.id:eq:' + accountIds.join(':eq:'));
+            if (accountIds.length) {
+                opt = 'account.id:eq:' + accountIds.join(':eq:');
+            }
+
+            return baseUrl + filter(opt);
         }
 
         function headerTransform(data) {

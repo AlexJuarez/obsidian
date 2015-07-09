@@ -10,12 +10,20 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/divisions/directives/youWorkOn.html',
-            controller: ['$scope', 'clientSet', function ($scope, activeSummary) {
-                function updateSummary() {
-                    $scope.summary = activeSummary.all();
+            controller: ['$scope', '$state', 'clientSet', 'divisionSet', function ($scope, $state, clientSet, divisionSet) {
+                function updateSummaryClientSet() {
+                    $scope.summary = clientSet.all();
                 }
 
-                activeSummary.observe(updateSummary, $scope);
+                function updateSummaryDivisionSet() {
+                    $scope.summary = divisionSet.all();
+                }
+
+                if ($state.params.divisionId) {
+                    divisionSet.observe(updateSummaryDivisionSet, $scope);
+                } else {
+                    clientSet.observe(updateSummaryClientSet, $scope);
+                }
             }]
         };
     }]);

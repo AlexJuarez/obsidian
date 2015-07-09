@@ -45,7 +45,7 @@ define(function (require) {
                     ],
                     data: [
                         {
-                            checked: '<input type="checkbox" checked>',
+                            checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
                             name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
                             type: 'RM',
                             delivering: '<span class="icon-status success"></span>',

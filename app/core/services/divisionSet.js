@@ -3,20 +3,20 @@ define(function (require) {
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
 
-    module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
+    module.service('divisionSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
             transform: function (data) {
-                return data.clientSet;
+                return data.divisionSet;
             }
         });
 
         function filter() {
             var output = '';
 
-            if ($state.params.clientId) {
-                output = '&filters=id:eq:' + $state.params.clientId;
+            if ($state.params.divisionId) {
+                output = '&filters=id:eq:' + $state.params.divisionId;
             }
 
             return output;

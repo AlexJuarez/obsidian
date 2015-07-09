@@ -217,7 +217,7 @@ define(function (require) {
                     name: base + '.campaigns.detail',
                     url: '/analytics/reports/campaign/:campaignId',
                     template: '<ui-view />'
-                })
+                });
         }
 
         function buildAnalyticsRoutes(base) {

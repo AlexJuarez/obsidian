@@ -93,7 +93,7 @@ define(function (require) {
 
                 if ($state.params.accountId) {
                     delete rules.account;
-                    headers.shift();
+                    headers.splice(1, 1);
                 }
 
                 return {
