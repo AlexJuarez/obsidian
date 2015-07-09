@@ -341,12 +341,20 @@
     }
 
     .dropdown-toggle-title {
+        font-family: 'Oswald', sans-serif;
         .font-size(1.8);
         line-height: 6rem;
-        font-family: 'Oswald', sans-serif;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        > .main {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+        .wrapper {
+            font-family: 'Lato', sans-serif;
+            line-height: 1.2rem;
+            .font-size(1.2);
+        }
         .glyph-chevron-down {
             box-sizing: border-box;
             height: 6rem;
