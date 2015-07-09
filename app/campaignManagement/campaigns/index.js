@@ -10,6 +10,7 @@ define(function (require) {
     require('./controllers/campaign');
 
     require('./directives/campaignDetails');
+    require('./directives/creativeThumbnails');
     require('./placements/controllers/list');
     require('./creatives/controllers/list');
     require('./creatives/controllers/thumbnails');

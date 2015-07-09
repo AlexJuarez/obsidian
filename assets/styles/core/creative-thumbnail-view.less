@@ -82,17 +82,17 @@
             background: @dark-gray;
             color: #fff;
             margin-bottom: 0.7rem;
-            padding: 0.7rem 1rem;
+            padding: 1rem;
             position: relative;
             overflow: auto;
-            @media (max-width: @screen-lg-min) {
-                .font-size(1);
-                .line-height(1);
-                padding: 1rem;
-            }
+            // @media (max-width: @screen-lg-min) {
+            //     .font-size(1);
+            //     .line-height(1);
+            //     padding: 1rem;
+            // }
             i {
                 color: @light-gray;
-                &.active {
+                &.success {
                     color: @green;
                 }
             }
@@ -125,6 +125,9 @@
                     display: inline-block;
                 }
            }
+        }
+        &.col-sm-15 {
+            width: 20%;
         }
     }
 
