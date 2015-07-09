@@ -1,10 +1,12 @@
-<div class="header-summary">
-    <button class="btn btn-default solid right" ng-click="openModal('lg')">Add New Campaign</button>
-</div>
 <p>
-    View By: <a ui-sref="cm.campaigns.all.status" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref="cm.campaigns.all.account" ui-sref-active="active">Account</a></span>
+    View By: <a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></span>
 </p>
 <br />
 <div ui-view="tab-content">
-    <div accordion-table="byStatus" class="table table-hover"></div>
+    <div ng-if="params.viewBy !== 'account'">
+        <div campaigns-by-status></div>
+    </div>
+    <div ng-if="params.viewBy === 'account'">
+        <div campaigns-by-account></div>
+    </div>
 </div>

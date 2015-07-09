@@ -10,13 +10,12 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/clients/directives/activeSummary.html',
-            controller: ['$scope', '$http', '$timeout', function ($scope, $http, $timeout) {
-                $http.get('/api/v3/clientSet?metrics=countActive,countAccountsActive,countCampaignsActive,countCampaignsPreFlight,countCampaignsInFlight').then(function (res) {
-                    $timeout(function () {
-                        $scope.active = res.data.clientSet[0].metrics;
-                        $scope.$apply();
-                    });
-                });
+            controller: ['$scope', 'clientSet', function ($scope, activeSummary) {
+                function updateSummary() {
+                    $scope.active = activeSummary.all();
+                }
+
+                activeSummary.observe(updateSummary, $scope);
             }]
         };
     }]);

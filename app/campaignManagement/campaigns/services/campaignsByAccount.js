@@ -1,4 +1,3 @@
-//jshint ignore:start
 define(function (require) {
     'use strict';
 
@@ -6,7 +5,7 @@ define(function (require) {
     var ng = require('angular');
     var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
     var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns,countCampaignsPreFlight,countCampaignsCompleted';
-    var headerTemplate = require('tpl!./campaignAccountHeader.html');
+    var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
         'campaign': 'link',
@@ -31,36 +30,20 @@ define(function (require) {
 
     var limits = {};
 
-    module.service('campaignsByAccount', ['campaignCache', '$state', '$interpolate', function (cache, $state, $interpolate) {
-        function idFilter(opt) {
-            var filters = [];
-            var params = $state.params;
-
-            if (params.divisionId) {
-                filters.push('division.id:eq:' + params.divisionId);
-            } else if (params.clientId) {
-                filters.push('client.id:eq:' + params.clientId);
-            }
-
-            if (opt) {
-                filters.push(opt);
-            }
-
-            if (filters.length) {
-                return '&filters=' + filters.join(',');
-            }
-
-            return '';
-        }
-
+    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', function (cache, filter, $interpolate) {
         function accountUrl() {
-            return headerUrl + idFilter();
+            return headerUrl + filter();
         }
 
         function url() {
             var accountIds = getAccountIds();
+            var opt = '';
 
-            return baseUrl + idFilter('account.id:eq:' + accountIds.join(':eq:'));
+            if (accountIds.length) {
+                opt = 'account.id:eq:' + accountIds.join(':eq:');
+            }
+
+            return baseUrl + filter(opt);
         }
 
         function headerTransform(data) {
@@ -147,6 +130,8 @@ define(function (require) {
                 }
 
                 limits[accountId] += 10;
+
+                return limits[accountId];
             };
         }
 
@@ -167,13 +152,13 @@ define(function (require) {
                         headers: headers,
                         data: transformRows(accounts[account.id], account.id)
                     }
-                })
+                });
             }
 
             return output;
         }
 
-        function observe(callback, $scope, preventImmediate){
+        function observe(callback, $scope, preventImmediate) {
             var campaignHeader = cache.get(accountUrl(), headerTransform);
 
             campaignHeader.observe(callback, $scope, preventImmediate);
@@ -184,7 +169,6 @@ define(function (require) {
         }
 
         return {
-            _idFilter: idFilter,
             _getAccountIds: getAccountIds,
             _groupByAccount: groupByAccount,
             all: all,

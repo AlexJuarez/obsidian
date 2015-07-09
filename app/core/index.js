@@ -8,6 +8,7 @@ define(function (require) {
     require('./datepicker/index');
     require('./navbar/index');
     require('./factories/data');
+    require('./factories/cache');
     require('./factories/pagination');
     require('./factories/domainInterceptor');
     require('./directives/dropdown');
@@ -24,5 +25,7 @@ define(function (require) {
     require('./filters/truncateNumber');
     require('./services/store');
     require('./services/channel');
+    require('./services/clientSet');
+    require('./services/divisionSet');
     require('./constants/apiURI');
 });

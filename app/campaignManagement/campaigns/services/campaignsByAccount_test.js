@@ -32,26 +32,6 @@ define(function (require) {
             expect(campaigns).not.toEqual(null);
         });
 
-        describe('idFilter', function () {
-            it('should return an empty string', function () {
-                expect(campaigns._idFilter()).toEqual('');
-            });
-
-            it('should return &filters=division.id:eq:division1', function () {
-                state.params.divisionId = 'division1';
-                expect(campaigns._idFilter()).toEqual('&filters=division.id:eq:division1');
-            });
-
-            it('should add just the optional filter', function () {
-                expect(campaigns._idFilter('test')).toEqual('&filters=test');
-            });
-
-            it('should properly handle a state param and a option', function () {
-                state.params.clientId = 'clientId1';
-                expect(campaigns._idFilter('test')).toEqual('&filters=client.id:eq:clientId1,test');
-            });
-        });
-
         function setUpTests() {
             httpBackend.when('GET', '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns,countCampaignsPreFlight,countCampaignsCompleted&limit=10&offset=0')
                 .respond(accountJSON);
@@ -66,6 +46,7 @@ define(function (require) {
                 expect(campaigns._getAccountIds()).toEqual([ '50367e93-e79a-4ac0-b35b-f62eb987b5b3', '070e353e-01f0-4053-b506-35a25b8c654b', '3bea5bbd-bf34-4b9f-89e2-1da824b1de17', '7d61e3dd-215b-45db-8283-2a35098ccb9f', '85736e92-9a63-4e3f-863c-c680654b0d84', 'f7dee774-f5d3-416f-9a5a-d9c71ee0dab3', '48ebc6d2-4203-49e6-92f2-1084dfc0d0d3', '1acc9cc6-95fd-4805-a100-8cbd7cd6997c', 'bc35a968-d564-4237-9ae3-b8e48c92c5a7', '7c2625b2-f387-40e3-8948-583908a37802' ]);
             }, scope, true);
             httpBackend.flush();
+            expect(campaigns.all()[0].options.more()).toEqual(20);
             expect(campaigns.all().length).toBeTruthy();
         });
     });

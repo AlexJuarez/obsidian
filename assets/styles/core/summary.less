@@ -1,6 +1,6 @@
 .header-summary {
-    margin-top: 4rem;
-    margin-bottom: 1rem;
+    margin: 2rem 0 1rem 0;
+    .clearfix();
 
     .title, .list {
         padding: 0;
@@ -10,26 +10,31 @@
 
     .title {
         text-transform: uppercase;
+        margin-right: 3.5rem;
     }
 
     .list {
+        padding: 0;
         list-style: none;
-        font-weight: bold;
-        font-family: 'Lato', sans-serif;
         li {
+            + li {
+                margin-left: 3.5rem;
+            }
             display: inline-block;
-            margin-left: 2.5rem;
             span {
+                display: block;
+
                 &:first-child {
-                    font-size: 1.2rem; //TODO: fix
+                    .font-size(1.2); //TODO: fix
+                    font-family: 'Lato', sans-serif;
                     text-transform: uppercase;
+                    font-weight: bold;
                 }
                 &:last-child {
+                    font-family: 'Oswald', sans-serif;
+                    .font-size(3);
                     color: @brand-color;
                 }
-                font-size: 3rem; //TODO: fix
-                display: block;
-                text-align: center;
             }
         }
     }

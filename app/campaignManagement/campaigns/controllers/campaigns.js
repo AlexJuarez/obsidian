@@ -5,20 +5,15 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('campaignsCtrl', ['$scope', '$http', '$timeout', 'campaignsByStatus', 'navbarService', '$modal', 'campaignsByAccount', '$state', function ($scope, $http, $timeout, campaignsByStatus, navbarService, $modal, campaignsByAccount, $state) {
+    app.controller('campaignsCtrl', ['$scope', '$modal', '$state', 'campaignsHeader', function ($scope, $modal, $state, campaignsHeader) {
 
-        $scope.byStatus = [];
+        $scope.summary = [];
 
-        function updateByStatus() {
-            $scope.byStatus = campaignsByStatus.all();
+        function updateSummary() {
+            $scope.summary = campaignsHeader.all();
         }
 
-        function updateByAccount() {
-            $scope.byAccount = campaignsByAccount.all();
-        }
-
-        campaignsByStatus.observe(updateByStatus, $scope);
-        campaignsByAccount.observe(updateByAccount, $scope);
+        campaignsHeader.observe(updateSummary, $scope);
 
         // Modal
         $scope.openModal = openModal;

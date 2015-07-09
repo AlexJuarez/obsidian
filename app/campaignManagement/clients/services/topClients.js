@@ -29,15 +29,16 @@ define(function (require) {
         }
 
         function topClientsTransform(data) {
-            var lastLogin;
+            var lastLogin, clientName;
             var output = [];
 
             data.forEach(function (client) {
-                lastLogin = client.lastViewedUserName + ', ' + dateFormatter(client.lastViewedUserDate);
+                clientName = client.lastViewedUserName ? client.lastViewedUserName + ', ' : '';
+                lastLogin = clientName + dateFormatter(client.lastViewedUserDate);
                 output.push({
                     'id': client.id,
                     'channel': client.channel,
-                    'client': {route: 'cm.clients.detail({ clientId: row.id })', name: client.name },
+                    'client': {route: 'cm.campaigns.client({ clientId: row.id })', name: client.name },
                     'activeAccounts': client.metrics.countAccountsActive,
                     'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
                     'impressions': client.metrics.impressions,
