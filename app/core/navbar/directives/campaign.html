@@ -2,7 +2,7 @@
     <div class="dropdown-toggle-subtitle">
         [[section]]
     </div>
-    <div tooltip="current" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">
+    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">
         <i class="glyph-chevron-down"></i>
         [[current]]
     </div>
@@ -17,7 +17,7 @@
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
                 <li ng-repeat="campaign in pinned track by campaign.id">
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
+                    <a title="[[campaign.name]]" ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -25,7 +25,7 @@
         <li ng-show="preFlight.length">preFlight
             <ul>
                 <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
+                    <a title="[[campaign.name]]" ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -33,7 +33,7 @@
         <li ng-show="inFlight.length">inFlight
             <ul>
                 <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
+                    <a title="[[campaign.name]]" ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -41,7 +41,7 @@
         <li ng-show="completed.length">completed
             <ul>
                 <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
+                    <a title="[[campaign.name]]" ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -52,7 +52,7 @@
             [[item.key]]
             <ul limit="5">
                 <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
+                    <a title="[[campaign.name]]" ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                 <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
             </ul>
@@ -62,7 +62,7 @@
         <li>Results for "[[query]]"
             <ul>
                 <li ng-repeat="campaign in results track by campaign.id">
-                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
+                    <a title="[[campaign.name]]" ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>
                     <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>

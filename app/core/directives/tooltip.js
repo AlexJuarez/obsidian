@@ -78,7 +78,7 @@ define(function (require) {
                 function updatePosition() {
                     if (overflow) {
                         var element = elem.find('.main')[0];
-                        if (element.offsetWidth <= element.scrollWidth) {
+                        if (element.offsetWidth >= element.scrollWidth) {
                             elem.find('.wrapper').addClass('ng-hide');
                         } else {
                             elem.find('.wrapper').removeClass('ng-hide');

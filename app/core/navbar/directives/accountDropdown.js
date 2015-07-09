@@ -15,7 +15,6 @@ define(function (require) {
                 $scope.section = 'Accounts';
                 $scope.current = 'All Accounts';
                 $scope.state = navbar.params();
-                $scope.overflow = overflow;
 
                 accounts.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
@@ -24,10 +23,6 @@ define(function (require) {
                 $scope.$watch('query', function (newValue) {
                     $scope.results = accounts.search(newValue);
                 });
-
-                function overflow(el) {
-                    console.log(el);
-                }
 
                 function updateCurrent() {
                     var info = navbar.all();

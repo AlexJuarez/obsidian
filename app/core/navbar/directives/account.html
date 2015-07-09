@@ -17,7 +17,7 @@
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
                 <li ng-repeat="account in pinned track by account.id">
-                    <a ui-sref=".campaigns.account({accountId: account.id})">[[account.name]]</a>
+                    <a title="[[account.name]]" ui-sref=".campaigns.account({accountId: account.id})">[[account.name]]</a>
                     <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -28,7 +28,7 @@
             [[item.key]]
             <ul limit="5">
                 <li ng-repeat="account in (item.value | limitTo: limit) track by account.id">
-                    <a ui-sref=".campaigns.account({accountId: account.id})">[[account.name]]</a>
+                    <a title="[[account.name]]" ui-sref=".campaigns.account({accountId: account.id})">[[account.name]]</a>
                     <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                 <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
             </ul>
@@ -38,7 +38,7 @@
         <li>Results for "[[query]]"
             <ul>
                 <li ng-repeat="account in results track by account.id">
-                    <a ui-sref=".campaigns.account({ accountId: account.id })">[[account.name]]</a>
+                    <a title="[[account.name]]" ui-sref=".campaigns.account({ accountId: account.id })">[[account.name]]</a>
                     <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>
