@@ -36,7 +36,7 @@ define(function (require) {
                 state.params.clientId = 'client0';
 
                 expect(metrics.url()).toEqual('/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count&filters=id:eq:client0');
-            })
+            });
         });
 
         it('should populate the expected fields', function () {
@@ -64,7 +64,7 @@ define(function (require) {
 
         it('should get the dataFactory object', function () {
             expect(metrics.data(false)).not.toBe(null);
-        })
+        });
 
     });
 });

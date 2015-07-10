@@ -37,7 +37,7 @@ define(function (require) {
                 state.params.divisionId = 'division0';
 
                 expect(metrics.url()).toEqual(baseUrl + '&filters=id:eq:division0');
-            })
+            });
         });
 
         it('should populate the expected fields', function () {
@@ -65,7 +65,7 @@ define(function (require) {
 
         it('should get the dataFactory object', function () {
             expect(metrics.data(false)).not.toBe(null);
-        })
+        });
 
     });
 });
