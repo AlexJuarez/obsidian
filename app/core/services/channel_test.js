@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    require('./store');
+    require('./channel');
     require('angularMocks');
     var data = require('text!/base/assets/fixtures/channel.json');
 
