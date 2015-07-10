@@ -18,7 +18,7 @@ module.exports = function (grunt) {
             },
             scripts: {
                 files: [
-                    'app/**/*.js'
+                    'app/**/!(*_test).js'
                 ]
             },
             html: {
