@@ -14,6 +14,7 @@ define(function (require) {
             replace: true,
             scope: {
                 table: '=basicTable',
+                footer: '=basicFooter',
                 classes: '@class'
             }
         };

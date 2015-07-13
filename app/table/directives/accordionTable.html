@@ -3,10 +3,7 @@
         <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">
         </div>
         <div class="content">
-            <div class="table-hover" basic-table="row.content"></div>
-            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">
-                <a ng-click="row.options.more()">Show More</a>
-            </div>
+            <div class="table-hover" basic-table="row.content" basic-footer="row.options"></div>
         </div>
     </div>
 </div>

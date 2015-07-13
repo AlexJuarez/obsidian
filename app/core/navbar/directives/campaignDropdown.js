@@ -14,7 +14,7 @@ define(function (require) {
                 $scope.unpin = campaigns.unpin;
                 $scope.section = 'Campaigns';
                 $scope.current = 'All Campaigns';
-                $scope.state = navbar.params();
+                $scope.state = {};
                 $scope.quarterLimit = 5;
                 $scope.preFlightLimit = 10;
                 $scope.inFlightLimit = 10;
@@ -35,7 +35,7 @@ define(function (require) {
                     if (info.campaign && info.account && info.account.id) {
                         $scope.state = { accountId: info.account.id };
                     } else {
-                        $scope.state = navbar.params();
+                        $scope.state = {};
                     }
                 }
 

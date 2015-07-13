@@ -55,11 +55,6 @@ define(function (require) {
             expect(filter('test', {'test': '2015-04-01T12:00:00Z'}, {'test': 'date'})).toEqual('April 1, 2015');
         });
 
-        it('should be formatted as a bullet', function () {
-        //    not implemented yet, can only test empty return.
-            expect(filter('test', {'test': 'ANYTHING!?!?'}, {'test': 'bullet'})).toEqual('');
-        });
-
         it('should be formatted as a link', function () {
             var input = {name:'' , route: ''};
             expect(filter('test', {'test': input}, {'test': 'link'})).toEqual('<a ui-sref=""></a>');

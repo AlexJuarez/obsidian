@@ -9,9 +9,7 @@ define(function (require) {
 
     require('tpl!./index.html');
     require('tpl!./campaigns/index.html');
-    require('tpl!./campaigns/campaigns.summary.html');
     require('tpl!./campaigns/campaign.summary.html');
-    require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/placements/list.html');
     require('tpl!./campaigns/placements/header.html');
@@ -57,20 +55,6 @@ define(function (require) {
                 templateUrl: 'campaignManagement/campaigns/index.html'
             })
             .state({
-                name: 'cm.campaigns.all',
-                url: '/campaigns?clientId&divisionId&accountId',
-                views: {
-                    'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
                 name: 'cm.campaigns.client',
                 url: '/client/:clientId',
                 views: {
@@ -97,39 +81,12 @@ define(function (require) {
                 }
             })
             .state({
-                name: 'cm.campaigns.divisions',
-                url: '/divisions?clientId',
-                views: {
-                    'summary': {
-                        templateUrl: 'campaignManagement/divisions/divisions.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
                 name: 'cm.campaigns.account',
                 url: '/account/:accountId',
                 views: {
                     'summary': {
                         controller: 'campaignsCtrl',
                         templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.accounts',
-                url: '/accounts?divisionId&clientId',
-                views: {
-                    'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/accounts/summary.html'
                     },
                     'content': {
                         controller: 'campaignsCtrl',
@@ -249,21 +206,6 @@ define(function (require) {
                 .state({
                     name: base + '.campaigns.detail',
                     url: '/campaign/:campaignId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.divisions',
-                    url: '/dashboard/client/:clientId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.accounts',
-                    url: '/dashboard/division/:divisionId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.all',
-                    url: '/dashboard/account/:accountId',
                     template: '<ui-view />'
                 })
                 .state(base + '.catch', {

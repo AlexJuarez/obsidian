@@ -1,10 +1,10 @@
 <div class="dropdown-toggle">
     <div class="dropdown-toggle-subtitle">
-        [[section]]
+        {{section}}
     </div>
     <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">
         <i class="glyph-chevron-down"></i>
-        [[current]]
+        {{current}}
     </div>
 </div>
 <div class="dropdown-menu" role="menu">
@@ -13,11 +13,12 @@
         <i class="glyph-close" ng-click="query = ''"></i>
     </label>
     <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">
-        <li><a ui-sref=".campaigns.divisions(state)">All [[section]]</a></li>
+        <li ng-if="!state.clientId"><a>All {{section}}</a></li>
+        <li ng-if="state.clientId"><a ui-sref=".campaigns.client(state)">All {{section}}</a></li>
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">
                 <li ng-repeat="division in pinned track by division.id">
-                    <a title="[[division.name]]" ui-sref=".campaigns.division({divisionId: division.id})">[[division.name]]</a>
+                    <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>
                     <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
                 </li>
             </ul>
@@ -25,20 +26,20 @@
     </ul>
     <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">
         <li ng-repeat="item in divisionsMap track by $index">
-            [[item.key]]
+            {{item.key}}
             <ul limit="5">
                 <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">
-                    <a title="[[division.name]]" ui-sref=".campaigns.division({divisionId: division.id})">[[division.name]]</a>
+                    <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>
                     <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
                 <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
             </ul>
         </li>
     </ul>
     <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
-        <li>Results for "[[query]]"
+        <li>Results for "{{query}}"
             <ul>
                 <li ng-repeat="division in results track by division.id">
-                    <a title="[[division.name]]" ui-sref=".campaigns.division({ divisionId: division.id })">[[division.name]]</a>
+                    <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>
                     <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
             </ul>
         </li>

@@ -55,8 +55,8 @@ define(function (require) {
                             name: row.name
                         },
                         impressions: {
-                            target: row.metrics.bookedImpressions,
-                            max: row.metrics.impressions
+                            max: row.metrics.bookedImpressions,
+                            current: row.metrics.impressions
                         },
                         start: row.startDate,
                         end: row.endDate,
@@ -124,7 +124,7 @@ define(function (require) {
                     }
                 }
 
-                template = $interpolate('<span class="icon-status"></span>[[title]] (0)');
+                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
                 return template({
                     title: title
                 });
