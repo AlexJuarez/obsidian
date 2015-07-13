@@ -1,3 +1,4 @@
+@import "./../core/mixins";
 // .font-smoothing {
 //     // This is to get the font weight closer to what the designs show
 //     -webkit-font-smoothing: antialiased;
@@ -33,15 +34,20 @@
     color: #333;
 }
 
+.tooltip-wrapper {
+    overflow: hidden;
+}
+
 // Layout styles just for pattern library display purposes
 .radio-button {
     margin-bottom: .5rem;
 }
 .border-right {
+    .clearfix();
     list-style: none;
-    margin: 0;
+    margin: 2rem 0;
     padding: 0;
-    display: inline-block;
+    display: block;
     li {
         border: 1px solid #E1E1E1;
         border-width: 0 1px 0 0;

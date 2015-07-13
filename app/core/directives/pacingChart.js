@@ -20,7 +20,7 @@ define(function (require) {
 
                         var fill = d3.select(elem.find('.fill > rect')[0]);
 
-                        if (current > max) {
+                        if (data.current > data.max) {
                             scope.target = 0;
                         }
 
