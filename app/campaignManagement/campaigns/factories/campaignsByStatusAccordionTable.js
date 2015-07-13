@@ -114,7 +114,6 @@ define(function (require) {
                     var header = data[i];
                     if (header.status === status) {
                         template = $interpolate(headerTemplate);
-                        debugger;
                         return template({
                             status: status,
                             title: title,

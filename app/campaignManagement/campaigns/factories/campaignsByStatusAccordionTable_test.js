@@ -3,9 +3,11 @@ define(function(require) {
 
     require('./campaignsByStatusAccordionTable');
     require('angularMocks');
+    var $ = require('jquery');
 
 
     var campaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json');
+    var sortedCampaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json');
 
     describe('campaignAccordionTableFactory', function() {
         var factory, httpBackend, scope, interpolate;
@@ -100,7 +102,7 @@ define(function(require) {
                         "route": "cm.campaigns.detail({ campaignId: row.id })",
                         "name": "name"
                     },
-                    "impressions": {"target": 0, "max": 5444326},
+                    "impressions": {"max": 0, "current": 5444326},
                     "start": "2015-04-27",
                     "end": "2015-07-14",
                     "placements": 22,
@@ -113,7 +115,7 @@ define(function(require) {
             expect(result).toEqual(expected);
         });
 
-        it('should get headers', function() {
+        it('should get headers given the correct status', function() {
             setUpTests();
             var test = factory();
             test.init({
@@ -132,11 +134,37 @@ define(function(require) {
             ];
 
             var expected = '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>My Status (10)';
-            scope.title = 'test';
-            var elem = interpolate(test._getTableHeader(given))(scope);
             scope.$digest();
-            console.log(elem);
-            expect(test._getTableHeader(given)).toEqual(expected);
+            expect($.trim(test._getTableHeader(given))).toEqual(expected);
+        });
+
+        it('should get default headers given no status', function() {
+            setUpTests();
+            var test = factory();
+            test.init({
+                status: 'myStatus',
+                title: 'My Status'
+            });
+            var given = [
+                {status: 'yourStatus'}
+            ];
+
+            var expected = '<span class="icon-status"></span>My Status (0)';
+            scope.$digest();
+            expect($.trim(test._getTableHeader(given))).toEqual(expected);
+        });
+
+        it('should sort rows correctly', function() {
+            setUpTests();
+            var test = factory();
+            test.init(defaultData);
+            test.observe(function() {
+                var tableData = test.all();
+                if (tableData.content.data.length > 0) {
+                    expect(tableData.content.data).toEqual(JSON.parse(sortedCampaignJSON));
+                }
+            }, scope, true);
+            httpBackend.flush();
         });
 
 
