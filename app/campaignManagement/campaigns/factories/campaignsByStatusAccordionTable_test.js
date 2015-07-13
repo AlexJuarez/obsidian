@@ -20,7 +20,7 @@ define(function(require) {
                 all: function() {
                     return {
                         preFlight: 1001
-                    }
+                    };
                 }
             },
             title: 'preFlight',
@@ -69,44 +69,44 @@ define(function(require) {
         it('should transform rows correctly', function() {
             setUpTests();
             var given = {
-                "campaigns": [
+                'campaigns': [
                     {
-                        "endDate": "2015-07-14",
-                        "name": "name",
-                        "id": "campaignId",
-                        "metrics": {
-                            "countCreatives": 22,
-                            "impressions": 5444326,
-                            "bookedImpressions": 0,
-                            "countPlacements": 22
+                        'endDate': '2015-07-14',
+                        'name': 'name',
+                        'id': 'campaignId',
+                        'metrics': {
+                            'countCreatives': 22,
+                            'impressions': 5444326,
+                            'bookedImpressions': 0,
+                            'countPlacements': 22
                         },
-                        "account": {
-                            "name": "accountName",
-                            "id": "accountId"
+                        'account': {
+                            'name': 'accountName',
+                            'id': 'accountId'
                         },
-                        "startDate": "2015-04-27",
-                        "budget": 0
+                        'startDate': '2015-04-27',
+                        'budget': 0
                     }
                 ]
             };
 
             var expected = [
                 {
-                    "id": "campaignId",
-                    "account": {
-                        "id": "accountId",
-                        "route": "cm.campaigns.all({ accountId: row.account.id })",
-                        "name": "accountName"
+                    'id': 'campaignId',
+                    'account': {
+                        'id': 'accountId',
+                        'route': 'cm.campaigns.all({ accountId: row.account.id })',
+                        'name': 'accountName'
                     },
-                    "campaign": {
-                        "route": "cm.campaigns.detail({ campaignId: row.id })",
-                        "name": "name"
+                    'campaign': {
+                        'route': 'cm.campaigns.detail({ campaignId: row.id })',
+                        'name': 'name'
                     },
-                    "impressions": {"max": 0, "current": 5444326},
-                    "start": "2015-04-27",
-                    "end": "2015-07-14",
-                    "placements": 22,
-                    "creatives": 22
+                    'impressions': {'max': 0, 'current': 5444326},
+                    'start': '2015-04-27',
+                    'end': '2015-07-14',
+                    'placements': 22,
+                    'creatives': 22
                 }
             ];
 
