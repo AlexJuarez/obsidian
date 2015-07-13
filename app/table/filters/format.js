@@ -15,24 +15,24 @@ define(function (require) {
 
         return function (input, row, rules) {
             var rule = rules[input];
-            input = row[input];
+            var data = row[input];
             switch (rule) {
             case 'number':
-                return $filter('number')(input, 0);
+                return $filter('number')(data, 0);
             case 'percent':
-                return percent(input);
+                return percent(data);
             case 'quartile':
-                return input.map(function (d) {
+                return data.map(function (d) {
                     return percent(d);
                 }).join(' ');
             case 'date':
-                return date(input);
+                return date(data);
             case 'bullet':
-                return '';
+                return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
             case 'link':
-                return '<a ui-sref="' + input.route + '">' + input.name + '</a>';
+                return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
             default:
-                return input;
+                return data;
             }
         };
     }]);

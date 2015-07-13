@@ -25,6 +25,7 @@ define(function (require) {
                 scope.calculateDims = calculateDims;
 
                 var tooltip = attr.tooltip;
+                var overflow = attr.tooltipOverflow;
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
@@ -75,6 +76,15 @@ define(function (require) {
                 }
 
                 function updatePosition() {
+                    if (overflow) {
+                        var element = elem.find('.main')[0];
+                        if (element.offsetWidth >= element.scrollWidth) {
+                            elem.find('.wrapper').addClass('ng-hide');
+                        } else {
+                            elem.find('.wrapper').removeClass('ng-hide');
+                        }
+                    }
+
                     var dims = calculateDims();
                     elem.addClass(calculateClass(dims));
                 }

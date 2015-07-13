@@ -4,7 +4,8 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
     var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
-    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns,countCampaignsPreFlight,countCampaignsCompleted';
+    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns' +
+        ',countCampaignsPreFlight,countCampaignsCompleted';
     var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
@@ -111,7 +112,10 @@ define(function (require) {
                             route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
                             name: campaign.name
                         },
-                        impressions: campaign.metrics.impressions,
+                        impressions: {
+                            max: campaign.metrics.bookedImpressions,
+                            current: campaign.metrics.impressions
+                        },
                         start: campaign.startDate,
                         end: campaign.endDate,
                         creatives: campaign.metrics.countCreatives,
