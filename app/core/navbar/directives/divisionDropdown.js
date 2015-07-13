@@ -14,7 +14,7 @@ define(function (require) {
                 $scope.unpin = divisions.unpin;
                 $scope.section = 'Divisions';
                 $scope.current = 'All Divisions';
-                $scope.state = navbar.params();
+                $scope.state = {};
 
                 divisions.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
@@ -30,7 +30,7 @@ define(function (require) {
                     if (info.division && info.client && info.client.id) {
                         $scope.state = { clientId: info.client.id };
                     } else {
-                        $scope.state = navbar.params();
+                        $scope.state = {};
                     }
                 }
 
