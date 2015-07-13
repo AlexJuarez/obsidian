@@ -27,5 +27,6 @@ define(function (require) {
     require('./services/channel');
     require('./services/clientSet');
     require('./services/divisionSet');
+    require('./services/campaignCreatives');
     require('./constants/apiURI');
 });
