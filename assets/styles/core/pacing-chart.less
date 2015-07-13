@@ -1,35 +1,40 @@
 .meter-wrapper {
-  .meter {
-    width: 80%;
-    height: 100%;
-    box-sizing: border-box;
-    .stroke rect {
-      stroke: #ccc;
-      stroke-width: 4px;
-      fill: none;
+    min-width: 200px;
+
+    .meter {
+        width: 70px;
+        float: right;
+        height: 100%;
+        box-sizing: border-box;
+        .stroke rect {
+            stroke: #ccc;
+            stroke-width: 4px;
+            fill: none;
+        }
+        .fill rect {
+            fill: @brand-color;
+            -webkit-transition: width 0.5s ease;
+            transition: width 0.5s ease;
+        }
+        .target rect {
+            fill: @dark-gray;
+            -webkit-transition: width 0.5s ease;
+            transition: width 0.5s ease;
+        }
     }
-    .fill rect {
-      fill: @brand-color;
-      -webkit-transition: width 0.5s ease;
-      transition: width 0.5s ease;
+    &.meter-sm {
+        height: 20px;
+        line-height: 20px;
     }
-    .target rect {
-      fill: @dark-gray;
-      -webkit-transition: width 0.5s ease;
-      transition: width 0.5s ease;
-    }    
-  }
-  &.meter-sm {
-    height: 20px;
-    line-height: 20px;
-  }
-  &.meter-reg {
-    height: 30px;
-    line-height: 30px;
-  }
-  & > span {
-    width: 18%;
-    float: right;
-  }
+    &.meter-reg {
+        height: 30px;
+        line-height: 30px;
+    }
+    & span {
+        vertical-align: top;
+        text-align: right;
+        display: inline-block;
+        margin-right: 5px;
+    }
 
 }
