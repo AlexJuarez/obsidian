@@ -12,5 +12,12 @@
         </td>
     </tr>
     </tbody>
+    <tfoot ng-if="footer">
+        <tr>
+            <td class="table-footer" colspan="100%">
+                <a ng-click="footer.more()">Show More</a>
+            </td>
+        </tr>
+    </tfoot>
 </table>
 
