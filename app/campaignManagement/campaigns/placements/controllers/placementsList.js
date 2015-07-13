@@ -3,7 +3,10 @@
 define(function (require) {
     var app = require('./../../../module');
 
-    app.controller('placementListCtrl', ['$scope', function ($scope) {
+    app.controller('placementsListCtrl', ['$scope', '$state', function ($scope, $state) {
+
+        $scope.params = $state.params;
+
         $scope.placementTypes = [
             {
                 name: 'Add Manually',

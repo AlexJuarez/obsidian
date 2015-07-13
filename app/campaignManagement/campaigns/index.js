@@ -6,7 +6,7 @@ define(function (require) {
     require('./services/campaignsByStatus');
     require('./services/campaignsFilter');
     require('./services/campaignsHeader');
-    require('./campaignManagement/campaigns/factories/campaignsByStatusAccordionTable');
+    require('./factories/campaignsByStatusAccordionTable');
     require('./controllers/newCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');
@@ -14,7 +14,12 @@ define(function (require) {
     require('./directives/campaignDetails');
     require('./directives/campaignsByAccount');
     require('./directives/campaignsByStatus');
+
     require('./placements/controllers/placementsList');
+    require('./placements/directives/placementsByPublisher');
+    require('./placements/directives/placementsByCreative');
+    require('./placements/directives/placementsByAdType');
+
     require('./creatives/controllers/creativesList');
-    require('./creatives/controllers/creagivesThumbnails');
+    require('./creatives/controllers/creativesThumbnails');
 });

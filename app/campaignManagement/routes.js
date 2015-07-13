@@ -11,11 +11,14 @@ define(function (require) {
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
-    require('tpl!./campaigns/placements/list.html');
-    require('tpl!./campaigns/placements/header.html');
-    require('tpl!./campaigns/creatives/list.html');
-    require('tpl!./campaigns/creatives/thumbnails.html');
-    require('tpl!./campaigns/creatives/header.html');
+    require('tpl!./campaigns/placements/placementsList.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
+    require('tpl!./campaigns/creatives/creativesList.html');
+    require('tpl!./campaigns/creatives/creativesThumbnails.html');
+    require('tpl!./campaigns/creatives/creativesHeader.html');
+    require('tpl!./campaigns/placements/directives/placementsByPublisher.html');
+    require('tpl!./campaigns/placements/directives/placementsByCreative.html');
+    require('tpl!./campaigns/placements/directives/placementsByAdType.html');
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -113,11 +116,11 @@ define(function (require) {
                 url: '/placements',
                 views: {
                     'tab-header': {
-                        templateUrl: 'campaignManagement/campaigns/placements/header.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
-                        controller: 'placementListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/placements/list.html'
+                        controller: 'placementsListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
                     }
                 }
             })
@@ -130,11 +133,11 @@ define(function (require) {
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativeListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/list.html'
+                        controller: 'creativesListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
                     }
                 }
             })
@@ -143,11 +146,11 @@ define(function (require) {
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativeThumbnailsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/thumbnails.html'
+                        controller: 'creativesThumbnailsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
                     }
                 }
             });

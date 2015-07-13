@@ -3,7 +3,7 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeThumbnailsCtrl', [
+    app.controller('creativesThumbnailsCtrl', [
         '$scope', function() {
 
         }
