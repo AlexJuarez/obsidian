@@ -208,21 +208,6 @@ define(function (require) {
                     url: '/campaign/:campaignId',
                     template: '<ui-view />'
                 })
-                .state({
-                    name: base + '.campaigns.divisions',
-                    url: '/dashboard/client/:clientId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.accounts',
-                    url: '/dashboard/division/:divisionId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.all',
-                    url: '/dashboard/account/:accountId',
-                    template: '<ui-view />'
-                })
                 .state(base + '.catch', {
                     url: '/*path',
                     template: '<ui-view />'
