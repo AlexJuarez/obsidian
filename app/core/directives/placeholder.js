@@ -14,7 +14,7 @@ define(function (require) {
                 if (attr.image) {
                     $scope.image = attr.image;
                 } else if (attr.height && attr.width) {
-                    var placeCageTemplate = $interpolate('http://www.placecage.com/[[width]]/[[height]]');
+                    var placeCageTemplate = $interpolate('http://www.placecage.com/{{width}}/{{height}}');
                     $scope.image = placeCageTemplate({
                         width: attr.width,
                         height: attr.height

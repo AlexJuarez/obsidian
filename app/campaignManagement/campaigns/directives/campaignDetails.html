@@ -1,30 +1,30 @@
 <ul class="list">
   <li>
     <span>status</span>
-    <span class="status"><i class="glyph-dot small" ng-class="{'success': isLive}"></i> [[campaignStatus]]</span>
+    <span class="status"><i class="glyph-dot small" ng-class="{'success': isLive}"></i> {{campaignStatus}}</span>
   </li>
   <li>
     <span>flight dates</span>
-    <span>[[details.startDate|date:'MMM d, yy']] - [[details.endDate|date:'MMM d, yy']]</span>
+    <span>{{details.startDate|date:'MMM d, yy'}} - {{details.endDate|date:'MMM d, yy'}}</span>
   </li>
   <li ng-if="showImpressions">
     <span>total impressions</span>
-    <span>[[details.metrics.impressions|truncateNumber]]</span>
+    <span>{{details.metrics.impressions|truncateNumber}}</span>
   </li>
   <li ng-if="showImpressions">
     <span>booked impressions</span>
-    <span>[[details.metrics.bookedImpressions|truncateNumber]]</span>
+    <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>
   </li>
   <li>
     <span>publishers</span>
-    <span>[[details.distinctPublishers|truncateNumber]]</span>
+    <span>{{details.distinctPublishers|truncateNumber}}</span>
   </li>
   <li>
     <span>creatives</span>
-    <span>[[details.countCreatives|truncateNumber]]</span>
+    <span>{{details.countCreatives|truncateNumber}}</span>
   </li>
   <li>
     <span>placements</span>
-    <span>[[details.countPlacements|truncateNumber]]</span>
+    <span>{{details.countPlacements|truncateNumber}}</span>
   </li>
 </ul>

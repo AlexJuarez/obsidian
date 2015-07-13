@@ -123,7 +123,7 @@ define(function (require) {
                     }
                 }
 
-                template = $interpolate('<span class="icon-status"></span>[[title]] (0)');
+                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
                 return template({
                     title: title
                 });
