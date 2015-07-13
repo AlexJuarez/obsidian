@@ -13,6 +13,7 @@
         <i class="glyph-close" ng-click="query = ''"></i>
     </label>
     <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">
+        <li ng-if="!state.clientId"><a>All [[section]]</a></li>
         <li ng-if="state.clientId"><a ui-sref=".campaigns.client(state)">All [[section]]</a></li>
         <li ng-if="pinned.length">Pinned
             <ul class="pinned">

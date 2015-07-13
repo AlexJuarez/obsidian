@@ -25,6 +25,11 @@ define(function (require) {
             email: 'invalid@e,'
         };
 
+        $scope.pacing = {
+            max: 65600,
+            current: 45300
+        };
+
         $timeout(function () {
             $location.hash($location.hash());
             $anchorScroll();
