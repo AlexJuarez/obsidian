@@ -6,7 +6,7 @@ define(function (require) {
     require('./services/campaignsByStatus');
     require('./services/campaignsFilter');
     require('./services/campaignsHeader');
-    require('./factories/campaignAccordionTable');
+    require('./campaignManagement/campaigns/factories/campaignsByStatusAccordionTable');
     require('./controllers/newCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');

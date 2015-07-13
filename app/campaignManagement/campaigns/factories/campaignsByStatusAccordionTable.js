@@ -32,11 +32,11 @@ define(function (require) {
                 header = data.header;
                 title = data.title;
                 if (data.rows) {
-                    rows.init(data.rows, transformRows);
+                    rows.init(data.rows, _transformRows);
                 }
             }
 
-            function transformRows(data) {
+            function _transformRows(data) {
                 var rows = data.campaigns;
                 var newRows = [];
                 var row;
@@ -97,7 +97,7 @@ define(function (require) {
                 }
 
                 return {
-                    header: getTableHeader(header.all()),
+                    header: _getTableHeader(header.all()),
                     options: options,
                     content: {
                         rules: rules,
@@ -107,13 +107,14 @@ define(function (require) {
                 };
             }
 
-            function getTableHeader(data) {
+            function _getTableHeader(data) {
                 var template;
 
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {
                         template = $interpolate(headerTemplate);
+                        debugger;
                         return template({
                             status: status,
                             title: title,
@@ -137,7 +138,9 @@ define(function (require) {
             return {
                 init: init,
                 observe: observe,
-                all: getTable
+                all: getTable,
+                _transformRows: _transformRows,
+                _getTableHeader: _getTableHeader
             };
         };
     }]);
