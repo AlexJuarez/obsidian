@@ -1,10 +1,10 @@
 <nav class="side-nav hidden-xs hidden-sm" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="navigation" wheel-propagation="true">
     <ul class="nav">
         <li ng-repeat="header in navigation track by $index">
-            <a ng-class="{'active': header.active}" href="" ng-click="scrollTo(header.id)">[[header.value]]</a>
+            <a ng-class="{'active': header.active}" href="" ng-click="scrollTo(header.id)">{{header.value}}</a>
             <ul class="nav" ng-if="header.children.length">
                 <li ng-repeat="child in header.children">
-                    <a ng-class="{'active': child.active}" href="" ng-click="scrollTo(child.id)">[[child.value]]</a>
+                    <a ng-class="{'active': child.active}" href="" ng-click="scrollTo(child.id)">{{child.value}}</a>
                 </li>
             </ul>
         </li>
