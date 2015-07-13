@@ -1,3 +1,5 @@
+@import "variables";
+
 .header-summary {
     margin: 2rem 0 1rem 0;
     .clearfix();
@@ -10,6 +12,22 @@
 
     .dropdown-toggle {
         .font-size(2);
+    }
+
+    @media(min-width: @screen-xs-max) {
+        .dropdown-toggle {
+            display: none;
+        }
+
+        .dropdown {
+            float: left;
+        }
+        .dropdown-menu {
+            display: block;
+        }
+        .list  + .list {
+            margin-left: 3.5rem;
+        }
     }
 
     .dropdown-menu {
@@ -47,6 +65,77 @@
                     .font-size(3);
                     color: @brand-color;
                 }
+            }
+        }
+    }
+}
+
+@media(max-width: @screen-xs-max) {
+    .header-summary {
+        margin: 0 -@mobile-gutter;
+
+        .btn-group {
+            width: 100%;
+            padding: 0 @mobile-gutter;
+            box-sizing: border-box;
+            .btn {
+                display: block;
+                width: 100%;
+                margin: @mobile-gutter 0;
+                .font-size(2.5);
+                &.right {
+                    margin-right: 0;
+                    //Clear margin added for btns in row
+                }
+            }
+        }
+
+        .dropdown-menu {
+            .clearfix();
+        }
+
+        .dropdown-toggle {
+            box-sizing: border-box;
+            border-bottom: 1px solid @light-gray;
+            font-family: 'Oswald', sans-serif;
+            padding: 0 @mobile-gutter;
+            line-height: 2.2;
+            letter-spacing: 1px;
+            .font-size(3);
+            .clearfix();
+            i {
+                margin: 17px 0 0 2rem;
+                line-height: 1;
+                float: right;
+            }
+        }
+
+        .dropdown {
+            display: block;
+        }
+
+        .title {
+            display: none;
+        }
+
+        .list {
+            text-align: justify;
+            display: block;
+            padding: 3px @mobile-gutter;
+            box-sizing: border-box;
+            li span {
+                &:first-child {
+                    .font-size(1.5);
+                }
+                &:last-child {
+                    .font-size(4);
+                }
+            }
+            + .list {
+                border-top: 1px solid @light-gray;
+            }
+            &:last-child {
+                border-bottom: 1px solid @light-gray;
             }
         }
     }
