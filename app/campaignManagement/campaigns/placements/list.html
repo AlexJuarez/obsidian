@@ -1,1 +1,11 @@
-<div accordion-table="placements" class="table table-hover"></div>
+<div ui-view="tab-content">
+    <div ng-if="params.viewBy !== 'creative' && params.viewBy !== 'adType'">
+        <div placements-by-publisher></div>
+    </div>
+    <div ng-if="params.viewBy === 'creative'">
+        <div placements-by-creative></div>
+    </div>
+    <div ng-if="params.viewBy === 'adType'">
+        <div placements-by-ad-type></div>
+    </div>
+</div>

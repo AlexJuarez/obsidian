@@ -14,7 +14,7 @@ define(function (require) {
     require('./directives/campaignDetails');
     require('./directives/campaignsByAccount');
     require('./directives/campaignsByStatus');
-    require('./placements/controllers/list');
-    require('./creatives/controllers/list');
-    require('./creatives/controllers/thumbnails');
+    require('./placements/controllers/placementsList');
+    require('./creatives/controllers/creativesList');
+    require('./creatives/controllers/creagivesThumbnails');
 });
