@@ -16,8 +16,8 @@ define(function (require) {
 
             function sortRows(transformedRows) {
                 var sortFn = function (a, b) {
-                    if (a.name && b.name) {
-                        return a.name.localeCompare(b.name);
+                    if (a.campaign.name && b.campaign.name) {
+                        return a.campaign.name.localeCompare(b.campaign.name);
                     } else {
                         return 0;
                     }
