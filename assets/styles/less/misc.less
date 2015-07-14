@@ -34,12 +34,13 @@
     color: #333;
 }
 
-.tooltip-wrapper {
-    overflow: hidden;
-}
-
 .style-guide {
-    // Layout styles just for pattern library display purposes
+    // Layout styles just for pattern library display purpose
+
+    @media(max-width: @screen-md-max){
+        overflow: hidden;
+    }
+
     .radio-button {
         margin-bottom: .5rem;
     }

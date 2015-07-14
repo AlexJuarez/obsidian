@@ -14,7 +14,7 @@ define(function (require) {
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            return utils.search(filtered(), query);
         }
 
         function alphabetMap() {

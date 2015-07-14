@@ -52,8 +52,10 @@
   font-size: inherit;
   color: #333;
 }
-.tooltip-wrapper {
-  overflow: hidden;
+@media (max-width: 1200px) {
+  .style-guide {
+    overflow: hidden;
+  }
 }
 .style-guide .radio-button {
   margin-bottom: .5rem;

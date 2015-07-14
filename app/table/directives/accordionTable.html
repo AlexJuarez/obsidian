@@ -1,5 +1,5 @@
 <div class="table-collapse-group">
-    <div ng-if="row.content.data.length" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{'open': open}">
+    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{'open': open}">
         <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">
         </div>
         <div class="content">

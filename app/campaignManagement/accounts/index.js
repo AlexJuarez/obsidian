@@ -4,5 +4,7 @@
 define(function (require) {
     'use strict';
 
-    require('./controllers/accounts');
+    require('./controllers/account');
+    require('./controllers/newAccount');
+    require('./directives/accountSummary');
 });
