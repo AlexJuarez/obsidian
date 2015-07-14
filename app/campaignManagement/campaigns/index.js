@@ -19,6 +19,7 @@ define(function (require) {
     require('./placements/directives/placementsByPublisher');
     require('./placements/directives/placementsByCreative');
     require('./placements/directives/placementsByAdType');
+    require('./placements/services/placements.js');
 
     require('./creatives/controllers/creativesList');
     require('./creatives/controllers/creativesThumbnails');

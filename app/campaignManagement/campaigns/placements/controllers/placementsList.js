@@ -3,7 +3,10 @@
 define(function (require) {
     var app = require('./../../../module');
 
-    app.controller('placementsListCtrl', ['$scope', '$state', function ($scope, $state) {
+    app.controller('placementsListCtrl', ['$scope', '$state', 'placements', function ($scope, $state, placements) {
+        if (placements.big) {
+            console.log('bg');
+        }
 
         $scope.params = $state.params;
 

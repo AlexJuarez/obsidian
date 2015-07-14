@@ -1,0 +1,189 @@
+define(function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+    //var ng = require('angular');
+    //var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
+
+    var baseApiCall = {
+        version: 3,
+        endpoint: 'placements',
+        dimensions: ['id', 'name', 'live', 'campaign.startDate', 'campaign.endDate', 'bookedImpressions'],
+        metrics: ['impressions']
+    };
+
+    //var rules = {
+    //    'campaign': 'link',
+    //    'status': '',
+    //    'impressions': 'bullet',
+    //    'start': 'date',
+    //    'end': 'date',
+    //    'placements': 'number',
+    //    'creatives': 'number',
+    //    'edit': ''
+    //};
+		//
+    //var headers = [
+    //    {name: 'Campaign', id: 'campaign'},
+    //    {name: 'Impressions & Pacing', id: 'impressions'},
+    //    {name: 'Start', id: 'start'},
+    //    {name: 'End', id: 'end'},
+    //    {name: 'Placements', id: 'placements'},
+    //    {name: 'Creatives', id: 'creatives'},
+    //    {name: '', id: 'edit'}
+    //];
+		//
+    //var limits = {};
+
+    module.service('placements', ['apiUriGeneratorService', function (apiGeneratorService) {
+        debugger;
+        var big = apiGeneratorService(baseApiCall);
+        debugger;
+        //function accountUrl() {
+        //    return headerUrl + filter();
+        //}
+				//
+        //function url() {
+        //    var accountIds = getAccountIds();
+        //    var opt = '';
+				//
+        //    if (accountIds.length) {
+        //        opt = 'account.id:eq:' + accountIds.join(':eq:');
+        //    }
+				//
+        //    return baseUrl + filter(opt);
+        //}
+				//
+        //function headerTransform(data) {
+        //    return data.accounts || data;
+        //}
+				//
+        //function campaignTransform(data) {
+        //    return data.campaigns || data;
+        //}
+				//
+        //function getAccountIds() {
+        //    var campaignHeader = cache.get(accountUrl(), headerTransform);
+        //    var accounts = campaignHeader.all();
+        //    var ids = [];
+				//
+        //    for (var i = 0; i < accounts.length; i++){
+        //        ids.push(accounts[i].id);
+        //    }
+				//
+        //    return ids;
+        //}
+				//
+        //function groupByAccount() {
+        //    var campaignCache = cache.get(url(), campaignTransform);
+				//
+        //    var accounts = {};
+        //    var campaigns = campaignCache.all();
+				//
+        //    for (var i = 0; i < campaigns.length; i++) {
+        //        var campaign = campaigns[i];
+        //        var accountId = campaign.account.id;
+				//
+        //        if (!accounts[accountId]) {
+        //            accounts[accountId] = [];
+        //        }
+				//
+        //        accounts[accountId].push(campaign);
+        //    }
+				//
+        //    return accounts;
+        //}
+				//
+        //function header(account) {
+        //    return $interpolate(headerTemplate)(account);
+        //}
+				//
+        //function transformRows(campaigns, accountId) {
+        //    if(campaigns) {
+        //        campaigns.sort(function(a, b){
+        //            if (b.name && a.name) {
+        //                return a.name.localeCompare(b.name);
+        //            }
+        //        });
+				//
+        //        var output = [];
+        //        var campaign;
+        //        var limit = limits[accountId] || 10;
+				//
+        //        for (var i = 0; i < campaigns.length && i < limit; i++) {
+        //            campaign = campaigns[i];
+				//
+        //            output.push(ng.extend({
+        //                campaign: {
+        //                    id: campaign.id,
+        //                    route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
+        //                    name: campaign.name
+        //                },
+        //                impressions: {
+        //                    max: campaign.metrics.bookedImpressions,
+        //                    current: campaign.metrics.impressions
+        //                },
+        //                start: campaign.startDate,
+        //                end: campaign.endDate,
+        //                creatives: campaign.metrics.countCreatives,
+        //                placements: campaign.metrics.countPlacements
+        //            }));
+        //        }
+				//
+        //        return output;
+        //    }
+        //}
+				//
+        //function showMore(accountId) {
+        //    return function () {
+        //        if (!limits[accountId]) {
+        //            limits[accountId] = 10;
+        //        }
+				//
+        //        limits[accountId] += 10;
+				//
+        //        return limits[accountId];
+        //    };
+        //}
+				//
+        //function all() {
+        //    var accountInfo = cache.get(accountUrl(), headerTransform).all();
+        //    var accounts = groupByAccount();
+        //    var output = [];
+				//
+        //    for (var i = 0; i < accountInfo.length; i++) {
+        //        var account = accountInfo[i];
+        //        output.push({
+        //            header: header(account),
+        //            options: {
+        //                more: showMore(account.id)
+        //            },
+        //            content: {
+        //                rules: rules,
+        //                headers: headers,
+        //                data: transformRows(accounts[account.id], account.id)
+        //            }
+        //        });
+        //    }
+				//
+        //    return output;
+        //}
+				//
+        //function observe(callback, $scope, preventImmediate) {
+        //    var campaignHeader = cache.get(accountUrl(), headerTransform);
+				//
+        //    campaignHeader.observe(callback, $scope, preventImmediate);
+        //    campaignHeader.observe(function() {
+        //        var campaignCache = cache.get(url(), campaignTransform);
+        //        campaignCache.observe(callback, $scope);
+        //    }, $scope, true);
+        //}
+				//
+        //return {
+        //    _getAccountIds: getAccountIds,
+        //    _groupByAccount: groupByAccount,
+        //    all: all,
+        //    observe: observe
+        //};
+    }]);
+});
