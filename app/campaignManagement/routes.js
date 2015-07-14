@@ -59,6 +59,7 @@ define(function (require) {
                 url: '/client/:clientId',
                 views: {
                     'summary': {
+                        controller: 'clientCtrl',
                         templateUrl: 'campaignManagement/clients/client.summary.html'
                     },
                     'content': {
@@ -72,6 +73,7 @@ define(function (require) {
                 url: '/division/:divisionId',
                 views: {
                     'summary': {
+                        controller: 'divisionCtrl',
                         templateUrl: 'campaignManagement/divisions/division.summary.html'
                     },
                     'content': {
@@ -85,8 +87,8 @@ define(function (require) {
                 url: '/account/:accountId',
                 views: {
                     'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
+                        controller: 'accountCtrl',
+                        templateUrl: 'campaignManagement/accounts/summary.html'
                     },
                     'content': {
                         controller: 'campaignsCtrl',

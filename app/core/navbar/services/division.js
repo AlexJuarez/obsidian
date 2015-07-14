@@ -14,13 +14,14 @@ define(function (require) {
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            return utils.search(filtered(), query);
         }
 
         function alphabetMap() {
             return utils.alphabetMap(filtered());
         }
 
+        //TODO: grab the current clientID from account or campaign
         function filtered() {
             var sorted = all();
             var output = [];
