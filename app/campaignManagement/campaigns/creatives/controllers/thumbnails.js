@@ -8,7 +8,7 @@ define(function(require) {
             
             $scope.openStudio = function(id) {
                 console.log( 'thumbnail controller: open studio ' + id );
-                $window.open('https://studio.mixpo.com', '_blank');
+                $window.open('//staging-studio.mixpo.com/studio?guid=' + id + '&sdf=open', '_blank');
             };
 
             $scope.openSettings = function(id) {
