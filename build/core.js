@@ -38016,6 +38016,24327 @@ define("angular", ["jquery"], (function (global) {
 }(this)));
 
 /**
+ * State-based routing for AngularJS
+ * @version v0.2.15
+ * @link http://angular-ui.github.com/
+ * @license MIT License, http://www.opensource.org/licenses/MIT
+ */
+
+/* commonjs package manager support (eg componentjs) */
+if (typeof module !== "undefined" && typeof exports !== "undefined" && module.exports === exports){
+  module.exports = 'ui.router';
+}
+
+(function (window, angular, undefined) {
+/*jshint globalstrict:true*/
+/*global angular:false*/
+
+
+var isDefined = angular.isDefined,
+    isFunction = angular.isFunction,
+    isString = angular.isString,
+    isObject = angular.isObject,
+    isArray = angular.isArray,
+    forEach = angular.forEach,
+    extend = angular.extend,
+    copy = angular.copy;
+
+function inherit(parent, extra) {
+  return extend(new (extend(function() {}, { prototype: parent }))(), extra);
+}
+
+function merge(dst) {
+  forEach(arguments, function(obj) {
+    if (obj !== dst) {
+      forEach(obj, function(value, key) {
+        if (!dst.hasOwnProperty(key)) dst[key] = value;
+      });
+    }
+  });
+  return dst;
+}
+
+/**
+ * Finds the common ancestor path between two states.
+ *
+ * @param {Object} first The first state.
+ * @param {Object} second The second state.
+ * @return {Array} Returns an array of state names in descending order, not including the root.
+ */
+function ancestors(first, second) {
+  var path = [];
+
+  for (var n in first.path) {
+    if (first.path[n] !== second.path[n]) break;
+    path.push(first.path[n]);
+  }
+  return path;
+}
+
+/**
+ * IE8-safe wrapper for `Object.keys()`.
+ *
+ * @param {Object} object A JavaScript object.
+ * @return {Array} Returns the keys of the object as an array.
+ */
+function objectKeys(object) {
+  if (Object.keys) {
+    return Object.keys(object);
+  }
+  var result = [];
+
+  forEach(object, function(val, key) {
+    result.push(key);
+  });
+  return result;
+}
+
+/**
+ * IE8-safe wrapper for `Array.prototype.indexOf()`.
+ *
+ * @param {Array} array A JavaScript array.
+ * @param {*} value A value to search the array for.
+ * @return {Number} Returns the array index value of `value`, or `-1` if not present.
+ */
+function indexOf(array, value) {
+  if (Array.prototype.indexOf) {
+    return array.indexOf(value, Number(arguments[2]) || 0);
+  }
+  var len = array.length >>> 0, from = Number(arguments[2]) || 0;
+  from = (from < 0) ? Math.ceil(from) : Math.floor(from);
+
+  if (from < 0) from += len;
+
+  for (; from < len; from++) {
+    if (from in array && array[from] === value) return from;
+  }
+  return -1;
+}
+
+/**
+ * Merges a set of parameters with all parameters inherited between the common parents of the
+ * current state and a given destination state.
+ *
+ * @param {Object} currentParams The value of the current state parameters ($stateParams).
+ * @param {Object} newParams The set of parameters which will be composited with inherited params.
+ * @param {Object} $current Internal definition of object representing the current state.
+ * @param {Object} $to Internal definition of object representing state to transition to.
+ */
+function inheritParams(currentParams, newParams, $current, $to) {
+  var parents = ancestors($current, $to), parentParams, inherited = {}, inheritList = [];
+
+  for (var i in parents) {
+    if (!parents[i] || !parents[i].params) continue;
+    parentParams = objectKeys(parents[i].params);
+    if (!parentParams.length) continue;
+
+    for (var j in parentParams) {
+      if (indexOf(inheritList, parentParams[j]) >= 0) continue;
+      inheritList.push(parentParams[j]);
+      inherited[parentParams[j]] = currentParams[parentParams[j]];
+    }
+  }
+  return extend({}, inherited, newParams);
+}
+
+/**
+ * Performs a non-strict comparison of the subset of two objects, defined by a list of keys.
+ *
+ * @param {Object} a The first object.
+ * @param {Object} b The second object.
+ * @param {Array} keys The list of keys within each object to compare. If the list is empty or not specified,
+ *                     it defaults to the list of keys in `a`.
+ * @return {Boolean} Returns `true` if the keys match, otherwise `false`.
+ */
+function equalForKeys(a, b, keys) {
+  if (!keys) {
+    keys = [];
+    for (var n in a) keys.push(n); // Used instead of Object.keys() for IE8 compatibility
+  }
+
+  for (var i=0; i<keys.length; i++) {
+    var k = keys[i];
+    if (a[k] != b[k]) return false; // Not '===', values aren't necessarily normalized
+  }
+  return true;
+}
+
+/**
+ * Returns the subset of an object, based on a list of keys.
+ *
+ * @param {Array} keys
+ * @param {Object} values
+ * @return {Boolean} Returns a subset of `values`.
+ */
+function filterByKeys(keys, values) {
+  var filtered = {};
+
+  forEach(keys, function (name) {
+    filtered[name] = values[name];
+  });
+  return filtered;
+}
+
+// like _.indexBy
+// when you know that your index values will be unique, or you want last-one-in to win
+function indexBy(array, propName) {
+  var result = {};
+  forEach(array, function(item) {
+    result[item[propName]] = item;
+  });
+  return result;
+}
+
+// extracted from underscore.js
+// Return a copy of the object only containing the whitelisted properties.
+function pick(obj) {
+  var copy = {};
+  var keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
+  forEach(keys, function(key) {
+    if (key in obj) copy[key] = obj[key];
+  });
+  return copy;
+}
+
+// extracted from underscore.js
+// Return a copy of the object omitting the blacklisted properties.
+function omit(obj) {
+  var copy = {};
+  var keys = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
+  for (var key in obj) {
+    if (indexOf(keys, key) == -1) copy[key] = obj[key];
+  }
+  return copy;
+}
+
+function pluck(collection, key) {
+  var result = isArray(collection) ? [] : {};
+
+  forEach(collection, function(val, i) {
+    result[i] = isFunction(key) ? key(val) : val[key];
+  });
+  return result;
+}
+
+function filter(collection, callback) {
+  var array = isArray(collection);
+  var result = array ? [] : {};
+  forEach(collection, function(val, i) {
+    if (callback(val, i)) {
+      result[array ? result.length : i] = val;
+    }
+  });
+  return result;
+}
+
+function map(collection, callback) {
+  var result = isArray(collection) ? [] : {};
+
+  forEach(collection, function(val, i) {
+    result[i] = callback(val, i);
+  });
+  return result;
+}
+
+/**
+ * @ngdoc overview
+ * @name ui.router.util
+ *
+ * @description
+ * # ui.router.util sub-module
+ *
+ * This module is a dependency of other sub-modules. Do not include this module as a dependency
+ * in your angular app (use {@link ui.router} module instead).
+ *
+ */
+angular.module('ui.router.util', ['ng']);
+
+/**
+ * @ngdoc overview
+ * @name ui.router.router
+ * 
+ * @requires ui.router.util
+ *
+ * @description
+ * # ui.router.router sub-module
+ *
+ * This module is a dependency of other sub-modules. Do not include this module as a dependency
+ * in your angular app (use {@link ui.router} module instead).
+ */
+angular.module('ui.router.router', ['ui.router.util']);
+
+/**
+ * @ngdoc overview
+ * @name ui.router.state
+ * 
+ * @requires ui.router.router
+ * @requires ui.router.util
+ *
+ * @description
+ * # ui.router.state sub-module
+ *
+ * This module is a dependency of the main ui.router module. Do not include this module as a dependency
+ * in your angular app (use {@link ui.router} module instead).
+ * 
+ */
+angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
+
+/**
+ * @ngdoc overview
+ * @name ui.router
+ *
+ * @requires ui.router.state
+ *
+ * @description
+ * # ui.router
+ * 
+ * ## The main module for ui.router 
+ * There are several sub-modules included with the ui.router module, however only this module is needed
+ * as a dependency within your angular app. The other modules are for organization purposes. 
+ *
+ * The modules are:
+ * * ui.router - the main "umbrella" module
+ * * ui.router.router - 
+ * 
+ * *You'll need to include **only** this module as the dependency within your angular app.*
+ * 
+ * <pre>
+ * <!doctype html>
+ * <html ng-app="myApp">
+ * <head>
+ *   <script src="js/angular.js"></script>
+ *   <!-- Include the ui-router script -->
+ *   <script src="js/angular-ui-router.min.js"></script>
+ *   <script>
+ *     // ...and add 'ui.router' as a dependency
+ *     var myApp = angular.module('myApp', ['ui.router']);
+ *   </script>
+ * </head>
+ * <body>
+ * </body>
+ * </html>
+ * </pre>
+ */
+angular.module('ui.router', ['ui.router.state']);
+
+angular.module('ui.router.compat', ['ui.router']);
+
+/**
+ * @ngdoc object
+ * @name ui.router.util.$resolve
+ *
+ * @requires $q
+ * @requires $injector
+ *
+ * @description
+ * Manages resolution of (acyclic) graphs of promises.
+ */
+$Resolve.$inject = ['$q', '$injector'];
+function $Resolve(  $q,    $injector) {
+  
+  var VISIT_IN_PROGRESS = 1,
+      VISIT_DONE = 2,
+      NOTHING = {},
+      NO_DEPENDENCIES = [],
+      NO_LOCALS = NOTHING,
+      NO_PARENT = extend($q.when(NOTHING), { $$promises: NOTHING, $$values: NOTHING });
+  
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$resolve#study
+   * @methodOf ui.router.util.$resolve
+   *
+   * @description
+   * Studies a set of invocables that are likely to be used multiple times.
+   * <pre>
+   * $resolve.study(invocables)(locals, parent, self)
+   * </pre>
+   * is equivalent to
+   * <pre>
+   * $resolve.resolve(invocables, locals, parent, self)
+   * </pre>
+   * but the former is more efficient (in fact `resolve` just calls `study` 
+   * internally).
+   *
+   * @param {object} invocables Invocable objects
+   * @return {function} a function to pass in locals, parent and self
+   */
+  this.study = function (invocables) {
+    if (!isObject(invocables)) throw new Error("'invocables' must be an object");
+    var invocableKeys = objectKeys(invocables || {});
+    
+    // Perform a topological sort of invocables to build an ordered plan
+    var plan = [], cycle = [], visited = {};
+    function visit(value, key) {
+      if (visited[key] === VISIT_DONE) return;
+      
+      cycle.push(key);
+      if (visited[key] === VISIT_IN_PROGRESS) {
+        cycle.splice(0, indexOf(cycle, key));
+        throw new Error("Cyclic dependency: " + cycle.join(" -> "));
+      }
+      visited[key] = VISIT_IN_PROGRESS;
+      
+      if (isString(value)) {
+        plan.push(key, [ function() { return $injector.get(value); }], NO_DEPENDENCIES);
+      } else {
+        var params = $injector.annotate(value);
+        forEach(params, function (param) {
+          if (param !== key && invocables.hasOwnProperty(param)) visit(invocables[param], param);
+        });
+        plan.push(key, value, params);
+      }
+      
+      cycle.pop();
+      visited[key] = VISIT_DONE;
+    }
+    forEach(invocables, visit);
+    invocables = cycle = visited = null; // plan is all that's required
+    
+    function isResolve(value) {
+      return isObject(value) && value.then && value.$$promises;
+    }
+    
+    return function (locals, parent, self) {
+      if (isResolve(locals) && self === undefined) {
+        self = parent; parent = locals; locals = null;
+      }
+      if (!locals) locals = NO_LOCALS;
+      else if (!isObject(locals)) {
+        throw new Error("'locals' must be an object");
+      }       
+      if (!parent) parent = NO_PARENT;
+      else if (!isResolve(parent)) {
+        throw new Error("'parent' must be a promise returned by $resolve.resolve()");
+      }
+      
+      // To complete the overall resolution, we have to wait for the parent
+      // promise and for the promise for each invokable in our plan.
+      var resolution = $q.defer(),
+          result = resolution.promise,
+          promises = result.$$promises = {},
+          values = extend({}, locals),
+          wait = 1 + plan.length/3,
+          merged = false;
+          
+      function done() {
+        // Merge parent values we haven't got yet and publish our own $$values
+        if (!--wait) {
+          if (!merged) merge(values, parent.$$values); 
+          result.$$values = values;
+          result.$$promises = result.$$promises || true; // keep for isResolve()
+          delete result.$$inheritedValues;
+          resolution.resolve(values);
+        }
+      }
+      
+      function fail(reason) {
+        result.$$failure = reason;
+        resolution.reject(reason);
+      }
+
+      // Short-circuit if parent has already failed
+      if (isDefined(parent.$$failure)) {
+        fail(parent.$$failure);
+        return result;
+      }
+      
+      if (parent.$$inheritedValues) {
+        merge(values, omit(parent.$$inheritedValues, invocableKeys));
+      }
+
+      // Merge parent values if the parent has already resolved, or merge
+      // parent promises and wait if the parent resolve is still in progress.
+      extend(promises, parent.$$promises);
+      if (parent.$$values) {
+        merged = merge(values, omit(parent.$$values, invocableKeys));
+        result.$$inheritedValues = omit(parent.$$values, invocableKeys);
+        done();
+      } else {
+        if (parent.$$inheritedValues) {
+          result.$$inheritedValues = omit(parent.$$inheritedValues, invocableKeys);
+        }        
+        parent.then(done, fail);
+      }
+      
+      // Process each invocable in the plan, but ignore any where a local of the same name exists.
+      for (var i=0, ii=plan.length; i<ii; i+=3) {
+        if (locals.hasOwnProperty(plan[i])) done();
+        else invoke(plan[i], plan[i+1], plan[i+2]);
+      }
+      
+      function invoke(key, invocable, params) {
+        // Create a deferred for this invocation. Failures will propagate to the resolution as well.
+        var invocation = $q.defer(), waitParams = 0;
+        function onfailure(reason) {
+          invocation.reject(reason);
+          fail(reason);
+        }
+        // Wait for any parameter that we have a promise for (either from parent or from this
+        // resolve; in that case study() will have made sure it's ordered before us in the plan).
+        forEach(params, function (dep) {
+          if (promises.hasOwnProperty(dep) && !locals.hasOwnProperty(dep)) {
+            waitParams++;
+            promises[dep].then(function (result) {
+              values[dep] = result;
+              if (!(--waitParams)) proceed();
+            }, onfailure);
+          }
+        });
+        if (!waitParams) proceed();
+        function proceed() {
+          if (isDefined(result.$$failure)) return;
+          try {
+            invocation.resolve($injector.invoke(invocable, self, values));
+            invocation.promise.then(function (result) {
+              values[key] = result;
+              done();
+            }, onfailure);
+          } catch (e) {
+            onfailure(e);
+          }
+        }
+        // Publish promise synchronously; invocations further down in the plan may depend on it.
+        promises[key] = invocation.promise;
+      }
+      
+      return result;
+    };
+  };
+  
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$resolve#resolve
+   * @methodOf ui.router.util.$resolve
+   *
+   * @description
+   * Resolves a set of invocables. An invocable is a function to be invoked via 
+   * `$injector.invoke()`, and can have an arbitrary number of dependencies. 
+   * An invocable can either return a value directly,
+   * or a `$q` promise. If a promise is returned it will be resolved and the 
+   * resulting value will be used instead. Dependencies of invocables are resolved 
+   * (in this order of precedence)
+   *
+   * - from the specified `locals`
+   * - from another invocable that is part of this `$resolve` call
+   * - from an invocable that is inherited from a `parent` call to `$resolve` 
+   *   (or recursively
+   * - from any ancestor `$resolve` of that parent).
+   *
+   * The return value of `$resolve` is a promise for an object that contains 
+   * (in this order of precedence)
+   *
+   * - any `locals` (if specified)
+   * - the resolved return values of all injectables
+   * - any values inherited from a `parent` call to `$resolve` (if specified)
+   *
+   * The promise will resolve after the `parent` promise (if any) and all promises 
+   * returned by injectables have been resolved. If any invocable 
+   * (or `$injector.invoke`) throws an exception, or if a promise returned by an 
+   * invocable is rejected, the `$resolve` promise is immediately rejected with the 
+   * same error. A rejection of a `parent` promise (if specified) will likewise be 
+   * propagated immediately. Once the `$resolve` promise has been rejected, no 
+   * further invocables will be called.
+   * 
+   * Cyclic dependencies between invocables are not permitted and will caues `$resolve`
+   * to throw an error. As a special case, an injectable can depend on a parameter 
+   * with the same name as the injectable, which will be fulfilled from the `parent` 
+   * injectable of the same name. This allows inherited values to be decorated. 
+   * Note that in this case any other injectable in the same `$resolve` with the same
+   * dependency would see the decorated value, not the inherited value.
+   *
+   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an 
+   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous) 
+   * exception.
+   *
+   * Invocables are invoked eagerly as soon as all dependencies are available. 
+   * This is true even for dependencies inherited from a `parent` call to `$resolve`.
+   *
+   * As a special case, an invocable can be a string, in which case it is taken to 
+   * be a service name to be passed to `$injector.get()`. This is supported primarily 
+   * for backwards-compatibility with the `resolve` property of `$routeProvider` 
+   * routes.
+   *
+   * @param {object} invocables functions to invoke or 
+   * `$injector` services to fetch.
+   * @param {object} locals  values to make available to the injectables
+   * @param {object} parent  a promise returned by another call to `$resolve`.
+   * @param {object} self  the `this` for the invoked methods
+   * @return {object} Promise for an object that contains the resolved return value
+   * of all invocables, as well as any inherited and local values.
+   */
+  this.resolve = function (invocables, locals, parent, self) {
+    return this.study(invocables)(locals, parent, self);
+  };
+}
+
+angular.module('ui.router.util').service('$resolve', $Resolve);
+
+
+/**
+ * @ngdoc object
+ * @name ui.router.util.$templateFactory
+ *
+ * @requires $http
+ * @requires $templateCache
+ * @requires $injector
+ *
+ * @description
+ * Service. Manages loading of templates.
+ */
+$TemplateFactory.$inject = ['$http', '$templateCache', '$injector'];
+function $TemplateFactory(  $http,   $templateCache,   $injector) {
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$templateFactory#fromConfig
+   * @methodOf ui.router.util.$templateFactory
+   *
+   * @description
+   * Creates a template from a configuration object. 
+   *
+   * @param {object} config Configuration object for which to load a template. 
+   * The following properties are search in the specified order, and the first one 
+   * that is defined is used to create the template:
+   *
+   * @param {string|object} config.template html string template or function to 
+   * load via {@link ui.router.util.$templateFactory#fromString fromString}.
+   * @param {string|object} config.templateUrl url to load or a function returning 
+   * the url to load via {@link ui.router.util.$templateFactory#fromUrl fromUrl}.
+   * @param {Function} config.templateProvider function to invoke via 
+   * {@link ui.router.util.$templateFactory#fromProvider fromProvider}.
+   * @param {object} params  Parameters to pass to the template function.
+   * @param {object} locals Locals to pass to `invoke` if the template is loaded 
+   * via a `templateProvider`. Defaults to `{ params: params }`.
+   *
+   * @return {string|object}  The template html as a string, or a promise for 
+   * that string,or `null` if no template is configured.
+   */
+  this.fromConfig = function (config, params, locals) {
+    return (
+      isDefined(config.template) ? this.fromString(config.template, params) :
+      isDefined(config.templateUrl) ? this.fromUrl(config.templateUrl, params) :
+      isDefined(config.templateProvider) ? this.fromProvider(config.templateProvider, params, locals) :
+      null
+    );
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$templateFactory#fromString
+   * @methodOf ui.router.util.$templateFactory
+   *
+   * @description
+   * Creates a template from a string or a function returning a string.
+   *
+   * @param {string|object} template html template as a string or function that 
+   * returns an html template as a string.
+   * @param {object} params Parameters to pass to the template function.
+   *
+   * @return {string|object} The template html as a string, or a promise for that 
+   * string.
+   */
+  this.fromString = function (template, params) {
+    return isFunction(template) ? template(params) : template;
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$templateFactory#fromUrl
+   * @methodOf ui.router.util.$templateFactory
+   * 
+   * @description
+   * Loads a template from the a URL via `$http` and `$templateCache`.
+   *
+   * @param {string|Function} url url of the template to load, or a function 
+   * that returns a url.
+   * @param {Object} params Parameters to pass to the url function.
+   * @return {string|Promise.<string>} The template html as a string, or a promise 
+   * for that string.
+   */
+  this.fromUrl = function (url, params) {
+    if (isFunction(url)) url = url(params);
+    if (url == null) return null;
+    else return $http
+        .get(url, { cache: $templateCache, headers: { Accept: 'text/html' }})
+        .then(function(response) { return response.data; });
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$templateFactory#fromProvider
+   * @methodOf ui.router.util.$templateFactory
+   *
+   * @description
+   * Creates a template by invoking an injectable provider function.
+   *
+   * @param {Function} provider Function to invoke via `$injector.invoke`
+   * @param {Object} params Parameters for the template.
+   * @param {Object} locals Locals to pass to `invoke`. Defaults to 
+   * `{ params: params }`.
+   * @return {string|Promise.<string>} The template html as a string, or a promise 
+   * for that string.
+   */
+  this.fromProvider = function (provider, params, locals) {
+    return $injector.invoke(provider, null, locals || { params: params });
+  };
+}
+
+angular.module('ui.router.util').service('$templateFactory', $TemplateFactory);
+
+var $$UMFP; // reference to $UrlMatcherFactoryProvider
+
+/**
+ * @ngdoc object
+ * @name ui.router.util.type:UrlMatcher
+ *
+ * @description
+ * Matches URLs against patterns and extracts named parameters from the path or the search
+ * part of the URL. A URL pattern consists of a path pattern, optionally followed by '?' and a list
+ * of search parameters. Multiple search parameter names are separated by '&'. Search parameters
+ * do not influence whether or not a URL is matched, but their values are passed through into
+ * the matched parameters returned by {@link ui.router.util.type:UrlMatcher#methods_exec exec}.
+ *
+ * Path parameter placeholders can be specified using simple colon/catch-all syntax or curly brace
+ * syntax, which optionally allows a regular expression for the parameter to be specified:
+ *
+ * * `':'` name - colon placeholder
+ * * `'*'` name - catch-all placeholder
+ * * `'{' name '}'` - curly placeholder
+ * * `'{' name ':' regexp|type '}'` - curly placeholder with regexp or type name. Should the
+ *   regexp itself contain curly braces, they must be in matched pairs or escaped with a backslash.
+ *
+ * Parameter names may contain only word characters (latin letters, digits, and underscore) and
+ * must be unique within the pattern (across both path and search parameters). For colon
+ * placeholders or curly placeholders without an explicit regexp, a path parameter matches any
+ * number of characters other than '/'. For catch-all placeholders the path parameter matches
+ * any number of characters.
+ *
+ * Examples:
+ *
+ * * `'/hello/'` - Matches only if the path is exactly '/hello/'. There is no special treatment for
+ *   trailing slashes, and patterns have to match the entire path, not just a prefix.
+ * * `'/user/:id'` - Matches '/user/bob' or '/user/1234!!!' or even '/user/' but not '/user' or
+ *   '/user/bob/details'. The second path segment will be captured as the parameter 'id'.
+ * * `'/user/{id}'` - Same as the previous example, but using curly brace syntax.
+ * * `'/user/{id:[^/]*}'` - Same as the previous example.
+ * * `'/user/{id:[0-9a-fA-F]{1,8}}'` - Similar to the previous example, but only matches if the id
+ *   parameter consists of 1 to 8 hex digits.
+ * * `'/files/{path:.*}'` - Matches any URL starting with '/files/' and captures the rest of the
+ *   path into the parameter 'path'.
+ * * `'/files/*path'` - ditto.
+ * * `'/calendar/{start:date}'` - Matches "/calendar/2014-11-12" (because the pattern defined
+ *   in the built-in  `date` Type matches `2014-11-12`) and provides a Date object in $stateParams.start
+ *
+ * @param {string} pattern  The pattern to compile into a matcher.
+ * @param {Object} config  A configuration object hash:
+ * @param {Object=} parentMatcher Used to concatenate the pattern/config onto
+ *   an existing UrlMatcher
+ *
+ * * `caseInsensitive` - `true` if URL matching should be case insensitive, otherwise `false`, the default value (for backward compatibility) is `false`.
+ * * `strict` - `false` if matching against a URL with a trailing slash should be treated as equivalent to a URL without a trailing slash, the default value is `true`.
+ *
+ * @property {string} prefix  A static prefix of this pattern. The matcher guarantees that any
+ *   URL matching this matcher (i.e. any string for which {@link ui.router.util.type:UrlMatcher#methods_exec exec()} returns
+ *   non-null) will start with this prefix.
+ *
+ * @property {string} source  The pattern that was passed into the constructor
+ *
+ * @property {string} sourcePath  The path portion of the source property
+ *
+ * @property {string} sourceSearch  The search portion of the source property
+ *
+ * @property {string} regex  The constructed regex that will be used to match against the url when
+ *   it is time to determine which url will match.
+ *
+ * @returns {Object}  New `UrlMatcher` object
+ */
+function UrlMatcher(pattern, config, parentMatcher) {
+  config = extend({ params: {} }, isObject(config) ? config : {});
+
+  // Find all placeholders and create a compiled pattern, using either classic or curly syntax:
+  //   '*' name
+  //   ':' name
+  //   '{' name '}'
+  //   '{' name ':' regexp '}'
+  // The regular expression is somewhat complicated due to the need to allow curly braces
+  // inside the regular expression. The placeholder regexp breaks down as follows:
+  //    ([:*])([\w\[\]]+)              - classic placeholder ($1 / $2) (search version has - for snake-case)
+  //    \{([\w\[\]]+)(?:\:( ... ))?\}  - curly brace placeholder ($3) with optional regexp/type ... ($4) (search version has - for snake-case
+  //    (?: ... | ... | ... )+         - the regexp consists of any number of atoms, an atom being either
+  //    [^{}\\]+                       - anything other than curly braces or backslash
+  //    \\.                            - a backslash escape
+  //    \{(?:[^{}\\]+|\\.)*\}          - a matched set of curly braces containing other atoms
+  var placeholder       = /([:*])([\w\[\]]+)|\{([\w\[\]]+)(?:\:((?:[^{}\\]+|\\.|\{(?:[^{}\\]+|\\.)*\})+))?\}/g,
+      searchPlaceholder = /([:]?)([\w\[\]-]+)|\{([\w\[\]-]+)(?:\:((?:[^{}\\]+|\\.|\{(?:[^{}\\]+|\\.)*\})+))?\}/g,
+      compiled = '^', last = 0, m,
+      segments = this.segments = [],
+      parentParams = parentMatcher ? parentMatcher.params : {},
+      params = this.params = parentMatcher ? parentMatcher.params.$$new() : new $$UMFP.ParamSet(),
+      paramNames = [];
+
+  function addParameter(id, type, config, location) {
+    paramNames.push(id);
+    if (parentParams[id]) return parentParams[id];
+    if (!/^\w+(-+\w+)*(?:\[\])?$/.test(id)) throw new Error("Invalid parameter name '" + id + "' in pattern '" + pattern + "'");
+    if (params[id]) throw new Error("Duplicate parameter name '" + id + "' in pattern '" + pattern + "'");
+    params[id] = new $$UMFP.Param(id, type, config, location);
+    return params[id];
+  }
+
+  function quoteRegExp(string, pattern, squash, optional) {
+    var surroundPattern = ['',''], result = string.replace(/[\\\[\]\^$*+?.()|{}]/g, "\\$&");
+    if (!pattern) return result;
+    switch(squash) {
+      case false: surroundPattern = ['(', ')' + (optional ? "?" : "")]; break;
+      case true:  surroundPattern = ['?(', ')?']; break;
+      default:    surroundPattern = ['(' + squash + "|", ')?']; break;
+    }
+    return result + surroundPattern[0] + pattern + surroundPattern[1];
+  }
+
+  this.source = pattern;
+
+  // Split into static segments separated by path parameter placeholders.
+  // The number of segments is always 1 more than the number of parameters.
+  function matchDetails(m, isSearch) {
+    var id, regexp, segment, type, cfg, arrayMode;
+    id          = m[2] || m[3]; // IE[78] returns '' for unmatched groups instead of null
+    cfg         = config.params[id];
+    segment     = pattern.substring(last, m.index);
+    regexp      = isSearch ? m[4] : m[4] || (m[1] == '*' ? '.*' : null);
+    type        = $$UMFP.type(regexp || "string") || inherit($$UMFP.type("string"), { pattern: new RegExp(regexp, config.caseInsensitive ? 'i' : undefined) });
+    return {
+      id: id, regexp: regexp, segment: segment, type: type, cfg: cfg
+    };
+  }
+
+  var p, param, segment;
+  while ((m = placeholder.exec(pattern))) {
+    p = matchDetails(m, false);
+    if (p.segment.indexOf('?') >= 0) break; // we're into the search part
+
+    param = addParameter(p.id, p.type, p.cfg, "path");
+    compiled += quoteRegExp(p.segment, param.type.pattern.source, param.squash, param.isOptional);
+    segments.push(p.segment);
+    last = placeholder.lastIndex;
+  }
+  segment = pattern.substring(last);
+
+  // Find any search parameter names and remove them from the last segment
+  var i = segment.indexOf('?');
+
+  if (i >= 0) {
+    var search = this.sourceSearch = segment.substring(i);
+    segment = segment.substring(0, i);
+    this.sourcePath = pattern.substring(0, last + i);
+
+    if (search.length > 0) {
+      last = 0;
+      while ((m = searchPlaceholder.exec(search))) {
+        p = matchDetails(m, true);
+        param = addParameter(p.id, p.type, p.cfg, "search");
+        last = placeholder.lastIndex;
+        // check if ?&
+      }
+    }
+  } else {
+    this.sourcePath = pattern;
+    this.sourceSearch = '';
+  }
+
+  compiled += quoteRegExp(segment) + (config.strict === false ? '\/?' : '') + '$';
+  segments.push(segment);
+
+  this.regexp = new RegExp(compiled, config.caseInsensitive ? 'i' : undefined);
+  this.prefix = segments[0];
+  this.$$paramNames = paramNames;
+}
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:UrlMatcher#concat
+ * @methodOf ui.router.util.type:UrlMatcher
+ *
+ * @description
+ * Returns a new matcher for a pattern constructed by appending the path part and adding the
+ * search parameters of the specified pattern to this pattern. The current pattern is not
+ * modified. This can be understood as creating a pattern for URLs that are relative to (or
+ * suffixes of) the current pattern.
+ *
+ * @example
+ * The following two matchers are equivalent:
+ * <pre>
+ * new UrlMatcher('/user/{id}?q').concat('/details?date');
+ * new UrlMatcher('/user/{id}/details?q&date');
+ * </pre>
+ *
+ * @param {string} pattern  The pattern to append.
+ * @param {Object} config  An object hash of the configuration for the matcher.
+ * @returns {UrlMatcher}  A matcher for the concatenated pattern.
+ */
+UrlMatcher.prototype.concat = function (pattern, config) {
+  // Because order of search parameters is irrelevant, we can add our own search
+  // parameters to the end of the new pattern. Parse the new pattern by itself
+  // and then join the bits together, but it's much easier to do this on a string level.
+  var defaultConfig = {
+    caseInsensitive: $$UMFP.caseInsensitive(),
+    strict: $$UMFP.strictMode(),
+    squash: $$UMFP.defaultSquashPolicy()
+  };
+  return new UrlMatcher(this.sourcePath + pattern + this.sourceSearch, extend(defaultConfig, config), this);
+};
+
+UrlMatcher.prototype.toString = function () {
+  return this.source;
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:UrlMatcher#exec
+ * @methodOf ui.router.util.type:UrlMatcher
+ *
+ * @description
+ * Tests the specified path against this matcher, and returns an object containing the captured
+ * parameter values, or null if the path does not match. The returned object contains the values
+ * of any search parameters that are mentioned in the pattern, but their value may be null if
+ * they are not present in `searchParams`. This means that search parameters are always treated
+ * as optional.
+ *
+ * @example
+ * <pre>
+ * new UrlMatcher('/user/{id}?q&r').exec('/user/bob', {
+ *   x: '1', q: 'hello'
+ * });
+ * // returns { id: 'bob', q: 'hello', r: null }
+ * </pre>
+ *
+ * @param {string} path  The URL path to match, e.g. `$location.path()`.
+ * @param {Object} searchParams  URL search parameters, e.g. `$location.search()`.
+ * @returns {Object}  The captured parameter values.
+ */
+UrlMatcher.prototype.exec = function (path, searchParams) {
+  var m = this.regexp.exec(path);
+  if (!m) return null;
+  searchParams = searchParams || {};
+
+  var paramNames = this.parameters(), nTotal = paramNames.length,
+    nPath = this.segments.length - 1,
+    values = {}, i, j, cfg, paramName;
+
+  if (nPath !== m.length - 1) throw new Error("Unbalanced capture group in route '" + this.source + "'");
+
+  function decodePathArray(string) {
+    function reverseString(str) { return str.split("").reverse().join(""); }
+    function unquoteDashes(str) { return str.replace(/\\-/g, "-"); }
+
+    var split = reverseString(string).split(/-(?!\\)/);
+    var allReversed = map(split, reverseString);
+    return map(allReversed, unquoteDashes).reverse();
+  }
+
+  for (i = 0; i < nPath; i++) {
+    paramName = paramNames[i];
+    var param = this.params[paramName];
+    var paramVal = m[i+1];
+    // if the param value matches a pre-replace pair, replace the value before decoding.
+    for (j = 0; j < param.replace; j++) {
+      if (param.replace[j].from === paramVal) paramVal = param.replace[j].to;
+    }
+    if (paramVal && param.array === true) paramVal = decodePathArray(paramVal);
+    values[paramName] = param.value(paramVal);
+  }
+  for (/**/; i < nTotal; i++) {
+    paramName = paramNames[i];
+    values[paramName] = this.params[paramName].value(searchParams[paramName]);
+  }
+
+  return values;
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:UrlMatcher#parameters
+ * @methodOf ui.router.util.type:UrlMatcher
+ *
+ * @description
+ * Returns the names of all path and search parameters of this pattern in an unspecified order.
+ *
+ * @returns {Array.<string>}  An array of parameter names. Must be treated as read-only. If the
+ *    pattern has no parameters, an empty array is returned.
+ */
+UrlMatcher.prototype.parameters = function (param) {
+  if (!isDefined(param)) return this.$$paramNames;
+  return this.params[param] || null;
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:UrlMatcher#validate
+ * @methodOf ui.router.util.type:UrlMatcher
+ *
+ * @description
+ * Checks an object hash of parameters to validate their correctness according to the parameter
+ * types of this `UrlMatcher`.
+ *
+ * @param {Object} params The object hash of parameters to validate.
+ * @returns {boolean} Returns `true` if `params` validates, otherwise `false`.
+ */
+UrlMatcher.prototype.validates = function (params) {
+  return this.params.$$validates(params);
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:UrlMatcher#format
+ * @methodOf ui.router.util.type:UrlMatcher
+ *
+ * @description
+ * Creates a URL that matches this pattern by substituting the specified values
+ * for the path and search parameters. Null values for path parameters are
+ * treated as empty strings.
+ *
+ * @example
+ * <pre>
+ * new UrlMatcher('/user/{id}?q').format({ id:'bob', q:'yes' });
+ * // returns '/user/bob?q=yes'
+ * </pre>
+ *
+ * @param {Object} values  the values to substitute for the parameters in this pattern.
+ * @returns {string}  the formatted URL (path and optionally search part).
+ */
+UrlMatcher.prototype.format = function (values) {
+  values = values || {};
+  var segments = this.segments, params = this.parameters(), paramset = this.params;
+  if (!this.validates(values)) return null;
+
+  var i, search = false, nPath = segments.length - 1, nTotal = params.length, result = segments[0];
+
+  function encodeDashes(str) { // Replace dashes with encoded "\-"
+    return encodeURIComponent(str).replace(/-/g, function(c) { return '%5C%' + c.charCodeAt(0).toString(16).toUpperCase(); });
+  }
+
+  for (i = 0; i < nTotal; i++) {
+    var isPathParam = i < nPath;
+    var name = params[i], param = paramset[name], value = param.value(values[name]);
+    var isDefaultValue = param.isOptional && param.type.equals(param.value(), value);
+    var squash = isDefaultValue ? param.squash : false;
+    var encoded = param.type.encode(value);
+
+    if (isPathParam) {
+      var nextSegment = segments[i + 1];
+      if (squash === false) {
+        if (encoded != null) {
+          if (isArray(encoded)) {
+            result += map(encoded, encodeDashes).join("-");
+          } else {
+            result += encodeURIComponent(encoded);
+          }
+        }
+        result += nextSegment;
+      } else if (squash === true) {
+        var capture = result.match(/\/$/) ? /\/?(.*)/ : /(.*)/;
+        result += nextSegment.match(capture)[1];
+      } else if (isString(squash)) {
+        result += squash + nextSegment;
+      }
+    } else {
+      if (encoded == null || (isDefaultValue && squash !== false)) continue;
+      if (!isArray(encoded)) encoded = [ encoded ];
+      encoded = map(encoded, encodeURIComponent).join('&' + name + '=');
+      result += (search ? '&' : '?') + (name + '=' + encoded);
+      search = true;
+    }
+  }
+
+  return result;
+};
+
+/**
+ * @ngdoc object
+ * @name ui.router.util.type:Type
+ *
+ * @description
+ * Implements an interface to define custom parameter types that can be decoded from and encoded to
+ * string parameters matched in a URL. Used by {@link ui.router.util.type:UrlMatcher `UrlMatcher`}
+ * objects when matching or formatting URLs, or comparing or validating parameter values.
+ *
+ * See {@link ui.router.util.$urlMatcherFactory#methods_type `$urlMatcherFactory#type()`} for more
+ * information on registering custom types.
+ *
+ * @param {Object} config  A configuration object which contains the custom type definition.  The object's
+ *        properties will override the default methods and/or pattern in `Type`'s public interface.
+ * @example
+ * <pre>
+ * {
+ *   decode: function(val) { return parseInt(val, 10); },
+ *   encode: function(val) { return val && val.toString(); },
+ *   equals: function(a, b) { return this.is(a) && a === b; },
+ *   is: function(val) { return angular.isNumber(val) isFinite(val) && val % 1 === 0; },
+ *   pattern: /\d+/
+ * }
+ * </pre>
+ *
+ * @property {RegExp} pattern The regular expression pattern used to match values of this type when
+ *           coming from a substring of a URL.
+ *
+ * @returns {Object}  Returns a new `Type` object.
+ */
+function Type(config) {
+  extend(this, config);
+}
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:Type#is
+ * @methodOf ui.router.util.type:Type
+ *
+ * @description
+ * Detects whether a value is of a particular type. Accepts a native (decoded) value
+ * and determines whether it matches the current `Type` object.
+ *
+ * @param {*} val  The value to check.
+ * @param {string} key  Optional. If the type check is happening in the context of a specific
+ *        {@link ui.router.util.type:UrlMatcher `UrlMatcher`} object, this is the name of the
+ *        parameter in which `val` is stored. Can be used for meta-programming of `Type` objects.
+ * @returns {Boolean}  Returns `true` if the value matches the type, otherwise `false`.
+ */
+Type.prototype.is = function(val, key) {
+  return true;
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:Type#encode
+ * @methodOf ui.router.util.type:Type
+ *
+ * @description
+ * Encodes a custom/native type value to a string that can be embedded in a URL. Note that the
+ * return value does *not* need to be URL-safe (i.e. passed through `encodeURIComponent()`), it
+ * only needs to be a representation of `val` that has been coerced to a string.
+ *
+ * @param {*} val  The value to encode.
+ * @param {string} key  The name of the parameter in which `val` is stored. Can be used for
+ *        meta-programming of `Type` objects.
+ * @returns {string}  Returns a string representation of `val` that can be encoded in a URL.
+ */
+Type.prototype.encode = function(val, key) {
+  return val;
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:Type#decode
+ * @methodOf ui.router.util.type:Type
+ *
+ * @description
+ * Converts a parameter value (from URL string or transition param) to a custom/native value.
+ *
+ * @param {string} val  The URL parameter value to decode.
+ * @param {string} key  The name of the parameter in which `val` is stored. Can be used for
+ *        meta-programming of `Type` objects.
+ * @returns {*}  Returns a custom representation of the URL parameter value.
+ */
+Type.prototype.decode = function(val, key) {
+  return val;
+};
+
+/**
+ * @ngdoc function
+ * @name ui.router.util.type:Type#equals
+ * @methodOf ui.router.util.type:Type
+ *
+ * @description
+ * Determines whether two decoded values are equivalent.
+ *
+ * @param {*} a  A value to compare against.
+ * @param {*} b  A value to compare against.
+ * @returns {Boolean}  Returns `true` if the values are equivalent/equal, otherwise `false`.
+ */
+Type.prototype.equals = function(a, b) {
+  return a == b;
+};
+
+Type.prototype.$subPattern = function() {
+  var sub = this.pattern.toString();
+  return sub.substr(1, sub.length - 2);
+};
+
+Type.prototype.pattern = /.*/;
+
+Type.prototype.toString = function() { return "{Type:" + this.name + "}"; };
+
+/** Given an encoded string, or a decoded object, returns a decoded object */
+Type.prototype.$normalize = function(val) {
+  return this.is(val) ? val : this.decode(val);
+};
+
+/*
+ * Wraps an existing custom Type as an array of Type, depending on 'mode'.
+ * e.g.:
+ * - urlmatcher pattern "/path?{queryParam[]:int}"
+ * - url: "/path?queryParam=1&queryParam=2
+ * - $stateParams.queryParam will be [1, 2]
+ * if `mode` is "auto", then
+ * - url: "/path?queryParam=1 will create $stateParams.queryParam: 1
+ * - url: "/path?queryParam=1&queryParam=2 will create $stateParams.queryParam: [1, 2]
+ */
+Type.prototype.$asArray = function(mode, isSearch) {
+  if (!mode) return this;
+  if (mode === "auto" && !isSearch) throw new Error("'auto' array mode is for query parameters only");
+
+  function ArrayType(type, mode) {
+    function bindTo(type, callbackName) {
+      return function() {
+        return type[callbackName].apply(type, arguments);
+      };
+    }
+
+    // Wrap non-array value as array
+    function arrayWrap(val) { return isArray(val) ? val : (isDefined(val) ? [ val ] : []); }
+    // Unwrap array value for "auto" mode. Return undefined for empty array.
+    function arrayUnwrap(val) {
+      switch(val.length) {
+        case 0: return undefined;
+        case 1: return mode === "auto" ? val[0] : val;
+        default: return val;
+      }
+    }
+    function falsey(val) { return !val; }
+
+    // Wraps type (.is/.encode/.decode) functions to operate on each value of an array
+    function arrayHandler(callback, allTruthyMode) {
+      return function handleArray(val) {
+        val = arrayWrap(val);
+        var result = map(val, callback);
+        if (allTruthyMode === true)
+          return filter(result, falsey).length === 0;
+        return arrayUnwrap(result);
+      };
+    }
+
+    // Wraps type (.equals) functions to operate on each value of an array
+    function arrayEqualsHandler(callback) {
+      return function handleArray(val1, val2) {
+        var left = arrayWrap(val1), right = arrayWrap(val2);
+        if (left.length !== right.length) return false;
+        for (var i = 0; i < left.length; i++) {
+          if (!callback(left[i], right[i])) return false;
+        }
+        return true;
+      };
+    }
+
+    this.encode = arrayHandler(bindTo(type, 'encode'));
+    this.decode = arrayHandler(bindTo(type, 'decode'));
+    this.is     = arrayHandler(bindTo(type, 'is'), true);
+    this.equals = arrayEqualsHandler(bindTo(type, 'equals'));
+    this.pattern = type.pattern;
+    this.$normalize = arrayHandler(bindTo(type, '$normalize'));
+    this.name = type.name;
+    this.$arrayMode = mode;
+  }
+
+  return new ArrayType(this, mode);
+};
+
+
+
+/**
+ * @ngdoc object
+ * @name ui.router.util.$urlMatcherFactory
+ *
+ * @description
+ * Factory for {@link ui.router.util.type:UrlMatcher `UrlMatcher`} instances. The factory
+ * is also available to providers under the name `$urlMatcherFactoryProvider`.
+ */
+function $UrlMatcherFactory() {
+  $$UMFP = this;
+
+  var isCaseInsensitive = false, isStrictMode = true, defaultSquashPolicy = false;
+
+  function valToString(val) { return val != null ? val.toString().replace(/\//g, "%2F") : val; }
+  function valFromString(val) { return val != null ? val.toString().replace(/%2F/g, "/") : val; }
+
+  var $types = {}, enqueue = true, typeQueue = [], injector, defaultTypes = {
+    string: {
+      encode: valToString,
+      decode: valFromString,
+      // TODO: in 1.0, make string .is() return false if value is undefined/null by default.
+      // In 0.2.x, string params are optional by default for backwards compat
+      is: function(val) { return val == null || !isDefined(val) || typeof val === "string"; },
+      pattern: /[^/]*/
+    },
+    int: {
+      encode: valToString,
+      decode: function(val) { return parseInt(val, 10); },
+      is: function(val) { return isDefined(val) && this.decode(val.toString()) === val; },
+      pattern: /\d+/
+    },
+    bool: {
+      encode: function(val) { return val ? 1 : 0; },
+      decode: function(val) { return parseInt(val, 10) !== 0; },
+      is: function(val) { return val === true || val === false; },
+      pattern: /0|1/
+    },
+    date: {
+      encode: function (val) {
+        if (!this.is(val))
+          return undefined;
+        return [ val.getFullYear(),
+          ('0' + (val.getMonth() + 1)).slice(-2),
+          ('0' + val.getDate()).slice(-2)
+        ].join("-");
+      },
+      decode: function (val) {
+        if (this.is(val)) return val;
+        var match = this.capture.exec(val);
+        return match ? new Date(match[1], match[2] - 1, match[3]) : undefined;
+      },
+      is: function(val) { return val instanceof Date && !isNaN(val.valueOf()); },
+      equals: function (a, b) { return this.is(a) && this.is(b) && a.toISOString() === b.toISOString(); },
+      pattern: /[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2][0-9]|3[0-1])/,
+      capture: /([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])/
+    },
+    json: {
+      encode: angular.toJson,
+      decode: angular.fromJson,
+      is: angular.isObject,
+      equals: angular.equals,
+      pattern: /[^/]*/
+    },
+    any: { // does not encode/decode
+      encode: angular.identity,
+      decode: angular.identity,
+      equals: angular.equals,
+      pattern: /.*/
+    }
+  };
+
+  function getDefaultConfig() {
+    return {
+      strict: isStrictMode,
+      caseInsensitive: isCaseInsensitive
+    };
+  }
+
+  function isInjectable(value) {
+    return (isFunction(value) || (isArray(value) && isFunction(value[value.length - 1])));
+  }
+
+  /**
+   * [Internal] Get the default value of a parameter, which may be an injectable function.
+   */
+  $UrlMatcherFactory.$$getDefaultValue = function(config) {
+    if (!isInjectable(config.value)) return config.value;
+    if (!injector) throw new Error("Injectable functions cannot be called at configuration time");
+    return injector.invoke(config.value);
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$urlMatcherFactory#caseInsensitive
+   * @methodOf ui.router.util.$urlMatcherFactory
+   *
+   * @description
+   * Defines whether URL matching should be case sensitive (the default behavior), or not.
+   *
+   * @param {boolean} value `false` to match URL in a case sensitive manner; otherwise `true`;
+   * @returns {boolean} the current value of caseInsensitive
+   */
+  this.caseInsensitive = function(value) {
+    if (isDefined(value))
+      isCaseInsensitive = value;
+    return isCaseInsensitive;
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$urlMatcherFactory#strictMode
+   * @methodOf ui.router.util.$urlMatcherFactory
+   *
+   * @description
+   * Defines whether URLs should match trailing slashes, or not (the default behavior).
+   *
+   * @param {boolean=} value `false` to match trailing slashes in URLs, otherwise `true`.
+   * @returns {boolean} the current value of strictMode
+   */
+  this.strictMode = function(value) {
+    if (isDefined(value))
+      isStrictMode = value;
+    return isStrictMode;
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$urlMatcherFactory#defaultSquashPolicy
+   * @methodOf ui.router.util.$urlMatcherFactory
+   *
+   * @description
+   * Sets the default behavior when generating or matching URLs with default parameter values.
+   *
+   * @param {string} value A string that defines the default parameter URL squashing behavior.
+   *    `nosquash`: When generating an href with a default parameter value, do not squash the parameter value from the URL
+   *    `slash`: When generating an href with a default parameter value, squash (remove) the parameter value, and, if the
+   *             parameter is surrounded by slashes, squash (remove) one slash from the URL
+   *    any other string, e.g. "~": When generating an href with a default parameter value, squash (remove)
+   *             the parameter value from the URL and replace it with this string.
+   */
+  this.defaultSquashPolicy = function(value) {
+    if (!isDefined(value)) return defaultSquashPolicy;
+    if (value !== true && value !== false && !isString(value))
+      throw new Error("Invalid squash policy: " + value + ". Valid policies: false, true, arbitrary-string");
+    defaultSquashPolicy = value;
+    return value;
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$urlMatcherFactory#compile
+   * @methodOf ui.router.util.$urlMatcherFactory
+   *
+   * @description
+   * Creates a {@link ui.router.util.type:UrlMatcher `UrlMatcher`} for the specified pattern.
+   *
+   * @param {string} pattern  The URL pattern.
+   * @param {Object} config  The config object hash.
+   * @returns {UrlMatcher}  The UrlMatcher.
+   */
+  this.compile = function (pattern, config) {
+    return new UrlMatcher(pattern, extend(getDefaultConfig(), config));
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$urlMatcherFactory#isMatcher
+   * @methodOf ui.router.util.$urlMatcherFactory
+   *
+   * @description
+   * Returns true if the specified object is a `UrlMatcher`, or false otherwise.
+   *
+   * @param {Object} object  The object to perform the type check against.
+   * @returns {Boolean}  Returns `true` if the object matches the `UrlMatcher` interface, by
+   *          implementing all the same methods.
+   */
+  this.isMatcher = function (o) {
+    if (!isObject(o)) return false;
+    var result = true;
+
+    forEach(UrlMatcher.prototype, function(val, name) {
+      if (isFunction(val)) {
+        result = result && (isDefined(o[name]) && isFunction(o[name]));
+      }
+    });
+    return result;
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.util.$urlMatcherFactory#type
+   * @methodOf ui.router.util.$urlMatcherFactory
+   *
+   * @description
+   * Registers a custom {@link ui.router.util.type:Type `Type`} object that can be used to
+   * generate URLs with typed parameters.
+   *
+   * @param {string} name  The type name.
+   * @param {Object|Function} definition   The type definition. See
+   *        {@link ui.router.util.type:Type `Type`} for information on the values accepted.
+   * @param {Object|Function} definitionFn (optional) A function that is injected before the app
+   *        runtime starts.  The result of this function is merged into the existing `definition`.
+   *        See {@link ui.router.util.type:Type `Type`} for information on the values accepted.
+   *
+   * @returns {Object}  Returns `$urlMatcherFactoryProvider`.
+   *
+   * @example
+   * This is a simple example of a custom type that encodes and decodes items from an
+   * array, using the array index as the URL-encoded value:
+   *
+   * <pre>
+   * var list = ['John', 'Paul', 'George', 'Ringo'];
+   *
+   * $urlMatcherFactoryProvider.type('listItem', {
+   *   encode: function(item) {
+   *     // Represent the list item in the URL using its corresponding index
+   *     return list.indexOf(item);
+   *   },
+   *   decode: function(item) {
+   *     // Look up the list item by index
+   *     return list[parseInt(item, 10)];
+   *   },
+   *   is: function(item) {
+   *     // Ensure the item is valid by checking to see that it appears
+   *     // in the list
+   *     return list.indexOf(item) > -1;
+   *   }
+   * });
+   *
+   * $stateProvider.state('list', {
+   *   url: "/list/{item:listItem}",
+   *   controller: function($scope, $stateParams) {
+   *     console.log($stateParams.item);
+   *   }
+   * });
+   *
+   * // ...
+   *
+   * // Changes URL to '/list/3', logs "Ringo" to the console
+   * $state.go('list', { item: "Ringo" });
+   * </pre>
+   *
+   * This is a more complex example of a type that relies on dependency injection to
+   * interact with services, and uses the parameter name from the URL to infer how to
+   * handle encoding and decoding parameter values:
+   *
+   * <pre>
+   * // Defines a custom type that gets a value from a service,
+   * // where each service gets different types of values from
+   * // a backend API:
+   * $urlMatcherFactoryProvider.type('dbObject', {}, function(Users, Posts) {
+   *
+   *   // Matches up services to URL parameter names
+   *   var services = {
+   *     user: Users,
+   *     post: Posts
+   *   };
+   *
+   *   return {
+   *     encode: function(object) {
+   *       // Represent the object in the URL using its unique ID
+   *       return object.id;
+   *     },
+   *     decode: function(value, key) {
+   *       // Look up the object by ID, using the parameter
+   *       // name (key) to call the correct service
+   *       return services[key].findById(value);
+   *     },
+   *     is: function(object, key) {
+   *       // Check that object is a valid dbObject
+   *       return angular.isObject(object) && object.id && services[key];
+   *     }
+   *     equals: function(a, b) {
+   *       // Check the equality of decoded objects by comparing
+   *       // their unique IDs
+   *       return a.id === b.id;
+   *     }
+   *   };
+   * });
+   *
+   * // In a config() block, you can then attach URLs with
+   * // type-annotated parameters:
+   * $stateProvider.state('users', {
+   *   url: "/users",
+   *   // ...
+   * }).state('users.item', {
+   *   url: "/{user:dbObject}",
+   *   controller: function($scope, $stateParams) {
+   *     // $stateParams.user will now be an object returned from
+   *     // the Users service
+   *   },
+   *   // ...
+   * });
+   * </pre>
+   */
+  this.type = function (name, definition, definitionFn) {
+    if (!isDefined(definition)) return $types[name];
+    if ($types.hasOwnProperty(name)) throw new Error("A type named '" + name + "' has already been defined.");
+
+    $types[name] = new Type(extend({ name: name }, definition));
+    if (definitionFn) {
+      typeQueue.push({ name: name, def: definitionFn });
+      if (!enqueue) flushTypeQueue();
+    }
+    return this;
+  };
+
+  // `flushTypeQueue()` waits until `$urlMatcherFactory` is injected before invoking the queued `definitionFn`s
+  function flushTypeQueue() {
+    while(typeQueue.length) {
+      var type = typeQueue.shift();
+      if (type.pattern) throw new Error("You cannot override a type's .pattern at runtime.");
+      angular.extend($types[type.name], injector.invoke(type.def));
+    }
+  }
+
+  // Register default types. Store them in the prototype of $types.
+  forEach(defaultTypes, function(type, name) { $types[name] = new Type(extend({name: name}, type)); });
+  $types = inherit($types, {});
+
+  /* No need to document $get, since it returns this */
+  this.$get = ['$injector', function ($injector) {
+    injector = $injector;
+    enqueue = false;
+    flushTypeQueue();
+
+    forEach(defaultTypes, function(type, name) {
+      if (!$types[name]) $types[name] = new Type(type);
+    });
+    return this;
+  }];
+
+  this.Param = function Param(id, type, config, location) {
+    var self = this;
+    config = unwrapShorthand(config);
+    type = getType(config, type, location);
+    var arrayMode = getArrayMode();
+    type = arrayMode ? type.$asArray(arrayMode, location === "search") : type;
+    if (type.name === "string" && !arrayMode && location === "path" && config.value === undefined)
+      config.value = ""; // for 0.2.x; in 0.3.0+ do not automatically default to ""
+    var isOptional = config.value !== undefined;
+    var squash = getSquashPolicy(config, isOptional);
+    var replace = getReplace(config, arrayMode, isOptional, squash);
+
+    function unwrapShorthand(config) {
+      var keys = isObject(config) ? objectKeys(config) : [];
+      var isShorthand = indexOf(keys, "value") === -1 && indexOf(keys, "type") === -1 &&
+                        indexOf(keys, "squash") === -1 && indexOf(keys, "array") === -1;
+      if (isShorthand) config = { value: config };
+      config.$$fn = isInjectable(config.value) ? config.value : function () { return config.value; };
+      return config;
+    }
+
+    function getType(config, urlType, location) {
+      if (config.type && urlType) throw new Error("Param '"+id+"' has two type configurations.");
+      if (urlType) return urlType;
+      if (!config.type) return (location === "config" ? $types.any : $types.string);
+      return config.type instanceof Type ? config.type : new Type(config.type);
+    }
+
+    // array config: param name (param[]) overrides default settings.  explicit config overrides param name.
+    function getArrayMode() {
+      var arrayDefaults = { array: (location === "search" ? "auto" : false) };
+      var arrayParamNomenclature = id.match(/\[\]$/) ? { array: true } : {};
+      return extend(arrayDefaults, arrayParamNomenclature, config).array;
+    }
+
+    /**
+     * returns false, true, or the squash value to indicate the "default parameter url squash policy".
+     */
+    function getSquashPolicy(config, isOptional) {
+      var squash = config.squash;
+      if (!isOptional || squash === false) return false;
+      if (!isDefined(squash) || squash == null) return defaultSquashPolicy;
+      if (squash === true || isString(squash)) return squash;
+      throw new Error("Invalid squash policy: '" + squash + "'. Valid policies: false, true, or arbitrary string");
+    }
+
+    function getReplace(config, arrayMode, isOptional, squash) {
+      var replace, configuredKeys, defaultPolicy = [
+        { from: "",   to: (isOptional || arrayMode ? undefined : "") },
+        { from: null, to: (isOptional || arrayMode ? undefined : "") }
+      ];
+      replace = isArray(config.replace) ? config.replace : [];
+      if (isString(squash))
+        replace.push({ from: squash, to: undefined });
+      configuredKeys = map(replace, function(item) { return item.from; } );
+      return filter(defaultPolicy, function(item) { return indexOf(configuredKeys, item.from) === -1; }).concat(replace);
+    }
+
+    /**
+     * [Internal] Get the default value of a parameter, which may be an injectable function.
+     */
+    function $$getDefaultValue() {
+      if (!injector) throw new Error("Injectable functions cannot be called at configuration time");
+      var defaultValue = injector.invoke(config.$$fn);
+      if (defaultValue !== null && defaultValue !== undefined && !self.type.is(defaultValue))
+        throw new Error("Default value (" + defaultValue + ") for parameter '" + self.id + "' is not an instance of Type (" + self.type.name + ")");
+      return defaultValue;
+    }
+
+    /**
+     * [Internal] Gets the decoded representation of a value if the value is defined, otherwise, returns the
+     * default value, which may be the result of an injectable function.
+     */
+    function $value(value) {
+      function hasReplaceVal(val) { return function(obj) { return obj.from === val; }; }
+      function $replace(value) {
+        var replacement = map(filter(self.replace, hasReplaceVal(value)), function(obj) { return obj.to; });
+        return replacement.length ? replacement[0] : value;
+      }
+      value = $replace(value);
+      return !isDefined(value) ? $$getDefaultValue() : self.type.$normalize(value);
+    }
+
+    function toString() { return "{Param:" + id + " " + type + " squash: '" + squash + "' optional: " + isOptional + "}"; }
+
+    extend(this, {
+      id: id,
+      type: type,
+      location: location,
+      array: arrayMode,
+      squash: squash,
+      replace: replace,
+      isOptional: isOptional,
+      value: $value,
+      dynamic: undefined,
+      config: config,
+      toString: toString
+    });
+  };
+
+  function ParamSet(params) {
+    extend(this, params || {});
+  }
+
+  ParamSet.prototype = {
+    $$new: function() {
+      return inherit(this, extend(new ParamSet(), { $$parent: this}));
+    },
+    $$keys: function () {
+      var keys = [], chain = [], parent = this,
+        ignore = objectKeys(ParamSet.prototype);
+      while (parent) { chain.push(parent); parent = parent.$$parent; }
+      chain.reverse();
+      forEach(chain, function(paramset) {
+        forEach(objectKeys(paramset), function(key) {
+            if (indexOf(keys, key) === -1 && indexOf(ignore, key) === -1) keys.push(key);
+        });
+      });
+      return keys;
+    },
+    $$values: function(paramValues) {
+      var values = {}, self = this;
+      forEach(self.$$keys(), function(key) {
+        values[key] = self[key].value(paramValues && paramValues[key]);
+      });
+      return values;
+    },
+    $$equals: function(paramValues1, paramValues2) {
+      var equal = true, self = this;
+      forEach(self.$$keys(), function(key) {
+        var left = paramValues1 && paramValues1[key], right = paramValues2 && paramValues2[key];
+        if (!self[key].type.equals(left, right)) equal = false;
+      });
+      return equal;
+    },
+    $$validates: function $$validate(paramValues) {
+      var keys = this.$$keys(), i, param, rawVal, normalized, encoded;
+      for (i = 0; i < keys.length; i++) {
+        param = this[keys[i]];
+        rawVal = paramValues[keys[i]];
+        if ((rawVal === undefined || rawVal === null) && param.isOptional)
+          break; // There was no parameter value, but the param is optional
+        normalized = param.type.$normalize(rawVal);
+        if (!param.type.is(normalized))
+          return false; // The value was not of the correct Type, and could not be decoded to the correct Type
+        encoded = param.type.encode(normalized);
+        if (angular.isString(encoded) && !param.type.pattern.exec(encoded))
+          return false; // The value was of the correct type, but when encoded, did not match the Type's regexp
+      }
+      return true;
+    },
+    $$parent: undefined
+  };
+
+  this.ParamSet = ParamSet;
+}
+
+// Register as a provider so it's available to other providers
+angular.module('ui.router.util').provider('$urlMatcherFactory', $UrlMatcherFactory);
+angular.module('ui.router.util').run(['$urlMatcherFactory', function($urlMatcherFactory) { }]);
+
+/**
+ * @ngdoc object
+ * @name ui.router.router.$urlRouterProvider
+ *
+ * @requires ui.router.util.$urlMatcherFactoryProvider
+ * @requires $locationProvider
+ *
+ * @description
+ * `$urlRouterProvider` has the responsibility of watching `$location`. 
+ * When `$location` changes it runs through a list of rules one by one until a 
+ * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify 
+ * a url in a state configuration. All urls are compiled into a UrlMatcher object.
+ *
+ * There are several methods on `$urlRouterProvider` that make it useful to use directly
+ * in your module config.
+ */
+$UrlRouterProvider.$inject = ['$locationProvider', '$urlMatcherFactoryProvider'];
+function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
+  var rules = [], otherwise = null, interceptDeferred = false, listener;
+
+  // Returns a string that is a prefix of all strings matching the RegExp
+  function regExpPrefix(re) {
+    var prefix = /^\^((?:\\[^a-zA-Z0-9]|[^\\\[\]\^$*+?.()|{}]+)*)/.exec(re.source);
+    return (prefix != null) ? prefix[1].replace(/\\(.)/g, "$1") : '';
+  }
+
+  // Interpolates matched values into a String.replace()-style pattern
+  function interpolate(pattern, match) {
+    return pattern.replace(/\$(\$|\d{1,2})/, function (m, what) {
+      return match[what === '$' ? 0 : Number(what)];
+    });
+  }
+
+  /**
+   * @ngdoc function
+   * @name ui.router.router.$urlRouterProvider#rule
+   * @methodOf ui.router.router.$urlRouterProvider
+   *
+   * @description
+   * Defines rules that are used by `$urlRouterProvider` to find matches for
+   * specific URLs.
+   *
+   * @example
+   * <pre>
+   * var app = angular.module('app', ['ui.router.router']);
+   *
+   * app.config(function ($urlRouterProvider) {
+   *   // Here's an example of how you might allow case insensitive urls
+   *   $urlRouterProvider.rule(function ($injector, $location) {
+   *     var path = $location.path(),
+   *         normalized = path.toLowerCase();
+   *
+   *     if (path !== normalized) {
+   *       return normalized;
+   *     }
+   *   });
+   * });
+   * </pre>
+   *
+   * @param {object} rule Handler function that takes `$injector` and `$location`
+   * services as arguments. You can use them to return a valid path as a string.
+   *
+   * @return {object} `$urlRouterProvider` - `$urlRouterProvider` instance
+   */
+  this.rule = function (rule) {
+    if (!isFunction(rule)) throw new Error("'rule' must be a function");
+    rules.push(rule);
+    return this;
+  };
+
+  /**
+   * @ngdoc object
+   * @name ui.router.router.$urlRouterProvider#otherwise
+   * @methodOf ui.router.router.$urlRouterProvider
+   *
+   * @description
+   * Defines a path that is used when an invalid route is requested.
+   *
+   * @example
+   * <pre>
+   * var app = angular.module('app', ['ui.router.router']);
+   *
+   * app.config(function ($urlRouterProvider) {
+   *   // if the path doesn't match any of the urls you configured
+   *   // otherwise will take care of routing the user to the
+   *   // specified url
+   *   $urlRouterProvider.otherwise('/index');
+   *
+   *   // Example of using function rule as param
+   *   $urlRouterProvider.otherwise(function ($injector, $location) {
+   *     return '/a/valid/url';
+   *   });
+   * });
+   * </pre>
+   *
+   * @param {string|object} rule The url path you want to redirect to or a function 
+   * rule that returns the url path. The function version is passed two params: 
+   * `$injector` and `$location` services, and must return a url string.
+   *
+   * @return {object} `$urlRouterProvider` - `$urlRouterProvider` instance
+   */
+  this.otherwise = function (rule) {
+    if (isString(rule)) {
+      var redirect = rule;
+      rule = function () { return redirect; };
+    }
+    else if (!isFunction(rule)) throw new Error("'rule' must be a function");
+    otherwise = rule;
+    return this;
+  };
+
+
+  function handleIfMatch($injector, handler, match) {
+    if (!match) return false;
+    var result = $injector.invoke(handler, handler, { $match: match });
+    return isDefined(result) ? result : true;
+  }
+
+  /**
+   * @ngdoc function
+   * @name ui.router.router.$urlRouterProvider#when
+   * @methodOf ui.router.router.$urlRouterProvider
+   *
+   * @description
+   * Registers a handler for a given url matching. if handle is a string, it is
+   * treated as a redirect, and is interpolated according to the syntax of match
+   * (i.e. like `String.replace()` for `RegExp`, or like a `UrlMatcher` pattern otherwise).
+   *
+   * If the handler is a function, it is injectable. It gets invoked if `$location`
+   * matches. You have the option of inject the match object as `$match`.
+   *
+   * The handler can return
+   *
+   * - **falsy** to indicate that the rule didn't match after all, then `$urlRouter`
+   *   will continue trying to find another one that matches.
+   * - **string** which is treated as a redirect and passed to `$location.url()`
+   * - **void** or any **truthy** value tells `$urlRouter` that the url was handled.
+   *
+   * @example
+   * <pre>
+   * var app = angular.module('app', ['ui.router.router']);
+   *
+   * app.config(function ($urlRouterProvider) {
+   *   $urlRouterProvider.when($state.url, function ($match, $stateParams) {
+   *     if ($state.$current.navigable !== state ||
+   *         !equalForKeys($match, $stateParams) {
+   *      $state.transitionTo(state, $match, false);
+   *     }
+   *   });
+   * });
+   * </pre>
+   *
+   * @param {string|object} what The incoming path that you want to redirect.
+   * @param {string|object} handler The path you want to redirect your user to.
+   */
+  this.when = function (what, handler) {
+    var redirect, handlerIsString = isString(handler);
+    if (isString(what)) what = $urlMatcherFactory.compile(what);
+
+    if (!handlerIsString && !isFunction(handler) && !isArray(handler))
+      throw new Error("invalid 'handler' in when()");
+
+    var strategies = {
+      matcher: function (what, handler) {
+        if (handlerIsString) {
+          redirect = $urlMatcherFactory.compile(handler);
+          handler = ['$match', function ($match) { return redirect.format($match); }];
+        }
+        return extend(function ($injector, $location) {
+          return handleIfMatch($injector, handler, what.exec($location.path(), $location.search()));
+        }, {
+          prefix: isString(what.prefix) ? what.prefix : ''
+        });
+      },
+      regex: function (what, handler) {
+        if (what.global || what.sticky) throw new Error("when() RegExp must not be global or sticky");
+
+        if (handlerIsString) {
+          redirect = handler;
+          handler = ['$match', function ($match) { return interpolate(redirect, $match); }];
+        }
+        return extend(function ($injector, $location) {
+          return handleIfMatch($injector, handler, what.exec($location.path()));
+        }, {
+          prefix: regExpPrefix(what)
+        });
+      }
+    };
+
+    var check = { matcher: $urlMatcherFactory.isMatcher(what), regex: what instanceof RegExp };
+
+    for (var n in check) {
+      if (check[n]) return this.rule(strategies[n](what, handler));
+    }
+
+    throw new Error("invalid 'what' in when()");
+  };
+
+  /**
+   * @ngdoc function
+   * @name ui.router.router.$urlRouterProvider#deferIntercept
+   * @methodOf ui.router.router.$urlRouterProvider
+   *
+   * @description
+   * Disables (or enables) deferring location change interception.
+   *
+   * If you wish to customize the behavior of syncing the URL (for example, if you wish to
+   * defer a transition but maintain the current URL), call this method at configuration time.
+   * Then, at run time, call `$urlRouter.listen()` after you have configured your own
+   * `$locationChangeSuccess` event handler.
+   *
+   * @example
+   * <pre>
+   * var app = angular.module('app', ['ui.router.router']);
+   *
+   * app.config(function ($urlRouterProvider) {
+   *
+   *   // Prevent $urlRouter from automatically intercepting URL changes;
+   *   // this allows you to configure custom behavior in between
+   *   // location changes and route synchronization:
+   *   $urlRouterProvider.deferIntercept();
+   *
+   * }).run(function ($rootScope, $urlRouter, UserService) {
+   *
+   *   $rootScope.$on('$locationChangeSuccess', function(e) {
+   *     // UserService is an example service for managing user state
+   *     if (UserService.isLoggedIn()) return;
+   *
+   *     // Prevent $urlRouter's default handler from firing
+   *     e.preventDefault();
+   *
+   *     UserService.handleLogin().then(function() {
+   *       // Once the user has logged in, sync the current URL
+   *       // to the router:
+   *       $urlRouter.sync();
+   *     });
+   *   });
+   *
+   *   // Configures $urlRouter's listener *after* your custom listener
+   *   $urlRouter.listen();
+   * });
+   * </pre>
+   *
+   * @param {boolean} defer Indicates whether to defer location change interception. Passing
+            no parameter is equivalent to `true`.
+   */
+  this.deferIntercept = function (defer) {
+    if (defer === undefined) defer = true;
+    interceptDeferred = defer;
+  };
+
+  /**
+   * @ngdoc object
+   * @name ui.router.router.$urlRouter
+   *
+   * @requires $location
+   * @requires $rootScope
+   * @requires $injector
+   * @requires $browser
+   *
+   * @description
+   *
+   */
+  this.$get = $get;
+  $get.$inject = ['$location', '$rootScope', '$injector', '$browser'];
+  function $get(   $location,   $rootScope,   $injector,   $browser) {
+
+    var baseHref = $browser.baseHref(), location = $location.url(), lastPushedUrl;
+
+    function appendBasePath(url, isHtml5, absolute) {
+      if (baseHref === '/') return url;
+      if (isHtml5) return baseHref.slice(0, -1) + url;
+      if (absolute) return baseHref.slice(1) + url;
+      return url;
+    }
+
+    // TODO: Optimize groups of rules with non-empty prefix into some sort of decision tree
+    function update(evt) {
+      if (evt && evt.defaultPrevented) return;
+      var ignoreUpdate = lastPushedUrl && $location.url() === lastPushedUrl;
+      lastPushedUrl = undefined;
+      // TODO: Re-implement this in 1.0 for https://github.com/angular-ui/ui-router/issues/1573
+      //if (ignoreUpdate) return true;
+
+      function check(rule) {
+        var handled = rule($injector, $location);
+
+        if (!handled) return false;
+        if (isString(handled)) $location.replace().url(handled);
+        return true;
+      }
+      var n = rules.length, i;
+
+      for (i = 0; i < n; i++) {
+        if (check(rules[i])) return;
+      }
+      // always check otherwise last to allow dynamic updates to the set of rules
+      if (otherwise) check(otherwise);
+    }
+
+    function listen() {
+      listener = listener || $rootScope.$on('$locationChangeSuccess', update);
+      return listener;
+    }
+
+    if (!interceptDeferred) listen();
+
+    return {
+      /**
+       * @ngdoc function
+       * @name ui.router.router.$urlRouter#sync
+       * @methodOf ui.router.router.$urlRouter
+       *
+       * @description
+       * Triggers an update; the same update that happens when the address bar url changes, aka `$locationChangeSuccess`.
+       * This method is useful when you need to use `preventDefault()` on the `$locationChangeSuccess` event,
+       * perform some custom logic (route protection, auth, config, redirection, etc) and then finally proceed
+       * with the transition by calling `$urlRouter.sync()`.
+       *
+       * @example
+       * <pre>
+       * angular.module('app', ['ui.router'])
+       *   .run(function($rootScope, $urlRouter) {
+       *     $rootScope.$on('$locationChangeSuccess', function(evt) {
+       *       // Halt state change from even starting
+       *       evt.preventDefault();
+       *       // Perform custom logic
+       *       var meetsRequirement = ...
+       *       // Continue with the update and state transition if logic allows
+       *       if (meetsRequirement) $urlRouter.sync();
+       *     });
+       * });
+       * </pre>
+       */
+      sync: function() {
+        update();
+      },
+
+      listen: function() {
+        return listen();
+      },
+
+      update: function(read) {
+        if (read) {
+          location = $location.url();
+          return;
+        }
+        if ($location.url() === location) return;
+
+        $location.url(location);
+        $location.replace();
+      },
+
+      push: function(urlMatcher, params, options) {
+         var url = urlMatcher.format(params || {});
+
+        // Handle the special hash param, if needed
+        if (url !== null && params && params['#']) {
+            url += '#' + params['#'];
+        }
+
+        $location.url(url);
+        lastPushedUrl = options && options.$$avoidResync ? $location.url() : undefined;
+        if (options && options.replace) $location.replace();
+      },
+
+      /**
+       * @ngdoc function
+       * @name ui.router.router.$urlRouter#href
+       * @methodOf ui.router.router.$urlRouter
+       *
+       * @description
+       * A URL generation method that returns the compiled URL for a given
+       * {@link ui.router.util.type:UrlMatcher `UrlMatcher`}, populated with the provided parameters.
+       *
+       * @example
+       * <pre>
+       * $bob = $urlRouter.href(new UrlMatcher("/about/:person"), {
+       *   person: "bob"
+       * });
+       * // $bob == "/about/bob";
+       * </pre>
+       *
+       * @param {UrlMatcher} urlMatcher The `UrlMatcher` object which is used as the template of the URL to generate.
+       * @param {object=} params An object of parameter values to fill the matcher's required parameters.
+       * @param {object=} options Options object. The options are:
+       *
+       * - **`absolute`** - {boolean=false},  If true will generate an absolute url, e.g. "http://www.example.com/fullurl".
+       *
+       * @returns {string} Returns the fully compiled URL, or `null` if `params` fail validation against `urlMatcher`
+       */
+      href: function(urlMatcher, params, options) {
+        if (!urlMatcher.validates(params)) return null;
+
+        var isHtml5 = $locationProvider.html5Mode();
+        if (angular.isObject(isHtml5)) {
+          isHtml5 = isHtml5.enabled;
+        }
+        
+        var url = urlMatcher.format(params);
+        options = options || {};
+
+        if (!isHtml5 && url !== null) {
+          url = "#" + $locationProvider.hashPrefix() + url;
+        }
+
+        // Handle special hash param, if needed
+        if (url !== null && params && params['#']) {
+          url += '#' + params['#'];
+        }
+
+        url = appendBasePath(url, isHtml5, options.absolute);
+
+        if (!options.absolute || !url) {
+          return url;
+        }
+
+        var slash = (!isHtml5 && url ? '/' : ''), port = $location.port();
+        port = (port === 80 || port === 443 ? '' : ':' + port);
+
+        return [$location.protocol(), '://', $location.host(), port, slash, url].join('');
+      }
+    };
+  }
+}
+
+angular.module('ui.router.router').provider('$urlRouter', $UrlRouterProvider);
+
+/**
+ * @ngdoc object
+ * @name ui.router.state.$stateProvider
+ *
+ * @requires ui.router.router.$urlRouterProvider
+ * @requires ui.router.util.$urlMatcherFactoryProvider
+ *
+ * @description
+ * The new `$stateProvider` works similar to Angular's v1 router, but it focuses purely
+ * on state.
+ *
+ * A state corresponds to a "place" in the application in terms of the overall UI and
+ * navigation. A state describes (via the controller / template / view properties) what
+ * the UI looks like and does at that place.
+ *
+ * States often have things in common, and the primary way of factoring out these
+ * commonalities in this model is via the state hierarchy, i.e. parent/child states aka
+ * nested states.
+ *
+ * The `$stateProvider` provides interfaces to declare these states for your app.
+ */
+$StateProvider.$inject = ['$urlRouterProvider', '$urlMatcherFactoryProvider'];
+function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
+
+  var root, states = {}, $state, queue = {}, abstractKey = 'abstract';
+
+  // Builds state properties from definition passed to registerState()
+  var stateBuilder = {
+
+    // Derive parent state from a hierarchical name only if 'parent' is not explicitly defined.
+    // state.children = [];
+    // if (parent) parent.children.push(state);
+    parent: function(state) {
+      if (isDefined(state.parent) && state.parent) return findState(state.parent);
+      // regex matches any valid composite state name
+      // would match "contact.list" but not "contacts"
+      var compositeName = /^(.+)\.[^.]+$/.exec(state.name);
+      return compositeName ? findState(compositeName[1]) : root;
+    },
+
+    // inherit 'data' from parent and override by own values (if any)
+    data: function(state) {
+      if (state.parent && state.parent.data) {
+        state.data = state.self.data = extend({}, state.parent.data, state.data);
+      }
+      return state.data;
+    },
+
+    // Build a URLMatcher if necessary, either via a relative or absolute URL
+    url: function(state) {
+      var url = state.url, config = { params: state.params || {} };
+
+      if (isString(url)) {
+        if (url.charAt(0) == '^') return $urlMatcherFactory.compile(url.substring(1), config);
+        return (state.parent.navigable || root).url.concat(url, config);
+      }
+
+      if (!url || $urlMatcherFactory.isMatcher(url)) return url;
+      throw new Error("Invalid url '" + url + "' in state '" + state + "'");
+    },
+
+    // Keep track of the closest ancestor state that has a URL (i.e. is navigable)
+    navigable: function(state) {
+      return state.url ? state : (state.parent ? state.parent.navigable : null);
+    },
+
+    // Own parameters for this state. state.url.params is already built at this point. Create and add non-url params
+    ownParams: function(state) {
+      var params = state.url && state.url.params || new $$UMFP.ParamSet();
+      forEach(state.params || {}, function(config, id) {
+        if (!params[id]) params[id] = new $$UMFP.Param(id, null, config, "config");
+      });
+      return params;
+    },
+
+    // Derive parameters for this state and ensure they're a super-set of parent's parameters
+    params: function(state) {
+      return state.parent && state.parent.params ? extend(state.parent.params.$$new(), state.ownParams) : new $$UMFP.ParamSet();
+    },
+
+    // If there is no explicit multi-view configuration, make one up so we don't have
+    // to handle both cases in the view directive later. Note that having an explicit
+    // 'views' property will mean the default unnamed view properties are ignored. This
+    // is also a good time to resolve view names to absolute names, so everything is a
+    // straight lookup at link time.
+    views: function(state) {
+      var views = {};
+
+      forEach(isDefined(state.views) ? state.views : { '': state }, function (view, name) {
+        if (name.indexOf('@') < 0) name += '@' + state.parent.name;
+        views[name] = view;
+      });
+      return views;
+    },
+
+    // Keep a full path from the root down to this state as this is needed for state activation.
+    path: function(state) {
+      return state.parent ? state.parent.path.concat(state) : []; // exclude root from path
+    },
+
+    // Speed up $state.contains() as it's used a lot
+    includes: function(state) {
+      var includes = state.parent ? extend({}, state.parent.includes) : {};
+      includes[state.name] = true;
+      return includes;
+    },
+
+    $delegates: {}
+  };
+
+  function isRelative(stateName) {
+    return stateName.indexOf(".") === 0 || stateName.indexOf("^") === 0;
+  }
+
+  function findState(stateOrName, base) {
+    if (!stateOrName) return undefined;
+
+    var isStr = isString(stateOrName),
+        name  = isStr ? stateOrName : stateOrName.name,
+        path  = isRelative(name);
+
+    if (path) {
+      if (!base) throw new Error("No reference point given for path '"  + name + "'");
+      base = findState(base);
+      
+      var rel = name.split("."), i = 0, pathLength = rel.length, current = base;
+
+      for (; i < pathLength; i++) {
+        if (rel[i] === "" && i === 0) {
+          current = base;
+          continue;
+        }
+        if (rel[i] === "^") {
+          if (!current.parent) throw new Error("Path '" + name + "' not valid for state '" + base.name + "'");
+          current = current.parent;
+          continue;
+        }
+        break;
+      }
+      rel = rel.slice(i).join(".");
+      name = current.name + (current.name && rel ? "." : "") + rel;
+    }
+    var state = states[name];
+
+    if (state && (isStr || (!isStr && (state === stateOrName || state.self === stateOrName)))) {
+      return state;
+    }
+    return undefined;
+  }
+
+  function queueState(parentName, state) {
+    if (!queue[parentName]) {
+      queue[parentName] = [];
+    }
+    queue[parentName].push(state);
+  }
+
+  function flushQueuedChildren(parentName) {
+    var queued = queue[parentName] || [];
+    while(queued.length) {
+      registerState(queued.shift());
+    }
+  }
+
+  function registerState(state) {
+    // Wrap a new object around the state so we can store our private details easily.
+    state = inherit(state, {
+      self: state,
+      resolve: state.resolve || {},
+      toString: function() { return this.name; }
+    });
+
+    var name = state.name;
+    if (!isString(name) || name.indexOf('@') >= 0) throw new Error("State must have a valid name");
+    if (states.hasOwnProperty(name)) throw new Error("State '" + name + "'' is already defined");
+
+    // Get parent name
+    var parentName = (name.indexOf('.') !== -1) ? name.substring(0, name.lastIndexOf('.'))
+        : (isString(state.parent)) ? state.parent
+        : (isObject(state.parent) && isString(state.parent.name)) ? state.parent.name
+        : '';
+
+    // If parent is not registered yet, add state to queue and register later
+    if (parentName && !states[parentName]) {
+      return queueState(parentName, state.self);
+    }
+
+    for (var key in stateBuilder) {
+      if (isFunction(stateBuilder[key])) state[key] = stateBuilder[key](state, stateBuilder.$delegates[key]);
+    }
+    states[name] = state;
+
+    // Register the state in the global state list and with $urlRouter if necessary.
+    if (!state[abstractKey] && state.url) {
+      $urlRouterProvider.when(state.url, ['$match', '$stateParams', function ($match, $stateParams) {
+        if ($state.$current.navigable != state || !equalForKeys($match, $stateParams)) {
+          $state.transitionTo(state, $match, { inherit: true, location: false });
+        }
+      }]);
+    }
+
+    // Register any queued children
+    flushQueuedChildren(name);
+
+    return state;
+  }
+
+  // Checks text to see if it looks like a glob.
+  function isGlob (text) {
+    return text.indexOf('*') > -1;
+  }
+
+  // Returns true if glob matches current $state name.
+  function doesStateMatchGlob (glob) {
+    var globSegments = glob.split('.'),
+        segments = $state.$current.name.split('.');
+
+    //match single stars
+    for (var i = 0, l = globSegments.length; i < l; i++) {
+      if (globSegments[i] === '*') {
+        segments[i] = '*';
+      }
+    }
+
+    //match greedy starts
+    if (globSegments[0] === '**') {
+       segments = segments.slice(indexOf(segments, globSegments[1]));
+       segments.unshift('**');
+    }
+    //match greedy ends
+    if (globSegments[globSegments.length - 1] === '**') {
+       segments.splice(indexOf(segments, globSegments[globSegments.length - 2]) + 1, Number.MAX_VALUE);
+       segments.push('**');
+    }
+
+    if (globSegments.length != segments.length) {
+      return false;
+    }
+
+    return segments.join('') === globSegments.join('');
+  }
+
+
+  // Implicit root state that is always active
+  root = registerState({
+    name: '',
+    url: '^',
+    views: null,
+    'abstract': true
+  });
+  root.navigable = null;
+
+
+  /**
+   * @ngdoc function
+   * @name ui.router.state.$stateProvider#decorator
+   * @methodOf ui.router.state.$stateProvider
+   *
+   * @description
+   * Allows you to extend (carefully) or override (at your own peril) the 
+   * `stateBuilder` object used internally by `$stateProvider`. This can be used 
+   * to add custom functionality to ui-router, for example inferring templateUrl 
+   * based on the state name.
+   *
+   * When passing only a name, it returns the current (original or decorated) builder
+   * function that matches `name`.
+   *
+   * The builder functions that can be decorated are listed below. Though not all
+   * necessarily have a good use case for decoration, that is up to you to decide.
+   *
+   * In addition, users can attach custom decorators, which will generate new 
+   * properties within the state's internal definition. There is currently no clear 
+   * use-case for this beyond accessing internal states (i.e. $state.$current), 
+   * however, expect this to become increasingly relevant as we introduce additional 
+   * meta-programming features.
+   *
+   * **Warning**: Decorators should not be interdependent because the order of 
+   * execution of the builder functions in non-deterministic. Builder functions 
+   * should only be dependent on the state definition object and super function.
+   *
+   *
+   * Existing builder functions and current return values:
+   *
+   * - **parent** `{object}` - returns the parent state object.
+   * - **data** `{object}` - returns state data, including any inherited data that is not
+   *   overridden by own values (if any).
+   * - **url** `{object}` - returns a {@link ui.router.util.type:UrlMatcher UrlMatcher}
+   *   or `null`.
+   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is 
+   *   navigable).
+   * - **params** `{object}` - returns an array of state params that are ensured to 
+   *   be a super-set of parent's params.
+   * - **views** `{object}` - returns a views object where each key is an absolute view 
+   *   name (i.e. "viewName@stateName") and each value is the config object 
+   *   (template, controller) for the view. Even when you don't use the views object 
+   *   explicitly on a state config, one is still created for you internally.
+   *   So by decorating this builder function you have access to decorating template 
+   *   and controller properties.
+   * - **ownParams** `{object}` - returns an array of params that belong to the state, 
+   *   not including any params defined by ancestor states.
+   * - **path** `{string}` - returns the full path from the root down to this state. 
+   *   Needed for state activation.
+   * - **includes** `{object}` - returns an object that includes every state that 
+   *   would pass a `$state.includes()` test.
+   *
+   * @example
+   * <pre>
+   * // Override the internal 'views' builder with a function that takes the state
+   * // definition, and a reference to the internal function being overridden:
+   * $stateProvider.decorator('views', function (state, parent) {
+   *   var result = {},
+   *       views = parent(state);
+   *
+   *   angular.forEach(views, function (config, name) {
+   *     var autoName = (state.name + '.' + name).replace('.', '/');
+   *     config.templateUrl = config.templateUrl || '/partials/' + autoName + '.html';
+   *     result[name] = config;
+   *   });
+   *   return result;
+   * });
+   *
+   * $stateProvider.state('home', {
+   *   views: {
+   *     'contact.list': { controller: 'ListController' },
+   *     'contact.item': { controller: 'ItemController' }
+   *   }
+   * });
+   *
+   * // ...
+   *
+   * $state.go('home');
+   * // Auto-populates list and item views with /partials/home/contact/list.html,
+   * // and /partials/home/contact/item.html, respectively.
+   * </pre>
+   *
+   * @param {string} name The name of the builder function to decorate. 
+   * @param {object} func A function that is responsible for decorating the original 
+   * builder function. The function receives two parameters:
+   *
+   *   - `{object}` - state - The state config object.
+   *   - `{object}` - super - The original builder function.
+   *
+   * @return {object} $stateProvider - $stateProvider instance
+   */
+  this.decorator = decorator;
+  function decorator(name, func) {
+    /*jshint validthis: true */
+    if (isString(name) && !isDefined(func)) {
+      return stateBuilder[name];
+    }
+    if (!isFunction(func) || !isString(name)) {
+      return this;
+    }
+    if (stateBuilder[name] && !stateBuilder.$delegates[name]) {
+      stateBuilder.$delegates[name] = stateBuilder[name];
+    }
+    stateBuilder[name] = func;
+    return this;
+  }
+
+  /**
+   * @ngdoc function
+   * @name ui.router.state.$stateProvider#state
+   * @methodOf ui.router.state.$stateProvider
+   *
+   * @description
+   * Registers a state configuration under a given state name. The stateConfig object
+   * has the following acceptable properties.
+   *
+   * @param {string} name A unique state name, e.g. "home", "about", "contacts".
+   * To create a parent/child state use a dot, e.g. "about.sales", "home.newest".
+   * @param {object} stateConfig State configuration object.
+   * @param {string|function=} stateConfig.template
+   * <a id='template'></a>
+   *   html template as a string or a function that returns
+   *   an html template as a string which should be used by the uiView directives. This property 
+   *   takes precedence over templateUrl.
+   *   
+   *   If `template` is a function, it will be called with the following parameters:
+   *
+   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
+   *     applying the current state
+   *
+   * <pre>template:
+   *   "<h1>inline template definition</h1>" +
+   *   "<div ui-view></div>"</pre>
+   * <pre>template: function(params) {
+   *       return "<h1>generated template</h1>"; }</pre>
+   * </div>
+   *
+   * @param {string|function=} stateConfig.templateUrl
+   * <a id='templateUrl'></a>
+   *
+   *   path or function that returns a path to an html
+   *   template that should be used by uiView.
+   *   
+   *   If `templateUrl` is a function, it will be called with the following parameters:
+   *
+   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by 
+   *     applying the current state
+   *
+   * <pre>templateUrl: "home.html"</pre>
+   * <pre>templateUrl: function(params) {
+   *     return myTemplates[params.pageId]; }</pre>
+   *
+   * @param {function=} stateConfig.templateProvider
+   * <a id='templateProvider'></a>
+   *    Provider function that returns HTML content string.
+   * <pre> templateProvider:
+   *       function(MyTemplateService, params) {
+   *         return MyTemplateService.getTemplate(params.pageId);
+   *       }</pre>
+   *
+   * @param {string|function=} stateConfig.controller
+   * <a id='controller'></a>
+   *
+   *  Controller fn that should be associated with newly
+   *   related scope or the name of a registered controller if passed as a string.
+   *   Optionally, the ControllerAs may be declared here.
+   * <pre>controller: "MyRegisteredController"</pre>
+   * <pre>controller:
+   *     "MyRegisteredController as fooCtrl"}</pre>
+   * <pre>controller: function($scope, MyService) {
+   *     $scope.data = MyService.getData(); }</pre>
+   *
+   * @param {function=} stateConfig.controllerProvider
+   * <a id='controllerProvider'></a>
+   *
+   * Injectable provider function that returns the actual controller or string.
+   * <pre>controllerProvider:
+   *   function(MyResolveData) {
+   *     if (MyResolveData.foo)
+   *       return "FooCtrl"
+   *     else if (MyResolveData.bar)
+   *       return "BarCtrl";
+   *     else return function($scope) {
+   *       $scope.baz = "Qux";
+   *     }
+   *   }</pre>
+   *
+   * @param {string=} stateConfig.controllerAs
+   * <a id='controllerAs'></a>
+   * 
+   * A controller alias name. If present the controller will be
+   *   published to scope under the controllerAs name.
+   * <pre>controllerAs: "myCtrl"</pre>
+   *
+   * @param {string|object=} stateConfig.parent
+   * <a id='parent'></a>
+   * Optionally specifies the parent state of this state.
+   *
+   * <pre>parent: 'parentState'</pre>
+   * <pre>parent: parentState // JS variable</pre>
+   *
+   * @param {object=} stateConfig.resolve
+   * <a id='resolve'></a>
+   *
+   * An optional map&lt;string, function&gt; of dependencies which
+   *   should be injected into the controller. If any of these dependencies are promises, 
+   *   the router will wait for them all to be resolved before the controller is instantiated.
+   *   If all the promises are resolved successfully, the $stateChangeSuccess event is fired
+   *   and the values of the resolved promises are injected into any controllers that reference them.
+   *   If any  of the promises are rejected the $stateChangeError event is fired.
+   *
+   *   The map object is:
+   *   
+   *   - key - {string}: name of dependency to be injected into controller
+   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function, 
+   *     it is injected and return value it treated as dependency. If result is a promise, it is 
+   *     resolved before its value is injected into controller.
+   *
+   * <pre>resolve: {
+   *     myResolve1:
+   *       function($http, $stateParams) {
+   *         return $http.get("/api/foos/"+stateParams.fooID);
+   *       }
+   *     }</pre>
+   *
+   * @param {string=} stateConfig.url
+   * <a id='url'></a>
+   *
+   *   A url fragment with optional parameters. When a state is navigated or
+   *   transitioned to, the `$stateParams` service will be populated with any 
+   *   parameters that were passed.
+   *
+   *   (See {@link ui.router.util.type:UrlMatcher UrlMatcher} `UrlMatcher`} for
+   *   more details on acceptable patterns )
+   *
+   * examples:
+   * <pre>url: "/home"
+   * url: "/users/:userid"
+   * url: "/books/{bookid:[a-zA-Z_-]}"
+   * url: "/books/{categoryid:int}"
+   * url: "/books/{publishername:string}/{categoryid:int}"
+   * url: "/messages?before&after"
+   * url: "/messages?{before:date}&{after:date}"
+   * url: "/messages/:mailboxid?{before:date}&{after:date}"
+   * </pre>
+   *
+   * @param {object=} stateConfig.views
+   * <a id='views'></a>
+   * an optional map&lt;string, object&gt; which defined multiple views, or targets views
+   * manually/explicitly.
+   *
+   * Examples:
+   *
+   * Targets three named `ui-view`s in the parent state's template
+   * <pre>views: {
+   *     header: {
+   *       controller: "headerCtrl",
+   *       templateUrl: "header.html"
+   *     }, body: {
+   *       controller: "bodyCtrl",
+   *       templateUrl: "body.html"
+   *     }, footer: {
+   *       controller: "footCtrl",
+   *       templateUrl: "footer.html"
+   *     }
+   *   }</pre>
+   *
+   * Targets named `ui-view="header"` from grandparent state 'top''s template, and named `ui-view="body" from parent state's template.
+   * <pre>views: {
+   *     'header@top': {
+   *       controller: "msgHeaderCtrl",
+   *       templateUrl: "msgHeader.html"
+   *     }, 'body': {
+   *       controller: "messagesCtrl",
+   *       templateUrl: "messages.html"
+   *     }
+   *   }</pre>
+   *
+   * @param {boolean=} [stateConfig.abstract=false]
+   * <a id='abstract'></a>
+   * An abstract state will never be directly activated,
+   *   but can provide inherited properties to its common children states.
+   * <pre>abstract: true</pre>
+   *
+   * @param {function=} stateConfig.onEnter
+   * <a id='onEnter'></a>
+   *
+   * Callback function for when a state is entered. Good way
+   *   to trigger an action or dispatch an event, such as opening a dialog.
+   * If minifying your scripts, make sure to explictly annotate this function,
+   * because it won't be automatically annotated by your build tools.
+   *
+   * <pre>onEnter: function(MyService, $stateParams) {
+   *     MyService.foo($stateParams.myParam);
+   * }</pre>
+   *
+   * @param {function=} stateConfig.onExit
+   * <a id='onExit'></a>
+   *
+   * Callback function for when a state is exited. Good way to
+   *   trigger an action or dispatch an event, such as opening a dialog.
+   * If minifying your scripts, make sure to explictly annotate this function,
+   * because it won't be automatically annotated by your build tools.
+   *
+   * <pre>onExit: function(MyService, $stateParams) {
+   *     MyService.cleanup($stateParams.myParam);
+   * }</pre>
+   *
+   * @param {boolean=} [stateConfig.reloadOnSearch=true]
+   * <a id='reloadOnSearch'></a>
+   *
+   * If `false`, will not retrigger the same state
+   *   just because a search/query parameter has changed (via $location.search() or $location.hash()). 
+   *   Useful for when you'd like to modify $location.search() without triggering a reload.
+   * <pre>reloadOnSearch: false</pre>
+   *
+   * @param {object=} stateConfig.data
+   * <a id='data'></a>
+   *
+   * Arbitrary data object, useful for custom configuration.  The parent state's `data` is
+   *   prototypally inherited.  In other words, adding a data property to a state adds it to
+   *   the entire subtree via prototypal inheritance.
+   *
+   * <pre>data: {
+   *     requiredRole: 'foo'
+   * } </pre>
+   *
+   * @param {object=} stateConfig.params
+   * <a id='params'></a>
+   *
+   * A map which optionally configures parameters declared in the `url`, or
+   *   defines additional non-url parameters.  For each parameter being
+   *   configured, add a configuration object keyed to the name of the parameter.
+   *
+   *   Each parameter configuration object may contain the following properties:
+   *
+   *   - ** value ** - {object|function=}: specifies the default value for this
+   *     parameter.  This implicitly sets this parameter as optional.
+   *
+   *     When UI-Router routes to a state and no value is
+   *     specified for this parameter in the URL or transition, the
+   *     default value will be used instead.  If `value` is a function,
+   *     it will be injected and invoked, and the return value used.
+   *
+   *     *Note*: `undefined` is treated as "no default value" while `null`
+   *     is treated as "the default value is `null`".
+   *
+   *     *Shorthand*: If you only need to configure the default value of the
+   *     parameter, you may use a shorthand syntax.   In the **`params`**
+   *     map, instead mapping the param name to a full parameter configuration
+   *     object, simply set map it to the default parameter value, e.g.:
+   *
+   * <pre>// define a parameter's default value
+   * params: {
+   *     param1: { value: "defaultValue" }
+   * }
+   * // shorthand default values
+   * params: {
+   *     param1: "defaultValue",
+   *     param2: "param2Default"
+   * }</pre>
+   *
+   *   - ** array ** - {boolean=}: *(default: false)* If true, the param value will be
+   *     treated as an array of values.  If you specified a Type, the value will be
+   *     treated as an array of the specified Type.  Note: query parameter values
+   *     default to a special `"auto"` mode.
+   *
+   *     For query parameters in `"auto"` mode, if multiple  values for a single parameter
+   *     are present in the URL (e.g.: `/foo?bar=1&bar=2&bar=3`) then the values
+   *     are mapped to an array (e.g.: `{ foo: [ '1', '2', '3' ] }`).  However, if
+   *     only one value is present (e.g.: `/foo?bar=1`) then the value is treated as single
+   *     value (e.g.: `{ foo: '1' }`).
+   *
+   * <pre>params: {
+   *     param1: { array: true }
+   * }</pre>
+   *
+   *   - ** squash ** - {bool|string=}: `squash` configures how a default parameter value is represented in the URL when
+   *     the current parameter value is the same as the default value. If `squash` is not set, it uses the
+   *     configured default squash policy.
+   *     (See {@link ui.router.util.$urlMatcherFactory#methods_defaultSquashPolicy `defaultSquashPolicy()`})
+   *
+   *   There are three squash settings:
+   *
+   *     - false: The parameter's default value is not squashed.  It is encoded and included in the URL
+   *     - true: The parameter's default value is omitted from the URL.  If the parameter is preceeded and followed
+   *       by slashes in the state's `url` declaration, then one of those slashes are omitted.
+   *       This can allow for cleaner looking URLs.
+   *     - `"<arbitrary string>"`: The parameter's default value is replaced with an arbitrary placeholder of  your choice.
+   *
+   * <pre>params: {
+   *     param1: {
+   *       value: "defaultId",
+   *       squash: true
+   * } }
+   * // squash "defaultValue" to "~"
+   * params: {
+   *     param1: {
+   *       value: "defaultValue",
+   *       squash: "~"
+   * } }
+   * </pre>
+   *
+   *
+   * @example
+   * <pre>
+   * // Some state name examples
+   *
+   * // stateName can be a single top-level name (must be unique).
+   * $stateProvider.state("home", {});
+   *
+   * // Or it can be a nested state name. This state is a child of the
+   * // above "home" state.
+   * $stateProvider.state("home.newest", {});
+   *
+   * // Nest states as deeply as needed.
+   * $stateProvider.state("home.newest.abc.xyz.inception", {});
+   *
+   * // state() returns $stateProvider, so you can chain state declarations.
+   * $stateProvider
+   *   .state("home", {})
+   *   .state("about", {})
+   *   .state("contacts", {});
+   * </pre>
+   *
+   */
+  this.state = state;
+  function state(name, definition) {
+    /*jshint validthis: true */
+    if (isObject(name)) definition = name;
+    else definition.name = name;
+    registerState(definition);
+    return this;
+  }
+
+  /**
+   * @ngdoc object
+   * @name ui.router.state.$state
+   *
+   * @requires $rootScope
+   * @requires $q
+   * @requires ui.router.state.$view
+   * @requires $injector
+   * @requires ui.router.util.$resolve
+   * @requires ui.router.state.$stateParams
+   * @requires ui.router.router.$urlRouter
+   *
+   * @property {object} params A param object, e.g. {sectionId: section.id)}, that 
+   * you'd like to test against the current active state.
+   * @property {object} current A reference to the state's config object. However 
+   * you passed it in. Useful for accessing custom data.
+   * @property {object} transition Currently pending transition. A promise that'll 
+   * resolve or reject.
+   *
+   * @description
+   * `$state` service is responsible for representing states as well as transitioning
+   * between them. It also provides interfaces to ask for current state or even states
+   * you're coming from.
+   */
+  this.$get = $get;
+  $get.$inject = ['$rootScope', '$q', '$view', '$injector', '$resolve', '$stateParams', '$urlRouter', '$location', '$urlMatcherFactory'];
+  function $get(   $rootScope,   $q,   $view,   $injector,   $resolve,   $stateParams,   $urlRouter,   $location,   $urlMatcherFactory) {
+
+    var TransitionSuperseded = $q.reject(new Error('transition superseded'));
+    var TransitionPrevented = $q.reject(new Error('transition prevented'));
+    var TransitionAborted = $q.reject(new Error('transition aborted'));
+    var TransitionFailed = $q.reject(new Error('transition failed'));
+
+    // Handles the case where a state which is the target of a transition is not found, and the user
+    // can optionally retry or defer the transition
+    function handleRedirect(redirect, state, params, options) {
+      /**
+       * @ngdoc event
+       * @name ui.router.state.$state#$stateNotFound
+       * @eventOf ui.router.state.$state
+       * @eventType broadcast on root scope
+       * @description
+       * Fired when a requested state **cannot be found** using the provided state name during transition.
+       * The event is broadcast allowing any handlers a single chance to deal with the error (usually by
+       * lazy-loading the unfound state). A special `unfoundState` object is passed to the listener handler,
+       * you can see its three properties in the example. You can use `event.preventDefault()` to abort the
+       * transition and the promise returned from `go` will be rejected with a `'transition aborted'` value.
+       *
+       * @param {Object} event Event object.
+       * @param {Object} unfoundState Unfound State information. Contains: `to, toParams, options` properties.
+       * @param {State} fromState Current state object.
+       * @param {Object} fromParams Current state params.
+       *
+       * @example
+       *
+       * <pre>
+       * // somewhere, assume lazy.state has not been defined
+       * $state.go("lazy.state", {a:1, b:2}, {inherit:false});
+       *
+       * // somewhere else
+       * $scope.$on('$stateNotFound',
+       * function(event, unfoundState, fromState, fromParams){
+       *     console.log(unfoundState.to); // "lazy.state"
+       *     console.log(unfoundState.toParams); // {a:1, b:2}
+       *     console.log(unfoundState.options); // {inherit:false} + default options
+       * })
+       * </pre>
+       */
+      var evt = $rootScope.$broadcast('$stateNotFound', redirect, state, params);
+
+      if (evt.defaultPrevented) {
+        $urlRouter.update();
+        return TransitionAborted;
+      }
+
+      if (!evt.retry) {
+        return null;
+      }
+
+      // Allow the handler to return a promise to defer state lookup retry
+      if (options.$retry) {
+        $urlRouter.update();
+        return TransitionFailed;
+      }
+      var retryTransition = $state.transition = $q.when(evt.retry);
+
+      retryTransition.then(function() {
+        if (retryTransition !== $state.transition) return TransitionSuperseded;
+        redirect.options.$retry = true;
+        return $state.transitionTo(redirect.to, redirect.toParams, redirect.options);
+      }, function() {
+        return TransitionAborted;
+      });
+      $urlRouter.update();
+
+      return retryTransition;
+    }
+
+    root.locals = { resolve: null, globals: { $stateParams: {} } };
+
+    $state = {
+      params: {},
+      current: root.self,
+      $current: root,
+      transition: null
+    };
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#reload
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * A method that force reloads the current state. All resolves are re-resolved,
+     * controllers reinstantiated, and events re-fired.
+     *
+     * @example
+     * <pre>
+     * var app angular.module('app', ['ui.router']);
+     *
+     * app.controller('ctrl', function ($scope, $state) {
+     *   $scope.reload = function(){
+     *     $state.reload();
+     *   }
+     * });
+     * </pre>
+     *
+     * `reload()` is just an alias for:
+     * <pre>
+     * $state.transitionTo($state.current, $stateParams, { 
+     *   reload: true, inherit: false, notify: true
+     * });
+     * </pre>
+     *
+     * @param {string=|object=} state - A state name or a state object, which is the root of the resolves to be re-resolved.
+     * @example
+     * <pre>
+     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item' 
+     * //and current state is 'contacts.detail.item'
+     * var app angular.module('app', ['ui.router']);
+     *
+     * app.controller('ctrl', function ($scope, $state) {
+     *   $scope.reload = function(){
+     *     //will reload 'contact.detail' and 'contact.detail.item' states
+     *     $state.reload('contact.detail');
+     *   }
+     * });
+     * </pre>
+     *
+     * `reload()` is just an alias for:
+     * <pre>
+     * $state.transitionTo($state.current, $stateParams, { 
+     *   reload: true, inherit: false, notify: true
+     * });
+     * </pre>
+
+     * @returns {promise} A promise representing the state of the new transition. See
+     * {@link ui.router.state.$state#methods_go $state.go}.
+     */
+    $state.reload = function reload(state) {
+      return $state.transitionTo($state.current, $stateParams, { reload: state || true, inherit: false, notify: true});
+    };
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#go
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * Convenience method for transitioning to a new state. `$state.go` calls 
+     * `$state.transitionTo` internally but automatically sets options to 
+     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`. 
+     * This allows you to easily use an absolute or relative to path and specify 
+     * only the parameters you'd like to update (while letting unspecified parameters 
+     * inherit from the currently active ancestor states).
+     *
+     * @example
+     * <pre>
+     * var app = angular.module('app', ['ui.router']);
+     *
+     * app.controller('ctrl', function ($scope, $state) {
+     *   $scope.changeState = function () {
+     *     $state.go('contact.detail');
+     *   };
+     * });
+     * </pre>
+     * <img src='../ngdoc_assets/StateGoExamples.png'/>
+     *
+     * @param {string} to Absolute state name or relative state path. Some examples:
+     *
+     * - `$state.go('contact.detail')` - will go to the `contact.detail` state
+     * - `$state.go('^')` - will go to a parent state
+     * - `$state.go('^.sibling')` - will go to a sibling state
+     * - `$state.go('.child.grandchild')` - will go to grandchild state
+     *
+     * @param {object=} params A map of the parameters that will be sent to the state, 
+     * will populate $stateParams. Any parameters that are not specified will be inherited from currently 
+     * defined parameters. This allows, for example, going to a sibling state that shares parameters
+     * specified in a parent state. Parameter inheritance only works between common ancestor states, I.e.
+     * transitioning to a sibling will get you the parameters for all parents, transitioning to a child
+     * will get you all current parameters, etc.
+     * @param {object=} options Options object. The options are:
+     *
+     * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
+     *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
+     * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
+     *    defines which state to be relative from.
+     * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
+     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params 
+     *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
+     *    use this when you want to force a reload when *everything* is the same, including search params.
+     *
+     * @returns {promise} A promise representing the state of the new transition.
+     *
+     * Possible success values:
+     *
+     * - $state.current
+     *
+     * <br/>Possible rejection values:
+     *
+     * - 'transition superseded' - when a newer transition has been started after this one
+     * - 'transition prevented' - when `event.preventDefault()` has been called in a `$stateChangeStart` listener
+     * - 'transition aborted' - when `event.preventDefault()` has been called in a `$stateNotFound` listener or
+     *   when a `$stateNotFound` `event.retry` promise errors.
+     * - 'transition failed' - when a state has been unsuccessfully found after 2 tries.
+     * - *resolve error* - when an error has occurred with a `resolve`
+     *
+     */
+    $state.go = function go(to, params, options) {
+      return $state.transitionTo(to, params, extend({ inherit: true, relative: $state.$current }, options));
+    };
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#transitionTo
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * Low-level method for transitioning to a new state. {@link ui.router.state.$state#methods_go $state.go}
+     * uses `transitionTo` internally. `$state.go` is recommended in most situations.
+     *
+     * @example
+     * <pre>
+     * var app = angular.module('app', ['ui.router']);
+     *
+     * app.controller('ctrl', function ($scope, $state) {
+     *   $scope.changeState = function () {
+     *     $state.transitionTo('contact.detail');
+     *   };
+     * });
+     * </pre>
+     *
+     * @param {string} to State name.
+     * @param {object=} toParams A map of the parameters that will be sent to the state,
+     * will populate $stateParams.
+     * @param {object=} options Options object. The options are:
+     *
+     * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
+     *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
+     * - **`inherit`** - {boolean=false}, If `true` will inherit url parameters from current url.
+     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'), 
+     *    defines which state to be relative from.
+     * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
+     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params 
+     *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
+     *    use this when you want to force a reload when *everything* is the same, including search params.
+     *    if String, then will reload the state with the name given in reload, and any children.
+     *    if Object, then a stateObj is expected, will reload the state found in stateObj, and any children.
+     *
+     * @returns {promise} A promise representing the state of the new transition. See
+     * {@link ui.router.state.$state#methods_go $state.go}.
+     */
+    $state.transitionTo = function transitionTo(to, toParams, options) {
+      toParams = toParams || {};
+      options = extend({
+        location: true, inherit: false, relative: null, notify: true, reload: false, $retry: false
+      }, options || {});
+
+      var from = $state.$current, fromParams = $state.params, fromPath = from.path;
+      var evt, toState = findState(to, options.relative);
+
+      // Store the hash param for later (since it will be stripped out by various methods)
+      var hash = toParams['#'];
+
+      if (!isDefined(toState)) {
+        var redirect = { to: to, toParams: toParams, options: options };
+        var redirectResult = handleRedirect(redirect, from.self, fromParams, options);
+
+        if (redirectResult) {
+          return redirectResult;
+        }
+
+        // Always retry once if the $stateNotFound was not prevented
+        // (handles either redirect changed or state lazy-definition)
+        to = redirect.to;
+        toParams = redirect.toParams;
+        options = redirect.options;
+        toState = findState(to, options.relative);
+
+        if (!isDefined(toState)) {
+          if (!options.relative) throw new Error("No such state '" + to + "'");
+          throw new Error("Could not resolve '" + to + "' from state '" + options.relative + "'");
+        }
+      }
+      if (toState[abstractKey]) throw new Error("Cannot transition to abstract state '" + to + "'");
+      if (options.inherit) toParams = inheritParams($stateParams, toParams || {}, $state.$current, toState);
+      if (!toState.params.$$validates(toParams)) return TransitionFailed;
+
+      toParams = toState.params.$$values(toParams);
+      to = toState;
+
+      var toPath = to.path;
+
+      // Starting from the root of the path, keep all levels that haven't changed
+      var keep = 0, state = toPath[keep], locals = root.locals, toLocals = [];
+
+      if (!options.reload) {
+        while (state && state === fromPath[keep] && state.ownParams.$$equals(toParams, fromParams)) {
+          locals = toLocals[keep] = state.locals;
+          keep++;
+          state = toPath[keep];
+        }
+      } else if (isString(options.reload) || isObject(options.reload)) {
+        if (isObject(options.reload) && !options.reload.name) {
+          throw new Error('Invalid reload state object');
+        }
+        
+        var reloadState = options.reload === true ? fromPath[0] : findState(options.reload);
+        if (options.reload && !reloadState) {
+          throw new Error("No such reload state '" + (isString(options.reload) ? options.reload : options.reload.name) + "'");
+        }
+
+        while (state && state === fromPath[keep] && state !== reloadState) {
+          locals = toLocals[keep] = state.locals;
+          keep++;
+          state = toPath[keep];
+        }
+      }
+
+      // If we're going to the same state and all locals are kept, we've got nothing to do.
+      // But clear 'transition', as we still want to cancel any other pending transitions.
+      // TODO: We may not want to bump 'transition' if we're called from a location change
+      // that we've initiated ourselves, because we might accidentally abort a legitimate
+      // transition initiated from code?
+      if (shouldSkipReload(to, toParams, from, fromParams, locals, options)) {
+        if (hash) toParams['#'] = hash;
+        $state.params = toParams;
+        copy($state.params, $stateParams);
+        if (options.location && to.navigable && to.navigable.url) {
+          $urlRouter.push(to.navigable.url, toParams, {
+            $$avoidResync: true, replace: options.location === 'replace'
+          });
+          $urlRouter.update(true);
+        }
+        $state.transition = null;
+        return $q.when($state.current);
+      }
+
+      // Filter parameters before we pass them to event handlers etc.
+      toParams = filterByKeys(to.params.$$keys(), toParams || {});
+
+      // Broadcast start event and cancel the transition if requested
+      if (options.notify) {
+        /**
+         * @ngdoc event
+         * @name ui.router.state.$state#$stateChangeStart
+         * @eventOf ui.router.state.$state
+         * @eventType broadcast on root scope
+         * @description
+         * Fired when the state transition **begins**. You can use `event.preventDefault()`
+         * to prevent the transition from happening and then the transition promise will be
+         * rejected with a `'transition prevented'` value.
+         *
+         * @param {Object} event Event object.
+         * @param {State} toState The state being transitioned to.
+         * @param {Object} toParams The params supplied to the `toState`.
+         * @param {State} fromState The current state, pre-transition.
+         * @param {Object} fromParams The params supplied to the `fromState`.
+         *
+         * @example
+         *
+         * <pre>
+         * $rootScope.$on('$stateChangeStart',
+         * function(event, toState, toParams, fromState, fromParams){
+         *     event.preventDefault();
+         *     // transitionTo() promise will be rejected with
+         *     // a 'transition prevented' error
+         * })
+         * </pre>
+         */
+        if ($rootScope.$broadcast('$stateChangeStart', to.self, toParams, from.self, fromParams).defaultPrevented) {
+          $rootScope.$broadcast('$stateChangeCancel', to.self, toParams, from.self, fromParams);
+          $urlRouter.update();
+          return TransitionPrevented;
+        }
+      }
+
+      // Resolve locals for the remaining states, but don't update any global state just
+      // yet -- if anything fails to resolve the current state needs to remain untouched.
+      // We also set up an inheritance chain for the locals here. This allows the view directive
+      // to quickly look up the correct definition for each view in the current state. Even
+      // though we create the locals object itself outside resolveState(), it is initially
+      // empty and gets filled asynchronously. We need to keep track of the promise for the
+      // (fully resolved) current locals, and pass this down the chain.
+      var resolved = $q.when(locals);
+
+      for (var l = keep; l < toPath.length; l++, state = toPath[l]) {
+        locals = toLocals[l] = inherit(locals);
+        resolved = resolveState(state, toParams, state === to, resolved, locals, options);
+      }
+
+      // Once everything is resolved, we are ready to perform the actual transition
+      // and return a promise for the new state. We also keep track of what the
+      // current promise is, so that we can detect overlapping transitions and
+      // keep only the outcome of the last transition.
+      var transition = $state.transition = resolved.then(function () {
+        var l, entering, exiting;
+
+        if ($state.transition !== transition) return TransitionSuperseded;
+
+        // Exit 'from' states not kept
+        for (l = fromPath.length - 1; l >= keep; l--) {
+          exiting = fromPath[l];
+          if (exiting.self.onExit) {
+            $injector.invoke(exiting.self.onExit, exiting.self, exiting.locals.globals);
+          }
+          exiting.locals = null;
+        }
+
+        // Enter 'to' states not kept
+        for (l = keep; l < toPath.length; l++) {
+          entering = toPath[l];
+          entering.locals = toLocals[l];
+          if (entering.self.onEnter) {
+            $injector.invoke(entering.self.onEnter, entering.self, entering.locals.globals);
+          }
+        }
+
+        // Re-add the saved hash before we start returning things
+        if (hash) toParams['#'] = hash;
+
+        // Run it again, to catch any transitions in callbacks
+        if ($state.transition !== transition) return TransitionSuperseded;
+
+        // Update globals in $state
+        $state.$current = to;
+        $state.current = to.self;
+        $state.params = toParams;
+        copy($state.params, $stateParams);
+        $state.transition = null;
+
+        if (options.location && to.navigable) {
+          $urlRouter.push(to.navigable.url, to.navigable.locals.globals.$stateParams, {
+            $$avoidResync: true, replace: options.location === 'replace'
+          });
+        }
+
+        if (options.notify) {
+        /**
+         * @ngdoc event
+         * @name ui.router.state.$state#$stateChangeSuccess
+         * @eventOf ui.router.state.$state
+         * @eventType broadcast on root scope
+         * @description
+         * Fired once the state transition is **complete**.
+         *
+         * @param {Object} event Event object.
+         * @param {State} toState The state being transitioned to.
+         * @param {Object} toParams The params supplied to the `toState`.
+         * @param {State} fromState The current state, pre-transition.
+         * @param {Object} fromParams The params supplied to the `fromState`.
+         */
+          $rootScope.$broadcast('$stateChangeSuccess', to.self, toParams, from.self, fromParams);
+        }
+        $urlRouter.update(true);
+
+        return $state.current;
+      }, function (error) {
+        if ($state.transition !== transition) return TransitionSuperseded;
+
+        $state.transition = null;
+        /**
+         * @ngdoc event
+         * @name ui.router.state.$state#$stateChangeError
+         * @eventOf ui.router.state.$state
+         * @eventType broadcast on root scope
+         * @description
+         * Fired when an **error occurs** during transition. It's important to note that if you
+         * have any errors in your resolve functions (javascript errors, non-existent services, etc)
+         * they will not throw traditionally. You must listen for this $stateChangeError event to
+         * catch **ALL** errors.
+         *
+         * @param {Object} event Event object.
+         * @param {State} toState The state being transitioned to.
+         * @param {Object} toParams The params supplied to the `toState`.
+         * @param {State} fromState The current state, pre-transition.
+         * @param {Object} fromParams The params supplied to the `fromState`.
+         * @param {Error} error The resolve error object.
+         */
+        evt = $rootScope.$broadcast('$stateChangeError', to.self, toParams, from.self, fromParams, error);
+
+        if (!evt.defaultPrevented) {
+            $urlRouter.update();
+        }
+
+        return $q.reject(error);
+      });
+
+      return transition;
+    };
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#is
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * Similar to {@link ui.router.state.$state#methods_includes $state.includes},
+     * but only checks for the full state name. If params is supplied then it will be
+     * tested for strict equality against the current active params object, so all params
+     * must match with none missing and no extras.
+     *
+     * @example
+     * <pre>
+     * $state.$current.name = 'contacts.details.item';
+     *
+     * // absolute name
+     * $state.is('contact.details.item'); // returns true
+     * $state.is(contactDetailItemStateObject); // returns true
+     *
+     * // relative name (. and ^), typically from a template
+     * // E.g. from the 'contacts.details' template
+     * <div ng-class="{highlighted: $state.is('.item')}">Item</div>
+     * </pre>
+     *
+     * @param {string|object} stateOrName The state name (absolute or relative) or state object you'd like to check.
+     * @param {object=} params A param object, e.g. `{sectionId: section.id}`, that you'd like
+     * to test against the current active state.
+     * @param {object=} options An options object.  The options are:
+     *
+     * - **`relative`** - {string|object} -  If `stateOrName` is a relative state name and `options.relative` is set, .is will
+     * test relative to `options.relative` state (or name).
+     *
+     * @returns {boolean} Returns true if it is the state.
+     */
+    $state.is = function is(stateOrName, params, options) {
+      options = extend({ relative: $state.$current }, options || {});
+      var state = findState(stateOrName, options.relative);
+
+      if (!isDefined(state)) { return undefined; }
+      if ($state.$current !== state) { return false; }
+      return params ? equalForKeys(state.params.$$values(params), $stateParams) : true;
+    };
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#includes
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * A method to determine if the current active state is equal to or is the child of the
+     * state stateName. If any params are passed then they will be tested for a match as well.
+     * Not all the parameters need to be passed, just the ones you'd like to test for equality.
+     *
+     * @example
+     * Partial and relative names
+     * <pre>
+     * $state.$current.name = 'contacts.details.item';
+     *
+     * // Using partial names
+     * $state.includes("contacts"); // returns true
+     * $state.includes("contacts.details"); // returns true
+     * $state.includes("contacts.details.item"); // returns true
+     * $state.includes("contacts.list"); // returns false
+     * $state.includes("about"); // returns false
+     *
+     * // Using relative names (. and ^), typically from a template
+     * // E.g. from the 'contacts.details' template
+     * <div ng-class="{highlighted: $state.includes('.item')}">Item</div>
+     * </pre>
+     *
+     * Basic globbing patterns
+     * <pre>
+     * $state.$current.name = 'contacts.details.item.url';
+     *
+     * $state.includes("*.details.*.*"); // returns true
+     * $state.includes("*.details.**"); // returns true
+     * $state.includes("**.item.**"); // returns true
+     * $state.includes("*.details.item.url"); // returns true
+     * $state.includes("*.details.*.url"); // returns true
+     * $state.includes("*.details.*"); // returns false
+     * $state.includes("item.**"); // returns false
+     * </pre>
+     *
+     * @param {string} stateOrName A partial name, relative name, or glob pattern
+     * to be searched for within the current state name.
+     * @param {object=} params A param object, e.g. `{sectionId: section.id}`,
+     * that you'd like to test against the current active state.
+     * @param {object=} options An options object.  The options are:
+     *
+     * - **`relative`** - {string|object=} -  If `stateOrName` is a relative state reference and `options.relative` is set,
+     * .includes will test relative to `options.relative` state (or name).
+     *
+     * @returns {boolean} Returns true if it does include the state
+     */
+    $state.includes = function includes(stateOrName, params, options) {
+      options = extend({ relative: $state.$current }, options || {});
+      if (isString(stateOrName) && isGlob(stateOrName)) {
+        if (!doesStateMatchGlob(stateOrName)) {
+          return false;
+        }
+        stateOrName = $state.$current.name;
+      }
+
+      var state = findState(stateOrName, options.relative);
+      if (!isDefined(state)) { return undefined; }
+      if (!isDefined($state.$current.includes[state.name])) { return false; }
+      return params ? equalForKeys(state.params.$$values(params), $stateParams, objectKeys(params)) : true;
+    };
+
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#href
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * A url generation method that returns the compiled url for the given state populated with the given params.
+     *
+     * @example
+     * <pre>
+     * expect($state.href("about.person", { person: "bob" })).toEqual("/about/bob");
+     * </pre>
+     *
+     * @param {string|object} stateOrName The state name or state object you'd like to generate a url from.
+     * @param {object=} params An object of parameter values to fill the state's required parameters.
+     * @param {object=} options Options object. The options are:
+     *
+     * - **`lossy`** - {boolean=true} -  If true, and if there is no url associated with the state provided in the
+     *    first parameter, then the constructed href url will be built from the first navigable ancestor (aka
+     *    ancestor with a valid url).
+     * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
+     *    defines which state to be relative from.
+     * - **`absolute`** - {boolean=false},  If true will generate an absolute url, e.g. "http://www.example.com/fullurl".
+     * 
+     * @returns {string} compiled state url
+     */
+    $state.href = function href(stateOrName, params, options) {
+      options = extend({
+        lossy:    true,
+        inherit:  true,
+        absolute: false,
+        relative: $state.$current
+      }, options || {});
+
+      var state = findState(stateOrName, options.relative);
+
+      if (!isDefined(state)) return null;
+      if (options.inherit) params = inheritParams($stateParams, params || {}, $state.$current, state);
+      
+      var nav = (state && options.lossy) ? state.navigable : state;
+
+      if (!nav || nav.url === undefined || nav.url === null) {
+        return null;
+      }
+      return $urlRouter.href(nav.url, filterByKeys(state.params.$$keys().concat('#'), params || {}), {
+        absolute: options.absolute
+      });
+    };
+
+    /**
+     * @ngdoc function
+     * @name ui.router.state.$state#get
+     * @methodOf ui.router.state.$state
+     *
+     * @description
+     * Returns the state configuration object for any specific state or all states.
+     *
+     * @param {string|object=} stateOrName (absolute or relative) If provided, will only get the config for
+     * the requested state. If not provided, returns an array of ALL state configs.
+     * @param {string|object=} context When stateOrName is a relative state reference, the state will be retrieved relative to context.
+     * @returns {Object|Array} State configuration object or array of all objects.
+     */
+    $state.get = function (stateOrName, context) {
+      if (arguments.length === 0) return map(objectKeys(states), function(name) { return states[name].self; });
+      var state = findState(stateOrName, context || $state.$current);
+      return (state && state.self) ? state.self : null;
+    };
+
+    function resolveState(state, params, paramsAreFiltered, inherited, dst, options) {
+      // Make a restricted $stateParams with only the parameters that apply to this state if
+      // necessary. In addition to being available to the controller and onEnter/onExit callbacks,
+      // we also need $stateParams to be available for any $injector calls we make during the
+      // dependency resolution process.
+      var $stateParams = (paramsAreFiltered) ? params : filterByKeys(state.params.$$keys(), params);
+      var locals = { $stateParams: $stateParams };
+
+      // Resolve 'global' dependencies for the state, i.e. those not specific to a view.
+      // We're also including $stateParams in this; that way the parameters are restricted
+      // to the set that should be visible to the state, and are independent of when we update
+      // the global $state and $stateParams values.
+      dst.resolve = $resolve.resolve(state.resolve, locals, dst.resolve, state);
+      var promises = [dst.resolve.then(function (globals) {
+        dst.globals = globals;
+      })];
+      if (inherited) promises.push(inherited);
+
+      function resolveViews() {
+        var viewsPromises = [];
+
+        // Resolve template and dependencies for all views.
+        forEach(state.views, function (view, name) {
+          var injectables = (view.resolve && view.resolve !== state.resolve ? view.resolve : {});
+          injectables.$template = [ function () {
+            return $view.load(name, { view: view, locals: dst.globals, params: $stateParams, notify: options.notify }) || '';
+          }];
+
+          viewsPromises.push($resolve.resolve(injectables, dst.globals, dst.resolve, state).then(function (result) {
+            // References to the controller (only instantiated at link time)
+            if (isFunction(view.controllerProvider) || isArray(view.controllerProvider)) {
+              var injectLocals = angular.extend({}, injectables, dst.globals);
+              result.$$controller = $injector.invoke(view.controllerProvider, null, injectLocals);
+            } else {
+              result.$$controller = view.controller;
+            }
+            // Provide access to the state itself for internal use
+            result.$$state = state;
+            result.$$controllerAs = view.controllerAs;
+            dst[name] = result;
+          }));
+        });
+
+        return $q.all(viewsPromises).then(function(){
+          return dst.globals;
+        });
+      }
+
+      // Wait for all the promises and then return the activation object
+      return $q.all(promises).then(resolveViews).then(function (values) {
+        return dst;
+      });
+    }
+
+    return $state;
+  }
+
+  function shouldSkipReload(to, toParams, from, fromParams, locals, options) {
+    // Return true if there are no differences in non-search (path/object) params, false if there are differences
+    function nonSearchParamsEqual(fromAndToState, fromParams, toParams) {
+      // Identify whether all the parameters that differ between `fromParams` and `toParams` were search params.
+      function notSearchParam(key) {
+        return fromAndToState.params[key].location != "search";
+      }
+      var nonQueryParamKeys = fromAndToState.params.$$keys().filter(notSearchParam);
+      var nonQueryParams = pick.apply({}, [fromAndToState.params].concat(nonQueryParamKeys));
+      var nonQueryParamSet = new $$UMFP.ParamSet(nonQueryParams);
+      return nonQueryParamSet.$$equals(fromParams, toParams);
+    }
+
+    // If reload was not explicitly requested
+    // and we're transitioning to the same state we're already in
+    // and    the locals didn't change
+    //     or they changed in a way that doesn't merit reloading
+    //        (reloadOnParams:false, or reloadOnSearch.false and only search params changed)
+    // Then return true.
+    if (!options.reload && to === from &&
+      (locals === from.locals || (to.self.reloadOnSearch === false && nonSearchParamsEqual(from, fromParams, toParams)))) {
+      return true;
+    }
+  }
+}
+
+angular.module('ui.router.state')
+  .value('$stateParams', {})
+  .provider('$state', $StateProvider);
+
+
+$ViewProvider.$inject = [];
+function $ViewProvider() {
+
+  this.$get = $get;
+  /**
+   * @ngdoc object
+   * @name ui.router.state.$view
+   *
+   * @requires ui.router.util.$templateFactory
+   * @requires $rootScope
+   *
+   * @description
+   *
+   */
+  $get.$inject = ['$rootScope', '$templateFactory'];
+  function $get(   $rootScope,   $templateFactory) {
+    return {
+      // $view.load('full.viewName', { template: ..., controller: ..., resolve: ..., async: false, params: ... })
+      /**
+       * @ngdoc function
+       * @name ui.router.state.$view#load
+       * @methodOf ui.router.state.$view
+       *
+       * @description
+       *
+       * @param {string} name name
+       * @param {object} options option object.
+       */
+      load: function load(name, options) {
+        var result, defaults = {
+          template: null, controller: null, view: null, locals: null, notify: true, async: true, params: {}
+        };
+        options = extend(defaults, options);
+
+        if (options.view) {
+          result = $templateFactory.fromConfig(options.view, options.params, options.locals);
+        }
+        if (result && options.notify) {
+        /**
+         * @ngdoc event
+         * @name ui.router.state.$state#$viewContentLoading
+         * @eventOf ui.router.state.$view
+         * @eventType broadcast on root scope
+         * @description
+         *
+         * Fired once the view **begins loading**, *before* the DOM is rendered.
+         *
+         * @param {Object} event Event object.
+         * @param {Object} viewConfig The view config properties (template, controller, etc).
+         *
+         * @example
+         *
+         * <pre>
+         * $scope.$on('$viewContentLoading',
+         * function(event, viewConfig){
+         *     // Access to all the view config properties.
+         *     // and one special property 'targetView'
+         *     // viewConfig.targetView
+         * });
+         * </pre>
+         */
+          $rootScope.$broadcast('$viewContentLoading', options);
+        }
+        return result;
+      }
+    };
+  }
+}
+
+angular.module('ui.router.state').provider('$view', $ViewProvider);
+
+/**
+ * @ngdoc object
+ * @name ui.router.state.$uiViewScrollProvider
+ *
+ * @description
+ * Provider that returns the {@link ui.router.state.$uiViewScroll} service function.
+ */
+function $ViewScrollProvider() {
+
+  var useAnchorScroll = false;
+
+  /**
+   * @ngdoc function
+   * @name ui.router.state.$uiViewScrollProvider#useAnchorScroll
+   * @methodOf ui.router.state.$uiViewScrollProvider
+   *
+   * @description
+   * Reverts back to using the core [`$anchorScroll`](http://docs.angularjs.org/api/ng.$anchorScroll) service for
+   * scrolling based on the url anchor.
+   */
+  this.useAnchorScroll = function () {
+    useAnchorScroll = true;
+  };
+
+  /**
+   * @ngdoc object
+   * @name ui.router.state.$uiViewScroll
+   *
+   * @requires $anchorScroll
+   * @requires $timeout
+   *
+   * @description
+   * When called with a jqLite element, it scrolls the element into view (after a
+   * `$timeout` so the DOM has time to refresh).
+   *
+   * If you prefer to rely on `$anchorScroll` to scroll the view to the anchor,
+   * this can be enabled by calling {@link ui.router.state.$uiViewScrollProvider#methods_useAnchorScroll `$uiViewScrollProvider.useAnchorScroll()`}.
+   */
+  this.$get = ['$anchorScroll', '$timeout', function ($anchorScroll, $timeout) {
+    if (useAnchorScroll) {
+      return $anchorScroll;
+    }
+
+    return function ($element) {
+      return $timeout(function () {
+        $element[0].scrollIntoView();
+      }, 0, false);
+    };
+  }];
+}
+
+angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider);
+
+/**
+ * @ngdoc directive
+ * @name ui.router.state.directive:ui-view
+ *
+ * @requires ui.router.state.$state
+ * @requires $compile
+ * @requires $controller
+ * @requires $injector
+ * @requires ui.router.state.$uiViewScroll
+ * @requires $document
+ *
+ * @restrict ECA
+ *
+ * @description
+ * The ui-view directive tells $state where to place your templates.
+ *
+ * @param {string=} name A view name. The name should be unique amongst the other views in the
+ * same state. You can have views of the same name that live in different states.
+ *
+ * @param {string=} autoscroll It allows you to set the scroll behavior of the browser window
+ * when a view is populated. By default, $anchorScroll is overridden by ui-router's custom scroll
+ * service, {@link ui.router.state.$uiViewScroll}. This custom service let's you
+ * scroll ui-view elements into view when they are populated during a state activation.
+ *
+ * *Note: To revert back to old [`$anchorScroll`](http://docs.angularjs.org/api/ng.$anchorScroll)
+ * functionality, call `$uiViewScrollProvider.useAnchorScroll()`.*
+ *
+ * @param {string=} onload Expression to evaluate whenever the view updates.
+ * 
+ * @example
+ * A view can be unnamed or named. 
+ * <pre>
+ * <!-- Unnamed -->
+ * <div ui-view></div> 
+ * 
+ * <!-- Named -->
+ * <div ui-view="viewName"></div>
+ * </pre>
+ *
+ * You can only have one unnamed view within any template (or root html). If you are only using a 
+ * single view and it is unnamed then you can populate it like so:
+ * <pre>
+ * <div ui-view></div> 
+ * $stateProvider.state("home", {
+ *   template: "<h1>HELLO!</h1>"
+ * })
+ * </pre>
+ * 
+ * The above is a convenient shortcut equivalent to specifying your view explicitly with the {@link ui.router.state.$stateProvider#views `views`}
+ * config property, by name, in this case an empty name:
+ * <pre>
+ * $stateProvider.state("home", {
+ *   views: {
+ *     "": {
+ *       template: "<h1>HELLO!</h1>"
+ *     }
+ *   }    
+ * })
+ * </pre>
+ * 
+ * But typically you'll only use the views property if you name your view or have more than one view 
+ * in the same template. There's not really a compelling reason to name a view if its the only one, 
+ * but you could if you wanted, like so:
+ * <pre>
+ * <div ui-view="main"></div>
+ * </pre> 
+ * <pre>
+ * $stateProvider.state("home", {
+ *   views: {
+ *     "main": {
+ *       template: "<h1>HELLO!</h1>"
+ *     }
+ *   }    
+ * })
+ * </pre>
+ * 
+ * Really though, you'll use views to set up multiple views:
+ * <pre>
+ * <div ui-view></div>
+ * <div ui-view="chart"></div> 
+ * <div ui-view="data"></div> 
+ * </pre>
+ * 
+ * <pre>
+ * $stateProvider.state("home", {
+ *   views: {
+ *     "": {
+ *       template: "<h1>HELLO!</h1>"
+ *     },
+ *     "chart": {
+ *       template: "<chart_thing/>"
+ *     },
+ *     "data": {
+ *       template: "<data_thing/>"
+ *     }
+ *   }    
+ * })
+ * </pre>
+ *
+ * Examples for `autoscroll`:
+ *
+ * <pre>
+ * <!-- If autoscroll present with no expression,
+ *      then scroll ui-view into view -->
+ * <ui-view autoscroll/>
+ *
+ * <!-- If autoscroll present with valid expression,
+ *      then scroll ui-view into view if expression evaluates to true -->
+ * <ui-view autoscroll='true'/>
+ * <ui-view autoscroll='false'/>
+ * <ui-view autoscroll='scopeVariable'/>
+ * </pre>
+ */
+$ViewDirective.$inject = ['$state', '$injector', '$uiViewScroll', '$interpolate'];
+function $ViewDirective(   $state,   $injector,   $uiViewScroll,   $interpolate) {
+
+  function getService() {
+    return ($injector.has) ? function(service) {
+      return $injector.has(service) ? $injector.get(service) : null;
+    } : function(service) {
+      try {
+        return $injector.get(service);
+      } catch (e) {
+        return null;
+      }
+    };
+  }
+
+  var service = getService(),
+      $animator = service('$animator'),
+      $animate = service('$animate');
+
+  // Returns a set of DOM manipulation functions based on which Angular version
+  // it should use
+  function getRenderer(attrs, scope) {
+    var statics = function() {
+      return {
+        enter: function (element, target, cb) { target.after(element); cb(); },
+        leave: function (element, cb) { element.remove(); cb(); }
+      };
+    };
+
+    if ($animate) {
+      return {
+        enter: function(element, target, cb) {
+          var promise = $animate.enter(element, null, target, cb);
+          if (promise && promise.then) promise.then(cb);
+        },
+        leave: function(element, cb) {
+          var promise = $animate.leave(element, cb);
+          if (promise && promise.then) promise.then(cb);
+        }
+      };
+    }
+
+    if ($animator) {
+      var animate = $animator && $animator(scope, attrs);
+
+      return {
+        enter: function(element, target, cb) {animate.enter(element, null, target); cb(); },
+        leave: function(element, cb) { animate.leave(element); cb(); }
+      };
+    }
+
+    return statics();
+  }
+
+  var directive = {
+    restrict: 'ECA',
+    terminal: true,
+    priority: 400,
+    transclude: 'element',
+    compile: function (tElement, tAttrs, $transclude) {
+      return function (scope, $element, attrs) {
+        var previousEl, currentEl, currentScope, latestLocals,
+            onloadExp     = attrs.onload || '',
+            autoScrollExp = attrs.autoscroll,
+            renderer      = getRenderer(attrs, scope);
+
+        scope.$on('$stateChangeSuccess', function() {
+          updateView(false);
+        });
+        scope.$on('$viewContentLoading', function() {
+          updateView(false);
+        });
+
+        updateView(true);
+
+        function cleanupLastView() {
+          if (previousEl) {
+            previousEl.remove();
+            previousEl = null;
+          }
+
+          if (currentScope) {
+            currentScope.$destroy();
+            currentScope = null;
+          }
+
+          if (currentEl) {
+            renderer.leave(currentEl, function() {
+              previousEl = null;
+            });
+
+            previousEl = currentEl;
+            currentEl = null;
+          }
+        }
+
+        function updateView(firstTime) {
+          var newScope,
+              name            = getUiViewName(scope, attrs, $element, $interpolate),
+              previousLocals  = name && $state.$current && $state.$current.locals[name];
+
+          if (!firstTime && previousLocals === latestLocals) return; // nothing to do
+          newScope = scope.$new();
+          latestLocals = $state.$current.locals[name];
+
+          var clone = $transclude(newScope, function(clone) {
+            renderer.enter(clone, $element, function onUiViewEnter() {
+              if(currentScope) {
+                currentScope.$emit('$viewContentAnimationEnded');
+              }
+
+              if (angular.isDefined(autoScrollExp) && !autoScrollExp || scope.$eval(autoScrollExp)) {
+                $uiViewScroll(clone);
+              }
+            });
+            cleanupLastView();
+          });
+
+          currentEl = clone;
+          currentScope = newScope;
+          /**
+           * @ngdoc event
+           * @name ui.router.state.directive:ui-view#$viewContentLoaded
+           * @eventOf ui.router.state.directive:ui-view
+           * @eventType emits on ui-view directive scope
+           * @description           *
+           * Fired once the view is **loaded**, *after* the DOM is rendered.
+           *
+           * @param {Object} event Event object.
+           */
+          currentScope.$emit('$viewContentLoaded');
+          currentScope.$eval(onloadExp);
+        }
+      };
+    }
+  };
+
+  return directive;
+}
+
+$ViewDirectiveFill.$inject = ['$compile', '$controller', '$state', '$interpolate'];
+function $ViewDirectiveFill (  $compile,   $controller,   $state,   $interpolate) {
+  return {
+    restrict: 'ECA',
+    priority: -400,
+    compile: function (tElement) {
+      var initial = tElement.html();
+      return function (scope, $element, attrs) {
+        var current = $state.$current,
+            name = getUiViewName(scope, attrs, $element, $interpolate),
+            locals  = current && current.locals[name];
+
+        if (! locals) {
+          return;
+        }
+
+        $element.data('$uiView', { name: name, state: locals.$$state });
+        $element.html(locals.$template ? locals.$template : initial);
+
+        var link = $compile($element.contents());
+
+        if (locals.$$controller) {
+          locals.$scope = scope;
+          locals.$element = $element;
+          var controller = $controller(locals.$$controller, locals);
+          if (locals.$$controllerAs) {
+            scope[locals.$$controllerAs] = controller;
+          }
+          $element.data('$ngControllerController', controller);
+          $element.children().data('$ngControllerController', controller);
+        }
+
+        link(scope);
+      };
+    }
+  };
+}
+
+/**
+ * Shared ui-view code for both directives:
+ * Given scope, element, and its attributes, return the view's name
+ */
+function getUiViewName(scope, attrs, element, $interpolate) {
+  var name = $interpolate(attrs.uiView || attrs.name || '')(scope);
+  var inherited = element.inheritedData('$uiView');
+  return name.indexOf('@') >= 0 ?  name :  (name + '@' + (inherited ? inherited.state.name : ''));
+}
+
+angular.module('ui.router.state').directive('uiView', $ViewDirective);
+angular.module('ui.router.state').directive('uiView', $ViewDirectiveFill);
+
+function parseStateRef(ref, current) {
+  var preparsed = ref.match(/^\s*({[^}]*})\s*$/), parsed;
+  if (preparsed) ref = current + '(' + preparsed[1] + ')';
+  parsed = ref.replace(/\n/g, " ").match(/^([^(]+?)\s*(\((.*)\))?$/);
+  if (!parsed || parsed.length !== 4) throw new Error("Invalid state ref '" + ref + "'");
+  return { state: parsed[1], paramExpr: parsed[3] || null };
+}
+
+function stateContext(el) {
+  var stateData = el.parent().inheritedData('$uiView');
+
+  if (stateData && stateData.state && stateData.state.name) {
+    return stateData.state;
+  }
+}
+
+/**
+ * @ngdoc directive
+ * @name ui.router.state.directive:ui-sref
+ *
+ * @requires ui.router.state.$state
+ * @requires $timeout
+ *
+ * @restrict A
+ *
+ * @description
+ * A directive that binds a link (`<a>` tag) to a state. If the state has an associated 
+ * URL, the directive will automatically generate & update the `href` attribute via 
+ * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking 
+ * the link will trigger a state transition with optional parameters. 
+ *
+ * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be 
+ * handled natively by the browser.
+ *
+ * You can also use relative state paths within ui-sref, just like the relative 
+ * paths passed to `$state.go()`. You just need to be aware that the path is relative
+ * to the state that the link lives in, in other words the state that loaded the 
+ * template containing the link.
+ *
+ * You can specify options to pass to {@link ui.router.state.$state#go $state.go()}
+ * using the `ui-sref-opts` attribute. Options are restricted to `location`, `inherit`,
+ * and `reload`.
+ *
+ * @example
+ * Here's an example of how you'd use ui-sref and how it would compile. If you have the 
+ * following template:
+ * <pre>
+ * <a ui-sref="home">Home</a> | <a ui-sref="about">About</a> | <a ui-sref="{page: 2}">Next page</a>
+ * 
+ * <ul>
+ *     <li ng-repeat="contact in contacts">
+ *         <a ui-sref="contacts.detail({ id: contact.id })">{{ contact.name }}</a>
+ *     </li>
+ * </ul>
+ * </pre>
+ * 
+ * Then the compiled html would be (assuming Html5Mode is off and current state is contacts):
+ * <pre>
+ * <a href="#/home" ui-sref="home">Home</a> | <a href="#/about" ui-sref="about">About</a> | <a href="#/contacts?page=2" ui-sref="{page: 2}">Next page</a>
+ * 
+ * <ul>
+ *     <li ng-repeat="contact in contacts">
+ *         <a href="#/contacts/1" ui-sref="contacts.detail({ id: contact.id })">Joe</a>
+ *     </li>
+ *     <li ng-repeat="contact in contacts">
+ *         <a href="#/contacts/2" ui-sref="contacts.detail({ id: contact.id })">Alice</a>
+ *     </li>
+ *     <li ng-repeat="contact in contacts">
+ *         <a href="#/contacts/3" ui-sref="contacts.detail({ id: contact.id })">Bob</a>
+ *     </li>
+ * </ul>
+ *
+ * <a ui-sref="home" ui-sref-opts="{reload: true}">Home</a>
+ * </pre>
+ *
+ * @param {string} ui-sref 'stateName' can be any valid absolute or relative state
+ * @param {Object} ui-sref-opts options to pass to {@link ui.router.state.$state#go $state.go()}
+ */
+$StateRefDirective.$inject = ['$state', '$timeout'];
+function $StateRefDirective($state, $timeout) {
+  var allowedOptions = ['location', 'inherit', 'reload', 'absolute'];
+
+  return {
+    restrict: 'A',
+    require: ['?^uiSrefActive', '?^uiSrefActiveEq'],
+    link: function(scope, element, attrs, uiSrefActive) {
+      var ref = parseStateRef(attrs.uiSref, $state.current.name);
+      var params = null, url = null, base = stateContext(element) || $state.$current;
+      // SVGAElement does not use the href attribute, but rather the 'xlinkHref' attribute.
+      var hrefKind = Object.prototype.toString.call(element.prop('href')) === '[object SVGAnimatedString]' ?
+                 'xlink:href' : 'href';
+      var newHref = null, isAnchor = element.prop("tagName").toUpperCase() === "A";
+      var isForm = element[0].nodeName === "FORM";
+      var attr = isForm ? "action" : hrefKind, nav = true;
+
+      var options = { relative: base, inherit: true };
+      var optionsOverride = scope.$eval(attrs.uiSrefOpts) || {};
+
+      angular.forEach(allowedOptions, function(option) {
+        if (option in optionsOverride) {
+          options[option] = optionsOverride[option];
+        }
+      });
+
+      var update = function(newVal) {
+        if (newVal) params = angular.copy(newVal);
+        if (!nav) return;
+
+        newHref = $state.href(ref.state, params, options);
+
+        var activeDirective = uiSrefActive[1] || uiSrefActive[0];
+        if (activeDirective) {
+          activeDirective.$$addStateInfo(ref.state, params);
+        }
+        if (newHref === null) {
+          nav = false;
+          return false;
+        }
+        attrs.$set(attr, newHref);
+      };
+
+      if (ref.paramExpr) {
+        scope.$watch(ref.paramExpr, function(newVal, oldVal) {
+          if (newVal !== params) update(newVal);
+        }, true);
+        params = angular.copy(scope.$eval(ref.paramExpr));
+      }
+      update();
+
+      if (isForm) return;
+
+      element.bind("click", function(e) {
+        var button = e.which || e.button;
+        if ( !(button > 1 || e.ctrlKey || e.metaKey || e.shiftKey || element.attr('target')) ) {
+          // HACK: This is to allow ng-clicks to be processed before the transition is initiated:
+          var transition = $timeout(function() {
+            $state.go(ref.state, params, options);
+          });
+          e.preventDefault();
+
+          // if the state has no URL, ignore one preventDefault from the <a> directive.
+          var ignorePreventDefaultCount = isAnchor && !newHref ? 1: 0;
+          e.preventDefault = function() {
+            if (ignorePreventDefaultCount-- <= 0)
+              $timeout.cancel(transition);
+          };
+        }
+      });
+    }
+  };
+}
+
+/**
+ * @ngdoc directive
+ * @name ui.router.state.directive:ui-sref-active
+ *
+ * @requires ui.router.state.$state
+ * @requires ui.router.state.$stateParams
+ * @requires $interpolate
+ *
+ * @restrict A
+ *
+ * @description
+ * A directive working alongside ui-sref to add classes to an element when the
+ * related ui-sref directive's state is active, and removing them when it is inactive.
+ * The primary use-case is to simplify the special appearance of navigation menus
+ * relying on `ui-sref`, by having the "active" state's menu button appear different,
+ * distinguishing it from the inactive menu items.
+ *
+ * ui-sref-active can live on the same element as ui-sref or on a parent element. The first
+ * ui-sref-active found at the same level or above the ui-sref will be used.
+ *
+ * Will activate when the ui-sref's target state or any child state is active. If you
+ * need to activate only when the ui-sref target state is active and *not* any of
+ * it's children, then you will use
+ * {@link ui.router.state.directive:ui-sref-active-eq ui-sref-active-eq}
+ *
+ * @example
+ * Given the following template:
+ * <pre>
+ * <ul>
+ *   <li ui-sref-active="active" class="item">
+ *     <a href ui-sref="app.user({user: 'bilbobaggins'})">@bilbobaggins</a>
+ *   </li>
+ * </ul>
+ * </pre>
+ *
+ *
+ * When the app state is "app.user" (or any children states), and contains the state parameter "user" with value "bilbobaggins",
+ * the resulting HTML will appear as (note the 'active' class):
+ * <pre>
+ * <ul>
+ *   <li ui-sref-active="active" class="item active">
+ *     <a ui-sref="app.user({user: 'bilbobaggins'})" href="/users/bilbobaggins">@bilbobaggins</a>
+ *   </li>
+ * </ul>
+ * </pre>
+ *
+ * The class name is interpolated **once** during the directives link time (any further changes to the
+ * interpolated value are ignored).
+ *
+ * Multiple classes may be specified in a space-separated format:
+ * <pre>
+ * <ul>
+ *   <li ui-sref-active='class1 class2 class3'>
+ *     <a ui-sref="app.user">link</a>
+ *   </li>
+ * </ul>
+ * </pre>
+ */
+
+/**
+ * @ngdoc directive
+ * @name ui.router.state.directive:ui-sref-active-eq
+ *
+ * @requires ui.router.state.$state
+ * @requires ui.router.state.$stateParams
+ * @requires $interpolate
+ *
+ * @restrict A
+ *
+ * @description
+ * The same as {@link ui.router.state.directive:ui-sref-active ui-sref-active} but will only activate
+ * when the exact target state used in the `ui-sref` is active; no child states.
+ *
+ */
+$StateRefActiveDirective.$inject = ['$state', '$stateParams', '$interpolate'];
+function $StateRefActiveDirective($state, $stateParams, $interpolate) {
+  return  {
+    restrict: "A",
+    controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
+      var states = [], activeClass;
+
+      // There probably isn't much point in $observing this
+      // uiSrefActive and uiSrefActiveEq share the same directive object with some
+      // slight difference in logic routing
+      activeClass = $interpolate($attrs.uiSrefActiveEq || $attrs.uiSrefActive || '', false)($scope);
+
+      // Allow uiSref to communicate with uiSrefActive[Equals]
+      this.$$addStateInfo = function (newState, newParams) {
+        var state = $state.get(newState, stateContext($element));
+
+        states.push({
+          state: state || { name: newState },
+          params: newParams
+        });
+
+        update();
+      };
+
+      $scope.$on('$stateChangeSuccess', update);
+
+      // Update route state
+      function update() {
+        if (anyMatch()) {
+          $element.addClass(activeClass);
+        } else {
+          $element.removeClass(activeClass);
+        }
+      }
+
+      function anyMatch() {
+        for (var i = 0; i < states.length; i++) {
+          if (isMatch(states[i].state, states[i].params)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function isMatch(state, params) {
+        if (typeof $attrs.uiSrefActiveEq !== 'undefined') {
+          return $state.is(state.name, params);
+        } else {
+          return $state.includes(state.name, params);
+        }
+      }
+    }]
+  };
+}
+
+angular.module('ui.router.state')
+  .directive('uiSref', $StateRefDirective)
+  .directive('uiSrefActive', $StateRefActiveDirective)
+  .directive('uiSrefActiveEq', $StateRefActiveDirective);
+
+/**
+ * @ngdoc filter
+ * @name ui.router.state.filter:isState
+ *
+ * @requires ui.router.state.$state
+ *
+ * @description
+ * Translates to {@link ui.router.state.$state#methods_is $state.is("stateName")}.
+ */
+$IsStateFilter.$inject = ['$state'];
+function $IsStateFilter($state) {
+  var isFilter = function (state) {
+    return $state.is(state);
+  };
+  isFilter.$stateful = true;
+  return isFilter;
+}
+
+/**
+ * @ngdoc filter
+ * @name ui.router.state.filter:includedByState
+ *
+ * @requires ui.router.state.$state
+ *
+ * @description
+ * Translates to {@link ui.router.state.$state#methods_includes $state.includes('fullOrPartialStateName')}.
+ */
+$IncludedByStateFilter.$inject = ['$state'];
+function $IncludedByStateFilter($state) {
+  var includesFilter = function (state) {
+    return $state.includes(state);
+  };
+  includesFilter.$stateful = true;
+  return  includesFilter;
+}
+
+angular.module('ui.router.state')
+  .filter('isState', $IsStateFilter)
+  .filter('includedByState', $IncludedByStateFilter);
+})(window, window.angular);
+
+define("ui-router", ["angular"], function(){});
+
+/*!
+Chosen, a Select Box Enhancer for jQuery and Prototype
+by Patrick Filler for Harvest, http://getharvest.com
+
+Version 1.1.0
+Full source at https://github.com/harvesthq/chosen
+Copyright (c) 2011 Harvest http://getharvest.com
+
+MIT License, https://github.com/harvesthq/chosen/blob/master/LICENSE.md
+This file is generated by `grunt build`, do not edit it by hand.
+*/
+
+(function() {
+  var $, AbstractChosen, Chosen, SelectParser, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  SelectParser = (function() {
+    function SelectParser() {
+      this.options_index = 0;
+      this.parsed = [];
+    }
+
+    SelectParser.prototype.add_node = function(child) {
+      if (child.nodeName.toUpperCase() === "OPTGROUP") {
+        return this.add_group(child);
+      } else {
+        return this.add_option(child);
+      }
+    };
+
+    SelectParser.prototype.add_group = function(group) {
+      var group_position, option, _i, _len, _ref, _results;
+      group_position = this.parsed.length;
+      this.parsed.push({
+        array_index: group_position,
+        group: true,
+        label: this.escapeExpression(group.label),
+        children: 0,
+        disabled: group.disabled
+      });
+      _ref = group.childNodes;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        option = _ref[_i];
+        _results.push(this.add_option(option, group_position, group.disabled));
+      }
+      return _results;
+    };
+
+    SelectParser.prototype.add_option = function(option, group_position, group_disabled) {
+      if (option.nodeName.toUpperCase() === "OPTION") {
+        if (option.text !== "") {
+          if (group_position != null) {
+            this.parsed[group_position].children += 1;
+          }
+          this.parsed.push({
+            array_index: this.parsed.length,
+            options_index: this.options_index,
+            value: option.value,
+            text: option.text,
+            html: option.innerHTML,
+            selected: option.selected,
+            disabled: group_disabled === true ? group_disabled : option.disabled,
+            group_array_index: group_position,
+            classes: option.className,
+            style: option.style.cssText
+          });
+        } else {
+          this.parsed.push({
+            array_index: this.parsed.length,
+            options_index: this.options_index,
+            empty: true
+          });
+        }
+        return this.options_index += 1;
+      }
+    };
+
+    SelectParser.prototype.escapeExpression = function(text) {
+      var map, unsafe_chars;
+      if ((text == null) || text === false) {
+        return "";
+      }
+      if (!/[\&\<\>\"\'\`]/.test(text)) {
+        return text;
+      }
+      map = {
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#x27;",
+        "`": "&#x60;"
+      };
+      unsafe_chars = /&(?!\w+;)|[\<\>\"\'\`]/g;
+      return text.replace(unsafe_chars, function(chr) {
+        return map[chr] || "&amp;";
+      });
+    };
+
+    return SelectParser;
+
+  })();
+
+  SelectParser.select_to_array = function(select) {
+    var child, parser, _i, _len, _ref;
+    parser = new SelectParser();
+    _ref = select.childNodes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      child = _ref[_i];
+      parser.add_node(child);
+    }
+    return parser.parsed;
+  };
+
+  AbstractChosen = (function() {
+    function AbstractChosen(form_field, options) {
+      this.form_field = form_field;
+      this.options = options != null ? options : {};
+      if (!AbstractChosen.browser_is_supported()) {
+        return;
+      }
+      this.is_multiple = this.form_field.multiple;
+      this.set_default_text();
+      this.set_default_values();
+      this.setup();
+      this.set_up_html();
+      this.register_observers();
+    }
+
+    AbstractChosen.prototype.set_default_values = function() {
+      var _this = this;
+      this.click_test_action = function(evt) {
+        return _this.test_active_click(evt);
+      };
+      this.activate_action = function(evt) {
+        return _this.activate_field(evt);
+      };
+      this.active_field = false;
+      this.mouse_on_container = false;
+      this.results_showing = false;
+      this.result_highlighted = null;
+      this.allow_single_deselect = (this.options.allow_single_deselect != null) && (this.form_field.options[0] != null) && this.form_field.options[0].text === "" ? this.options.allow_single_deselect : false;
+      this.disable_search_threshold = this.options.disable_search_threshold || 0;
+      this.disable_search = this.options.disable_search || false;
+      this.enable_split_word_search = this.options.enable_split_word_search != null ? this.options.enable_split_word_search : true;
+      this.group_search = this.options.group_search != null ? this.options.group_search : true;
+      this.search_contains = this.options.search_contains || false;
+      this.single_backstroke_delete = this.options.single_backstroke_delete != null ? this.options.single_backstroke_delete : true;
+      this.max_selected_options = this.options.max_selected_options || Infinity;
+      this.inherit_select_classes = this.options.inherit_select_classes || false;
+      this.display_selected_options = this.options.display_selected_options != null ? this.options.display_selected_options : true;
+      return this.display_disabled_options = this.options.display_disabled_options != null ? this.options.display_disabled_options : true;
+    };
+
+    AbstractChosen.prototype.set_default_text = function() {
+      if (this.form_field.getAttribute("data-placeholder")) {
+        this.default_text = this.form_field.getAttribute("data-placeholder");
+      } else if (this.is_multiple) {
+        this.default_text = this.options.placeholder_text_multiple || this.options.placeholder_text || AbstractChosen.default_multiple_text;
+      } else {
+        this.default_text = this.options.placeholder_text_single || this.options.placeholder_text || AbstractChosen.default_single_text;
+      }
+      return this.results_none_found = this.form_field.getAttribute("data-no_results_text") || this.options.no_results_text || AbstractChosen.default_no_result_text;
+    };
+
+    AbstractChosen.prototype.mouse_enter = function() {
+      return this.mouse_on_container = true;
+    };
+
+    AbstractChosen.prototype.mouse_leave = function() {
+      return this.mouse_on_container = false;
+    };
+
+    AbstractChosen.prototype.input_focus = function(evt) {
+      var _this = this;
+      if (this.is_multiple) {
+        if (!this.active_field) {
+          return setTimeout((function() {
+            return _this.container_mousedown();
+          }), 50);
+        }
+      } else {
+        if (!this.active_field) {
+          return this.activate_field();
+        }
+      }
+    };
+
+    AbstractChosen.prototype.input_blur = function(evt) {
+      var _this = this;
+      if (!this.mouse_on_container) {
+        this.active_field = false;
+        return setTimeout((function() {
+          return _this.blur_test();
+        }), 100);
+      }
+    };
+
+    AbstractChosen.prototype.results_option_build = function(options) {
+      var content, data, _i, _len, _ref;
+      content = '';
+      _ref = this.results_data;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        data = _ref[_i];
+        if (data.group) {
+          content += this.result_add_group(data);
+        } else {
+          content += this.result_add_option(data);
+        }
+        if (options != null ? options.first : void 0) {
+          if (data.selected && this.is_multiple) {
+            this.choice_build(data);
+          } else if (data.selected && !this.is_multiple) {
+            this.single_set_selected_text(data.text);
+          }
+        }
+      }
+      return content;
+    };
+
+    AbstractChosen.prototype.result_add_option = function(option) {
+      var classes, option_el;
+      if (!option.search_match) {
+        return '';
+      }
+      if (!this.include_option_in_results(option)) {
+        return '';
+      }
+      classes = [];
+      if (!option.disabled && !(option.selected && this.is_multiple)) {
+        classes.push("active-result");
+      }
+      if (option.disabled && !(option.selected && this.is_multiple)) {
+        classes.push("disabled-result");
+      }
+      if (option.selected) {
+        classes.push("result-selected");
+      }
+      if (option.group_array_index != null) {
+        classes.push("group-option");
+      }
+      if (option.classes !== "") {
+        classes.push(option.classes);
+      }
+      option_el = document.createElement("li");
+      option_el.className = classes.join(" ");
+      option_el.style.cssText = option.style;
+      option_el.setAttribute("data-option-array-index", option.array_index);
+      option_el.innerHTML = option.search_text;
+      return this.outerHTML(option_el);
+    };
+
+    AbstractChosen.prototype.result_add_group = function(group) {
+      var group_el;
+      if (!(group.search_match || group.group_match)) {
+        return '';
+      }
+      if (!(group.active_options > 0)) {
+        return '';
+      }
+      group_el = document.createElement("li");
+      group_el.className = "group-result";
+      group_el.innerHTML = group.search_text;
+      return this.outerHTML(group_el);
+    };
+
+    AbstractChosen.prototype.results_update_field = function() {
+      this.set_default_text();
+      if (!this.is_multiple) {
+        this.results_reset_cleanup();
+      }
+      this.result_clear_highlight();
+      this.results_build();
+      if (this.results_showing) {
+        return this.winnow_results();
+      }
+    };
+
+    AbstractChosen.prototype.reset_single_select_options = function() {
+      var result, _i, _len, _ref, _results;
+      _ref = this.results_data;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        result = _ref[_i];
+        if (result.selected) {
+          _results.push(result.selected = false);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    AbstractChosen.prototype.results_toggle = function() {
+      if (this.results_showing) {
+        return this.results_hide();
+      } else {
+        return this.results_show();
+      }
+    };
+
+    AbstractChosen.prototype.results_search = function(evt) {
+      if (this.results_showing) {
+        return this.winnow_results();
+      } else {
+        return this.results_show();
+      }
+    };
+
+    AbstractChosen.prototype.winnow_results = function() {
+      var escapedSearchText, option, regex, regexAnchor, results, results_group, searchText, startpos, text, zregex, _i, _len, _ref;
+      this.no_results_clear();
+      results = 0;
+      searchText = this.get_search_text();
+      escapedSearchText = searchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      regexAnchor = this.search_contains ? "" : "^";
+      regex = new RegExp(regexAnchor + escapedSearchText, 'i');
+      zregex = new RegExp(escapedSearchText, 'i');
+      _ref = this.results_data;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        option = _ref[_i];
+        option.search_match = false;
+        results_group = null;
+        if (this.include_option_in_results(option)) {
+          if (option.group) {
+            option.group_match = false;
+            option.active_options = 0;
+          }
+          if ((option.group_array_index != null) && this.results_data[option.group_array_index]) {
+            results_group = this.results_data[option.group_array_index];
+            if (results_group.active_options === 0 && results_group.search_match) {
+              results += 1;
+            }
+            results_group.active_options += 1;
+          }
+          if (!(option.group && !this.group_search)) {
+            option.search_text = option.group ? option.label : option.html;
+            option.search_match = this.search_string_match(option.search_text, regex);
+            if (option.search_match && !option.group) {
+              results += 1;
+            }
+            if (option.search_match) {
+              if (searchText.length) {
+                startpos = option.search_text.search(zregex);
+                text = option.search_text.substr(0, startpos + searchText.length) + '</em>' + option.search_text.substr(startpos + searchText.length);
+                option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos);
+              }
+              if (results_group != null) {
+                results_group.group_match = true;
+              }
+            } else if ((option.group_array_index != null) && this.results_data[option.group_array_index].search_match) {
+              option.search_match = true;
+            }
+          }
+        }
+      }
+      this.result_clear_highlight();
+      if (results < 1 && searchText.length) {
+        this.update_results_content("");
+        return this.no_results(searchText);
+      } else {
+        this.update_results_content(this.results_option_build());
+        return this.winnow_results_set_highlight();
+      }
+    };
+
+    AbstractChosen.prototype.search_string_match = function(search_string, regex) {
+      var part, parts, _i, _len;
+      if (regex.test(search_string)) {
+        return true;
+      } else if (this.enable_split_word_search && (search_string.indexOf(" ") >= 0 || search_string.indexOf("[") === 0)) {
+        parts = search_string.replace(/\[|\]/g, "").split(" ");
+        if (parts.length) {
+          for (_i = 0, _len = parts.length; _i < _len; _i++) {
+            part = parts[_i];
+            if (regex.test(part)) {
+              return true;
+            }
+          }
+        }
+      }
+    };
+
+    AbstractChosen.prototype.choices_count = function() {
+      var option, _i, _len, _ref;
+      if (this.selected_option_count != null) {
+        return this.selected_option_count;
+      }
+      this.selected_option_count = 0;
+      _ref = this.form_field.options;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        option = _ref[_i];
+        if (option.selected) {
+          this.selected_option_count += 1;
+        }
+      }
+      return this.selected_option_count;
+    };
+
+    AbstractChosen.prototype.choices_click = function(evt) {
+      evt.preventDefault();
+      if (!(this.results_showing || this.is_disabled)) {
+        return this.results_show();
+      }
+    };
+
+    AbstractChosen.prototype.keyup_checker = function(evt) {
+      var stroke, _ref;
+      stroke = (_ref = evt.which) != null ? _ref : evt.keyCode;
+      this.search_field_scale();
+      switch (stroke) {
+        case 8:
+          if (this.is_multiple && this.backstroke_length < 1 && this.choices_count() > 0) {
+            return this.keydown_backstroke();
+          } else if (!this.pending_backstroke) {
+            this.result_clear_highlight();
+            return this.results_search();
+          }
+          break;
+        case 13:
+          evt.preventDefault();
+          if (this.results_showing) {
+            return this.result_select(evt);
+          }
+          break;
+        case 27:
+          if (this.results_showing) {
+            this.results_hide();
+          }
+          return true;
+        case 9:
+        case 38:
+        case 40:
+        case 16:
+        case 91:
+        case 17:
+          break;
+        default:
+          return this.results_search();
+      }
+    };
+
+    AbstractChosen.prototype.clipboard_event_checker = function(evt) {
+      var _this = this;
+      return setTimeout((function() {
+        return _this.results_search();
+      }), 50);
+    };
+
+    AbstractChosen.prototype.container_width = function() {
+      if (this.options.width != null) {
+        return this.options.width;
+      } else {
+        return "" + this.form_field.offsetWidth + "px";
+      }
+    };
+
+    AbstractChosen.prototype.include_option_in_results = function(option) {
+      if (this.is_multiple && (!this.display_selected_options && option.selected)) {
+        return false;
+      }
+      if (!this.display_disabled_options && option.disabled) {
+        return false;
+      }
+      if (option.empty) {
+        return false;
+      }
+      return true;
+    };
+
+    AbstractChosen.prototype.search_results_touchstart = function(evt) {
+      this.touch_started = true;
+      return this.search_results_mouseover(evt);
+    };
+
+    AbstractChosen.prototype.search_results_touchmove = function(evt) {
+      this.touch_started = false;
+      return this.search_results_mouseout(evt);
+    };
+
+    AbstractChosen.prototype.search_results_touchend = function(evt) {
+      if (this.touch_started) {
+        return this.search_results_mouseup(evt);
+      }
+    };
+
+    AbstractChosen.prototype.outerHTML = function(element) {
+      var tmp;
+      if (element.outerHTML) {
+        return element.outerHTML;
+      }
+      tmp = document.createElement("div");
+      tmp.appendChild(element);
+      return tmp.innerHTML;
+    };
+
+    AbstractChosen.browser_is_supported = function() {
+      if (window.navigator.appName === "Microsoft Internet Explorer") {
+        return document.documentMode >= 8;
+      }
+      if (/iP(od|hone)/i.test(window.navigator.userAgent)) {
+        return false;
+      }
+      if (/Android/i.test(window.navigator.userAgent)) {
+        if (/Mobile/i.test(window.navigator.userAgent)) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    AbstractChosen.default_multiple_text = "Select Some Options";
+
+    AbstractChosen.default_single_text = "Select an Option";
+
+    AbstractChosen.default_no_result_text = "No results match";
+
+    return AbstractChosen;
+
+  })();
+
+  $ = jQuery;
+
+  $.fn.extend({
+    chosen: function(options) {
+      if (!AbstractChosen.browser_is_supported()) {
+        return this;
+      }
+      return this.each(function(input_field) {
+        var $this, chosen;
+        $this = $(this);
+        chosen = $this.data('chosen');
+        if (options === 'destroy' && chosen) {
+          chosen.destroy();
+        } else if (!chosen) {
+          $this.data('chosen', new Chosen(this, options));
+        }
+      });
+    }
+  });
+
+  Chosen = (function(_super) {
+    __extends(Chosen, _super);
+
+    function Chosen() {
+      _ref = Chosen.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    Chosen.prototype.setup = function() {
+      this.form_field_jq = $(this.form_field);
+      this.current_selectedIndex = this.form_field.selectedIndex;
+      return this.is_rtl = this.form_field_jq.hasClass("chosen-rtl");
+    };
+
+    Chosen.prototype.set_up_html = function() {
+      var container_classes, container_props;
+      container_classes = ["chosen-container"];
+      container_classes.push("chosen-container-" + (this.is_multiple ? "multi" : "single"));
+      if (this.inherit_select_classes && this.form_field.className) {
+        container_classes.push(this.form_field.className);
+      }
+      if (this.is_rtl) {
+        container_classes.push("chosen-rtl");
+      }
+      container_props = {
+        'class': container_classes.join(' '),
+        'style': "width: " + (this.container_width()) + ";",
+        'title': this.form_field.title
+      };
+      if (this.form_field.id.length) {
+        container_props.id = this.form_field.id.replace(/[^\w]/g, '_') + "_chosen";
+      }
+      this.container = $("<div />", container_props);
+      if (this.is_multiple) {
+        this.container.html('<ul class="chosen-choices"><li class="search-field"><input type="text" value="' + this.default_text + '" class="default" autocomplete="off" style="width:25px;" /></li></ul><div class="chosen-drop"><ul class="chosen-results"></ul></div>');
+      } else {
+        this.container.html('<a class="chosen-single chosen-default" tabindex="-1"><span>' + this.default_text + '</span><div><b></b></div></a><div class="chosen-drop"><div class="chosen-search"><input type="text" autocomplete="off" /></div><ul class="chosen-results"></ul></div>');
+      }
+      this.form_field_jq.hide().after(this.container);
+      this.dropdown = this.container.find('div.chosen-drop').first();
+      this.search_field = this.container.find('input').first();
+      this.search_results = this.container.find('ul.chosen-results').first();
+      this.search_field_scale();
+      this.search_no_results = this.container.find('li.no-results').first();
+      if (this.is_multiple) {
+        this.search_choices = this.container.find('ul.chosen-choices').first();
+        this.search_container = this.container.find('li.search-field').first();
+      } else {
+        this.search_container = this.container.find('div.chosen-search').first();
+        this.selected_item = this.container.find('.chosen-single').first();
+      }
+      this.results_build();
+      this.set_tab_index();
+      this.set_label_behavior();
+      return this.form_field_jq.trigger("chosen:ready", {
+        chosen: this
+      });
+    };
+
+    Chosen.prototype.register_observers = function() {
+      var _this = this;
+      this.container.bind('mousedown.chosen', function(evt) {
+        _this.container_mousedown(evt);
+      });
+      this.container.bind('mouseup.chosen', function(evt) {
+        _this.container_mouseup(evt);
+      });
+      this.container.bind('mouseenter.chosen', function(evt) {
+        _this.mouse_enter(evt);
+      });
+      this.container.bind('mouseleave.chosen', function(evt) {
+        _this.mouse_leave(evt);
+      });
+      this.search_results.bind('mouseup.chosen', function(evt) {
+        _this.search_results_mouseup(evt);
+      });
+      this.search_results.bind('mouseover.chosen', function(evt) {
+        _this.search_results_mouseover(evt);
+      });
+      this.search_results.bind('mouseout.chosen', function(evt) {
+        _this.search_results_mouseout(evt);
+      });
+      this.search_results.bind('mousewheel.chosen DOMMouseScroll.chosen', function(evt) {
+        _this.search_results_mousewheel(evt);
+      });
+      this.search_results.bind('touchstart.chosen', function(evt) {
+        _this.search_results_touchstart(evt);
+      });
+      this.search_results.bind('touchmove.chosen', function(evt) {
+        _this.search_results_touchmove(evt);
+      });
+      this.search_results.bind('touchend.chosen', function(evt) {
+        _this.search_results_touchend(evt);
+      });
+      this.form_field_jq.bind("chosen:updated.chosen", function(evt) {
+        _this.results_update_field(evt);
+      });
+      this.form_field_jq.bind("chosen:activate.chosen", function(evt) {
+        _this.activate_field(evt);
+      });
+      this.form_field_jq.bind("chosen:open.chosen", function(evt) {
+        _this.container_mousedown(evt);
+      });
+      this.form_field_jq.bind("chosen:close.chosen", function(evt) {
+        _this.input_blur(evt);
+      });
+      this.search_field.bind('blur.chosen', function(evt) {
+        _this.input_blur(evt);
+      });
+      this.search_field.bind('keyup.chosen', function(evt) {
+        _this.keyup_checker(evt);
+      });
+      this.search_field.bind('keydown.chosen', function(evt) {
+        _this.keydown_checker(evt);
+      });
+      this.search_field.bind('focus.chosen', function(evt) {
+        _this.input_focus(evt);
+      });
+      this.search_field.bind('cut.chosen', function(evt) {
+        _this.clipboard_event_checker(evt);
+      });
+      this.search_field.bind('paste.chosen', function(evt) {
+        _this.clipboard_event_checker(evt);
+      });
+      if (this.is_multiple) {
+        return this.search_choices.bind('click.chosen', function(evt) {
+          _this.choices_click(evt);
+        });
+      } else {
+        return this.container.bind('click.chosen', function(evt) {
+          evt.preventDefault();
+        });
+      }
+    };
+
+    Chosen.prototype.destroy = function() {
+      $(this.container[0].ownerDocument).unbind("click.chosen", this.click_test_action);
+      if (this.search_field[0].tabIndex) {
+        this.form_field_jq[0].tabIndex = this.search_field[0].tabIndex;
+      }
+      this.container.remove();
+      this.form_field_jq.removeData('chosen');
+      return this.form_field_jq.show();
+    };
+
+    Chosen.prototype.search_field_disabled = function() {
+      this.is_disabled = this.form_field_jq[0].disabled;
+      if (this.is_disabled) {
+        this.container.addClass('chosen-disabled');
+        this.search_field[0].disabled = true;
+        if (!this.is_multiple) {
+          this.selected_item.unbind("focus.chosen", this.activate_action);
+        }
+        return this.close_field();
+      } else {
+        this.container.removeClass('chosen-disabled');
+        this.search_field[0].disabled = false;
+        if (!this.is_multiple) {
+          return this.selected_item.bind("focus.chosen", this.activate_action);
+        }
+      }
+    };
+
+    Chosen.prototype.container_mousedown = function(evt) {
+      if (!this.is_disabled) {
+        if (evt && evt.type === "mousedown" && !this.results_showing) {
+          evt.preventDefault();
+        }
+        if (!((evt != null) && ($(evt.target)).hasClass("search-choice-close"))) {
+          if (!this.active_field) {
+            if (this.is_multiple) {
+              this.search_field.val("");
+            }
+            $(this.container[0].ownerDocument).bind('click.chosen', this.click_test_action);
+            this.results_show();
+          } else if (!this.is_multiple && evt && (($(evt.target)[0] === this.selected_item[0]) || $(evt.target).parents("a.chosen-single").length)) {
+            evt.preventDefault();
+            this.results_toggle();
+          }
+          return this.activate_field();
+        }
+      }
+    };
+
+    Chosen.prototype.container_mouseup = function(evt) {
+      if (evt.target.nodeName === "ABBR" && !this.is_disabled) {
+        return this.results_reset(evt);
+      }
+    };
+
+    Chosen.prototype.search_results_mousewheel = function(evt) {
+      var delta;
+      if (evt.originalEvent) {
+        delta = -evt.originalEvent.wheelDelta || evt.originalEvent.detail;
+      }
+      if (delta != null) {
+        evt.preventDefault();
+        if (evt.type === 'DOMMouseScroll') {
+          delta = delta * 40;
+        }
+        return this.search_results.scrollTop(delta + this.search_results.scrollTop());
+      }
+    };
+
+    Chosen.prototype.blur_test = function(evt) {
+      if (!this.active_field && this.container.hasClass("chosen-container-active")) {
+        return this.close_field();
+      }
+    };
+
+    Chosen.prototype.close_field = function() {
+      $(this.container[0].ownerDocument).unbind("click.chosen", this.click_test_action);
+      this.active_field = false;
+      this.results_hide();
+      this.container.removeClass("chosen-container-active");
+      this.clear_backstroke();
+      this.show_search_field_default();
+      return this.search_field_scale();
+    };
+
+    Chosen.prototype.activate_field = function() {
+      this.container.addClass("chosen-container-active");
+      this.active_field = true;
+      this.search_field.val(this.search_field.val());
+      return this.search_field.focus();
+    };
+
+    Chosen.prototype.test_active_click = function(evt) {
+      var active_container;
+      active_container = $(evt.target).closest('.chosen-container');
+      if (active_container.length && this.container[0] === active_container[0]) {
+        return this.active_field = true;
+      } else {
+        return this.close_field();
+      }
+    };
+
+    Chosen.prototype.results_build = function() {
+      this.parsing = true;
+      this.selected_option_count = null;
+      this.results_data = SelectParser.select_to_array(this.form_field);
+      if (this.is_multiple) {
+        this.search_choices.find("li.search-choice").remove();
+      } else if (!this.is_multiple) {
+        this.single_set_selected_text();
+        if (this.disable_search || this.form_field.options.length <= this.disable_search_threshold) {
+          this.search_field[0].readOnly = true;
+          this.container.addClass("chosen-container-single-nosearch");
+        } else {
+          this.search_field[0].readOnly = false;
+          this.container.removeClass("chosen-container-single-nosearch");
+        }
+      }
+      this.update_results_content(this.results_option_build({
+        first: true
+      }));
+      this.search_field_disabled();
+      this.show_search_field_default();
+      this.search_field_scale();
+      return this.parsing = false;
+    };
+
+    Chosen.prototype.result_do_highlight = function(el) {
+      var high_bottom, high_top, maxHeight, visible_bottom, visible_top;
+      if (el.length) {
+        this.result_clear_highlight();
+        this.result_highlight = el;
+        this.result_highlight.addClass("highlighted");
+        maxHeight = parseInt(this.search_results.css("maxHeight"), 10);
+        visible_top = this.search_results.scrollTop();
+        visible_bottom = maxHeight + visible_top;
+        high_top = this.result_highlight.position().top + this.search_results.scrollTop();
+        high_bottom = high_top + this.result_highlight.outerHeight();
+        if (high_bottom >= visible_bottom) {
+          return this.search_results.scrollTop((high_bottom - maxHeight) > 0 ? high_bottom - maxHeight : 0);
+        } else if (high_top < visible_top) {
+          return this.search_results.scrollTop(high_top);
+        }
+      }
+    };
+
+    Chosen.prototype.result_clear_highlight = function() {
+      if (this.result_highlight) {
+        this.result_highlight.removeClass("highlighted");
+      }
+      return this.result_highlight = null;
+    };
+
+    Chosen.prototype.results_show = function() {
+      if (this.is_multiple && this.max_selected_options <= this.choices_count()) {
+        this.form_field_jq.trigger("chosen:maxselected", {
+          chosen: this
+        });
+        return false;
+      }
+      this.container.addClass("chosen-with-drop");
+      this.results_showing = true;
+      this.search_field.focus();
+      this.search_field.val(this.search_field.val());
+      this.winnow_results();
+      return this.form_field_jq.trigger("chosen:showing_dropdown", {
+        chosen: this
+      });
+    };
+
+    Chosen.prototype.update_results_content = function(content) {
+      return this.search_results.html(content);
+    };
+
+    Chosen.prototype.results_hide = function() {
+      if (this.results_showing) {
+        this.result_clear_highlight();
+        this.container.removeClass("chosen-with-drop");
+        this.form_field_jq.trigger("chosen:hiding_dropdown", {
+          chosen: this
+        });
+      }
+      return this.results_showing = false;
+    };
+
+    Chosen.prototype.set_tab_index = function(el) {
+      var ti;
+      if (this.form_field.tabIndex) {
+        ti = this.form_field.tabIndex;
+        this.form_field.tabIndex = -1;
+        return this.search_field[0].tabIndex = ti;
+      }
+    };
+
+    Chosen.prototype.set_label_behavior = function() {
+      var _this = this;
+      this.form_field_label = this.form_field_jq.parents("label");
+      if (!this.form_field_label.length && this.form_field.id.length) {
+        this.form_field_label = $("label[for='" + this.form_field.id + "']");
+      }
+      if (this.form_field_label.length > 0) {
+        return this.form_field_label.bind('click.chosen', function(evt) {
+          if (_this.is_multiple) {
+            return _this.container_mousedown(evt);
+          } else {
+            return _this.activate_field();
+          }
+        });
+      }
+    };
+
+    Chosen.prototype.show_search_field_default = function() {
+      if (this.is_multiple && this.choices_count() < 1 && !this.active_field) {
+        this.search_field.val(this.default_text);
+        return this.search_field.addClass("default");
+      } else {
+        this.search_field.val("");
+        return this.search_field.removeClass("default");
+      }
+    };
+
+    Chosen.prototype.search_results_mouseup = function(evt) {
+      var target;
+      target = $(evt.target).hasClass("active-result") ? $(evt.target) : $(evt.target).parents(".active-result").first();
+      if (target.length) {
+        this.result_highlight = target;
+        this.result_select(evt);
+        return this.search_field.focus();
+      }
+    };
+
+    Chosen.prototype.search_results_mouseover = function(evt) {
+      var target;
+      target = $(evt.target).hasClass("active-result") ? $(evt.target) : $(evt.target).parents(".active-result").first();
+      if (target) {
+        return this.result_do_highlight(target);
+      }
+    };
+
+    Chosen.prototype.search_results_mouseout = function(evt) {
+      if ($(evt.target).hasClass("active-result" || $(evt.target).parents('.active-result').first())) {
+        return this.result_clear_highlight();
+      }
+    };
+
+    Chosen.prototype.choice_build = function(item) {
+      var choice, close_link,
+        _this = this;
+      choice = $('<li />', {
+        "class": "search-choice"
+      }).html("<span>" + item.html + "</span>");
+      if (item.disabled) {
+        choice.addClass('search-choice-disabled');
+      } else {
+        close_link = $('<a />', {
+          "class": 'search-choice-close',
+          'data-option-array-index': item.array_index
+        });
+        close_link.bind('click.chosen', function(evt) {
+          return _this.choice_destroy_link_click(evt);
+        });
+        choice.append(close_link);
+      }
+      return this.search_container.before(choice);
+    };
+
+    Chosen.prototype.choice_destroy_link_click = function(evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      if (!this.is_disabled) {
+        return this.choice_destroy($(evt.target));
+      }
+    };
+
+    Chosen.prototype.choice_destroy = function(link) {
+      if (this.result_deselect(link[0].getAttribute("data-option-array-index"))) {
+        this.show_search_field_default();
+        if (this.is_multiple && this.choices_count() > 0 && this.search_field.val().length < 1) {
+          this.results_hide();
+        }
+        link.parents('li').first().remove();
+        return this.search_field_scale();
+      }
+    };
+
+    Chosen.prototype.results_reset = function() {
+      this.reset_single_select_options();
+      this.form_field.options[0].selected = true;
+      this.single_set_selected_text();
+      this.show_search_field_default();
+      this.results_reset_cleanup();
+      this.form_field_jq.trigger("change");
+      if (this.active_field) {
+        return this.results_hide();
+      }
+    };
+
+    Chosen.prototype.results_reset_cleanup = function() {
+      this.current_selectedIndex = this.form_field.selectedIndex;
+      return this.selected_item.find("abbr").remove();
+    };
+
+    Chosen.prototype.result_select = function(evt) {
+      var high, item;
+      if (this.result_highlight) {
+        high = this.result_highlight;
+        this.result_clear_highlight();
+        if (this.is_multiple && this.max_selected_options <= this.choices_count()) {
+          this.form_field_jq.trigger("chosen:maxselected", {
+            chosen: this
+          });
+          return false;
+        }
+        if (this.is_multiple) {
+          high.removeClass("active-result");
+        } else {
+          this.reset_single_select_options();
+        }
+        item = this.results_data[high[0].getAttribute("data-option-array-index")];
+        item.selected = true;
+        this.form_field.options[item.options_index].selected = true;
+        this.selected_option_count = null;
+        if (this.is_multiple) {
+          this.choice_build(item);
+        } else {
+          this.single_set_selected_text(item.text);
+        }
+        if (!((evt.metaKey || evt.ctrlKey) && this.is_multiple)) {
+          this.results_hide();
+        }
+        this.search_field.val("");
+        if (this.is_multiple || this.form_field.selectedIndex !== this.current_selectedIndex) {
+          this.form_field_jq.trigger("change", {
+            'selected': this.form_field.options[item.options_index].value
+          });
+        }
+        this.current_selectedIndex = this.form_field.selectedIndex;
+        return this.search_field_scale();
+      }
+    };
+
+    Chosen.prototype.single_set_selected_text = function(text) {
+      if (text == null) {
+        text = this.default_text;
+      }
+      if (text === this.default_text) {
+        this.selected_item.addClass("chosen-default");
+      } else {
+        this.single_deselect_control_build();
+        this.selected_item.removeClass("chosen-default");
+      }
+      return this.selected_item.find("span").text(text);
+    };
+
+    Chosen.prototype.result_deselect = function(pos) {
+      var result_data;
+      result_data = this.results_data[pos];
+      if (!this.form_field.options[result_data.options_index].disabled) {
+        result_data.selected = false;
+        this.form_field.options[result_data.options_index].selected = false;
+        this.selected_option_count = null;
+        this.result_clear_highlight();
+        if (this.results_showing) {
+          this.winnow_results();
+        }
+        this.form_field_jq.trigger("change", {
+          deselected: this.form_field.options[result_data.options_index].value
+        });
+        this.search_field_scale();
+        return true;
+      } else {
+        return false;
+      }
+    };
+
+    Chosen.prototype.single_deselect_control_build = function() {
+      if (!this.allow_single_deselect) {
+        return;
+      }
+      if (!this.selected_item.find("abbr").length) {
+        this.selected_item.find("span").first().after("<abbr class=\"search-choice-close\"></abbr>");
+      }
+      return this.selected_item.addClass("chosen-single-with-deselect");
+    };
+
+    Chosen.prototype.get_search_text = function() {
+      if (this.search_field.val() === this.default_text) {
+        return "";
+      } else {
+        return $('<div/>').text($.trim(this.search_field.val())).html();
+      }
+    };
+
+    Chosen.prototype.winnow_results_set_highlight = function() {
+      var do_high, selected_results;
+      selected_results = !this.is_multiple ? this.search_results.find(".result-selected.active-result") : [];
+      do_high = selected_results.length ? selected_results.first() : this.search_results.find(".active-result").first();
+      if (do_high != null) {
+        return this.result_do_highlight(do_high);
+      }
+    };
+
+    Chosen.prototype.no_results = function(terms) {
+      var no_results_html;
+      no_results_html = $('<li class="no-results">' + this.results_none_found + ' "<span></span>"</li>');
+      no_results_html.find("span").first().html(terms);
+      this.search_results.append(no_results_html);
+      return this.form_field_jq.trigger("chosen:no_results", {
+        chosen: this
+      });
+    };
+
+    Chosen.prototype.no_results_clear = function() {
+      return this.search_results.find(".no-results").remove();
+    };
+
+    Chosen.prototype.keydown_arrow = function() {
+      var next_sib;
+      if (this.results_showing && this.result_highlight) {
+        next_sib = this.result_highlight.nextAll("li.active-result").first();
+        if (next_sib) {
+          return this.result_do_highlight(next_sib);
+        }
+      } else {
+        return this.results_show();
+      }
+    };
+
+    Chosen.prototype.keyup_arrow = function() {
+      var prev_sibs;
+      if (!this.results_showing && !this.is_multiple) {
+        return this.results_show();
+      } else if (this.result_highlight) {
+        prev_sibs = this.result_highlight.prevAll("li.active-result");
+        if (prev_sibs.length) {
+          return this.result_do_highlight(prev_sibs.first());
+        } else {
+          if (this.choices_count() > 0) {
+            this.results_hide();
+          }
+          return this.result_clear_highlight();
+        }
+      }
+    };
+
+    Chosen.prototype.keydown_backstroke = function() {
+      var next_available_destroy;
+      if (this.pending_backstroke) {
+        this.choice_destroy(this.pending_backstroke.find("a").first());
+        return this.clear_backstroke();
+      } else {
+        next_available_destroy = this.search_container.siblings("li.search-choice").last();
+        if (next_available_destroy.length && !next_available_destroy.hasClass("search-choice-disabled")) {
+          this.pending_backstroke = next_available_destroy;
+          if (this.single_backstroke_delete) {
+            return this.keydown_backstroke();
+          } else {
+            return this.pending_backstroke.addClass("search-choice-focus");
+          }
+        }
+      }
+    };
+
+    Chosen.prototype.clear_backstroke = function() {
+      if (this.pending_backstroke) {
+        this.pending_backstroke.removeClass("search-choice-focus");
+      }
+      return this.pending_backstroke = null;
+    };
+
+    Chosen.prototype.keydown_checker = function(evt) {
+      var stroke, _ref1;
+      stroke = (_ref1 = evt.which) != null ? _ref1 : evt.keyCode;
+      this.search_field_scale();
+      if (stroke !== 8 && this.pending_backstroke) {
+        this.clear_backstroke();
+      }
+      switch (stroke) {
+        case 8:
+          this.backstroke_length = this.search_field.val().length;
+          break;
+        case 9:
+          if (this.results_showing && !this.is_multiple) {
+            this.result_select(evt);
+          }
+          this.mouse_on_container = false;
+          break;
+        case 13:
+          evt.preventDefault();
+          break;
+        case 38:
+          evt.preventDefault();
+          this.keyup_arrow();
+          break;
+        case 40:
+          evt.preventDefault();
+          this.keydown_arrow();
+          break;
+      }
+    };
+
+    Chosen.prototype.search_field_scale = function() {
+      var div, f_width, h, style, style_block, styles, w, _i, _len;
+      if (this.is_multiple) {
+        h = 0;
+        w = 0;
+        style_block = "position:absolute; left: -1000px; top: -1000px; display:none;";
+        styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
+        for (_i = 0, _len = styles.length; _i < _len; _i++) {
+          style = styles[_i];
+          style_block += style + ":" + this.search_field.css(style) + ";";
+        }
+        div = $('<div />', {
+          'style': style_block
+        });
+        div.text(this.search_field.val());
+        $('body').append(div);
+        w = div.width() + 25;
+        div.remove();
+        f_width = this.container.outerWidth();
+        if (w > f_width - 10) {
+          w = f_width - 10;
+        }
+        return this.search_field.css({
+          'width': w + 'px'
+        });
+      }
+    };
+
+    return Chosen;
+
+  })(AbstractChosen);
+
+}).call(this);
+
+define("chosen", ["jquery"], function(){});
+
+// Generated by CoffeeScript 1.8.0
+(function() {
+  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  angular.module('localytics.directives', []);
+
+  angular.module('localytics.directives').directive('chosen', [
+    '$timeout', function($timeout) {
+      var CHOSEN_OPTION_WHITELIST, NG_OPTIONS_REGEXP, isEmpty, snakeCase;
+      NG_OPTIONS_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?(?:\s+group\s+by\s+(.*))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+(.*?)(?:\s+track\s+by\s+(.*?))?$/;
+      CHOSEN_OPTION_WHITELIST = ['noResultsText', 'allowSingleDeselect', 'disableSearchThreshold', 'disableSearch', 'enableSplitWordSearch', 'inheritSelectClasses', 'maxSelectedOptions', 'placeholderTextMultiple', 'placeholderTextSingle', 'searchContains', 'singleBackstrokeDelete', 'displayDisabledOptions', 'displaySelectedOptions', 'width'];
+      snakeCase = function(input) {
+        return input.replace(/[A-Z]/g, function($1) {
+          return "_" + ($1.toLowerCase());
+        });
+      };
+      isEmpty = function(value) {
+        var key;
+        if (angular.isArray(value)) {
+          return value.length === 0;
+        } else if (angular.isObject(value)) {
+          for (key in value) {
+            if (value.hasOwnProperty(key)) {
+              return false;
+            }
+          }
+        }
+        return true;
+      };
+      return {
+        restrict: 'A',
+        require: '?ngModel',
+        terminal: true,
+        link: function(scope, element, attr, ngModel) {
+          var chosen, defaultText, disableWithMessage, empty, initOrUpdate, match, options, origRender, removeEmptyMessage, startLoading, stopLoading, valuesExpr, viewWatch;
+          element.addClass('localytics-chosen');
+          options = scope.$eval(attr.chosen) || {};
+          angular.forEach(attr, function(value, key) {
+            if (__indexOf.call(CHOSEN_OPTION_WHITELIST, key) >= 0) {
+              return options[snakeCase(key)] = scope.$eval(value);
+            }
+          });
+          startLoading = function() {
+            return element.addClass('loading').attr('disabled', true).trigger('chosen:updated');
+          };
+          stopLoading = function() {
+            return element.removeClass('loading').attr('disabled', false).trigger('chosen:updated');
+          };
+          chosen = null;
+          defaultText = null;
+          empty = false;
+          initOrUpdate = function() {
+            if (chosen) {
+              return element.trigger('chosen:updated');
+            } else {
+              chosen = element.chosen(options).data('chosen');
+              if (angular.isObject(chosen)) {
+                return defaultText = chosen.default_text;
+              }
+            }
+          };
+          removeEmptyMessage = function() {
+            empty = false;
+            return element.attr('data-placeholder', defaultText);
+          };
+          disableWithMessage = function() {
+            empty = true;
+            return element.attr('data-placeholder', chosen.results_none_found).attr('disabled', true).trigger('chosen:updated');
+          };
+          if (ngModel) {
+            origRender = ngModel.$render;
+            ngModel.$render = function() {
+              origRender();
+              return initOrUpdate();
+            };
+            if (attr.multiple) {
+              viewWatch = function() {
+                return ngModel.$viewValue;
+              };
+              scope.$watch(viewWatch, ngModel.$render, true);
+            }
+          } else {
+            initOrUpdate();
+          }
+          attr.$observe('disabled', function() {
+            return element.trigger('chosen:updated');
+          });
+          if (attr.ngOptions && ngModel) {
+            match = attr.ngOptions.match(NG_OPTIONS_REGEXP);
+            valuesExpr = match[7];
+            scope.$watchCollection(valuesExpr, function(newVal, oldVal) {
+              var timer;
+              return timer = $timeout(function() {
+                if (angular.isUndefined(newVal)) {
+                  return startLoading();
+                } else {
+                  if (empty) {
+                    removeEmptyMessage();
+                  }
+                  stopLoading();
+                  if (isEmpty(newVal)) {
+                    return disableWithMessage();
+                  }
+                }
+              });
+            });
+            return scope.$on('$destroy', function(event) {
+              if (typeof timer !== "undefined" && timer !== null) {
+                return $timeout.cancel(timer);
+              }
+            });
+          }
+        }
+      };
+    }
+  ]);
+
+}).call(this);
+
+define("angular-chosen", ["angular","chosen"], function(){});
+
+/* Copyright (c) 2015 Hyunje Alex Jun and other contributors
+ * Licensed under the MIT License
+ */
+(function (factory) {
+  'use strict';
+
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('perfect-scrollbar',['jquery'], factory);
+  } else if (typeof exports === 'object') {
+    // Node/CommonJS
+    factory(require('jquery'));
+  } else {
+    // Browser globals
+    factory(jQuery);
+  }
+})(function ($) {
+  'use strict';
+
+  function getInt(x) {
+    if (typeof x === 'string') {
+      return parseInt(x, 10);
+    } else {
+      return ~~x;
+    }
+  }
+
+  var defaultSettings = {
+    wheelSpeed: 1,
+    wheelPropagation: false,
+    swipePropagation: true,
+    minScrollbarLength: null,
+    maxScrollbarLength: null,
+    useBothWheelAxes: false,
+    useKeyboard: true,
+    suppressScrollX: false,
+    suppressScrollY: false,
+    scrollXMarginOffset: 0,
+    scrollYMarginOffset: 0,
+    includePadding: false
+  };
+
+  var incrementingId = 0;
+  var eventClassFactory = function () {
+    var id = incrementingId++;
+    return function (eventName) {
+      var className = '.perfect-scrollbar-' + id;
+      if (typeof eventName === 'undefined') {
+        return className;
+      } else {
+        return eventName + className;
+      }
+    };
+  };
+
+  var isWebkit = 'WebkitAppearance' in document.documentElement.style;
+
+  $.fn.perfectScrollbar = function (suppliedSettings, option) {
+
+    return this.each(function () {
+      var settings = $.extend(true, {}, defaultSettings);
+      var $this = $(this);
+      var isPluginAlive = function () { return !!$this; };
+
+      if (typeof suppliedSettings === "object") {
+        // Override default settings with any supplied
+        $.extend(true, settings, suppliedSettings);
+      } else {
+        // If no setting was supplied, then the first param must be the option
+        option = suppliedSettings;
+      }
+
+      // Catch options
+      if (option === 'update') {
+        if ($this.data('perfect-scrollbar-update')) {
+          $this.data('perfect-scrollbar-update')();
+        }
+        return $this;
+      }
+      else if (option === 'destroy') {
+        if ($this.data('perfect-scrollbar-destroy')) {
+          $this.data('perfect-scrollbar-destroy')();
+        }
+        return $this;
+      }
+
+      if ($this.data('perfect-scrollbar')) {
+        // if there's already perfect-scrollbar
+        return $this.data('perfect-scrollbar');
+      }
+
+
+      // Or generate new perfectScrollbar
+
+      $this.addClass('ps-container');
+
+      var containerWidth;
+      var containerHeight;
+      var contentWidth;
+      var contentHeight;
+
+      var isRtl = $this.css('direction') === "rtl";
+      var eventClass = eventClassFactory();
+      var ownerDocument = this.ownerDocument || document;
+
+      var $scrollbarXRail = $("<div class='ps-scrollbar-x-rail'>").appendTo($this);
+      var $scrollbarX = $("<div class='ps-scrollbar-x'>").appendTo($scrollbarXRail);
+      var scrollbarXActive;
+      var scrollbarXWidth;
+      var scrollbarXLeft;
+      var scrollbarXBottom = getInt($scrollbarXRail.css('bottom'));
+      var isScrollbarXUsingBottom = scrollbarXBottom === scrollbarXBottom; // !isNaN
+      var scrollbarXTop = isScrollbarXUsingBottom ? null : getInt($scrollbarXRail.css('top'));
+      var railBorderXWidth = getInt($scrollbarXRail.css('borderLeftWidth')) + getInt($scrollbarXRail.css('borderRightWidth'));
+      var railXMarginWidth = getInt($scrollbarXRail.css('marginLeft')) + getInt($scrollbarXRail.css('marginRight'));
+      var railXWidth;
+
+      var $scrollbarYRail = $("<div class='ps-scrollbar-y-rail'>").appendTo($this);
+      var $scrollbarY = $("<div class='ps-scrollbar-y'>").appendTo($scrollbarYRail);
+      var scrollbarYActive;
+      var scrollbarYHeight;
+      var scrollbarYTop;
+      var scrollbarYRight = getInt($scrollbarYRail.css('right'));
+      var isScrollbarYUsingRight = scrollbarYRight === scrollbarYRight; // !isNaN
+      var scrollbarYLeft = isScrollbarYUsingRight ? null : getInt($scrollbarYRail.css('left'));
+      var railBorderYWidth = getInt($scrollbarYRail.css('borderTopWidth')) + getInt($scrollbarYRail.css('borderBottomWidth'));
+      var railYMarginHeight = getInt($scrollbarYRail.css('marginTop')) + getInt($scrollbarYRail.css('marginBottom'));
+      var railYHeight;
+
+      function updateScrollTop(currentTop, deltaY) {
+        var newTop = currentTop + deltaY;
+        var maxTop = containerHeight - scrollbarYHeight;
+
+        if (newTop < 0) {
+          scrollbarYTop = 0;
+        } else if (newTop > maxTop) {
+          scrollbarYTop = maxTop;
+        } else {
+          scrollbarYTop = newTop;
+        }
+
+        var scrollTop = getInt(scrollbarYTop * (contentHeight - containerHeight) / (containerHeight - scrollbarYHeight));
+        $this.scrollTop(scrollTop);
+      }
+
+      function updateScrollLeft(currentLeft, deltaX) {
+        var newLeft = currentLeft + deltaX;
+        var maxLeft = containerWidth - scrollbarXWidth;
+
+        if (newLeft < 0) {
+          scrollbarXLeft = 0;
+        } else if (newLeft > maxLeft) {
+          scrollbarXLeft = maxLeft;
+        } else {
+          scrollbarXLeft = newLeft;
+        }
+
+        var scrollLeft = getInt(scrollbarXLeft * (contentWidth - containerWidth) / (containerWidth - scrollbarXWidth));
+        $this.scrollLeft(scrollLeft);
+      }
+
+      function getThumbSize(thumbSize) {
+        if (settings.minScrollbarLength) {
+          thumbSize = Math.max(thumbSize, settings.minScrollbarLength);
+        }
+        if (settings.maxScrollbarLength) {
+          thumbSize = Math.min(thumbSize, settings.maxScrollbarLength);
+        }
+        return thumbSize;
+      }
+
+      function updateCss() {
+        var xRailOffset = {width: railXWidth};
+        if (isRtl) {
+          xRailOffset.left = $this.scrollLeft() + containerWidth - contentWidth;
+        } else {
+          xRailOffset.left = $this.scrollLeft();
+        }
+        if (isScrollbarXUsingBottom) {
+          xRailOffset.bottom = scrollbarXBottom - $this.scrollTop();
+        } else {
+          xRailOffset.top = scrollbarXTop + $this.scrollTop();
+        }
+        $scrollbarXRail.css(xRailOffset);
+
+        var railYOffset = {top: $this.scrollTop(), height: railYHeight};
+
+        if (isScrollbarYUsingRight) {
+          if (isRtl) {
+            railYOffset.right = contentWidth - $this.scrollLeft() - scrollbarYRight - $scrollbarY.outerWidth();
+          } else {
+            railYOffset.right = scrollbarYRight - $this.scrollLeft();
+          }
+        } else {
+          if (isRtl) {
+            railYOffset.left = $this.scrollLeft() + containerWidth * 2 - contentWidth - scrollbarYLeft - $scrollbarY.outerWidth();
+          } else {
+            railYOffset.left = scrollbarYLeft + $this.scrollLeft();
+          }
+        }
+        $scrollbarYRail.css(railYOffset);
+
+        $scrollbarX.css({left: scrollbarXLeft, width: scrollbarXWidth - railBorderXWidth});
+        $scrollbarY.css({top: scrollbarYTop, height: scrollbarYHeight - railBorderYWidth});
+      }
+
+      function updateGeometry() {
+        // Hide scrollbars not to affect scrollWidth and scrollHeight
+        $this.removeClass('ps-active-x');
+        $this.removeClass('ps-active-y');
+
+        containerWidth = settings.includePadding ? $this.innerWidth() : $this.width();
+        containerHeight = settings.includePadding ? $this.innerHeight() : $this.height();
+        contentWidth = $this.prop('scrollWidth');
+        contentHeight = $this.prop('scrollHeight');
+
+        if (!settings.suppressScrollX && containerWidth + settings.scrollXMarginOffset < contentWidth) {
+          scrollbarXActive = true;
+          railXWidth = containerWidth - railXMarginWidth;
+          scrollbarXWidth = getThumbSize(getInt(railXWidth * containerWidth / contentWidth));
+          scrollbarXLeft = getInt($this.scrollLeft() * (railXWidth - scrollbarXWidth) / (contentWidth - containerWidth));
+        } else {
+          scrollbarXActive = false;
+          scrollbarXWidth = 0;
+          scrollbarXLeft = 0;
+          $this.scrollLeft(0);
+        }
+
+        if (!settings.suppressScrollY && containerHeight + settings.scrollYMarginOffset < contentHeight) {
+          scrollbarYActive = true;
+          railYHeight = containerHeight - railYMarginHeight;
+          scrollbarYHeight = getThumbSize(getInt(railYHeight * containerHeight / contentHeight));
+          scrollbarYTop = getInt($this.scrollTop() * (railYHeight - scrollbarYHeight) / (contentHeight - containerHeight));
+        } else {
+          scrollbarYActive = false;
+          scrollbarYHeight = 0;
+          scrollbarYTop = 0;
+          $this.scrollTop(0);
+        }
+
+        if (scrollbarXLeft >= railXWidth - scrollbarXWidth) {
+          scrollbarXLeft = railXWidth - scrollbarXWidth;
+        }
+        if (scrollbarYTop >= railYHeight - scrollbarYHeight) {
+          scrollbarYTop = railYHeight - scrollbarYHeight;
+        }
+
+        updateCss();
+
+        if (scrollbarXActive) {
+          $this.addClass('ps-active-x');
+        }
+        if (scrollbarYActive) {
+          $this.addClass('ps-active-y');
+        }
+      }
+
+      function bindMouseScrollXHandler() {
+        var currentLeft;
+        var currentPageX;
+
+        var mouseMoveHandler = function (e) {
+          updateScrollLeft(currentLeft, e.pageX - currentPageX);
+          updateGeometry();
+          e.stopPropagation();
+          e.preventDefault();
+        };
+
+        var mouseUpHandler = function (e) {
+          $this.removeClass('ps-in-scrolling');
+          $(ownerDocument).unbind(eventClass('mousemove'), mouseMoveHandler);
+        };
+
+        $scrollbarX.bind(eventClass('mousedown'), function (e) {
+          currentPageX = e.pageX;
+          currentLeft = $scrollbarX.position().left;
+          $this.addClass('ps-in-scrolling');
+
+          $(ownerDocument).bind(eventClass('mousemove'), mouseMoveHandler);
+          $(ownerDocument).one(eventClass('mouseup'), mouseUpHandler);
+
+          e.stopPropagation();
+          e.preventDefault();
+        });
+
+        currentLeft =
+        currentPageX = null;
+      }
+
+      function bindMouseScrollYHandler() {
+        var currentTop;
+        var currentPageY;
+
+        var mouseMoveHandler = function (e) {
+          updateScrollTop(currentTop, e.pageY - currentPageY);
+          updateGeometry();
+          e.stopPropagation();
+          e.preventDefault();
+        };
+
+        var mouseUpHandler = function (e) {
+          $this.removeClass('ps-in-scrolling');
+          $(ownerDocument).unbind(eventClass('mousemove'), mouseMoveHandler);
+        };
+
+        $scrollbarY.bind(eventClass('mousedown'), function (e) {
+          currentPageY = e.pageY;
+          currentTop = $scrollbarY.position().top;
+          $this.addClass('ps-in-scrolling');
+
+          $(ownerDocument).bind(eventClass('mousemove'), mouseMoveHandler);
+          $(ownerDocument).one(eventClass('mouseup'), mouseUpHandler);
+
+          e.stopPropagation();
+          e.preventDefault();
+        });
+
+        currentTop =
+        currentPageY = null;
+      }
+
+      function shouldPreventWheel(deltaX, deltaY) {
+        var scrollTop = $this.scrollTop();
+        if (deltaX === 0) {
+          if (!scrollbarYActive) {
+            return false;
+          }
+          if ((scrollTop === 0 && deltaY > 0) || (scrollTop >= contentHeight - containerHeight && deltaY < 0)) {
+            return !settings.wheelPropagation;
+          }
+        }
+
+        var scrollLeft = $this.scrollLeft();
+        if (deltaY === 0) {
+          if (!scrollbarXActive) {
+            return false;
+          }
+          if ((scrollLeft === 0 && deltaX < 0) || (scrollLeft >= contentWidth - containerWidth && deltaX > 0)) {
+            return !settings.wheelPropagation;
+          }
+        }
+        return true;
+      }
+
+      function shouldPreventSwipe(deltaX, deltaY) {
+        var scrollTop = $this.scrollTop();
+        var scrollLeft = $this.scrollLeft();
+        var magnitudeX = Math.abs(deltaX);
+        var magnitudeY = Math.abs(deltaY);
+
+        if (magnitudeY > magnitudeX) {
+          // user is perhaps trying to swipe up/down the page
+
+          if (((deltaY < 0) && (scrollTop === contentHeight - containerHeight)) ||
+              ((deltaY > 0) && (scrollTop === 0))) {
+            return !settings.swipePropagation;
+          }
+        } else if (magnitudeX > magnitudeY) {
+          // user is perhaps trying to swipe left/right across the page
+
+          if (((deltaX < 0) && (scrollLeft === contentWidth - containerWidth)) ||
+              ((deltaX > 0) && (scrollLeft === 0))) {
+            return !settings.swipePropagation;
+          }
+        }
+
+        return true;
+      }
+
+      function bindMouseWheelHandler() {
+        var shouldPrevent = false;
+
+        function getDeltaFromEvent(e) {
+          var deltaX = e.originalEvent.deltaX;
+          var deltaY = -1 * e.originalEvent.deltaY;
+
+          if (typeof deltaX === "undefined" || typeof deltaY === "undefined") {
+            // OS X Safari
+            deltaX = -1 * e.originalEvent.wheelDeltaX / 6;
+            deltaY = e.originalEvent.wheelDeltaY / 6;
+          }
+
+          if (e.originalEvent.deltaMode && e.originalEvent.deltaMode === 1) {
+            // Firefox in deltaMode 1: Line scrolling
+            deltaX *= 10;
+            deltaY *= 10;
+          }
+
+          if (deltaX !== deltaX && deltaY !== deltaY/* NaN checks */) {
+            // IE in some mouse drivers
+            deltaX = 0;
+            deltaY = e.originalEvent.wheelDelta;
+          }
+
+          return [deltaX, deltaY];
+        }
+
+        function mousewheelHandler(e) {
+          // FIXME: this is a quick fix for the select problem in FF and IE.
+          // If there comes an effective way to deal with the problem,
+          // this lines should be removed.
+          if (!isWebkit && $this.find('select:focus').length > 0) {
+            return;
+          }
+
+          var delta = getDeltaFromEvent(e);
+
+          var deltaX = delta[0];
+          var deltaY = delta[1];
+
+          shouldPrevent = false;
+          if (!settings.useBothWheelAxes) {
+            // deltaX will only be used for horizontal scrolling and deltaY will
+            // only be used for vertical scrolling - this is the default
+            $this.scrollTop($this.scrollTop() - (deltaY * settings.wheelSpeed));
+            $this.scrollLeft($this.scrollLeft() + (deltaX * settings.wheelSpeed));
+          } else if (scrollbarYActive && !scrollbarXActive) {
+            // only vertical scrollbar is active and useBothWheelAxes option is
+            // active, so let's scroll vertical bar using both mouse wheel axes
+            if (deltaY) {
+              $this.scrollTop($this.scrollTop() - (deltaY * settings.wheelSpeed));
+            } else {
+              $this.scrollTop($this.scrollTop() + (deltaX * settings.wheelSpeed));
+            }
+            shouldPrevent = true;
+          } else if (scrollbarXActive && !scrollbarYActive) {
+            // useBothWheelAxes and only horizontal bar is active, so use both
+            // wheel axes for horizontal bar
+            if (deltaX) {
+              $this.scrollLeft($this.scrollLeft() + (deltaX * settings.wheelSpeed));
+            } else {
+              $this.scrollLeft($this.scrollLeft() - (deltaY * settings.wheelSpeed));
+            }
+            shouldPrevent = true;
+          }
+
+          updateGeometry();
+
+          shouldPrevent = (shouldPrevent || shouldPreventWheel(deltaX, deltaY));
+          if (shouldPrevent) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }
+
+        if (typeof window.onwheel !== "undefined") {
+          $this.bind(eventClass('wheel'), mousewheelHandler);
+        } else if (typeof window.onmousewheel !== "undefined") {
+          $this.bind(eventClass('mousewheel'), mousewheelHandler);
+        }
+      }
+
+      function bindKeyboardHandler() {
+        var hovered = false;
+        $this.bind(eventClass('mouseenter'), function (e) {
+          hovered = true;
+        });
+        $this.bind(eventClass('mouseleave'), function (e) {
+          hovered = false;
+        });
+
+        var shouldPrevent = false;
+        $(ownerDocument).bind(eventClass('keydown'), function (e) {
+          if (e.isDefaultPrevented && e.isDefaultPrevented()) {
+            return;
+          }
+
+          if (!hovered) {
+            return;
+          }
+
+          var activeElement = document.activeElement ? document.activeElement : ownerDocument.activeElement;
+
+          if (activeElement) {
+            // go deeper if element is a webcomponent
+            while (activeElement.shadowRoot) {
+              activeElement = activeElement.shadowRoot.activeElement;
+            }
+            if ($(activeElement).is(":input,[contenteditable]")) {
+              return;
+            }
+          }
+
+          var deltaX = 0;
+          var deltaY = 0;
+
+          switch (e.which) {
+          case 37: // left
+            deltaX = -30;
+            break;
+          case 38: // up
+            deltaY = 30;
+            break;
+          case 39: // right
+            deltaX = 30;
+            break;
+          case 40: // down
+            deltaY = -30;
+            break;
+          case 33: // page up
+            deltaY = 90;
+            break;
+          case 32: // space bar
+          case 34: // page down
+            deltaY = -90;
+            break;
+          case 35: // end
+            if (e.ctrlKey) {
+              deltaY = -contentHeight;
+            } else {
+              deltaY = -containerHeight;
+            }
+            break;
+          case 36: // home
+            if (e.ctrlKey) {
+              deltaY = $this.scrollTop();
+            } else {
+              deltaY = containerHeight;
+            }
+            break;
+          default:
+            return;
+          }
+
+          $this.scrollTop($this.scrollTop() - deltaY);
+          $this.scrollLeft($this.scrollLeft() + deltaX);
+
+          shouldPrevent = shouldPreventWheel(deltaX, deltaY);
+          if (shouldPrevent) {
+            e.preventDefault();
+          }
+        });
+      }
+
+      function bindRailClickHandler() {
+        function stopPropagation(e) { e.stopPropagation(); }
+
+        $scrollbarY.bind(eventClass('click'), stopPropagation);
+        $scrollbarYRail.bind(eventClass('click'), function (e) {
+          var halfOfScrollbarLength = getInt(scrollbarYHeight / 2);
+          var positionTop = e.pageY - $scrollbarYRail.offset().top - halfOfScrollbarLength;
+          var maxPositionTop = containerHeight - scrollbarYHeight;
+          var positionRatio = positionTop / maxPositionTop;
+
+          if (positionRatio < 0) {
+            positionRatio = 0;
+          } else if (positionRatio > 1) {
+            positionRatio = 1;
+          }
+
+          $this.scrollTop((contentHeight - containerHeight) * positionRatio);
+        });
+
+        $scrollbarX.bind(eventClass('click'), stopPropagation);
+        $scrollbarXRail.bind(eventClass('click'), function (e) {
+          var halfOfScrollbarLength = getInt(scrollbarXWidth / 2);
+          var positionLeft = e.pageX - $scrollbarXRail.offset().left - halfOfScrollbarLength;
+          var maxPositionLeft = containerWidth - scrollbarXWidth;
+          var positionRatio = positionLeft / maxPositionLeft;
+
+          if (positionRatio < 0) {
+            positionRatio = 0;
+          } else if (positionRatio > 1) {
+            positionRatio = 1;
+          }
+
+          $this.scrollLeft((contentWidth - containerWidth) * positionRatio);
+        });
+      }
+
+      function bindSelectionHandler() {
+        function getRangeNode() {
+          var selection = window.getSelection ? window.getSelection() :
+                          document.getSlection ? document.getSlection() : {rangeCount: 0};
+          if (selection.rangeCount === 0) {
+            return null;
+          } else {
+            return selection.getRangeAt(0).commonAncestorContainer;
+          }
+        }
+
+        var scrollingLoop = null;
+        var scrollDiff = {top: 0, left: 0};
+        function startScrolling() {
+          if (!scrollingLoop) {
+            scrollingLoop = setInterval(function () {
+              if (!isPluginAlive()) {
+                clearInterval(scrollingLoop);
+                return;
+              }
+
+              $this.scrollTop($this.scrollTop() + scrollDiff.top);
+              $this.scrollLeft($this.scrollLeft() + scrollDiff.left);
+              updateGeometry();
+            }, 50); // every .1 sec
+          }
+        }
+        function stopScrolling() {
+          if (scrollingLoop) {
+            clearInterval(scrollingLoop);
+            scrollingLoop = null;
+          }
+          $this.removeClass('ps-in-scrolling');
+          $this.removeClass('ps-in-scrolling');
+        }
+
+        var isSelected = false;
+        $(ownerDocument).bind(eventClass('selectionchange'), function (e) {
+          if ($.contains($this[0], getRangeNode())) {
+            isSelected = true;
+          } else {
+            isSelected = false;
+            stopScrolling();
+          }
+        });
+        $(window).bind(eventClass('mouseup'), function (e) {
+          if (isSelected) {
+            isSelected = false;
+            stopScrolling();
+          }
+        });
+
+        $(window).bind(eventClass('mousemove'), function (e) {
+          if (isSelected) {
+            var mousePosition = {x: e.pageX, y: e.pageY};
+            var containerOffset = $this.offset();
+            var containerGeometry = {
+              left: containerOffset.left,
+              right: containerOffset.left + $this.outerWidth(),
+              top: containerOffset.top,
+              bottom: containerOffset.top + $this.outerHeight()
+            };
+
+            if (mousePosition.x < containerGeometry.left + 3) {
+              scrollDiff.left = -5;
+              $this.addClass('ps-in-scrolling');
+            } else if (mousePosition.x > containerGeometry.right - 3) {
+              scrollDiff.left = 5;
+              $this.addClass('ps-in-scrolling');
+            } else {
+              scrollDiff.left = 0;
+            }
+
+            if (mousePosition.y < containerGeometry.top + 3) {
+              if (containerGeometry.top + 3 - mousePosition.y < 5) {
+                scrollDiff.top = -5;
+              } else {
+                scrollDiff.top = -20;
+              }
+              $this.addClass('ps-in-scrolling');
+            } else if (mousePosition.y > containerGeometry.bottom - 3) {
+              if (mousePosition.y - containerGeometry.bottom + 3 < 5) {
+                scrollDiff.top = 5;
+              } else {
+                scrollDiff.top = 20;
+              }
+              $this.addClass('ps-in-scrolling');
+            } else {
+              scrollDiff.top = 0;
+            }
+
+            if (scrollDiff.top === 0 && scrollDiff.left === 0) {
+              stopScrolling();
+            } else {
+              startScrolling();
+            }
+          }
+        });
+      }
+
+      function bindTouchHandler(supportsTouch, supportsIePointer) {
+        function applyTouchMove(differenceX, differenceY) {
+          $this.scrollTop($this.scrollTop() - differenceY);
+          $this.scrollLeft($this.scrollLeft() - differenceX);
+
+          updateGeometry();
+        }
+
+        var startOffset = {};
+        var startTime = 0;
+        var speed = {};
+        var easingLoop = null;
+        var inGlobalTouch = false;
+        var inLocalTouch = false;
+
+        function globalTouchStart(e) {
+          inGlobalTouch = true;
+        }
+        function globalTouchEnd(e) {
+          inGlobalTouch = false;
+        }
+
+        function getTouch(e) {
+          if (e.originalEvent.targetTouches) {
+            return e.originalEvent.targetTouches[0];
+          } else {
+            // Maybe IE pointer
+            return e.originalEvent;
+          }
+        }
+        function shouldHandle(e) {
+          var event = e.originalEvent;
+          if (event.targetTouches && event.targetTouches.length === 1) {
+            return true;
+          }
+          if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== event.MSPOINTER_TYPE_MOUSE) {
+            return true;
+          }
+          return false;
+        }
+        function touchStart(e) {
+          if (shouldHandle(e)) {
+            inLocalTouch = true;
+
+            var touch = getTouch(e);
+
+            startOffset.pageX = touch.pageX;
+            startOffset.pageY = touch.pageY;
+
+            startTime = (new Date()).getTime();
+
+            if (easingLoop !== null) {
+              clearInterval(easingLoop);
+            }
+
+            e.stopPropagation();
+          }
+        }
+        function touchMove(e) {
+          if (!inGlobalTouch && inLocalTouch && shouldHandle(e)) {
+            var touch = getTouch(e);
+
+            var currentOffset = {pageX: touch.pageX, pageY: touch.pageY};
+
+            var differenceX = currentOffset.pageX - startOffset.pageX;
+            var differenceY = currentOffset.pageY - startOffset.pageY;
+
+            applyTouchMove(differenceX, differenceY);
+            startOffset = currentOffset;
+
+            var currentTime = (new Date()).getTime();
+
+            var timeGap = currentTime - startTime;
+            if (timeGap > 0) {
+              speed.x = differenceX / timeGap;
+              speed.y = differenceY / timeGap;
+              startTime = currentTime;
+            }
+
+            if (shouldPreventSwipe(differenceX, differenceY)) {
+              e.stopPropagation();
+              e.preventDefault();
+            }
+          }
+        }
+        function touchEnd(e) {
+          if (!inGlobalTouch && inLocalTouch) {
+            inLocalTouch = false;
+
+            clearInterval(easingLoop);
+            easingLoop = setInterval(function () {
+              if (!isPluginAlive()) {
+                clearInterval(easingLoop);
+                return;
+              }
+
+              if (Math.abs(speed.x) < 0.01 && Math.abs(speed.y) < 0.01) {
+                clearInterval(easingLoop);
+                return;
+              }
+
+              applyTouchMove(speed.x * 30, speed.y * 30);
+
+              speed.x *= 0.8;
+              speed.y *= 0.8;
+            }, 10);
+          }
+        }
+
+        if (supportsTouch) {
+          $(window).bind(eventClass("touchstart"), globalTouchStart);
+          $(window).bind(eventClass("touchend"), globalTouchEnd);
+          $this.bind(eventClass("touchstart"), touchStart);
+          $this.bind(eventClass("touchmove"), touchMove);
+          $this.bind(eventClass("touchend"), touchEnd);
+        }
+
+        if (supportsIePointer) {
+          if (window.PointerEvent) {
+            $(window).bind(eventClass("pointerdown"), globalTouchStart);
+            $(window).bind(eventClass("pointerup"), globalTouchEnd);
+            $this.bind(eventClass("pointerdown"), touchStart);
+            $this.bind(eventClass("pointermove"), touchMove);
+            $this.bind(eventClass("pointerup"), touchEnd);
+          } else if (window.MSPointerEvent) {
+            $(window).bind(eventClass("MSPointerDown"), globalTouchStart);
+            $(window).bind(eventClass("MSPointerUp"), globalTouchEnd);
+            $this.bind(eventClass("MSPointerDown"), touchStart);
+            $this.bind(eventClass("MSPointerMove"), touchMove);
+            $this.bind(eventClass("MSPointerUp"), touchEnd);
+          }
+        }
+      }
+
+      function bindScrollHandler() {
+        $this.bind(eventClass('scroll'), function (e) {
+          updateGeometry();
+        });
+      }
+
+      function destroy() {
+        $this.unbind(eventClass());
+        $(window).unbind(eventClass());
+        $(ownerDocument).unbind(eventClass());
+        $this.data('perfect-scrollbar', null);
+        $this.data('perfect-scrollbar-update', null);
+        $this.data('perfect-scrollbar-destroy', null);
+        $scrollbarX.remove();
+        $scrollbarY.remove();
+        $scrollbarXRail.remove();
+        $scrollbarYRail.remove();
+
+        // clean all variables
+        $this =
+        $scrollbarXRail =
+        $scrollbarYRail =
+        $scrollbarX =
+        $scrollbarY =
+        scrollbarXActive =
+        scrollbarYActive =
+        containerWidth =
+        containerHeight =
+        contentWidth =
+        contentHeight =
+        scrollbarXWidth =
+        scrollbarXLeft =
+        scrollbarXBottom =
+        isScrollbarXUsingBottom =
+        scrollbarXTop =
+        scrollbarYHeight =
+        scrollbarYTop =
+        scrollbarYRight =
+        isScrollbarYUsingRight =
+        scrollbarYLeft =
+        isRtl =
+        eventClass = null;
+      }
+
+      var supportsTouch = (('ontouchstart' in window) || window.DocumentTouch && document instanceof window.DocumentTouch);
+      var supportsIePointer = window.navigator.msMaxTouchPoints !== null;
+
+      function initialize() {
+        updateGeometry();
+        bindScrollHandler();
+        bindMouseScrollXHandler();
+        bindMouseScrollYHandler();
+        bindRailClickHandler();
+        bindSelectionHandler();
+        bindMouseWheelHandler();
+
+        if (supportsTouch || supportsIePointer) {
+          bindTouchHandler(supportsTouch, supportsIePointer);
+        }
+        if (settings.useKeyboard) {
+          bindKeyboardHandler();
+        }
+        $this.data('perfect-scrollbar', $this);
+        $this.data('perfect-scrollbar-update', updateGeometry);
+        $this.data('perfect-scrollbar-destroy', destroy);
+      }
+
+      initialize();
+
+      return $this;
+    });
+  };
+});
+
+angular.module('perfect_scrollbar', []).directive('perfectScrollbar',
+  ['$parse', '$window', function($parse, $window) {
+  var psOptions = [
+    'wheelSpeed', 'wheelPropagation', 'minScrollbarLength', 'useBothWheelAxes',
+    'useKeyboard', 'suppressScrollX', 'suppressScrollY', 'scrollXMarginOffset',
+    'scrollYMarginOffset', 'includePadding'//, 'onScroll', 'scrollDown'
+  ];
+
+  return {
+    restrict: 'EA',
+    transclude: true,
+    template: '<div><div ng-transclude></div></div>',
+    replace: true,
+    link: function($scope, $elem, $attr) {
+      var jqWindow = angular.element($window);
+      var options = {};
+
+      for (var i=0, l=psOptions.length; i<l; i++) {
+        var opt = psOptions[i];
+        if ($attr[opt] !== undefined) {
+          options[opt] = $parse($attr[opt])();
+        }
+      }
+
+      $scope.$evalAsync(function() {
+        $elem.perfectScrollbar(options);
+        var onScrollHandler = $parse($attr.onScroll)
+        $elem.scroll(function(){
+          var scrollTop = $elem.scrollTop()
+          var scrollHeight = $elem.prop('scrollHeight') - $elem.height()
+          $scope.$apply(function() {
+            onScrollHandler($scope, {
+              scrollTop: scrollTop,
+              scrollHeight: scrollHeight
+            })
+          })
+        });
+      });
+
+      function update(event) {
+        $scope.$evalAsync(function() {
+          if ($attr.scrollDown == 'true' && event != 'mouseenter') {
+            setTimeout(function () {
+              $($elem).scrollTop($($elem).prop("scrollHeight"));
+            }, 100);
+          }
+          $elem.perfectScrollbar('update');
+        });
+      }
+
+      // This is necessary when you don't watch anything with the scrollbar
+      $elem.bind('mouseenter', update('mouseenter'));
+
+      // Possible future improvement - check the type here and use the appropriate watch for non-arrays
+      if ($attr.refreshOnChange) {
+        $scope.$watchCollection($attr.refreshOnChange, function() {
+          update();
+        });
+      }
+
+      // this is from a pull request - I am not totally sure what the original issue is but seems harmless
+      if ($attr.refreshOnResize) {
+        jqWindow.on('resize', update);
+      }
+
+      $elem.bind('$destroy', function() {
+        jqWindow.off('resize', update);
+        $elem.perfectScrollbar('destroy');
+      });
+
+    }
+  };
+}]);
+
+define("ng-perfect-scrollbar", ["angular","perfect-scrollbar"], function(){});
+
+/*
+ * angular-ui-bootstrap
+ * http://angular-ui.github.io/bootstrap/
+
+ * Version: 0.13.0 - 2015-05-02
+ * License: MIT
+ */
+angular.module("ui.bootstrap", ["ui.bootstrap.datepicker","ui.bootstrap.dateparser","ui.bootstrap.position"]);
+angular.module('ui.bootstrap.datepicker', ['ui.bootstrap.dateparser', 'ui.bootstrap.position'])
+
+.constant('datepickerConfig', {
+  formatDay: 'dd',
+  formatMonth: 'MMMM',
+  formatYear: 'yyyy',
+  formatDayHeader: 'EEE',
+  formatDayTitle: 'MMMM yyyy',
+  formatMonthTitle: 'yyyy',
+  datepickerMode: 'day',
+  minMode: 'day',
+  maxMode: 'year',
+  showWeeks: true,
+  startingDay: 0,
+  yearRange: 20,
+  minDate: null,
+  maxDate: null,
+  shortcutPropagation: false
+})
+
+.controller('DatepickerController', ['$scope', '$attrs', '$parse', '$interpolate', '$timeout', '$log', 'dateFilter', 'datepickerConfig', function($scope, $attrs, $parse, $interpolate, $timeout, $log, dateFilter, datepickerConfig) {
+  var self = this,
+      ngModelCtrl = { $setViewValue: angular.noop }; // nullModelCtrl;
+
+  // Modes chain
+  this.modes = ['day', 'month', 'year'];
+
+  // Configuration attributes
+  angular.forEach(['formatDay', 'formatMonth', 'formatYear', 'formatDayHeader', 'formatDayTitle', 'formatMonthTitle',
+                   'minMode', 'maxMode', 'showWeeks', 'startingDay', 'yearRange', 'shortcutPropagation'], function( key, index ) {
+    self[key] = angular.isDefined($attrs[key]) ? (index < 8 ? $interpolate($attrs[key])($scope.$parent) : $scope.$parent.$eval($attrs[key])) : datepickerConfig[key];
+  });
+
+  // Watchable date attributes
+  angular.forEach(['minDate', 'maxDate'], function( key ) {
+    if ( $attrs[key] ) {
+      $scope.$parent.$watch($parse($attrs[key]), function(value) {
+        self[key] = value ? new Date(value) : null;
+        self.refreshView();
+      });
+    } else {
+      self[key] = datepickerConfig[key] ? new Date(datepickerConfig[key]) : null;
+    }
+  });
+
+  $scope.datepickerMode = $scope.datepickerMode || datepickerConfig.datepickerMode;
+  $scope.maxMode = self.maxMode;
+  $scope.uniqueId = 'datepicker-' + $scope.$id + '-' + Math.floor(Math.random() * 10000);
+
+  if(angular.isDefined($attrs.initDate)) {
+    this.activeDate = $scope.$parent.$eval($attrs.initDate) || new Date();
+    $scope.$parent.$watch($attrs.initDate, function(initDate){
+      if(initDate && (ngModelCtrl.$isEmpty(ngModelCtrl.$modelValue) || ngModelCtrl.$invalid)){
+        self.activeDate = initDate;
+        self.refreshView();
+      }
+    });
+  } else {
+    this.activeDate =  new Date();
+  }
+
+  $scope.isActive = function(dateObject) {
+    if (self.compare(dateObject.date, self.activeDate) === 0) {
+      $scope.activeDateId = dateObject.uid;
+      return true;
+    }
+    return false;
+  };
+
+  this.init = function( ngModelCtrl_ ) {
+    ngModelCtrl = ngModelCtrl_;
+
+    ngModelCtrl.$render = function() {
+      self.render();
+    };
+  };
+
+  this.render = function() {
+    if ( ngModelCtrl.$viewValue ) {
+      var date = new Date( ngModelCtrl.$viewValue ),
+          isValid = !isNaN(date);
+
+      if ( isValid ) {
+        this.activeDate = date;
+      } else {
+        $log.error('Datepicker directive: "ng-model" value must be a Date object, a number of milliseconds since 01.01.1970 or a string representing an RFC2822 or ISO 8601 date.');
+      }
+      ngModelCtrl.$setValidity('date', isValid);
+    }
+    this.refreshView();
+  };
+
+  this.refreshView = function() {
+    if ( this.element ) {
+      this._refreshView();
+
+      var date = ngModelCtrl.$viewValue ? new Date(ngModelCtrl.$viewValue) : null;
+      ngModelCtrl.$setValidity('date-disabled', !date || (this.element && !this.isDisabled(date)));
+    }
+  };
+
+  this.createDateObject = function(date, format) {
+    var model = ngModelCtrl.$viewValue ? new Date(ngModelCtrl.$viewValue) : null;
+    return {
+      date: date,
+      label: dateFilter(date, format),
+      selected: model && this.compare(date, model) === 0,
+      disabled: this.isDisabled(date),
+      current: this.compare(date, new Date()) === 0,
+      customClass: this.customClass(date)
+    };
+  };
+
+  this.isDisabled = function( date ) {
+    return ((this.minDate && this.compare(date, this.minDate) < 0) || (this.maxDate && this.compare(date, this.maxDate) > 0) || ($attrs.dateDisabled && $scope.dateDisabled({date: date, mode: $scope.datepickerMode})));
+  };
+
+    this.customClass = function( date ) {
+      return $scope.customClass({date: date, mode: $scope.datepickerMode});
+    };
+
+  // Split array into smaller arrays
+  this.split = function(arr, size) {
+    var arrays = [];
+    while (arr.length > 0) {
+      arrays.push(arr.splice(0, size));
+    }
+    return arrays;
+  };
+
+  $scope.select = function( date ) {
+    if ( $scope.datepickerMode === self.minMode ) {
+      var dt = ngModelCtrl.$viewValue ? new Date( ngModelCtrl.$viewValue ) : new Date(0, 0, 0, 0, 0, 0, 0);
+      dt.setFullYear( date.getFullYear(), date.getMonth(), date.getDate() );
+      ngModelCtrl.$setViewValue( dt );
+      ngModelCtrl.$render();
+    } else {
+      self.activeDate = date;
+      $scope.datepickerMode = self.modes[ self.modes.indexOf( $scope.datepickerMode ) - 1 ];
+    }
+  };
+
+  $scope.move = function( direction ) {
+    var year = self.activeDate.getFullYear() + direction * (self.step.years || 0),
+        month = self.activeDate.getMonth() + direction * (self.step.months || 0);
+    self.activeDate.setFullYear(year, month, 1);
+    self.refreshView();
+  };
+
+  $scope.toggleMode = function( direction ) {
+    direction = direction || 1;
+
+    if (($scope.datepickerMode === self.maxMode && direction === 1) || ($scope.datepickerMode === self.minMode && direction === -1)) {
+      return;
+    }
+
+    $scope.datepickerMode = self.modes[ self.modes.indexOf( $scope.datepickerMode ) + direction ];
+  };
+
+  // Key event mapper
+  $scope.keys = { 13:'enter', 32:'space', 33:'pageup', 34:'pagedown', 35:'end', 36:'home', 37:'left', 38:'up', 39:'right', 40:'down' };
+
+  var focusElement = function() {
+    $timeout(function() {
+      self.element[0].focus();
+    }, 0 , false);
+  };
+
+  // Listen for focus requests from popup directive
+  $scope.$on('datepicker.focus', focusElement);
+
+  $scope.keydown = function( evt ) {
+    var key = $scope.keys[evt.which];
+
+    if ( !key || evt.shiftKey || evt.altKey ) {
+      return;
+    }
+
+    evt.preventDefault();
+    if(!self.shortcutPropagation){
+        evt.stopPropagation();
+    }
+
+    if (key === 'enter' || key === 'space') {
+      if ( self.isDisabled(self.activeDate)) {
+        return; // do nothing
+      }
+      $scope.select(self.activeDate);
+      focusElement();
+    } else if (evt.ctrlKey && (key === 'up' || key === 'down')) {
+      $scope.toggleMode(key === 'up' ? 1 : -1);
+      focusElement();
+    } else {
+      self.handleKeyDown(key, evt);
+      self.refreshView();
+    }
+  };
+}])
+
+.directive( 'datepicker', function () {
+  return {
+    restrict: 'EA',
+    replace: true,
+    templateUrl: 'core/datepicker/datepicker.html',
+    scope: {
+      datepickerMode: '=?',
+      dateDisabled: '&',
+      customClass: '&',
+      shortcutPropagation: '&?'
+    },
+    require: ['datepicker', '?^ngModel'],
+    controller: 'DatepickerController',
+    link: function(scope, element, attrs, ctrls) {
+      var datepickerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
+
+      if ( ngModelCtrl ) {
+        datepickerCtrl.init( ngModelCtrl );
+      }
+    }
+  };
+})
+
+.directive('daypicker', ['dateFilter', function (dateFilter) {
+  return {
+    restrict: 'EA',
+    replace: true,
+    templateUrl: 'core/datepicker/day.html',
+    require: '^datepicker',
+    link: function(scope, element, attrs, ctrl) {
+      scope.showWeeks = ctrl.showWeeks;
+
+      ctrl.step = { months: 1 };
+      ctrl.element = element;
+
+      var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      function getDaysInMonth( year, month ) {
+        return ((month === 1) && (year % 4 === 0) && ((year % 100 !== 0) || (year % 400 === 0))) ? 29 : DAYS_IN_MONTH[month];
+      }
+
+      function getDates(startDate, n) {
+        var dates = new Array(n), current = new Date(startDate), i = 0;
+        current.setHours(12); // Prevent repeated dates because of timezone bug
+        while ( i < n ) {
+          dates[i++] = new Date(current);
+          current.setDate( current.getDate() + 1 );
+        }
+        return dates;
+      }
+
+      ctrl._refreshView = function() {
+        var year = ctrl.activeDate.getFullYear(),
+          month = ctrl.activeDate.getMonth(),
+          firstDayOfMonth = new Date(year, month, 1),
+          difference = ctrl.startingDay - firstDayOfMonth.getDay(),
+          numDisplayedFromPreviousMonth = (difference > 0) ? 7 - difference : - difference,
+          firstDate = new Date(firstDayOfMonth);
+
+        if ( numDisplayedFromPreviousMonth > 0 ) {
+          firstDate.setDate( - numDisplayedFromPreviousMonth + 1 );
+        }
+
+        // 42 is the number of days on a six-month calendar
+        var days = getDates(firstDate, 42);
+        for (var i = 0; i < 42; i ++) {
+          days[i] = angular.extend(ctrl.createDateObject(days[i], ctrl.formatDay), {
+            secondary: days[i].getMonth() !== month,
+            uid: scope.uniqueId + '-' + i
+          });
+        }
+
+        scope.labels = new Array(7);
+        for (var j = 0; j < 7; j++) {
+          scope.labels[j] = {
+            abbr: dateFilter(days[j].date, ctrl.formatDayHeader),
+            full: dateFilter(days[j].date, 'EEEE')
+          };
+        }
+
+        scope.title = dateFilter(ctrl.activeDate, ctrl.formatDayTitle);
+        scope.rows = ctrl.split(days, 7);
+
+        if ( scope.showWeeks ) {
+          scope.weekNumbers = [];
+          var thursdayIndex = (4 + 7 - ctrl.startingDay) % 7,
+              numWeeks = scope.rows.length;
+          for (var curWeek = 0; curWeek < numWeeks; curWeek++) {
+            scope.weekNumbers.push(
+              getISO8601WeekNumber( scope.rows[curWeek][thursdayIndex].date ));
+          }
+        }
+      };
+
+      ctrl.compare = function(date1, date2) {
+        return (new Date( date1.getFullYear(), date1.getMonth(), date1.getDate() ) - new Date( date2.getFullYear(), date2.getMonth(), date2.getDate() ) );
+      };
+
+      function getISO8601WeekNumber(date) {
+        var checkDate = new Date(date);
+        checkDate.setDate(checkDate.getDate() + 4 - (checkDate.getDay() || 7)); // Thursday
+        var time = checkDate.getTime();
+        checkDate.setMonth(0); // Compare with Jan 1
+        checkDate.setDate(1);
+        return Math.floor(Math.round((time - checkDate) / 86400000) / 7) + 1;
+      }
+
+      ctrl.handleKeyDown = function( key, evt ) {
+        var date = ctrl.activeDate.getDate();
+
+        if (key === 'left') {
+          date = date - 1;   // up
+        } else if (key === 'up') {
+          date = date - 7;   // down
+        } else if (key === 'right') {
+          date = date + 1;   // down
+        } else if (key === 'down') {
+          date = date + 7;
+        } else if (key === 'pageup' || key === 'pagedown') {
+          var month = ctrl.activeDate.getMonth() + (key === 'pageup' ? - 1 : 1);
+          ctrl.activeDate.setMonth(month, 1);
+          date = Math.min(getDaysInMonth(ctrl.activeDate.getFullYear(), ctrl.activeDate.getMonth()), date);
+        } else if (key === 'home') {
+          date = 1;
+        } else if (key === 'end') {
+          date = getDaysInMonth(ctrl.activeDate.getFullYear(), ctrl.activeDate.getMonth());
+        }
+        ctrl.activeDate.setDate(date);
+      };
+
+      ctrl.refreshView();
+    }
+  };
+}])
+
+.directive('monthpicker', ['dateFilter', function (dateFilter) {
+  return {
+    restrict: 'EA',
+    replace: true,
+    templateUrl: 'core/datepicker/month.html',
+    require: '^datepicker',
+    link: function(scope, element, attrs, ctrl) {
+      ctrl.step = { years: 1 };
+      ctrl.element = element;
+
+      ctrl._refreshView = function() {
+        var months = new Array(12),
+            year = ctrl.activeDate.getFullYear();
+
+        for ( var i = 0; i < 12; i++ ) {
+          months[i] = angular.extend(ctrl.createDateObject(new Date(year, i, 1), ctrl.formatMonth), {
+            uid: scope.uniqueId + '-' + i
+          });
+        }
+
+        scope.title = dateFilter(ctrl.activeDate, ctrl.formatMonthTitle);
+        scope.rows = ctrl.split(months, 3);
+      };
+
+      ctrl.compare = function(date1, date2) {
+        return new Date( date1.getFullYear(), date1.getMonth() ) - new Date( date2.getFullYear(), date2.getMonth() );
+      };
+
+      ctrl.handleKeyDown = function( key, evt ) {
+        var date = ctrl.activeDate.getMonth();
+
+        if (key === 'left') {
+          date = date - 1;   // up
+        } else if (key === 'up') {
+          date = date - 3;   // down
+        } else if (key === 'right') {
+          date = date + 1;   // down
+        } else if (key === 'down') {
+          date = date + 3;
+        } else if (key === 'pageup' || key === 'pagedown') {
+          var year = ctrl.activeDate.getFullYear() + (key === 'pageup' ? - 1 : 1);
+          ctrl.activeDate.setFullYear(year);
+        } else if (key === 'home') {
+          date = 0;
+        } else if (key === 'end') {
+          date = 11;
+        }
+        ctrl.activeDate.setMonth(date);
+      };
+
+      ctrl.refreshView();
+    }
+  };
+}])
+
+.directive('yearpicker', ['dateFilter', function (dateFilter) {
+  return {
+    restrict: 'EA',
+    replace: true,
+    templateUrl: 'core/datepicker/year.html',
+    require: '^datepicker',
+    link: function(scope, element, attrs, ctrl) {
+      var range = ctrl.yearRange;
+
+      ctrl.step = { years: range };
+      ctrl.element = element;
+
+      function getStartingYear( year ) {
+        return parseInt((year - 1) / range, 10) * range + 1;
+      }
+
+      ctrl._refreshView = function() {
+        var years = new Array(range);
+
+        for ( var i = 0, start = getStartingYear(ctrl.activeDate.getFullYear()); i < range; i++ ) {
+          years[i] = angular.extend(ctrl.createDateObject(new Date(start + i, 0, 1), ctrl.formatYear), {
+            uid: scope.uniqueId + '-' + i
+          });
+        }
+
+        scope.title = [years[0].label, years[range - 1].label].join(' - ');
+        scope.rows = ctrl.split(years, 5);
+      };
+
+      ctrl.compare = function(date1, date2) {
+        return date1.getFullYear() - date2.getFullYear();
+      };
+
+      ctrl.handleKeyDown = function( key, evt ) {
+        var date = ctrl.activeDate.getFullYear();
+
+        if (key === 'left') {
+          date = date - 1;   // up
+        } else if (key === 'up') {
+          date = date - 5;   // down
+        } else if (key === 'right') {
+          date = date + 1;   // down
+        } else if (key === 'down') {
+          date = date + 5;
+        } else if (key === 'pageup' || key === 'pagedown') {
+          date += (key === 'pageup' ? - 1 : 1) * ctrl.step.years;
+        } else if (key === 'home') {
+          date = getStartingYear( ctrl.activeDate.getFullYear() );
+        } else if (key === 'end') {
+          date = getStartingYear( ctrl.activeDate.getFullYear() ) + range - 1;
+        }
+        ctrl.activeDate.setFullYear(date);
+      };
+
+      ctrl.refreshView();
+    }
+  };
+}])
+
+.constant('datepickerPopupConfig', {
+  datepickerPopup: 'yyyy-MM-dd',
+  html5Types: {
+    date: 'yyyy-MM-dd',
+    'datetime-local': 'yyyy-MM-ddTHH:mm:ss.sss',
+    'month': 'yyyy-MM'
+  },
+  currentText: 'Today',
+  clearText: 'Clear',
+  closeText: 'Done',
+  closeOnDateSelection: true,
+  appendToBody: false,
+  showButtonBar: true
+})
+
+.directive('datepickerPopup', ['$compile', '$parse', '$document', '$position', 'dateFilter', 'dateParser', 'datepickerPopupConfig',
+function ($compile, $parse, $document, $position, dateFilter, dateParser, datepickerPopupConfig) {
+  return {
+    restrict: 'EA',
+    require: 'ngModel',
+    scope: {
+      isOpen: '=?',
+      currentText: '@',
+      clearText: '@',
+      closeText: '@',
+      dateDisabled: '&',
+      customClass: '&'
+    },
+    link: function(scope, element, attrs, ngModel) {
+      var dateFormat,
+          closeOnDateSelection = angular.isDefined(attrs.closeOnDateSelection) ? scope.$parent.$eval(attrs.closeOnDateSelection) : datepickerPopupConfig.closeOnDateSelection,
+          appendToBody = angular.isDefined(attrs.datepickerAppendToBody) ? scope.$parent.$eval(attrs.datepickerAppendToBody) : datepickerPopupConfig.appendToBody;
+
+      scope.showButtonBar = angular.isDefined(attrs.showButtonBar) ? scope.$parent.$eval(attrs.showButtonBar) : datepickerPopupConfig.showButtonBar;
+
+      scope.getText = function( key ) {
+        return scope[key + 'Text'] || datepickerPopupConfig[key + 'Text'];
+      };
+
+      var isHtml5DateInput = false;
+      if (datepickerPopupConfig.html5Types[attrs.type]) {
+        dateFormat = datepickerPopupConfig.html5Types[attrs.type];
+        isHtml5DateInput = true;
+      } else {
+        dateFormat = attrs.datepickerPopup || datepickerPopupConfig.datepickerPopup;
+        attrs.$observe('datepickerPopup', function(value, oldValue) {
+            var newDateFormat = value || datepickerPopupConfig.datepickerPopup;
+            // Invalidate the $modelValue to ensure that formatters re-run
+            // FIXME: Refactor when PR is merged: https://github.com/angular/angular.js/pull/10764
+            if (newDateFormat !== dateFormat) {
+              dateFormat = newDateFormat;
+              ngModel.$modelValue = null;
+
+              if (!dateFormat) {
+                throw new Error('datepickerPopup must have a date format specified.');
+              }
+            }
+        });
+      }
+
+      if (!dateFormat) {
+        throw new Error('datepickerPopup must have a date format specified.');
+      }
+
+      if (isHtml5DateInput && attrs.datepickerPopup) {
+        throw new Error('HTML5 date input types do not support custom formats.');
+      }
+
+      // popup element used to display calendar
+      var popupEl = angular.element('<div datepicker-popup-wrap><div datepicker></div></div>');
+      popupEl.attr({
+        'ng-model': 'date',
+        'ng-change': 'dateSelection()'
+      });
+
+      function cameltoDash( string ){
+        return string.replace(/([A-Z])/g, function($1) { return '-' + $1.toLowerCase(); });
+      }
+
+      // datepicker element
+      var datepickerEl = angular.element(popupEl.children()[0]);
+      if (isHtml5DateInput) {
+        if (attrs.type == 'month') {
+          datepickerEl.attr('datepicker-mode', '"month"');
+          datepickerEl.attr('min-mode', 'month');
+        }
+      }
+
+      if ( attrs.datepickerOptions ) {
+        var options = scope.$parent.$eval(attrs.datepickerOptions);
+        if(options.initDate) {
+          scope.initDate = options.initDate;
+          datepickerEl.attr( 'init-date', 'initDate' );
+          delete options.initDate;
+        }
+        angular.forEach(options, function( value, option ) {
+          datepickerEl.attr( cameltoDash(option), value );
+        });
+      }
+
+      scope.watchData = {};
+      angular.forEach(['minDate', 'maxDate', 'datepickerMode', 'initDate', 'shortcutPropagation'], function( key ) {
+        if ( attrs[key] ) {
+          var getAttribute = $parse(attrs[key]);
+          scope.$parent.$watch(getAttribute, function(value){
+            scope.watchData[key] = value;
+          });
+          datepickerEl.attr(cameltoDash(key), 'watchData.' + key);
+
+          // Propagate changes from datepicker to outside
+          if ( key === 'datepickerMode' ) {
+            var setAttribute = getAttribute.assign;
+            scope.$watch('watchData.' + key, function(value, oldvalue) {
+              if ( value !== oldvalue ) {
+                setAttribute(scope.$parent, value);
+              }
+            });
+          }
+        }
+      });
+      if (attrs.dateDisabled) {
+        datepickerEl.attr('date-disabled', 'dateDisabled({ date: date, mode: mode })');
+      }
+
+      if (attrs.showWeeks) {
+        datepickerEl.attr('show-weeks', attrs.showWeeks);
+      }
+
+      if (attrs.customClass){
+        datepickerEl.attr('custom-class', 'customClass({ date: date, mode: mode })');
+      }
+
+      function parseDate(viewValue) {
+        if (angular.isNumber(viewValue)) {
+          // presumably timestamp to date object
+          viewValue = new Date(viewValue);
+        }
+
+        if (!viewValue) {
+          return null;
+        } else if (angular.isDate(viewValue) && !isNaN(viewValue)) {
+          return viewValue;
+        } else if (angular.isString(viewValue)) {
+          var date = dateParser.parse(viewValue, dateFormat, scope.date) || new Date(viewValue);
+          if (isNaN(date)) {
+            return undefined;
+          } else {
+            return date;
+          }
+        } else {
+          return undefined;
+        }
+      }
+
+      function validator(modelValue, viewValue) {
+        var value = modelValue || viewValue;
+        if (angular.isNumber(value)) {
+          value = new Date(value);
+        }
+        if (!value) {
+          return true;
+        } else if (angular.isDate(value) && !isNaN(value)) {
+          return true;
+        } else if (angular.isString(value)) {
+          var date = dateParser.parse(value, dateFormat) || new Date(value);
+          return !isNaN(date);
+        } else {
+          return false;
+        }
+      }
+
+      if (!isHtml5DateInput) {
+        // Internal API to maintain the correct ng-invalid-[key] class
+        ngModel.$$parserName = 'date';
+        ngModel.$validators.date = validator;
+        ngModel.$parsers.unshift(parseDate);
+        ngModel.$formatters.push(function (value) {
+          scope.date = value;
+          return ngModel.$isEmpty(value) ? value : dateFilter(value, dateFormat);
+        });
+      }
+      else {
+        ngModel.$formatters.push(function (value) {
+          scope.date = value;
+          return value;
+        });
+      }
+
+      // Inner change
+      scope.dateSelection = function(dt) {
+        if (angular.isDefined(dt)) {
+          scope.date = dt;
+        }
+        var date = scope.date ? dateFilter(scope.date, dateFormat) : '';
+        element.val(date);
+        ngModel.$setViewValue(date);
+
+        if ( closeOnDateSelection ) {
+          scope.isOpen = false;
+          element[0].focus();
+        }
+      };
+
+      // Detect changes in the view from the text box
+      ngModel.$viewChangeListeners.push(function () {
+        scope.date = dateParser.parse(ngModel.$viewValue, dateFormat, scope.date) || new Date(ngModel.$viewValue);
+      });
+
+      var documentClickBind = function(event) {
+        if (scope.isOpen && event.target !== element[0]) {
+          scope.$apply(function() {
+            scope.isOpen = false;
+          });
+        }
+      };
+
+      var keydown = function(evt, noApply) {
+        scope.keydown(evt);
+      };
+      element.bind('keydown', keydown);
+
+      scope.keydown = function(evt) {
+        if (evt.which === 27) {
+          evt.preventDefault();
+          if (scope.isOpen) {
+            evt.stopPropagation();
+          }
+          scope.close();
+        } else if (evt.which === 40 && !scope.isOpen) {
+          scope.isOpen = true;
+        }
+      };
+
+      scope.$watch('isOpen', function(value) {
+        if (value) {
+          scope.$broadcast('datepicker.focus');
+          scope.position = appendToBody ? $position.offset(element) : $position.position(element);
+          scope.position.top = scope.position.top + element.prop('offsetHeight');
+
+          $document.bind('click', documentClickBind);
+        } else {
+          $document.unbind('click', documentClickBind);
+        }
+      });
+
+      scope.select = function( date ) {
+        if (date === 'today') {
+          var today = new Date();
+          if (angular.isDate(scope.date)) {
+            date = new Date(scope.date);
+            date.setFullYear(today.getFullYear(), today.getMonth(), today.getDate());
+          } else {
+            date = new Date(today.setHours(0, 0, 0, 0));
+          }
+        }
+        scope.dateSelection( date );
+      };
+
+      scope.close = function() {
+        scope.isOpen = false;
+        element[0].focus();
+      };
+
+      var $popup = $compile(popupEl)(scope);
+      // Prevent jQuery cache memory leak (template is now redundant after linking)
+      popupEl.remove();
+
+      if ( appendToBody ) {
+        $document.find('body').append($popup);
+      } else {
+        element.after($popup);
+      }
+
+      scope.$on('$destroy', function() {
+        $popup.remove();
+        element.unbind('keydown', keydown);
+        $document.unbind('click', documentClickBind);
+      });
+    }
+  };
+}])
+
+.directive('datepickerPopupWrap', function() {
+  return {
+    restrict:'EA',
+    replace: true,
+    transclude: true,
+    templateUrl: 'core/datepicker/popup.html',
+    link:function (scope, element, attrs) {
+      element.bind('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+    }
+  };
+});
+
+angular.module('ui.bootstrap.dateparser', [])
+
+.service('dateParser', ['$locale', 'orderByFilter', function($locale, orderByFilter) {
+  // Pulled from https://github.com/mbostock/d3/blob/master/src/format/requote.js
+  var SPECIAL_CHARACTERS_REGEXP = /[\\\^\$\*\+\?\|\[\]\(\)\.\{\}]/g;
+
+  this.parsers = {};
+
+  var formatCodeToRegex = {
+    'yyyy': {
+      regex: '\\d{4}',
+      apply: function(value) { this.year = +value; }
+    },
+    'yy': {
+      regex: '\\d{2}',
+      apply: function(value) { this.year = +value + 2000; }
+    },
+    'y': {
+      regex: '\\d{1,4}',
+      apply: function(value) { this.year = +value; }
+    },
+    'MMMM': {
+      regex: $locale.DATETIME_FORMATS.MONTH.join('|'),
+      apply: function(value) { this.month = $locale.DATETIME_FORMATS.MONTH.indexOf(value); }
+    },
+    'MMM': {
+      regex: $locale.DATETIME_FORMATS.SHORTMONTH.join('|'),
+      apply: function(value) { this.month = $locale.DATETIME_FORMATS.SHORTMONTH.indexOf(value); }
+    },
+    'MM': {
+      regex: '0[1-9]|1[0-2]',
+      apply: function(value) { this.month = value - 1; }
+    },
+    'M': {
+      regex: '[1-9]|1[0-2]',
+      apply: function(value) { this.month = value - 1; }
+    },
+    'dd': {
+      regex: '[0-2][0-9]{1}|3[0-1]{1}',
+      apply: function(value) { this.date = +value; }
+    },
+    'd': {
+      regex: '[1-2]?[0-9]{1}|3[0-1]{1}',
+      apply: function(value) { this.date = +value; }
+    },
+    'EEEE': {
+      regex: $locale.DATETIME_FORMATS.DAY.join('|')
+    },
+    'EEE': {
+      regex: $locale.DATETIME_FORMATS.SHORTDAY.join('|')
+    },
+    'HH': {
+      regex: '(?:0|1)[0-9]|2[0-3]',
+      apply: function(value) { this.hours = +value; }
+    },
+    'H': {
+      regex: '1?[0-9]|2[0-3]',
+      apply: function(value) { this.hours = +value; }
+    },
+    'mm': {
+      regex: '[0-5][0-9]',
+      apply: function(value) { this.minutes = +value; }
+    },
+    'm': {
+      regex: '[0-9]|[1-5][0-9]',
+      apply: function(value) { this.minutes = +value; }
+    },
+    'sss': {
+      regex: '[0-9][0-9][0-9]',
+      apply: function(value) { this.milliseconds = +value; }
+    },
+    'ss': {
+      regex: '[0-5][0-9]',
+      apply: function(value) { this.seconds = +value; }
+    },
+    's': {
+      regex: '[0-9]|[1-5][0-9]',
+      apply: function(value) { this.seconds = +value; }
+    }
+  };
+
+  function createParser(format) {
+    var map = [], regex = format.split('');
+
+    angular.forEach(formatCodeToRegex, function(data, code) {
+      var index = format.indexOf(code);
+
+      if (index > -1) {
+        format = format.split('');
+
+        regex[index] = '(' + data.regex + ')';
+        format[index] = '$'; // Custom symbol to define consumed part of format
+        for (var i = index + 1, n = index + code.length; i < n; i++) {
+          regex[i] = '';
+          format[i] = '$';
+        }
+        format = format.join('');
+
+        map.push({ index: index, apply: data.apply });
+      }
+    });
+
+    return {
+      regex: new RegExp('^' + regex.join('') + '$'),
+      map: orderByFilter(map, 'index')
+    };
+  }
+
+  this.parse = function(input, format, baseDate) {
+    if ( !angular.isString(input) || !format ) {
+      return input;
+    }
+
+    format = $locale.DATETIME_FORMATS[format] || format;
+    format = format.replace(SPECIAL_CHARACTERS_REGEXP, '\\$&');
+
+    if ( !this.parsers[format] ) {
+      this.parsers[format] = createParser(format);
+    }
+
+    var parser = this.parsers[format],
+        regex = parser.regex,
+        map = parser.map,
+        results = input.match(regex);
+
+    if ( results && results.length ) {
+      var fields, dt;
+      if (baseDate) {
+        fields = {
+          year: baseDate.getFullYear(),
+          month: baseDate.getMonth(),
+          date: baseDate.getDate(),
+          hours: baseDate.getHours(),
+          minutes: baseDate.getMinutes(),
+          seconds: baseDate.getSeconds(),
+          milliseconds: baseDate.getMilliseconds()
+        };
+      } else {
+        fields = { year: 1900, month: 0, date: 1, hours: 0, minutes: 0, seconds: 0, milliseconds: 0 };
+      }
+
+      for( var i = 1, n = results.length; i < n; i++ ) {
+        var mapper = map[i-1];
+        if ( mapper.apply ) {
+          mapper.apply.call(fields, results[i]);
+        }
+      }
+
+      if ( isValid(fields.year, fields.month, fields.date) ) {
+        dt = new Date(fields.year, fields.month, fields.date, fields.hours, fields.minutes, fields.seconds,
+          fields.milliseconds || 0);
+      }
+
+      return dt;
+    }
+  };
+
+  // Check if date is valid for specific month (and year for February).
+  // Month: 0 = Jan, 1 = Feb, etc
+  function isValid(year, month, date) {
+    if (date < 1) {
+      return false;
+    }
+
+    if ( month === 1 && date > 28) {
+        return date === 29 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0);
+    }
+
+    if ( month === 3 || month === 5 || month === 8 || month === 10) {
+        return date < 31;
+    }
+
+    return true;
+  }
+}]);
+
+angular.module('ui.bootstrap.position', [])
+
+/**
+ * A set of utility methods that can be use to retrieve position of DOM elements.
+ * It is meant to be used where we need to absolute-position DOM elements in
+ * relation to other, existing elements (this is the case for tooltips, popovers,
+ * typeahead suggestions etc.).
+ */
+  .factory('$position', ['$document', '$window', function ($document, $window) {
+
+    function getStyle(el, cssprop) {
+      if (el.currentStyle) { //IE
+        return el.currentStyle[cssprop];
+      } else if ($window.getComputedStyle) {
+        return $window.getComputedStyle(el)[cssprop];
+      }
+      // finally try and get inline style
+      return el.style[cssprop];
+    }
+
+    /**
+     * Checks if a given element is statically positioned
+     * @param element - raw DOM element
+     */
+    function isStaticPositioned(element) {
+      return (getStyle(element, 'position') || 'static' ) === 'static';
+    }
+
+    /**
+     * returns the closest, non-statically positioned parentOffset of a given element
+     * @param element
+     */
+    var parentOffsetEl = function (element) {
+      var docDomEl = $document[0];
+      var offsetParent = element.offsetParent || docDomEl;
+      while (offsetParent && offsetParent !== docDomEl && isStaticPositioned(offsetParent) ) {
+        offsetParent = offsetParent.offsetParent;
+      }
+      return offsetParent || docDomEl;
+    };
+
+    return {
+      /**
+       * Provides read-only equivalent of jQuery's position function:
+       * http://api.jquery.com/position/
+       */
+      position: function (element) {
+        var elBCR = this.offset(element);
+        var offsetParentBCR = { top: 0, left: 0 };
+        var offsetParentEl = parentOffsetEl(element[0]);
+        if (offsetParentEl != $document[0]) {
+          offsetParentBCR = this.offset(angular.element(offsetParentEl));
+          offsetParentBCR.top += offsetParentEl.clientTop - offsetParentEl.scrollTop;
+          offsetParentBCR.left += offsetParentEl.clientLeft - offsetParentEl.scrollLeft;
+        }
+
+        var boundingClientRect = element[0].getBoundingClientRect();
+        return {
+          width: boundingClientRect.width || element.prop('offsetWidth'),
+          height: boundingClientRect.height || element.prop('offsetHeight'),
+          top: elBCR.top - offsetParentBCR.top,
+          left: elBCR.left - offsetParentBCR.left
+        };
+      },
+
+      /**
+       * Provides read-only equivalent of jQuery's offset function:
+       * http://api.jquery.com/offset/
+       */
+      offset: function (element) {
+        var boundingClientRect = element[0].getBoundingClientRect();
+        return {
+          width: boundingClientRect.width || element.prop('offsetWidth'),
+          height: boundingClientRect.height || element.prop('offsetHeight'),
+          top: boundingClientRect.top + ($window.pageYOffset || $document[0].documentElement.scrollTop),
+          left: boundingClientRect.left + ($window.pageXOffset || $document[0].documentElement.scrollLeft)
+        };
+      },
+
+      /**
+       * Provides coordinates for the targetEl in relation to hostEl
+       */
+      positionElements: function (hostEl, targetEl, positionStr, appendToBody) {
+
+        var positionStrParts = positionStr.split('-');
+        var pos0 = positionStrParts[0], pos1 = positionStrParts[1] || 'center';
+
+        var hostElPos,
+          targetElWidth,
+          targetElHeight,
+          targetElPos;
+
+        hostElPos = appendToBody ? this.offset(hostEl) : this.position(hostEl);
+
+        targetElWidth = targetEl.prop('offsetWidth');
+        targetElHeight = targetEl.prop('offsetHeight');
+
+        var shiftWidth = {
+          center: function () {
+            return hostElPos.left + hostElPos.width / 2 - targetElWidth / 2;
+          },
+          left: function () {
+            return hostElPos.left;
+          },
+          right: function () {
+            return hostElPos.left + hostElPos.width;
+          }
+        };
+
+        var shiftHeight = {
+          center: function () {
+            return hostElPos.top + hostElPos.height / 2 - targetElHeight / 2;
+          },
+          top: function () {
+            return hostElPos.top;
+          },
+          bottom: function () {
+            return hostElPos.top + hostElPos.height;
+          }
+        };
+
+        switch (pos0) {
+          case 'right':
+            targetElPos = {
+              top: shiftHeight[pos1](),
+              left: shiftWidth[pos0]()
+            };
+            break;
+          case 'left':
+            targetElPos = {
+              top: shiftHeight[pos1](),
+              left: hostElPos.left - targetElWidth
+            };
+            break;
+          case 'bottom':
+            targetElPos = {
+              top: shiftHeight[pos0](),
+              left: shiftWidth[pos1]()
+            };
+            break;
+          default:
+            targetElPos = {
+              top: hostElPos.top - targetElHeight,
+              left: shiftWidth[pos1]()
+            };
+            break;
+        }
+
+        return targetElPos;
+      }
+    };
+  }]);
+
+define("ng-datepicker", ["jquery","angular"], function(){});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/module',['require','angular','ui-router'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+    require('ui-router');
+
+    return ng.module('app.core', ['ng', 'ui.router']);
+});
+
+/**
+ * @license RequireJS text 2.0.14 Copyright (c) 2010-2014, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/requirejs/text for details
+ */
+/*jslint regexp: true */
+/*global require, XMLHttpRequest, ActiveXObject,
+  define, window, process, Packages,
+  java, location, Components, FileUtils */
+
+define('text',['module'], function (module) {
+    'use strict';
+
+    var text, fs, Cc, Ci, xpcIsWindows,
+        progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'],
+        xmlRegExp = /^\s*<\?xml(\s)+version=[\'\"](\d)*.(\d)*[\'\"](\s)*\?>/im,
+        bodyRegExp = /<body[^>]*>\s*([\s\S]+)\s*<\/body>/im,
+        hasLocation = typeof location !== 'undefined' && location.href,
+        defaultProtocol = hasLocation && location.protocol && location.protocol.replace(/\:/, ''),
+        defaultHostName = hasLocation && location.hostname,
+        defaultPort = hasLocation && (location.port || undefined),
+        buildMap = {},
+        masterConfig = (module.config && module.config()) || {};
+
+    text = {
+        version: '2.0.14',
+
+        strip: function (content) {
+            //Strips <?xml ...?> declarations so that external SVG and XML
+            //documents can be added to a document without worry. Also, if the string
+            //is an HTML document, only the part inside the body tag is returned.
+            if (content) {
+                content = content.replace(xmlRegExp, "");
+                var matches = content.match(bodyRegExp);
+                if (matches) {
+                    content = matches[1];
+                }
+            } else {
+                content = "";
+            }
+            return content;
+        },
+
+        jsEscape: function (content) {
+            return content.replace(/(['\\])/g, '\\$1')
+                .replace(/[\f]/g, "\\f")
+                .replace(/[\b]/g, "\\b")
+                .replace(/[\n]/g, "\\n")
+                .replace(/[\t]/g, "\\t")
+                .replace(/[\r]/g, "\\r")
+                .replace(/[\u2028]/g, "\\u2028")
+                .replace(/[\u2029]/g, "\\u2029");
+        },
+
+        createXhr: masterConfig.createXhr || function () {
+            //Would love to dump the ActiveX crap in here. Need IE 6 to die first.
+            var xhr, i, progId;
+            if (typeof XMLHttpRequest !== "undefined") {
+                return new XMLHttpRequest();
+            } else if (typeof ActiveXObject !== "undefined") {
+                for (i = 0; i < 3; i += 1) {
+                    progId = progIds[i];
+                    try {
+                        xhr = new ActiveXObject(progId);
+                    } catch (e) {}
+
+                    if (xhr) {
+                        progIds = [progId];  // so faster next time
+                        break;
+                    }
+                }
+            }
+
+            return xhr;
+        },
+
+        /**
+         * Parses a resource name into its component parts. Resource names
+         * look like: module/name.ext!strip, where the !strip part is
+         * optional.
+         * @param {String} name the resource name
+         * @returns {Object} with properties "moduleName", "ext" and "strip"
+         * where strip is a boolean.
+         */
+        parseName: function (name) {
+            var modName, ext, temp,
+                strip = false,
+                index = name.lastIndexOf("."),
+                isRelative = name.indexOf('./') === 0 ||
+                             name.indexOf('../') === 0;
+
+            if (index !== -1 && (!isRelative || index > 1)) {
+                modName = name.substring(0, index);
+                ext = name.substring(index + 1);
+            } else {
+                modName = name;
+            }
+
+            temp = ext || modName;
+            index = temp.indexOf("!");
+            if (index !== -1) {
+                //Pull off the strip arg.
+                strip = temp.substring(index + 1) === "strip";
+                temp = temp.substring(0, index);
+                if (ext) {
+                    ext = temp;
+                } else {
+                    modName = temp;
+                }
+            }
+
+            return {
+                moduleName: modName,
+                ext: ext,
+                strip: strip
+            };
+        },
+
+        xdRegExp: /^((\w+)\:)?\/\/([^\/\\]+)/,
+
+        /**
+         * Is an URL on another domain. Only works for browser use, returns
+         * false in non-browser environments. Only used to know if an
+         * optimized .js version of a text resource should be loaded
+         * instead.
+         * @param {String} url
+         * @returns Boolean
+         */
+        useXhr: function (url, protocol, hostname, port) {
+            var uProtocol, uHostName, uPort,
+                match = text.xdRegExp.exec(url);
+            if (!match) {
+                return true;
+            }
+            uProtocol = match[2];
+            uHostName = match[3];
+
+            uHostName = uHostName.split(':');
+            uPort = uHostName[1];
+            uHostName = uHostName[0];
+
+            return (!uProtocol || uProtocol === protocol) &&
+                   (!uHostName || uHostName.toLowerCase() === hostname.toLowerCase()) &&
+                   ((!uPort && !uHostName) || uPort === port);
+        },
+
+        finishLoad: function (name, strip, content, onLoad) {
+            content = strip ? text.strip(content) : content;
+            if (masterConfig.isBuild) {
+                buildMap[name] = content;
+            }
+            onLoad(content);
+        },
+
+        load: function (name, req, onLoad, config) {
+            //Name has format: some.module.filext!strip
+            //The strip part is optional.
+            //if strip is present, then that means only get the string contents
+            //inside a body tag in an HTML string. For XML/SVG content it means
+            //removing the <?xml ...?> declarations so the content can be inserted
+            //into the current doc without problems.
+
+            // Do not bother with the work if a build and text will
+            // not be inlined.
+            if (config && config.isBuild && !config.inlineText) {
+                onLoad();
+                return;
+            }
+
+            masterConfig.isBuild = config && config.isBuild;
+
+            var parsed = text.parseName(name),
+                nonStripName = parsed.moduleName +
+                    (parsed.ext ? '.' + parsed.ext : ''),
+                url = req.toUrl(nonStripName),
+                useXhr = (masterConfig.useXhr) ||
+                         text.useXhr;
+
+            // Do not load if it is an empty: url
+            if (url.indexOf('empty:') === 0) {
+                onLoad();
+                return;
+            }
+
+            //Load the text. Use XHR if possible and in a browser.
+            if (!hasLocation || useXhr(url, defaultProtocol, defaultHostName, defaultPort)) {
+                text.get(url, function (content) {
+                    text.finishLoad(name, parsed.strip, content, onLoad);
+                }, function (err) {
+                    if (onLoad.error) {
+                        onLoad.error(err);
+                    }
+                });
+            } else {
+                //Need to fetch the resource across domains. Assume
+                //the resource has been optimized into a JS module. Fetch
+                //by the module name + extension, but do not include the
+                //!strip part to avoid file system issues.
+                req([nonStripName], function (content) {
+                    text.finishLoad(parsed.moduleName + '.' + parsed.ext,
+                                    parsed.strip, content, onLoad);
+                });
+            }
+        },
+
+        write: function (pluginName, moduleName, write, config) {
+            if (buildMap.hasOwnProperty(moduleName)) {
+                var content = text.jsEscape(buildMap[moduleName]);
+                write.asModule(pluginName + "!" + moduleName,
+                               "define(function () { return '" +
+                                   content +
+                               "';});\n");
+            }
+        },
+
+        writeFile: function (pluginName, moduleName, req, write, config) {
+            var parsed = text.parseName(moduleName),
+                extPart = parsed.ext ? '.' + parsed.ext : '',
+                nonStripName = parsed.moduleName + extPart,
+                //Use a '.js' file name so that it indicates it is a
+                //script that can be loaded across domains.
+                fileName = req.toUrl(parsed.moduleName + extPart) + '.js';
+
+            //Leverage own load() method to load plugin value, but only
+            //write out values that do not have the strip argument,
+            //to avoid any potential issues with ! in file names.
+            text.load(nonStripName, req, function (value) {
+                //Use own write() method to construct full module value.
+                //But need to create shell that translates writeFile's
+                //write() to the right interface.
+                var textWrite = function (contents) {
+                    return write(fileName, contents);
+                };
+                textWrite.asModule = function (moduleName, contents) {
+                    return write.asModule(moduleName, fileName, contents);
+                };
+
+                text.write(pluginName, nonStripName, textWrite, config);
+            }, config);
+        }
+    };
+
+    if (masterConfig.env === 'node' || (!masterConfig.env &&
+            typeof process !== "undefined" &&
+            process.versions &&
+            !!process.versions.node &&
+            !process.versions['node-webkit'] &&
+            !process.versions['atom-shell'])) {
+        //Using special require.nodeRequire, something added by r.js.
+        fs = require.nodeRequire('fs');
+
+        text.get = function (url, callback, errback) {
+            try {
+                var file = fs.readFileSync(url, 'utf8');
+                //Remove BOM (Byte Mark Order) from utf8 files if it is there.
+                if (file[0] === '\uFEFF') {
+                    file = file.substring(1);
+                }
+                callback(file);
+            } catch (e) {
+                if (errback) {
+                    errback(e);
+                }
+            }
+        };
+    } else if (masterConfig.env === 'xhr' || (!masterConfig.env &&
+            text.createXhr())) {
+        text.get = function (url, callback, errback, headers) {
+            var xhr = text.createXhr(), header;
+            xhr.open('GET', url, true);
+
+            //Allow plugins direct access to xhr headers
+            if (headers) {
+                for (header in headers) {
+                    if (headers.hasOwnProperty(header)) {
+                        xhr.setRequestHeader(header.toLowerCase(), headers[header]);
+                    }
+                }
+            }
+
+            //Allow overrides specified in config
+            if (masterConfig.onXhr) {
+                masterConfig.onXhr(xhr, url);
+            }
+
+            xhr.onreadystatechange = function (evt) {
+                var status, err;
+                //Do not explicitly handle errors, those should be
+                //visible via console output in the browser.
+                if (xhr.readyState === 4) {
+                    status = xhr.status || 0;
+                    if (status > 399 && status < 600) {
+                        //An http 4xx or 5xx error. Signal an error.
+                        err = new Error(url + ' HTTP status: ' + status);
+                        err.xhr = xhr;
+                        if (errback) {
+                            errback(err);
+                        }
+                    } else {
+                        callback(xhr.responseText);
+                    }
+
+                    if (masterConfig.onXhrComplete) {
+                        masterConfig.onXhrComplete(xhr, url);
+                    }
+                }
+            };
+            xhr.send(null);
+        };
+    } else if (masterConfig.env === 'rhino' || (!masterConfig.env &&
+            typeof Packages !== 'undefined' && typeof java !== 'undefined')) {
+        //Why Java, why is this so awkward?
+        text.get = function (url, callback) {
+            var stringBuffer, line,
+                encoding = "utf-8",
+                file = new java.io.File(url),
+                lineSeparator = java.lang.System.getProperty("line.separator"),
+                input = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(file), encoding)),
+                content = '';
+            try {
+                stringBuffer = new java.lang.StringBuffer();
+                line = input.readLine();
+
+                // Byte Order Mark (BOM) - The Unicode Standard, version 3.0, page 324
+                // http://www.unicode.org/faq/utf_bom.html
+
+                // Note that when we use utf-8, the BOM should appear as "EF BB BF", but it doesn't due to this bug in the JDK:
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4508058
+                if (line && line.length() && line.charAt(0) === 0xfeff) {
+                    // Eat the BOM, since we've already found the encoding on this file,
+                    // and we plan to concatenating this buffer with others; the BOM should
+                    // only appear at the top of a file.
+                    line = line.substring(1);
+                }
+
+                if (line !== null) {
+                    stringBuffer.append(line);
+                }
+
+                while ((line = input.readLine()) !== null) {
+                    stringBuffer.append(lineSeparator);
+                    stringBuffer.append(line);
+                }
+                //Make sure we return a JavaScript string and not a Java string.
+                content = String(stringBuffer.toString()); //String
+            } finally {
+                input.close();
+            }
+            callback(content);
+        };
+    } else if (masterConfig.env === 'xpconnect' || (!masterConfig.env &&
+            typeof Components !== 'undefined' && Components.classes &&
+            Components.interfaces)) {
+        //Avert your gaze!
+        Cc = Components.classes;
+        Ci = Components.interfaces;
+        Components.utils['import']('resource://gre/modules/FileUtils.jsm');
+        xpcIsWindows = ('@mozilla.org/windows-registry-key;1' in Cc);
+
+        text.get = function (url, callback) {
+            var inStream, convertStream, fileObj,
+                readData = {};
+
+            if (xpcIsWindows) {
+                url = url.replace(/\//g, '\\');
+            }
+
+            fileObj = new FileUtils.File(url);
+
+            //XPCOM, you so crazy
+            try {
+                inStream = Cc['@mozilla.org/network/file-input-stream;1']
+                           .createInstance(Ci.nsIFileInputStream);
+                inStream.init(fileObj, 1, 0, false);
+
+                convertStream = Cc['@mozilla.org/intl/converter-input-stream;1']
+                                .createInstance(Ci.nsIConverterInputStream);
+                convertStream.init(inStream, "utf-8", inStream.available(),
+                Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+
+                convertStream.readString(inStream.available(), readData);
+                convertStream.close();
+                inStream.close();
+                callback(readData.value);
+            } catch (e) {
+                throw new Error((fileObj && fileObj.path || '') + ': ' + e);
+            }
+        };
+    }
+    return text;
+});
+
+/**
+ * AngularJS template loader plugin for RequireJS.
+ *
+ * Copyright (c) 2014, David Hall.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ *     1. Redistributions of source code must retain the above copyright notice, 
+ *        this list of conditions and the following disclaimer.
+ *     
+ *     2. Redistributions in binary form must reproduce the above copyright 
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ * 
+ *     3. Neither the name of David Hall nor the names of its contributors may be
+ *        used to endorse or promote products derived from this software without
+ *        specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+define('tpl',[
+    "text"
+], function(
+    text
+) {
+
+    "use strict";
+
+    var tplModule = null;
+    
+    var buildMap = {};
+
+    var tpl = {
+
+        _cacheTemplate: function(angular, name, contents) {
+            if (!tplModule) {
+                tplModule = angular.module("tpl", []);
+            }
+            tplModule.run(["$templateCache", function($templateCache) {
+                $templateCache.put(name, contents);
+            }]);
+            return contents;
+        },
+
+        load: function(name, parentRequire, onload, config) {
+            text.get(require.toUrl(name), function(contents) {
+                // How we act next depends on whether this is the browser.
+                if (config.isBuild) {
+                    // This is an optimizing build
+                    buildMap[name] = contents;
+                    onload(contents);
+                } else {
+                    // Add to the template cache.
+                    require(["angular"], function(angular) {
+                        onload(tpl._cacheTemplate(angular, name, contents));
+                    });
+                }
+            });
+        },
+
+        write: function (pluginName, moduleName, write) {
+            if (moduleName in buildMap) {
+                var contents = text.jsEscape(buildMap[moduleName]);
+                write("define('" + pluginName + "!" + moduleName  + "', ['angular', '" + pluginName + "'], function (angular, tpl) { return tpl._cacheTemplate(angular, '" + moduleName + "', '" + contents + "'); });\n");
+            }
+        }
+
+    };
+
+    return tpl;
+
+});
+
+
+define('tpl!core/modal/modal.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/modal/modal.html', '<div modal-render="{{$isRendered}}" tabindex="-1" role="dialog" class="modal"\n     modal-animation-class="fade"\n     ng-class="{in: animate}" ng-style="{\'z-index\': 1050 + index*10, display: \'block\'}" ng-click="close($event)">\n    <div class="modal-dialog" ng-class="size ? \'modal-\' + size : \'\'"><div class="modal-content" modal-transclude></div></div>\n</div>\n'); });
+
+define('core/modal/directives/modalWindow',['require','./../../module','tpl!./../modal.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var template = require('tpl!./../modal.html');
+
+    app.directive('modalWindow', ['$modalStack', '$q', '$templateCache', function ($modalStack, $q, $templateCache) {
+        return {
+            restrict: 'EA',
+            scope: {
+                index: '@',
+                animate: '='
+            },
+            replace: true,
+            transclude: true,
+            template: function (tElement, tAttrs) {
+                return tAttrs.templateUrl ? $templateCache.get(tAttrs.templateUrl) : template;
+            },
+            link: function (scope, element, attrs) {
+                element.addClass(attrs.windowClass || '');
+                scope.size = attrs.size;
+
+                scope.close = function (evt) {
+                    var modal = $modalStack.getTop();
+                    if (modal && modal.value.backdrop && modal.value.backdrop !== 'static' && (evt.target === evt.currentTarget)) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        $modalStack.dismiss(modal.key, 'backdrop click');
+                    }
+                };
+
+                // This property is only added to the scope for the purpose of detecting when this directive is rendered.
+                // We can detect that by using this property in the template associated with this directive and then use
+                // {@link Attribute#$observe} on it.
+                scope.$isRendered = true;
+
+                // Deferred object that will be resolved when this modal is render.
+                var modalRenderDeferObj = $q.defer();
+                // Observe function will be called on next digest cycle after compilation, ensuring that the DOM is ready.
+                // In order to use this way of finding whether DOM is ready, we need to observe a scope property used in modal's template.
+                attrs.$observe('modalRender', function (value) {
+                    if (value === 'true') {
+                        modalRenderDeferObj.resolve();
+                    }
+                });
+
+                modalRenderDeferObj.promise.then(function () {
+                    // trigger CSS transitions
+                    scope.animate = true;
+
+                    var inputsWithAutofocus = element[0].querySelectorAll('[autofocus]');
+                    /**
+                     * Auto-focusing of a freshly-opened modal element causes any child elements
+                     * with the autofocus attribute to lose focus. This is an issue on touch
+                     * based devices which will show and then hide the onscreen keyboard.
+                     * Attempts to refocus the autofocus element via JavaScript will not reopen
+                     * the onscreen keyboard. Fixed by updated the focusing logic to only autofocus
+                     * the modal element if the modal does not contain an autofocus element.
+                     */
+                    if (inputsWithAutofocus.length) {
+                        inputsWithAutofocus[0].focus();
+                    } else {
+                        element[0].focus();
+                    }
+
+                    // Notify {@link $modalStack} that modal is rendered.
+                    var modal = $modalStack.getTop();
+                    if (modal) {
+                        $modalStack.modalRendered(modal.key);
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+define('core/modal/directives/modalAnimationClass',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.directive('modalAnimationClass', [function () {
+        return {
+            compile: function (tElement, tAttrs) {
+                if (tAttrs.modalAnimation) {
+                    tElement.addClass(tAttrs.modalAnimationClass);
+                }
+            }
+        };
+    }]);
+});
+
+
+define('tpl!core/modal/modalBackground.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/modal/modalBackground.html', '<div class="modal-backdrop"\n     modal-animation-class="fade"\n     ng-class="{in: animate}"\n     ng-style="{\'z-index\': 1040 + (index && 1 || 0) + index*10}"\n    ></div>\n'); });
+
+define('core/modal/directives/modalBackdrop',['require','./../../module','tpl!./../modalBackground.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var template = require('tpl!./../modalBackground.html');
+
+    app.directive('modalBackdrop', ['$timeout', function ($timeout) {
+        function linkFn(scope) {
+            scope.animate = false;
+
+            //trigger CSS transitions
+            $timeout(function () {
+                scope.animate = true;
+            });
+        }
+
+        return {
+            restrict: 'EA',
+            replace: true,
+            template: template,
+            compile: function (tElement, tAttrs) {
+                tElement.addClass(tAttrs.backdropClass);
+                return linkFn;
+            }
+        };
+    }]);
+});
+
+define('core/modal/directives/modalTransclude',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.directive('modalTransclude', [function () {
+        return {
+            link: function ($scope, $element, $attrs, controller, $transclude) {
+                $transclude($scope.$parent, function (clone) {
+                    $element.empty();
+                    $element.append(clone);
+                });
+            }
+        };
+    }]);
+});
+
+define('core/modal/factories/modalStack',['require','./../../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var ng = require('angular');
+
+    app.factory('$modalStack', ['$animate', '$timeout', '$document', '$compile', '$rootScope', '$$stackedMap',
+        function ($animate, $timeout, $document, $compile, $rootScope, $$stackedMap) {
+
+            var OPENED_MODAL_CLASS = 'modal-open';
+
+            var backdropDomEl, backdropScope;
+            var openedWindows = $$stackedMap.createNew();
+            var $modalStack = {};
+
+            function backdropIndex() {
+                var topBackdropIndex = -1;
+                var opened = openedWindows.keys();
+                for (var i = 0; i < opened.length; i++) {
+                    if (openedWindows.get(opened[i]).value.backdrop) {
+                        topBackdropIndex = i;
+                    }
+                }
+                return topBackdropIndex;
+            }
+
+            $rootScope.$watch(backdropIndex, function (newBackdropIndex) {
+                if (backdropScope) {
+                    backdropScope.index = newBackdropIndex;
+                }
+            });
+
+            function removeModalWindow(modalInstance) {
+
+                var body = $document.find('body').eq(0);
+                var modalWindow = openedWindows.get(modalInstance).value;
+
+                //clean up the stack
+                openedWindows.remove(modalInstance);
+
+                //remove window DOM element
+                removeAfterAnimate(modalWindow.modalDomEl, modalWindow.modalScope, function () {
+                    body.toggleClass(OPENED_MODAL_CLASS, openedWindows.length() > 0);
+                    checkRemoveBackdrop();
+                });
+            }
+
+            function checkRemoveBackdrop() {
+                //remove backdrop if no longer needed
+                if (backdropDomEl && backdropIndex() === -1) {
+                    var backdropScopeRef = backdropScope;
+                    removeAfterAnimate(backdropDomEl, backdropScope, function () {
+                        backdropScopeRef = null;
+                    });
+                    backdropDomEl = undefined;
+                    backdropScope = undefined;
+                }
+            }
+
+            function removeAfterAnimate(domEl, scope, done) {
+                // Closing animation
+                scope.animate = false;
+
+                if (domEl.attr('modal-animation') && $animate.enabled()) {
+                    // transition out
+                    domEl.one('$animate:close', function closeFn() {
+                        $rootScope.$evalAsync(afterAnimating);
+                    });
+                } else {
+                    // Ensure this call is async
+                    $timeout(afterAnimating);
+                }
+
+                function afterAnimating() {
+                    if (afterAnimating.done) {
+                        return;
+                    }
+                    afterAnimating.done = true;
+
+                    domEl.remove();
+                    scope.$destroy();
+                    if (done) {
+                        done();
+                    }
+                }
+            }
+
+            $document.bind('keydown', function (evt) {
+                var modal;
+
+                if (evt.which === 27) {
+                    modal = openedWindows.top();
+                    if (modal && modal.value.keyboard) {
+                        evt.preventDefault();
+                        $rootScope.$apply(function () {
+                            $modalStack.dismiss(modal.key, 'escape key press');
+                        });
+                    }
+                }
+            });
+
+            $modalStack.open = function (modalInstance, modal) {
+
+                var modalOpener = $document[0].activeElement;
+
+                openedWindows.add(modalInstance, {
+                    deferred: modal.deferred,
+                    renderDeferred: modal.renderDeferred,
+                    modalScope: modal.scope,
+                    backdrop: modal.backdrop,
+                    keyboard: modal.keyboard
+                });
+
+                var body = $document.find('body').eq(0),
+                    currBackdropIndex = backdropIndex();
+
+                if (currBackdropIndex >= 0 && !backdropDomEl) {
+                    backdropScope = $rootScope.$new(true);
+                    backdropScope.index = currBackdropIndex;
+                    var angularBackgroundDomEl = ng.element('<div modal-backdrop="modal-backdrop"></div>');
+                    angularBackgroundDomEl.attr('backdrop-class', modal.backdropClass);
+                    if (modal.animation) {
+                        angularBackgroundDomEl.attr('modal-animation', 'true');
+                    }
+                    backdropDomEl = $compile(angularBackgroundDomEl)(backdropScope);
+                    body.append(backdropDomEl);
+                }
+
+                var angularDomEl = ng.element('<div modal-window="modal-window"></div>');
+                angularDomEl.attr({
+                    'template-url': modal.windowTemplateUrl,
+                    'window-class': modal.windowClass,
+                    'size': modal.size,
+                    'index': openedWindows.length() - 1,
+                    'animate': 'animate'
+                }).html(modal.content);
+                if (modal.animation) {
+                    angularDomEl.attr('modal-animation', 'true');
+                }
+
+                var modalDomEl = $compile(angularDomEl)(modal.scope);
+                openedWindows.top().value.modalDomEl = modalDomEl;
+                openedWindows.top().value.modalOpener = modalOpener;
+                body.append(modalDomEl);
+                body.addClass(OPENED_MODAL_CLASS);
+            };
+
+            function broadcastClosing(modalWindow, resultOrReason, closing) {
+                return !modalWindow.value.modalScope.$broadcast('modal.closing', resultOrReason, closing).defaultPrevented;
+            }
+
+            $modalStack.close = function (modalInstance, result) {
+                var modalWindow = openedWindows.get(modalInstance);
+                if (modalWindow && broadcastClosing(modalWindow, result, true)) {
+                    modalWindow.value.deferred.resolve(result);
+                    removeModalWindow(modalInstance);
+                    modalWindow.value.modalOpener.focus();
+                    return true;
+                }
+                return !modalWindow;
+            };
+
+            $modalStack.dismiss = function (modalInstance, reason) {
+                var modalWindow = openedWindows.get(modalInstance);
+                if (modalWindow && broadcastClosing(modalWindow, reason, false)) {
+                    modalWindow.value.deferred.reject(reason);
+                    removeModalWindow(modalInstance);
+                    modalWindow.value.modalOpener.focus();
+                    return true;
+                }
+                return !modalWindow;
+            };
+
+            $modalStack.dismissAll = function (reason) {
+                var topModal = this.getTop();
+                while (topModal && this.dismiss(topModal.key, reason)) {
+                    topModal = this.getTop();
+                }
+            };
+
+            $modalStack.getTop = function () {
+                return openedWindows.top();
+            };
+
+            $modalStack.modalRendered = function (modalInstance) {
+                var modalWindow = openedWindows.get(modalInstance);
+                if (modalWindow) {
+                    modalWindow.value.renderDeferred.resolve();
+                }
+            };
+
+            return $modalStack;
+        }]);
+});
+
+define('core/modal/factories/stackedMap',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.factory('$$stackedMap', [function () {
+        return {
+            createNew: function () {
+                var stack = [];
+
+                return {
+                    add: function (key, value) {
+                        stack.push({
+                            key: key,
+                            value: value
+                        });
+                    },
+                    get: function (key) {
+                        for (var i = 0; i < stack.length; i++) {
+                            if (key === stack[i].key) {
+                                return stack[i];
+                            }
+                        }
+                    },
+                    keys: function () {
+                        var keys = [];
+                        for (var i = 0; i < stack.length; i++) {
+                            keys.push(stack[i].key);
+                        }
+                        return keys;
+                    },
+                    top: function () {
+                        return stack[stack.length - 1];
+                    },
+                    remove: function (key) {
+                        var idx = -1;
+                        for (var i = 0; i < stack.length; i++) {
+                            if (key === stack[i].key) {
+                                idx = i;
+                                break;
+                            }
+                        }
+                        return stack.splice(idx, 1)[0];
+                    },
+                    removeTop: function () {
+                        return stack.splice(stack.length - 1, 1)[0];
+                    },
+                    length: function () {
+                        return stack.length;
+                    }
+                };
+            }
+        };
+    }]);
+});
+
+define('core/modal/providers/modal',['require','./../../module','angular','tpl!./../modal.html','tpl!./../modalBackground.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var ng = require('angular');
+    require('tpl!./../modal.html');
+    require('tpl!./../modalBackground.html');
+
+    app.provider('$modal', function () {
+        var $modalProvider = {
+            options: {
+                animation: true,
+                backdrop: true, //can also be false or 'static'
+                keyboard: true
+            },
+            $get: ['$injector', '$rootScope', '$q', '$templateRequest', '$controller', '$modalStack',
+                function ($injector, $rootScope, $q, $templateRequest, $controller, $modalStack) {
+
+                    var $modal = {};
+
+                    function getTemplatePromise(options) {
+                        return options.template ? $q.when(options.template) :
+                            $templateRequest(ng.isFunction(options.templateUrl) ? (options.templateUrl)() : options.templateUrl);
+                    }
+
+                    function getResolvePromises(resolves) {
+                        var promisesArr = [];
+                        ng.forEach(resolves, function (value) {
+                            if (ng.isFunction(value) || ng.isArray(value)) {
+                                promisesArr.push($q.when($injector.invoke(value)));
+                            }
+                        });
+                        return promisesArr;
+                    }
+
+                    $modal.open = function (modalOptions) {
+
+                        var modalResultDeferred = $q.defer();
+                        var modalOpenedDeferred = $q.defer();
+                        var modalRenderDeferred = $q.defer();
+
+                        //prepare an instance of a modal to be injected into controllers and returned to a caller
+                        var modalInstance = {
+                            result: modalResultDeferred.promise,
+                            opened: modalOpenedDeferred.promise,
+                            rendered: modalRenderDeferred.promise,
+                            close: function (result) {
+                                return $modalStack.close(modalInstance, result);
+                            },
+                            dismiss: function (reason) {
+                                return $modalStack.dismiss(modalInstance, reason);
+                            }
+                        };
+
+                        //merge and clean up options
+                        modalOptions = ng.extend({}, $modalProvider.options, modalOptions);
+                        modalOptions.resolve = modalOptions.resolve || {};
+
+                        //verify options
+                        if (!modalOptions.template && !modalOptions.templateUrl) {
+                            throw new Error('One of template or templateUrl options is required.');
+                        }
+
+                        var templateAndResolvePromise =
+                            $q.all([getTemplatePromise(modalOptions)].concat(getResolvePromises(modalOptions.resolve)));
+
+
+                        templateAndResolvePromise.then(function resolveSuccess(tplAndVars) {
+
+                            var modalScope = (modalOptions.scope || $rootScope).$new();
+                            modalScope.$close = modalInstance.close;
+                            modalScope.$dismiss = modalInstance.dismiss;
+
+                            var ctrlInstance, ctrlLocals = {};
+                            var resolveIter = 1;
+
+                            //controllers
+                            if (modalOptions.controller) {
+                                ctrlLocals.$scope = modalScope;
+                                ctrlLocals.$modalInstance = modalInstance;
+                                ng.forEach(modalOptions.resolve, function (value, key) {
+                                    ctrlLocals[key] = tplAndVars[resolveIter++];
+                                });
+
+                                ctrlInstance = $controller(modalOptions.controller, ctrlLocals);
+                                if (modalOptions.controllerAs) {
+                                    modalScope[modalOptions.controllerAs] = ctrlInstance;
+                                }
+                            }
+
+                            $modalStack.open(modalInstance, {
+                                scope: modalScope,
+                                deferred: modalResultDeferred,
+                                renderDeferred: modalRenderDeferred,
+                                content: tplAndVars[0],
+                                animation: modalOptions.animation,
+                                backdrop: modalOptions.backdrop,
+                                keyboard: modalOptions.keyboard,
+                                backdropClass: modalOptions.backdropClass,
+                                windowClass: modalOptions.windowClass,
+                                windowTemplateUrl: modalOptions.windowTemplateUrl,
+                                size: modalOptions.size
+                            });
+
+                        }, function resolveError(reason) {
+                            modalResultDeferred.reject(reason);
+                        });
+
+                        templateAndResolvePromise.then(function () {
+                            modalOpenedDeferred.resolve(true);
+                        }, function (reason) {
+                            modalOpenedDeferred.reject(reason);
+                        });
+
+                        return modalInstance;
+                    };
+
+                    return $modal;
+                }]
+        };
+
+        return $modalProvider;
+    });
+});
+
+define('core/modal/index',['require','./directives/modalWindow','./directives/modalAnimationClass','./directives/modalBackdrop','./directives/modalTransclude','./factories/modalStack','./factories/stackedMap','./providers/modal'],function (require) {
+    'use strict';
+
+    require('./directives/modalWindow');
+    require('./directives/modalAnimationClass');
+    require('./directives/modalBackdrop');
+    require('./directives/modalTransclude');
+    require('./factories/modalStack');
+    require('./factories/stackedMap');
+    require('./providers/modal');
+});
+
+
+define('tpl!core/datepicker/datepicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/datepicker.html', '<div ng-switch="datepickerMode" role="application" ng-keydown="keydown($event)">\n    <daypicker ng-switch-when="day" tabindex="0"></daypicker>\n    <monthpicker ng-switch-when="month" tabindex="0"></monthpicker>\n    <yearpicker ng-switch-when="year" tabindex="0"></yearpicker>\n</div>\n'); });
+
+
+define('tpl!core/datepicker/day.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/day.html', '<table role="grid" aria-labelledby="{{::uniqueId}}-title" aria-activedescendant="{{activeDateId}}">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm solid pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th colspan="{{::5 + showWeeks}}"><button id="{{::uniqueId}}-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm solid" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>{{title}}</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm solid pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    <tr>\n        <th ng-if="showWeeks" class="text-center"></th>\n        <th ng-repeat="label in ::labels track by $index" class="text-center"><small aria-label="{{::label.full}}">{{::label.abbr}}</small></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-if="showWeeks" class="text-center h6"><em>{{ weekNumbers[$index] }}</em></td>\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="{{::dt.uid}}" ng-class="::dt.customClass">\n            <button type="button" style="width:100%;" class="btn btn-default btn-sm" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-muted\': dt.secondary, \'text-info\': dt.current}">{{::dt.label}}</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+
+
+define('tpl!core/datepicker/month.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/month.html', '<table role="grid" aria-labelledby="{{::uniqueId}}-title" aria-activedescendant="{{activeDateId}}">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th><button id="{{::uniqueId}}-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>{{title}}</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="{{::dt.uid}}">\n            <button type="button" style="width:100%;" class="btn btn-default" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-info\': dt.current}">{{::dt.label}}</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+
+
+define('tpl!core/datepicker/popup.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/popup.html', '<ul class="dropdown-menu datepicker" ng-style="{display: (isOpen && \'block\') || \'none\', top: position.top+\'px\', left: position.left+\'px\'}" ng-keydown="keydown($event)">\n    <li ng-transclude></li>\n    <li ng-if="showButtonBar" class="button-bar">\n\t\t<span class="btn-group pull-left">\n\t\t\t<button type="button" class="btn btn-sm btn-default solid" ng-click="select(\'today\')">{{ getText(\'current\') }}</button>\n\t\t\t<button type="button" class="btn btn-sm btn-default solid" ng-click="select(null)">{{ getText(\'clear\') }}</button>\n\t\t</span>\n        <button type="button" class="btn btn-sm btn-default pull-right" ng-click="close()">{{ getText(\'close\') }}</button>\n    </li>\n</ul>\n'); });
+
+
+define('tpl!core/datepicker/year.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/year.html', '<table role="grid" aria-labelledby="{{::uniqueId}}-title" aria-activedescendant="{{activeDateId}}">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th colspan="3"><button id="{{::uniqueId}}-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>{{title}}</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="{{::dt.uid}}">\n            <button type="button" style="width:100%;" class="btn btn-default" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-info\': dt.current}">{{::dt.label}}</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+
+define('core/datepicker/index',['require','tpl!./datepicker.html','tpl!./day.html','tpl!./month.html','tpl!./popup.html','tpl!./year.html'],function (require) {
+    'use strict';
+
+    require('tpl!./datepicker.html');
+    require('tpl!./day.html');
+    require('tpl!./month.html');
+    require('tpl!./popup.html');
+    require('tpl!./year.html');
+});
+
+
+define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ui-sref="cm" ui-sref-active="active">Campaign Management</a></li>\n            <li><a class="primary" ui-sref="analytics"  ui-sref-active="active">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n            </li>\n            <li class="dropdown" division-dropdown>\n            </li>\n            <li class="dropdown" account-dropdown>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
+
+/**
+ * Created by alex on 4/15/15.
+ */
+define('core/navbar/navbar',['require','./../module','tpl!./navbar.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./navbar.html');
+
+    app.directive('navbar', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'core/navbar/navbar.html',
+            replace: true,
+            scope: {
+                open: '='
+            }
+        };
+    }]);
+});
+
+/* jshint -W101 */
+
+define('core/navbar/services/util',[],function () {
+    'use strict';
+
+    function sortByName(data) {
+        data.sort(function (a, b) {
+            if (a.name && b.name) {
+                return a.name.localeCompare(b.name);
+            } else {
+                return 0;
+            }
+        });
+
+        return data;
+    }
+
+    function checkName(item, query) {
+        return item.name && item.name.toLowerCase().indexOf(query) > -1;
+    }
+
+    function checkId(item, query) {
+        return item.id && item.id.toLowerCase().indexOf(query) > -1;
+    }
+
+    function search(sorted, query, max) {
+        var output = [];
+        max = max || 5;
+        var item;
+
+        if (query) {
+            query = query.toLowerCase();
+            for (var i = 0; i < sorted.length && output.length < max; i++) {
+                item = sorted[i];
+
+                if (query.length >= 3) {
+                    if (checkName(item, query) || checkId(item, query)) {
+                        output.push(item);
+                    }
+                } else {
+                    if (checkName(item, query)) {
+                        output.push(item);
+                    }
+                }
+            }
+        }
+
+        return output;
+    }
+
+    function alphabetMap(sorted) {
+        var map = {};
+        var item, key;
+
+        for (var i = 0; i < sorted.length; i++) {
+            item = sorted[i];
+            if (item.name && item.name !== null) {
+                key = item.name.trim().charAt(0).toLowerCase();
+
+                //Check non-alphanumeric
+                if (!/\d|[a-z]/.test(key)) {
+                    var name = item.name.trim();
+                    key = name.replace(/[^a-z0-9]|\W+|\r?\n|\r/gmi, '').charAt(0);
+                }
+
+                //Check if its a digit
+                if (/\d/.test(key)) {
+                    if (typeof map['#'] === 'undefined') {
+                        map['#'] = [item];
+                    } else {
+                        map['#'].push(item);
+                    }
+                } else {
+                    if (typeof map[key] === 'undefined') {
+                        map[key] = [item];
+                    } else {
+                        map[key].push(item);
+                    }
+                }
+            }
+        }
+
+        var output = [];
+
+        for (key in map) {
+            output.push({
+                key: key,
+                value: map[key]
+            });
+        }
+
+        output.sort(function (a, b) {
+            return a.key.localeCompare(b.key);
+        });
+
+        return output;
+    }
+
+    function pinned(sorted) {
+        var output = [];
+        var item;
+
+        for (var i = 0; i < sorted.length; i++) {
+            item = sorted[i];
+            if (item.pinned) {
+                output.push(item);
+            }
+        }
+
+        return output;
+    }
+
+    function get(items, id) {
+        var length = items.length;
+        for (var i = 0; i < length; i++) {
+            if (items[i].id === id) {
+                return items[i];
+            }
+        }
+    }
+
+    return {
+        sortByName: sortByName,
+        search: search,
+        alphabetMap: alphabetMap,
+        pinned: pinned,
+        get: get
+    };
+});
+
+define('core/navbar/services/division',['require','./../../module','./util'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var utils = require('./util');
+
+    module.service('divisionService', ['$http', 'dataFactory', '$state', function ($http, dataFactory, $state) {
+        var divisions = dataFactory(utils.sortByName);
+
+        function init(url) {
+            return divisions.init(url, function (data) {
+                return data.divisions;
+            });
+        }
+
+        function search(query) {
+            return utils.search(filtered(), query);
+        }
+
+        function alphabetMap() {
+            return utils.alphabetMap(filtered());
+        }
+
+        //TODO: grab the current clientID from account or campaign
+        function filtered() {
+            var sorted = all();
+            var output = [];
+            var division = get($state.params.divisionId);
+            var clientId = $state.params.clientId || division && division.client.id;
+            var item;
+
+            if (!clientId) {
+                return sorted;
+            }
+
+            for (var i = 0; i < sorted.length; i++) {
+                item = sorted[i];
+                if (clientId && item.client.id === clientId) {
+                    output.push(item);
+                }
+            }
+
+            return output;
+        }
+
+        function all() {
+            return divisions.all();
+        }
+
+        function pin(division) {
+            division.pinned = true;
+            divisions.notifyObservers('pin');
+        }
+
+        function unpin(division) {
+            division.pinned = false;
+            divisions.notifyObservers('pin');
+        }
+
+        function pinned() {
+            return utils.pinned(all());
+        }
+
+        function get(id) {
+            return utils.get(all(), id);
+        }
+
+        return {
+            init: init,
+            setData: divisions.setData,
+            addData: divisions.addData,
+            alphabetMap: alphabetMap,
+            observe: divisions.observe,
+            filtered: filtered,
+            pinned: pinned,
+            unpin: unpin,
+            pin: pin,
+            search: search,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
+define('core/navbar/services/campaign',['require','./../../module','./util'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var utils = require('./util');
+
+    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
+        var campaigns = dataFactory(sortByStartDate);
+
+        function init(url) {
+            return campaigns.init(url, function (data) {
+                return data.campaigns;
+            });
+        }
+
+        function search(query) {
+            return utils.search(filtered(), query);
+        }
+
+        function sortByStartDate(data) {
+            data.sort(function (a, b) {
+                return new Date(b.startDate) - new Date(a.startDate);
+            });
+
+            return data;
+        }
+
+        function getYearQuarter(date) {
+            date = new Date(date);
+            var quarter = Math.ceil((date.getUTCMonth() + 1) / 4);
+            var year = date.getUTCFullYear();
+            return year + ' ' + 'Q' + quarter;
+        }
+
+        function quarterMap() {
+            var sorted = filtered();
+            var map = {};
+            var item, key;
+
+            for (var i = 0; i < sorted.length; i++) {
+                item = sorted[i];
+                key = getYearQuarter(item.startDate);
+                if (typeof map[key] === 'undefined') {
+                    map[key] = [item];
+                } else {
+                    map[key].push(item);
+                }
+            }
+
+            var output = [];
+
+            for (key in map) {
+                output.push({
+                    key: key,
+                    value: map[key]
+                });
+            }
+
+            return output;
+        }
+
+        function filtered() {
+            var sorted = all();
+            var list = accounts.filtered();
+            var campaign = get($state.params.campaignId);
+            var accountId = $state.params.accountId || campaign && campaign.account.id;
+            var output = [];
+            var item, i;
+
+            if (accountId) {
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (accountId === item.account.id) {
+                        output.push(item);
+                    }
+                }
+            } else {
+                if (list.length === accounts.all().length) {
+                    return sorted;
+                }
+
+                var idSet = {};
+
+                for (i = 0; i < list.length; i++) {
+                    item = list[i];
+                    idSet[item.id] = true;
+                }
+
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (idSet[item.account.id]) {
+                        output.push(item);
+                    }
+                }
+            }
+
+            return output;
+        }
+
+
+        function all() {
+            return campaigns.all();
+        }
+
+        function pin(campaign) {
+            campaign.pinned = true;
+            campaigns.notifyObservers('pin');
+        }
+
+        function unpin(campaign) {
+            campaign.pinned = false;
+            campaigns.notifyObservers('pin');
+        }
+
+        function pinned() {
+            return utils.pinned(all());
+        }
+
+        function isInFlight(campaign) {
+            return campaign.status === 'inFlight';
+        }
+
+        function inFlight() {
+            var output = [];
+            var campaigns = filtered();
+            var campaign;
+
+            for (var i = 0; i < campaigns.length; i++) {
+                campaign = campaigns[i];
+                if (isInFlight(campaign)) {
+                    output.push(campaign);
+                }
+            }
+
+            return output;
+        }
+
+        function isPreFlight(campaign) {
+            return campaign.status === 'preFlight';
+        }
+
+        function preFlight() {
+            var output = [];
+            var campaigns = filtered();
+            var campaign;
+
+            for (var i = 0; i < campaigns.length; i++) {
+                campaign = campaigns[i];
+                if (isPreFlight(campaign)) {
+                    output.push(campaign);
+                }
+            }
+
+            return output;
+        }
+
+        function isCompleted(campaign) {
+            return campaign.status === 'completed';
+        }
+
+        function completed() {
+            var output = [];
+            var campaigns = filtered();
+            var campaign;
+
+            for (var i = 0; i < campaigns.length; i++) {
+                campaign = campaigns[i];
+                if (isCompleted(campaign)) {
+                    output.push(campaign);
+                }
+            }
+
+            return output;
+        }
+
+        function get(id) {
+            return utils.get(all(), id);
+        }
+
+        return {
+            init: init,
+            setData: campaigns.setData,
+            addData: campaigns.addData,
+            quarterMap: quarterMap,
+            completed: completed,
+            inFlight: inFlight,
+            preFlight: preFlight,
+            observe: campaigns.observe,
+            filtered: filtered,
+            pinned: pinned,
+            unpin: unpin,
+            search: search,
+            pin: pin,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
+define('core/navbar/services/client',['require','./../../module','./util'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var utils = require('./util');
+
+    module.service('clientService', ['$http', '$window', 'dataFactory', function ($http, $window, dataFactory) {
+        var clients = dataFactory(utils.sortByName);
+
+        function init(url) {
+            return clients.init(url, function (data) {
+                return data.clients;
+            });
+        }
+
+        function all() {
+            return clients.all();
+        }
+
+        function search(query) {
+            return utils.search(all(), query);
+        }
+
+        function alphabetMap() {
+            return utils.alphabetMap(all());
+        }
+
+        function pin(client) {
+            client.pinned = true;
+            clients.notifyObservers('pin');
+            $http.put('/api/v2/clients/' + client.id, {pinned: true})
+                .error(function(error) {
+                    client.pinned = false;
+                    clients.notifyObservers('pin');
+                    console.log(error);
+                    $window.alert('Failed to pin client ' + client.name);
+                });
+        }
+
+        function unpin(client) {
+            client.pinned = false;
+            clients.notifyObservers('pin');
+            $http.put('/api/v2/clients/' + client.id, {pinned: false})
+                .error(function(error) {
+                    client.pinned = true;
+                    clients.notifyObservers('pin');
+                    console.log(error);
+                    $window.alert('Failed to unpin client ' + client.name);
+                });
+        }
+
+        function pinned() {
+            return utils.pinned(all());
+        }
+
+        function get(id) {
+            return utils.get(all(), id);
+        }
+
+        return {
+            init: init,
+            setData: clients.setData,
+            addData: clients.addData,
+            alphabetMap: alphabetMap,
+            observe: clients.observe,
+            pinned: pinned,
+            unpin: unpin,
+            pin: pin,
+            search: search,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
+define('core/navbar/services/account',['require','./../../module','./util'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var utils = require('./util');
+
+    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', function ($http, dataFactory, divisions, $state) {
+        var accounts = dataFactory(utils.sortByName);
+
+        function init(url) {
+            return accounts.init(url, function (data) {
+                return data.accounts;
+            });
+        }
+
+        function all() {
+            return accounts.all();
+        }
+
+        function search(query) {
+            return utils.search(filtered(), query);
+        }
+
+        function alphabetMap() {
+            return utils.alphabetMap(filtered());
+        }
+
+        //TODO: grab the current divisionId from campaign
+        function filtered() {
+            var sorted = all();
+            var list = divisions.filtered();
+            var account = get($state.params.accountId);
+            var divisionId = $state.params.divisionId || account && account.division.id;
+            var output = [];
+            var item, i;
+
+            if (divisionId) {
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (divisionId === item.division.id) {
+                        output.push(item);
+                    }
+                }
+            } else {
+                if (list.length === divisions.all().length) {
+                    return sorted;
+                }
+
+                var divisionIdSet = {};
+
+                for (i = 0; i < list.length; i++) {
+                    item = list[i];
+                    divisionIdSet[item.id] = true;
+                }
+
+                for (i = 0; i < sorted.length; i++) {
+                    item = sorted[i];
+                    if (divisionIdSet[item.division.id]) {
+                        output.push(item);
+                    }
+                }
+            }
+
+            return output;
+        }
+
+
+        function pin(account) {
+            account.pinned = true;
+            accounts.notifyObservers('pin');
+        }
+
+        function unpin(account) {
+            account.pinned = false;
+            accounts.notifyObservers('pin');
+        }
+
+        function pinned() {
+            return utils.pinned(all());
+        }
+
+        function get(id) {
+            return utils.get(all(), id);
+        }
+
+        return {
+            init: init,
+            setData: accounts.setData,
+            addData: accounts.addData,
+            alphabetMap: alphabetMap,
+            observe: accounts.observe,
+            filtered: filtered,
+            search: search,
+            pinned: pinned,
+            unpin: unpin,
+            pin: pin,
+            all: all,
+            get: get
+        };
+    }]);
+});
+
+/* jshint -W101 */
+
+define('core/navbar/services/navbar',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+
+    module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', '$state', function (dataFactory, clients, divisions, accounts, campaigns, $rootScope, $state) {
+        var navInfo = dataFactory();
+        navInfo.setData($state.params);
+        clients.observe(navInfo.notifyObservers);
+        accounts.observe(navInfo.notifyObservers);
+        divisions.observe(navInfo.notifyObservers);
+        campaigns.observe(navInfo.notifyObservers);
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+            navInfo.setData(toParams);
+        });
+
+        function getClient(id) {
+            var data = {};
+            var client = clients.get(id);
+
+            if (client) {
+                data.client = client;
+            }
+
+            return data;
+        }
+
+        function getDivision(id) {
+            var data = {};
+            var division = divisions.get(id);
+
+            if (division) {
+                data.division = division;
+                var client = clients.get(division.client.id);
+                if (client) {
+                    data.client = client;
+                }
+            }
+
+            return data;
+        }
+
+        function getAccount(id) {
+            var data = {};
+            var account = accounts.get(id);
+
+            if (account) {
+                data.account = account;
+                var client = clients.get(account.client.id);
+                var division = divisions.get(account.division.id);
+
+                if (client) {
+                    data.client = client;
+                }
+
+                if (division) {
+                    data.division = division;
+                }
+            }
+
+            return data;
+        }
+
+        function getCampaign(id) {
+            var data = {};
+            var campaign = campaigns.get(id);
+
+            if (campaign) {
+                data.campaign = campaign;
+                var client = clients.get(campaign.client.id);
+                var division = divisions.get(campaign.division.id);
+                var account = accounts.get(campaign.account.id);
+
+                if (client) {
+                    data.client = client;
+                }
+
+                if (account) {
+                    data.account = account;
+                }
+
+                if (division) {
+                    data.division = division;
+                }
+            }
+
+            return data;
+        }
+
+        function all() {
+            var data = navInfo.all() || {};
+
+            if (data.campaignId) {
+                return getCampaign(data.campaignId);
+            }
+            if (data.accountId) {
+                return getAccount(data.accountId);
+            }
+            if (data.divisionId) {
+                return getDivision(data.divisionId);
+            }
+            if (data.clientId) {
+                return getClient(data.clientId);
+            }
+            return {};
+        }
+
+        return {
+            setData: navInfo.setData,
+            observe: navInfo.observe,
+            all: all,
+            params: navInfo.all
+        };
+    }]);
+});
+
+
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="item in clientsMap track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="client in results track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./client.html');
+
+    app.directive('clientDropdown', ['clientService', '$timeout', 'navbarService', function (clients, $timeout, navbar) {
+        return {
+            restrict: 'A',
+            scope: true,
+            templateUrl: 'core/navbar/directives/client.html',
+            controller: ['$scope', function ($scope) {
+                $scope.pin = clients.pin;
+                $scope.unpin = clients.unpin;
+                $scope.section = 'Clients';
+
+                clients.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+
+                $scope.$watch('query', function (newValue) {
+                    $scope.results = clients.search(newValue);
+                });
+
+                function updateCurrent() {
+                    var info = navbar.all();
+                    $scope.current = info.client && info.client.name || 'All Clients';
+                }
+
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = clients.pinned();
+                    } else {
+                        $scope.clientsMap = clients.alphabetMap();
+                        $scope.pinned = clients.pinned();
+                    }
+                }
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li ng-if="!state.clientId"><a>All {{section}}</a></li>\n        <li ng-if="state.clientId"><a ui-sref=".campaigns.client(state)">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by division.id">\n                    <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="item in divisionsMap track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                    <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="division in results track by division.id">\n                    <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./division.html');
+
+    app.directive('divisionDropdown', ['divisionService', '$timeout', 'navbarService', function (divisions, $timeout, navbar) {
+        return {
+            restrict: 'A',
+            scope: true,
+            templateUrl: 'core/navbar/directives/division.html',
+            link: function ($scope, element) {
+                $scope.pin = divisions.pin;
+                $scope.unpin = divisions.unpin;
+                $scope.section = 'Divisions';
+                $scope.current = 'All Divisions';
+                $scope.state = {};
+
+                divisions.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
+
+                $scope.$watch('query', function (newValue) {
+                    $scope.results = divisions.search(newValue);
+                });
+
+                function updateCurrent() {
+                    var info = navbar.all();
+                    $scope.current = info.division && info.division.name || 'All Divisions';
+                    if (info.division && info.client && info.client.id) {
+                        $scope.state = { clientId: info.client.id };
+                    } else {
+                        $scope.state = {};
+                    }
+                }
+
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = divisions.pinned();
+                    } else {
+                        if (hideDivisionTab()) {
+                            element.hide();
+                        } else {
+                            element.show();
+                        }
+                        $scope.divisionsMap = divisions.alphabetMap();
+                        $scope.pinned = divisions.pinned();
+                    }
+                }
+
+                function hideDivisionTab() {
+                    // Some users have a default division with a blank name,
+                    // and some users have no divisions. Hide the divisions
+                    // tab for these users
+
+                    var allDivisions = divisions.all();
+                    var numDivisions = allDivisions.length;
+                    return ( numDivisions === 1 &&
+                            allDivisions[0].name === '' ) ||
+                        numDivisions === 0;
+                }
+            }
+        };
+    }]);
+});
+
+
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="tooltip dropdown-toggle-title hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li ng-if="!state.divisionId"><a>All {{section}}</a></li>\n        <li ng-if="state.divisionId"><a ui-sref=".campaigns.division(state)">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="item in accountsMap track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="account in (item.value | limitTo: limit) track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="account in results track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({ accountId: account.id })">{{account.name}}</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./account.html');
+
+    app.directive('accountDropdown', ['accountService', '$timeout', 'navbarService', function (accounts, $timeout, navbar) {
+        return {
+            restrict: 'A',
+            scope: true,
+            templateUrl: 'core/navbar/directives/account.html',
+            controller: ['$scope', function ($scope) {
+                $scope.pin = accounts.pin;
+                $scope.unpin = accounts.unpin;
+                $scope.section = 'Accounts';
+                $scope.current = 'All Accounts';
+                $scope.state = {};
+
+                accounts.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
+
+                $scope.$watch('query', function (newValue) {
+                    $scope.results = accounts.search(newValue);
+                });
+
+                function updateCurrent() {
+                    var info = navbar.all();
+                    $scope.current = info.account && info.account.name || 'All Accounts';
+                    if (info.account && info.division && info.division.id) {
+                        $scope.state = { divisionId: info.division.id };
+                    } else {
+                        $scope.state = {};
+                    }
+                }
+
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = accounts.pinned();
+                    } else {
+                        $scope.accountsMap = accounts.alphabetMap();
+                        $scope.pinned = accounts.pinned();
+                    }
+                }
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">\n        <li ng-if="!state.accountId"><a>All {{section}}</a></li>\n        <li ng-if="state.accountId"><a ui-sref=".campaigns.account(state)">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="campaign in results track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('core/navbar/directives/campaignDropdown',['require','./../../module','tpl!./campaign.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./campaign.html');
+
+    app.directive('campaignDropdown', ['campaignService', '$timeout', 'navbarService', function (campaigns, $timeout, navbar) {
+        return {
+            restrict: 'A',
+            scope: true,
+            templateUrl: 'core/navbar/directives/campaign.html',
+            controller: ['$scope', function ($scope) {
+                $scope.pin = campaigns.pin;
+                $scope.unpin = campaigns.unpin;
+                $scope.section = 'Campaigns';
+                $scope.current = 'All Campaigns';
+                $scope.state = {};
+                $scope.quarterLimit = 5;
+                $scope.preFlightLimit = 10;
+                $scope.inFlightLimit = 10;
+                $scope.completedLimit = 10;
+
+                campaigns.observe(update, $scope);
+                navbar.observe(updateCurrent, $scope);
+                navbar.observe(update, $scope);
+
+                $scope.$watch('query', function (newValue) {
+                    $scope.results = campaigns.search(newValue);
+                });
+
+                function updateCurrent() {
+                    var info = navbar.all();
+
+                    $scope.current = info.campaign && info.campaign.name || 'All Campaigns';
+                    if (info.campaign && info.account && info.account.id) {
+                        $scope.state = { accountId: info.account.id };
+                    } else {
+                        $scope.state = {};
+                    }
+                }
+
+                function update(event) {
+                    if (event === 'pin') {
+                        $scope.pinned = campaigns.pinned();
+                    } else {
+                        $scope.pinned = campaigns.pinned();
+                        $scope.quarterMap = campaigns.quarterMap();
+                        $scope.inFlight = campaigns.inFlight();
+                        $scope.preFlight = campaigns.preFlight();
+                        $scope.completed = campaigns.completed();
+                    }
+                }
+            }]
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/navbar/index',['require','./navbar','./services/util','./services/division','./services/campaign','./services/client','./services/account','./services/navbar','./directives/clientDropdown','./directives/divisionDropdown','./directives/accountDropdown','./directives/campaignDropdown'],function (require) {
+    'use strict';
+
+    require('./navbar');
+    require('./services/util');
+    require('./services/division');
+    require('./services/campaign');
+    require('./services/client');
+    require('./services/account');
+    require('./services/navbar');
+    require('./directives/clientDropdown');
+    require('./directives/divisionDropdown');
+    require('./directives/accountDropdown');
+    require('./directives/campaignDropdown');
+
+});
+
+define('core/factories/data',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', function ($http, $q, $rootScope, $timeout) {
+        return function (sortFn) {
+            var initialized = false;
+            var data = [];
+            var observers = {};
+            var observerId = 0;
+
+            sortFn = sortFn || function (d) { return d; };
+
+            function init(url, transform) {
+                var deferred = $q.defer();
+
+                if (!initialized) {
+                    transform = transform || function (d) { return d; };
+
+                    initialized = true;
+
+                    $http.get(url).success(function (d) {
+                        data = sortFn(transform.call(this, d));
+                        deferred.resolve(data);
+                        notifyObservers();
+                    });
+                } else {
+                    deferred.resolve(data);
+                }
+
+                return deferred.promise;
+            }
+
+            function setData(d) {
+                data = sortFn(d);
+                notifyObservers();
+            }
+
+            function addData(d) {
+                var uniqueSet = {};
+                var item, i;
+
+                for (i = 0; i < d.length; i++) {
+                    item = d[i];
+                    uniqueSet[item.id] = true;
+                }
+
+                var temp = [];
+
+                for (i = 0; i < data.length; i++) {
+                    item = data[i];
+                    if (!uniqueSet[item.id]) {
+                        temp.push(item);
+                    }
+                }
+
+                data = sortFn(temp.concat(d));
+                notifyObservers();
+            }
+
+            function all() {
+                return data;
+            }
+
+            function observe(callback, $scope, preventImmediate) {
+                var id = observerId++;
+                observers[id] = callback;
+
+                if (preventImmediate !== true) {
+                    callback();
+                }
+
+                if ($scope) {
+                    $scope.$on('$destroy', function() {
+                        delete observers[id];
+                    });
+                }
+            }
+
+            function notifyObservers(event) {
+
+                for (var x in observers) {
+                    observers[x](event);
+                }
+
+                $timeout(function () {
+                    $rootScope.$apply();
+                });
+            }
+
+            return {
+                init: init,
+                setData: setData,
+                addData: addData,
+                all: all,
+                observe: observe,
+                notifyObservers: notifyObservers
+            };
+        };
+    }]);
+});
+
+define('core/factories/cache',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    module.factory('cacheFactory', ['dataFactory', function (dataFactory) {
+        /**
+         * Creates a cacheFactory object that wraps a dataFactory
+         * @param {{sortFn: (function), transform: (function)}}
+         * @returns {{get: get, all: all, observe: observe}}
+         */
+        return function(options) {
+            var cache = {};
+            options = options || {};
+
+            function get(url, initialize) {
+                if (!cache[url]) {
+                    cache[url] = dataFactory(options.sortFn);
+                }
+
+                if (initialize) {
+                    cache[url].init(url, options.transform);
+                }
+
+                return cache[url];
+            }
+
+            function all(url){
+                return get(url, true).all();
+            }
+
+            function observe(url, callback, $scope, preventImmediate) {
+                get(url, true).observe(callback, $scope, preventImmediate);
+            }
+
+            return {
+                get: get,
+                all: all,
+                observe: observe
+            };
+        };
+    }]);
+});
+
+define('core/factories/pagination',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
+        function buildPageUrl(url, limit, offset) {
+            if (url.indexOf('?') > -1) {
+                return url + '&limit=' + limit + '&offset=' + offset;
+            } else {
+                return url + '?limit=' + limit + '&offset=' + offset;
+            }
+        }
+
+        /**
+         * Create a Pagination Factory Object
+         * @param {function} sortFn - Optional sorting function, the data is stored after the sortFn is applied
+         * @param {number} [limit=10] - Limit the number of results
+         * @param {number} [offset=0] - The starting offset usually should not need to be changed.
+         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildPageUrl, limit: (number), all: (Object[])}}
+         */
+
+        function create(sortFn, limit, offset) {
+            limit = limit || 10;
+            offset = offset || 0;
+
+            var data = dataFactory(sortFn);
+            var baseUrl = '';
+            var transform;
+
+            function init(url, transformFn, perPage) {
+                baseUrl = url;
+                transform = transformFn || function (d) { return d; };
+                limit = perPage || 10;
+                data.init(buildPageUrl(baseUrl, limit, offset), transformFn);
+            }
+
+            function nextPage() {
+                offset = offset + limit;
+                $http.get(buildPageUrl(baseUrl, limit, offset)).success(function (res) {
+                    data.addData(transform(res));
+                });
+            }
+
+            return {
+                init: init,
+                observe: data.observe,
+                nextPage: nextPage,
+                buildUrl: buildPageUrl,
+                limit: limit,
+                all: data.all
+            };
+        }
+
+        return create;
+    }]);
+
+
+});
+
+define('core/factories/domainInterceptor',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    var apiPrefixes = ['/api/v3', '/api/v2', '/narwhal'];
+
+    module.factory('domainInterceptor', ['API_URI', function (apiURI) {
+        function request(config) {
+            var apiPrefix;
+
+            if(apiURI) {
+                for (var i = 0; i < apiPrefixes.length; i++) {
+                    apiPrefix = apiPrefixes[i];
+                    if (config.url.indexOf(apiPrefix) > -1) {
+                        config.url = apiURI + config.url;
+                        break;
+                    }
+                }
+            }
+            return config;
+        }
+
+        function response(resp) {
+            return resp;
+        }
+
+        return {
+            request: request,
+            response: response
+        };
+    }]);
+});
+
+define('core/directives/dropdown',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.directive('dropdownToggle', ['$document', function ($document) {
+        return {
+            restrict: 'C',
+            scope: {
+                selected: '='
+            },
+            link: function (scope, element) {
+                var permOpen = element.parent().hasClass('open');
+
+                function documentClickHandler() {
+                    if (!scope.clicked) {
+                        scope.$apply(function () {
+                            scope.selected = false;
+                        });
+                    } else {
+                        scope.clicked = false;
+                    }
+                    scope.toggle = false;
+                }
+
+                $document.on('click', documentClickHandler);
+
+                element.on('click', function () {
+                    scope.clicked = true;
+                    scope.toggle = true;
+
+                    scope.$apply(function () {
+                        scope.selected = !scope.selected;
+                    });
+                });
+
+                element.parent().on('click', function (event) {
+                    if (!scope.toggle) {
+                        scope.clicked = (event.target.tagName !== 'A');
+                    } else {
+                        scope.clicked = true;
+                    }
+                });
+
+                scope.$on('$destroy', function () {
+                    $document.off('click', documentClickHandler);
+                });
+
+                scope.$watch('selected', function (value) {
+                    if (!permOpen){
+                        if (value) {
+                            element.parent().addClass('open');
+                        } else {
+                            element.parent().removeClass('open');
+                        }
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+define('core/directives/limit',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.directive('limit', ['$timeout', function ($timeout) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function (scope, element, attr) {
+                scope.limit = parseInt(attr.limit);
+                scope.more = more;
+
+                function more(){
+                    scope.limit += 10;
+                    $timeout(function () {
+                        scope.$apply();
+                    });
+                }
+            }
+        };
+    }]);
+});
+
+
+define('tpl!core/directives/tooltip.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/tooltip.html', '<div class="main" ng-mouseover="updatePosition()" ng-bind-html="main|interpolate:this|safe"></div>\n<div class="wrapper">\n    <div class="content" ng-bind-html="content|interpolate:this|safe">\n    </div>\n</div>\n'); });
+
+define('core/directives/tooltip',['require','./../module','angular','tpl!./tooltip.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    var ng = require('angular');
+
+    var directionClasses = [
+        'tooltip-middle-left', 'tooltip-middle-right', 'tooltip-top-left', 'tooltip-top-center',
+        'tooltip-top-right',
+        'tooltip-bottom-left',
+        'tooltip-bottom-center',
+        'tooltip-bottom-right'
+    ];
+
+    require('tpl!./tooltip.html');
+
+    app.directive('tooltip', ['$templateCache', '$compile', '$document', function ($templateCache, $compile, $document) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function (scope, elem, attr) {
+
+                scope.updatePosition = updatePosition;
+                scope.calculateClass = calculateClass;
+                scope.calculateDims = calculateDims;
+
+                var tooltip = attr.tooltip;
+                var overflow = attr.tooltipOverflow;
+                scope.main = elem.html();
+                var baseTemplate = $templateCache.get('core/directives/tooltip.html');
+
+                scope.$watch(tooltip, function (newValue) {
+                    var template = $templateCache.get(newValue);
+                    if (!template) {
+                        scope.content = newValue;
+                    } else {
+                        scope.content = $compile(template)(scope);
+                    }
+                    elem.html($compile(baseTemplate)(scope));
+                });
+
+                function calculateClass(dims) {
+                    ng.forEach(directionClasses, function (c) {
+                        elem.removeClass(c);
+                    });
+
+                    if (dims.top > 50) {
+                        if (dims.left > 200 && dims.right > 200) {
+                            return 'tooltip-top-center';
+                        } else if (dims.left > dims.right) {
+                            return 'tooltip-top-left';
+                        } else {
+                            return 'tooltip-top-right';
+                        }
+                    } else {
+                        if (dims.left > 200 && dims.right > 200) {
+                            return 'tooltip-bottom-center';
+                        } else if (dims.left > dims.right) {
+                            return 'tooltip-bottom-left';
+                        } else {
+                            return 'tooltip-bottom-right';
+                        }
+                    }
+                }
+
+                function calculateDims() {
+                    var elementOffset = elem[0].getBoundingClientRect();
+                    var doc = $document[0].documentElement;
+
+                    return {
+                        right: doc.clientWidth - elementOffset.right,
+                        left: elementOffset.left,
+                        top: elementOffset.top,
+                        bottom: doc.clientHeight - elementOffset.bottom
+                    };
+                }
+
+                function updatePosition() {
+                    if (overflow) {
+                        var element = elem.find('.main')[0];
+                        if (element.offsetWidth >= element.scrollWidth) {
+                            elem.find('.wrapper').addClass('ng-hide');
+                        } else {
+                            elem.find('.wrapper').removeClass('ng-hide');
+                        }
+                    }
+
+                    var dims = calculateDims();
+                    elem.addClass(calculateClass(dims));
+                }
+            }
+        };
+    }]);
+});
+
+define('core/directives/compile',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.directive('compile', ['$compile', function ($compile) {
+        return {
+            restrict: 'A',
+            link: function (scope, elem, attr) {
+                scope.$watch(
+                    function (scope) {
+                        return scope.$eval(attr.compile);
+                    },
+                    function (value) {
+                        elem.html(value);
+                        $compile(elem.contents())(scope);
+                    }
+                );
+            }
+        };
+    }]);
+});
+
+
+define('tpl!core/directives/placeholder.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/placeholder.html', '<img style="{{style}}" ng-src="{{image}}" alt="Placeholder">\n'); });
+
+define('core/directives/placeholder',['require','./../module','tpl!./placeholder.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    require('tpl!./placeholder.html');
+
+    app.directive('placeholder', ['$interpolate', function ($interpolate) {
+        return {
+            restrict: 'E',
+            templateUrl: 'core/directives/placeholder.html',
+            scope: {},
+            link: function ($scope, elem, attr) {
+                if (attr.image) {
+                    $scope.image = attr.image;
+                } else if (attr.height && attr.width) {
+                    var placeCageTemplate = $interpolate('http://www.placecage.com/{{width}}/{{height}}');
+                    $scope.image = placeCageTemplate({
+                        width: attr.width,
+                        height: attr.height
+                    });
+                }
+                $scope.style = attr.style || '';
+            }
+        };
+    }]);
+});
+
+/**
+ * Simple Ajax Uploader
+ * Version 2.1
+ * https://github.com/LPology/Simple-Ajax-Uploader
+ *
+ * Copyright 2012-2015 LPology, LLC
+ * Released under the MIT license
+ */
+
+;(function( window, document, undefined ) {
+
+    var ss = window.ss || {},
+
+        // ss.trim()
+        rLWhitespace = /^\s+/,
+        rTWhitespace = /\s+$/,
+
+        // ss.getUID
+        uidReplace = /[xy]/g,
+
+        // ss.getFilename()
+        rPath = /.*(\/|\\)/,
+
+        // ss.getExt()
+        rExt = /.*[.]/,
+
+        // ss.hasClass()
+        rHasClass = /[\t\r\n]/g,
+
+        // Check for Safari -- it doesn't like multi file uploading. At all.
+        // http://stackoverflow.com/a/9851769/1091949
+        isSafari = Object.prototype.toString.call( window.HTMLElement ).indexOf( 'Constructor' ) > 0,
+
+        isIE7 = ( navigator.userAgent.indexOf('MSIE 7') !== -1 ),
+
+        // Check whether XHR uploads are supported
+        input = document.createElement( 'input' ),
+
+        XhrOk;
+
+    input.type = 'file';
+
+    XhrOk = ( 'multiple' in input &&
+              typeof File !== 'undefined' &&
+              typeof ( new XMLHttpRequest() ).upload !== 'undefined' );
+
+
+/**
+* Converts object to query string
+*/
+ss.obj2string = function( obj, prefix ) {
+    "use strict";
+
+    var str = [];
+
+    for ( var prop in obj ) {
+        if ( obj.hasOwnProperty( prop ) ) {
+            var k = prefix ? prefix + '[' + prop + ']' : prop, v = obj[prop];
+            str.push( typeof v === 'object' ?
+                        ss.obj2string( v, k ) :
+                        encodeURIComponent( k ) + '=' + encodeURIComponent( v ) );
+        }
+    }
+
+    return str.join( '&' );
+};
+
+/**
+* Copies all missing properties from second object to first object
+*/
+ss.extendObj = function( first, second ) {
+    "use strict";
+
+    for ( var prop in second ) {
+        if ( second.hasOwnProperty( prop ) ) {
+            first[prop] = second[prop];
+        }
+    }
+};
+
+ss.addEvent = function( elem, type, fn ) {
+    "use strict";
+
+    if ( elem.addEventListener ) {
+        elem.addEventListener( type, fn, false );
+
+    } else {
+        elem.attachEvent( 'on' + type, fn );
+    }
+    return function() {
+        ss.removeEvent( elem, type, fn );
+    };
+};
+
+ss.removeEvent = function( elem, type, fn ) {
+    "use strict";
+
+    if ( elem.removeEventListener ) {
+        elem.removeEventListener( type, fn, false );
+
+    } else {
+        elem.detachEvent( 'on' + type, fn );
+    }
+};
+
+ss.newXHR = function() {
+    "use strict";
+
+    if ( typeof XMLHttpRequest !== 'undefined' ) {
+        return new window.XMLHttpRequest();
+
+    } else if ( window.ActiveXObject ) {
+        try {
+            return new window.ActiveXObject( 'Microsoft.XMLHTTP' );
+        } catch ( err ) {
+            return false;
+        }
+    }
+};
+
+ss.getIFrame = function() {
+    "use strict";
+
+    var id = ss.getUID(),
+        iframe;
+
+    // IE7 can only create an iframe this way, all others are the other way
+    if ( isIE7 ) {
+        iframe = document.createElement('<iframe src="javascript:false;" name="' + id + '">');
+
+    } else {
+        iframe = document.createElement('iframe');
+        /*jshint scripturl:true*/
+        iframe.src = 'javascript:false;';
+        iframe.name = id;
+    }
+
+    iframe.style.display = 'none';
+    iframe.id = id;
+    return iframe;
+};
+
+ss.getForm = function( opts ) {
+    "use strict";
+
+    var form = document.createElement('form');
+
+    form.encoding = 'multipart/form-data'; // IE
+    form.enctype = 'multipart/form-data';
+    form.style.display = 'none';
+
+    for ( var prop in opts ) {
+        if ( opts.hasOwnProperty( prop ) ) {
+            form[prop] = opts[prop];
+        }
+    }
+
+    return form;
+};
+
+ss.getHidden = function( name, value ) {
+    "use strict";
+
+    var input = document.createElement( 'input' );
+
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    return input;
+};
+
+/**
+* Parses a JSON string and returns a Javascript object
+* Borrowed from www.jquery.com
+*/
+ss.parseJSON = function( data ) {
+    "use strict";
+
+    if ( !data ) {
+        return false;
+    }
+
+    data = ss.trim( data + '' );
+
+    if ( window.JSON && window.JSON.parse ) {
+        try {
+            // Support: Android 2.3
+            // Workaround failure to string-cast null input
+            return window.JSON.parse( data + '' );
+        } catch ( err ) {
+            return false;
+        }
+    }
+
+    var rvalidtokens = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g,
+        depth = null,
+        requireNonComma;
+
+    // Guard against invalid (and possibly dangerous) input by ensuring that nothing remains
+    // after removing valid tokens
+    return data && !ss.trim( data.replace( rvalidtokens, function( token, comma, open, close ) {
+
+        // Force termination if we see a misplaced comma
+        if ( requireNonComma && comma ) {
+            depth = 0;
+        }
+
+        // Perform no more replacements after returning to outermost depth
+        if ( depth === 0 ) {
+            return token;
+        }
+
+        // Commas must not follow "[", "{", or ","
+        requireNonComma = open || comma;
+
+        // Determine new depth
+        // array/object open ("[" or "{"): depth += true - false (increment)
+        // array/object close ("]" or "}"): depth += false - true (decrement)
+        // other cases ("," or primitive): depth += true - true (numeric cast)
+        depth += !close - !open;
+
+        // Remove this token
+        return '';
+    }) ) ?
+        ( Function( 'return ' + data ) )() :
+        false;
+};
+
+ss.getBox = function( elem ) {
+    "use strict";
+
+    var box,
+        docElem,
+        top = 0,
+        left = 0;
+
+    if ( elem.getBoundingClientRect ) {
+        box = elem.getBoundingClientRect();
+        docElem = document.documentElement;
+        top = box.top  + ( window.pageYOffset || docElem.scrollTop )  - ( docElem.clientTop  || 0 );
+        left = box.left + ( window.pageXOffset || docElem.scrollLeft ) - ( docElem.clientLeft || 0 );
+
+    } else {
+        do {
+            left += elem.offsetLeft;
+            top += elem.offsetTop;
+        } while ( ( elem = elem.offsetParent ) );
+    }
+
+    return {
+        top: Math.round( top ),
+        left: Math.round( left )
+    };
+};
+
+/**
+* Helper that takes object literal
+* and add all properties to element.style
+* @param {Element} el
+* @param {Object} styles
+*/
+ss.addStyles = function( elem, styles ) {
+    "use strict";
+
+    for ( var name in styles ) {
+        if ( styles.hasOwnProperty( name ) ) {
+            elem.style[name] = styles[name];
+        }
+    }
+};
+
+/**
+* Function places an absolutely positioned
+* element on top of the specified element
+* copying position and dimensions.
+*/
+ss.copyLayout = function( from, to ) {
+    "use strict";
+
+    var box = ss.getBox( from );
+
+    ss.addStyles( to, {
+        position: 'absolute',
+        left : box.left + 'px',
+        top : box.top + 'px',
+        width : from.offsetWidth + 'px',
+        height : from.offsetHeight + 'px'
+    });
+};
+
+/**
+* Generates unique ID
+* Complies with RFC 4122 version 4
+* http://stackoverflow.com/a/2117523/1091949
+* ID begins with letter "a" to be safe for HTML elem ID/name attr (can't start w/ number)
+*/
+ss.getUID = function() {
+    "use strict";
+
+    /*jslint bitwise: true*/
+    return 'axxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(uidReplace, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
+};
+
+/**
+* Removes white space from left and right of string
+*/
+ss.trim = function( text ) {
+    "use strict";
+    return text.toString().replace( rLWhitespace, '' ).replace( rTWhitespace, '' );
+};
+
+/**
+* Extract file name from path
+*/
+ss.getFilename = function( path ) {
+    "use strict";
+    return path.replace( rPath, '' );
+};
+
+/**
+* Get file extension
+*/
+ss.getExt = function( file ) {
+    "use strict";
+    return ( -1 !== file.indexOf( '.' ) ) ? file.replace( rExt, '' ) : '';
+};
+
+/**
+* Check whether element has a particular CSS class
+* Parts borrowed from www.jquery.com
+*/
+ss.hasClass = function( elem, name ) {
+    "use strict";
+    return ( ' ' + elem.className + ' ' ).replace( rHasClass, ' ' ).indexOf( ' ' + name + ' ' ) >= 0;
+};
+
+/**
+* Adds CSS class to an element
+*/
+ss.addClass = function( elem, name ) {
+    "use strict";
+
+    if ( !name || name === '' ) {
+        return false;
+    }
+    if ( !ss.hasClass( elem, name ) ) {
+        elem.className += ' ' + name;
+    }
+};
+
+/**
+* Removes CSS class from an element
+*/
+ss.removeClass = (function() {
+    "use strict";
+
+    var c = {}; //cache regexps for performance
+
+    return function( e, name ) {
+        if ( !c[name] ) {
+            c[name] = new RegExp('(?:^|\\s)' + name + '(?!\\S)');
+        }
+        e.className = e.className.replace( c[name], '' );
+    };
+})();
+
+/**
+* Nulls out event handlers to prevent memory leaks in IE6/IE7
+* http://javascript.crockford.com/memory/leak.html
+* @param {Element} d
+* @return void
+*/
+ss.purge = function( d ) {
+    "use strict";
+
+    var a = d.attributes, i, l, n;
+
+    if ( a ) {
+        for ( i = a.length - 1; i >= 0; i -= 1 ) {
+            n = a[i].name;
+
+            if ( typeof d[n] === 'function' ) {
+                d[n] = null;
+            }
+        }
+    }
+
+    a = d.childNodes;
+
+    if ( a ) {
+        l = a.length;
+        for ( i = 0; i < l; i += 1 ) {
+            ss.purge( d.childNodes[i] );
+        }
+    }
+};
+
+/**
+* Removes element from the DOM
+*/
+ss.remove = function( elem ) {
+    "use strict";
+
+    if ( elem && elem.parentNode ) {
+        // null out event handlers for IE
+        ss.purge( elem );
+        elem.parentNode.removeChild( elem );
+    }
+    elem = null;
+};
+
+/**
+* Accepts either a jQuery object, a string containing an element ID, or an element,
+* verifies that it exists, and returns the element.
+* @param {Mixed} elem
+* @return {Element}
+*/
+ss.verifyElem = function( elem ) {
+    "use strict";
+
+    if ( typeof jQuery !== 'undefined' && elem instanceof jQuery ) {
+        elem = elem[0];
+
+    } else if ( typeof elem === 'string' ) {
+        if ( elem.charAt( 0 ) == '#' ) {
+            elem = elem.substr( 1 );
+        }
+        elem = document.getElementById( elem );
+    }
+
+    if ( !elem || elem.nodeType !== 1 ) {
+        return false;
+    }
+
+    if ( elem.nodeName.toUpperCase() == 'A' ) {
+        elem.style.cursor = 'pointer';
+
+        ss.addEvent( elem, 'click', function( e ) {
+            if ( e && e.preventDefault ) {
+                e.preventDefault();
+
+            } else if ( window.event ) {
+                window.event.returnValue = false;
+            }
+        });
+    }
+
+    return elem;
+};
+
+ss._options = {};
+
+ss.uploadSetup = function( options ) {
+    "use strict";
+    ss.extendObj( ss._options, options );
+};
+
+ss.SimpleUpload = function( options ) {
+    "use strict";
+
+    var i,
+        len,
+        btn;
+
+    this._opts = {
+        button: '',
+        url: '',
+        dropzone: '',
+        dragClass: '',
+        cors: false,
+        progressUrl: false,
+        sessionProgressUrl: false,
+        nginxProgressUrl: false,
+        multiple: false,
+        maxUploads: 3,
+        queue: true,
+        checkProgressInterval: 500,
+        keyParamName: 'APC_UPLOAD_PROGRESS',
+        sessionProgressName: 'PHP_SESSION_UPLOAD_PROGRESS',
+        nginxProgressHeader: 'X-Progress-ID',
+        corsInputName: 'XHR_CORS_TARGETORIGIN',
+        allowedExtensions: [],
+        accept: '',
+        maxSize: false,
+        name: '',
+        data: {},
+        noParams: false,
+        autoSubmit: true,
+        multipart: false,
+        method: 'POST',
+        responseType: '',
+        debug: false,
+        hoverClass: '',
+        focusClass: '',
+        disabledClass: '',
+        customHeaders: {},
+        encodeCustomHeaders: false,
+        onAbort: function( filename, uploadBtn ) {},
+        onChange: function( filename, extension, uploadBtn, size ) {},
+        onSubmit: function( filename, extension, uploadBtn, size ) {},
+        onProgress: function( pct ) {},
+        onUpdateFileSize: function( filesize ) {},
+        onComplete: function( filename, response, uploadBtn ) {},
+        onExtError: function( filename, extension ) {},
+        onSizeError: function( filename, fileSize ) {},
+        onError: function( filename, type, status, statusText, response, uploadBtn ) {},
+        startXHR: function( filename, fileSize, uploadBtn ) {},
+        endXHR: function( filename, fileSize, uploadBtn ) {},
+        startNonXHR: function( filename, uploadBtn ) {},
+        endNonXHR: function( filename, uploadBtn ) {}
+    };
+
+    // Include any setup options
+    ss.extendObj( this._opts, ss._options );
+
+    // Then add options for this instance
+    ss.extendObj( this._opts, options );
+
+    options = null;
+
+    this._btns = [];
+
+    // An array of buttons was passed
+    if ( this._opts.button instanceof Array ) {
+        len = this._opts.button.length;
+
+        for ( i = 0; i < len; i++ ) {
+            btn = ss.verifyElem( this._opts.button[i] );
+
+            if ( btn !== false ) {
+                this._btns.push( this.rerouteClicks( btn ) );
+
+            } else {
+                this.log( 'Button with array index ' + i + ' is invalid' );
+            }
+        }
+
+    // A single button was passed
+    } else {
+        btn = ss.verifyElem( this._opts.button );
+
+        if ( btn !== false ) {
+            this._btns.push( this.rerouteClicks( btn ) );
+        }
+    }
+
+    delete this._opts.button;
+
+    // No valid elements were passed to button option
+    if ( this._opts.dropzone === '' && ( this._btns.length < 1 || this._btns[0] === false ) ) {
+        throw new Error( "Invalid button. Make sure the element you're passing exists." );
+    }
+
+    if ( this._opts.multiple === false ) {
+        this._opts.maxUploads = 1;
+    }
+
+    // An array of objects, each containing two items, a file and a reference
+    // to the button which triggered the upload: { file: uploadFile, btn: button }
+    this._queue = [];
+
+    this._active = 0;
+    this._disabled = false; // if disabled, clicking on button won't do anything
+    this._maxFails = 10; // max allowed failed progress updates requests in iframe mode
+    this._progKeys = {}; // contains the currently active upload ID progress keys
+
+    if ( !XhrOk ) {
+        // Cache progress keys after we set sizeBox for fewer trips to the DOM
+        this._sizeFlags = {};
+    }
+
+    if ( XhrOk && this._opts.dropzone !== '' ) {
+        this._dzone = ss.verifyElem( this._opts.dropzone );
+
+        if ( !this._dzone ) {
+            this.log( 'Invalid or nonexistent element passed for drop zone' );
+        } else {
+            this.addDropZone( this._dzone );
+        }
+    }
+
+    this._createInput();
+
+    this._manDisabled = false;
+    this.enable( true );
+};
+
+ss.SimpleUpload.prototype = {
+
+    destroy: function() {
+        "use strict";
+
+        // # of upload buttons
+        var i = this._btns.length;
+
+        // Put upload buttons back to the way we found them
+        while ( i-- ) {
+            // Remove event listener
+            if ( this._btns[i].off ) {
+                this._btns[i].off();
+            }
+
+            // Remove any lingering classes
+            ss.removeClass( this._btns[i], this._opts.hoverClass );
+            ss.removeClass( this._btns[i], this._opts.focusClass );
+            ss.removeClass( this._btns[i], this._opts.disabledClass );
+
+            // In case we disabled it
+            this._btns[i].disabled = false;
+        }
+
+        // Remove div/file input combos from the DOM
+        ss.remove( this._input.parentNode );
+
+        // Now burn it all down
+        for ( var prop in this ) {
+            if ( this.hasOwnProperty( prop ) ) {
+                delete this.prop;
+            }
+        }
+    },
+
+    /**
+    * Send data to browser console if debug is set to true
+    */
+    log: function( str ) {
+        "use strict";
+
+        if ( this._opts.debug && window.console && window.console.log ) {
+            window.console.log( '[Uploader] ' + str );
+        }
+    },
+
+    /**
+    * Replaces user data
+    * Note that all previously set data is entirely removed and replaced
+    */
+    setData: function( data ) {
+        "use strict";
+        this._opts.data = data;
+    },
+
+    /**
+    * Set or change uploader options
+    * @param {Object} options
+    */
+    setOptions: function( options ) {
+        "use strict";
+        ss.extendObj( this._opts, options );
+    },
+
+    /**
+    * Designate an element as a progress bar
+    * The CSS width % of the element will be updated as the upload progresses
+    */
+    setProgressBar: function( elem ) {
+        "use strict";
+        this._progBar = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to receive a string containing progress % during upload
+    * Note: Uses innerHTML, so any existing child elements will be wiped out
+    */
+    setPctBox: function( elem ) {
+        "use strict";
+        this._pctBox = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to receive a string containing file size at start of upload
+    * Note: Uses innerHTML, so any existing child elements will be wiped out
+    */
+    setFileSizeBox: function( elem ) {
+        "use strict";
+        this._sizeBox = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to be removed from DOM when upload is completed
+    * Useful for removing progress bar, file size, etc. after upload
+    */
+    setProgressContainer: function( elem ) {
+        "use strict";
+        this._progBox = ss.verifyElem( elem );
+    },
+
+    /**
+    * Designate an element to serve as the upload abort button
+    */
+    setAbortBtn: function( elem, remove ) {
+        "use strict";
+
+        this._abortBtn = ss.verifyElem( elem );
+        this._removeAbort = false;
+
+        if ( remove ) {
+            this._removeAbort = true;
+        }
+    },
+
+    /**
+    * Returns number of files currently in queue
+    */
+    getQueueSize: function() {
+        "use strict";
+        return this._queue.length;
+    },
+
+    /**
+    * Enables uploader and submits next file for upload
+    */
+    _cycleQueue: function() {
+        "use strict";
+
+        if ( this._queue.length > 0 && this._opts.autoSubmit ) {
+            this.submit();
+        }
+    },
+
+    /**
+    * Remove current file from upload queue, reset props, cycle to next upload
+    */
+    removeCurrent: function( id ) {
+        "use strict";
+
+        if ( id ) {
+            var i = this._queue.length;
+
+            while ( i-- ) {
+                if ( this._queue[i].id === id ) {
+                    this._queue.splice( i, 1 );
+                    break;
+                }
+            }
+
+        } else {
+            this._queue.splice( 0, 1 );
+        }
+
+        this._cycleQueue();
+    },
+
+    /**
+    * Clears Queue so only most recent select file is uploaded
+    */
+    clearQueue: function() {
+        "use strict";
+        this._queue.length = 0;
+    },
+
+    /**
+    * Disables upload functionality
+    */
+    disable: function( _self ) {
+        "use strict";
+
+        var i = this._btns.length,
+            nodeName;
+
+        // _self is always true when disable() is called internally
+        this._manDisabled = !_self || this._manDisabled === true ? true : false;
+        this._disabled = true;
+
+        while ( i-- ) {
+            nodeName = this._btns[i].nodeName.toUpperCase();
+
+            if ( nodeName == 'INPUT' || nodeName == 'BUTTON' ) {
+                this._btns[i].disabled = true;
+            }
+
+            if ( this._opts.disabledClass !== '' ) {
+                ss.addClass( this._btns[i], this._opts.disabledClass );
+            }
+        }
+
+        // Hide file input
+        if ( this._input && this._input.parentNode ) {
+            this._input.parentNode.style.visibility = 'hidden';
+        }
+    },
+
+    /**
+    * Enables upload functionality
+    */
+    enable: function( _self ) {
+        "use strict";
+
+        // _self will always be true when enable() is called internally
+        if ( !_self ) {
+            this._manDisabled = false;
+        }
+
+        // Don't enable uploader if it was manually disabled
+        if ( this._manDisabled === true ) {
+            return;
+        }
+
+        var i = this._btns.length;
+
+        this._disabled = false;
+
+        while ( i-- ) {
+            ss.removeClass( this._btns[i], this._opts.disabledClass );
+            this._btns[i].disabled = false;
+        }
+    },
+
+    /**
+     * Updates invisible button position
+     */
+    updatePosition: function() {
+        "use strict";
+
+        if ( this._btns[0] && this._input && this._input.parentNode ) {
+            this._overBtn = this._btns[0];
+            ss.copyLayout( this._btns[0], this._input.parentNode );
+        }
+    }
+
+};
+
+ss.IframeUpload = {
+
+    /**
+    * Accepts a URI string and returns the hostname
+    */
+    _getHost: function( uri ) {
+        var a = document.createElement( 'a' );
+
+        a.href = uri;
+
+        if ( a.hostname ) {
+            return a.hostname.toLowerCase();
+        }
+        return uri;
+    },
+
+    _addFiles: function( file ) {
+        var filename = ss.getFilename( file.value ),
+            ext = ss.getExt( filename );
+
+        if ( false === this._opts.onChange.call( this, filename, ext, this._overBtn ) ) {
+            return false;
+        }
+
+        this._queue.push({
+            id: ss.getUID(),
+            file: file,
+            name: filename,
+            ext: ext,
+            btn: this._overBtn,
+            size: null
+        });
+
+        return true;
+    },
+
+    /**
+    * Handles uploading with iFrame
+    */
+    _uploadIframe: function( fileObj, progBox, sizeBox, progBar, pctBox, abortBtn, removeAbort ) {
+        "use strict";
+
+        var self = this,
+            opts = this._opts,
+            key = ss.getUID(),
+            iframe = ss.getIFrame(),
+            form,
+            url,
+            msgLoaded = false,
+            iframeLoaded = false,
+            removeMessageListener,
+            removeLoadListener,
+            cancel;
+
+        if ( opts.noParams === true ) {
+            url = opts.url;
+
+        } else {
+            // If we're using Nginx Upload Progress Module, append upload key to the URL
+            // Also, preserve query string if there is one
+            url = !opts.nginxProgressUrl ?
+                    opts.url :
+                    url + ( ( url.indexOf( '?' ) > -1 ) ? '&' : '?' ) +
+                          encodeURIComponent( opts.nginxProgressHeader ) +
+                          '=' + encodeURIComponent( key );
+        }
+
+        form = ss.getForm({
+            action: url,
+            target: iframe.name,
+            method: opts.method
+        });
+
+        // Begin progress bars at 0%
+        opts.onProgress.call( this, 0 );
+
+        if ( pctBox ) {
+            pctBox.innerHTML = '0%';
+        }
+
+        if ( progBar ) {
+            progBar.style.width = '0%';
+        }
+
+        // For CORS, add a listener for the "message" event, which will be
+        // triggered by the Javascript snippet in the server response
+        if ( opts.cors ) {
+            removeMessageListener = ss.addEvent( window, 'message', function( event ) {
+                // Make sure event.origin matches the upload URL
+                if ( self._getHost( event.origin ) != self._getHost( opts.url ) ) {
+                    self.log('Non-matching origin: ' + event.origin);
+                    return;
+                }
+
+                // Set message event success flag to true
+                msgLoaded = true;
+
+                // Remove listener for message event
+                removeMessageListener();
+
+                opts.endNonXHR.call( self, fileObj.name, fileObj.btn );
+
+                self._finish( fileObj,  '', '', event.data, sizeBox, progBox, pctBox, abortBtn, removeAbort );
+            });
+        }
+
+        var remove = ss.addEvent( iframe, 'load', function() {
+            remove();
+
+            if ( opts.sessionProgressUrl ) {
+                form.appendChild( ss.getHidden( opts.sessionProgressName, key ) );
+            }
+
+            // PHP APC upload progress key field must come before the file field
+            else if ( opts.progressUrl ) {
+                form.appendChild( ss.getHidden( opts.keyParamName, key ) );
+            }
+
+            // We get any additional data here after startNonXHR()
+            // in case the data was changed with setData() prior to submitting
+            for ( var prop in opts.data ) {
+                if ( opts.data.hasOwnProperty( prop ) ) {
+                    form.appendChild( ss.getHidden( prop, opts.data[prop] ) );
+                }
+            }
+
+            // Add a field (default name: "XHR_CORS_TRARGETORIGIN") to tell server this is a CORS request
+            // Value of the field is targetOrigin parameter of postMessage(message, targetOrigin)
+            if ( opts.cors ) {
+                form.appendChild( ss.getHidden( opts.corsInputName, window.location.href ) );
+            }
+
+            form.appendChild( fileObj.file );
+
+            removeLoadListener = ss.addEvent( iframe, 'load', function() {
+                if ( !iframe.parentNode || iframeLoaded ) {
+                    return;
+                }
+
+                iframeLoaded = true;
+
+                delete self._progKeys[key];
+                delete self._sizeFlags[key];
+
+                // Remove listener for iframe load event
+                removeLoadListener();
+
+                if ( abortBtn ) {
+                    ss.removeEvent( abortBtn, 'click', cancel );
+                }
+
+                // After a CORS response, we wait briefly for the "message" event to finish,
+                // during which time the msgLoaded var will be set to true, signalling success.
+                // If iframe loads without "message" event, we assume there was an error
+                if ( opts.cors ) {
+                    window.setTimeout(function() {
+                        ss.remove( form );
+                        ss.remove( iframe );
+
+                        // If msgLoaded has not been set to true after "message" event fires, we
+                        // infer that an error must have occurred and respond accordingly
+                        if ( !msgLoaded ) {
+                            self._errorFinish( fileObj, '', '', false, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                        }
+
+                        opts = key = form = iframe = sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+                    }, 600);
+                }
+
+                // Ordinary, non-CORS upload
+                else {
+                    try {
+                        var doc = iframe.contentDocument ? iframe.contentDocument : iframe.contentWindow.document,
+                            response = doc.body.innerHTML;
+
+                        opts.endNonXHR.call( self, fileObj.name, fileObj.btn );
+
+                        // No way to get status and statusText for an iframe so return empty strings
+                        self._finish( fileObj, '', '', response, sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+                    } catch ( e ) {
+                        self._errorFinish( fileObj, '', e.message, false, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                    }
+
+                    window.setTimeout(function() {
+                        ss.remove( form );
+                        ss.remove( iframe );
+                        form = iframe = null;
+                    }, 0);
+
+                    fileObj = opts = key = sizeBox = progBox = pctBox = null;
+                }
+            });// end load
+
+            if ( abortBtn ) {
+                cancel = function() {
+                    ss.removeEvent( abortBtn, 'click', cancel );
+
+                    delete self._progKeys[key];
+                    delete self._sizeFlags[key];
+
+                    if ( iframe ) {
+                        iframeLoaded = true;
+                        removeLoadListener();
+
+                        try {
+                            if ( iframe.contentWindow.document.execCommand ) {
+                                iframe.contentWindow.document.execCommand('Stop');
+                            }
+                        } catch( err ) {}
+
+                        try {
+                            iframe.src = 'javascript'.concat(':false;');
+                        } catch( err ) {}
+
+                        window.setTimeout(function() {
+                            ss.remove( form );
+                            ss.remove( iframe );
+                            form = iframe = null;
+                        }, 0);
+                    }
+
+                    self.log('Upload aborted');
+                    opts.onAbort.call( self, fileObj.name, fileObj.btn );
+                    self._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+                };
+
+                ss.addEvent( abortBtn, 'click', cancel );
+            }
+
+            self.log( 'Commencing upload using iframe' );
+            form.submit();
+
+            if ( self._hasProgUrl ) {
+                // Add progress key to active key array
+                self._progKeys[key] = 1;
+
+                // Start timer for first progress update
+                window.setTimeout( function() {
+                    self._getProg( key, progBar, sizeBox, pctBox, 1 );
+                    progBar = sizeBox = pctBox = null;
+                }, opts.checkProgressInterval );
+            }
+
+            // Remove this file from the queue and begin next upload
+            window.setTimeout(function() {
+                self.removeCurrent( fileObj.id );
+            }, 0);
+
+        });// end load
+
+        document.body.appendChild( form );
+        document.body.appendChild( iframe );
+    },
+
+    /**
+    * Retrieves upload progress updates from the server
+    * (For fallback upload progress support)
+    */
+    _getProg: function( key, progBar, sizeBox, pctBox, counter ) {
+        "use strict";
+
+        var self = this,
+            opts = this._opts,
+            time = new Date().getTime(),
+            xhr,
+            url,
+            callback;
+
+        if ( !key ) {
+            return;
+        }
+
+        // Nginx Upload Progress Module
+        if ( opts.nginxProgressUrl ) {
+            url = opts.nginxProgressUrl + '?' +
+                  encodeURIComponent( opts.nginxProgressHeader ) + '=' + encodeURIComponent( key ) +
+                  '&_=' + time;
+        }
+
+        else if ( opts.sessionProgressUrl ) {
+            url = opts.sessionProgressUrl;
+        }
+
+        // PHP APC upload progress
+        else if ( opts.progressUrl ) {
+            url = opts.progressUrl +
+            '?progresskey=' + encodeURIComponent( key ) +
+            '&_=' + time;
+        }
+
+        callback = function() {
+            var response,
+                size,
+                pct,
+                status,
+                statusText;
+
+            try {
+                // XDomainRequest doesn't have readyState so we
+                // just assume that it finished correctly
+                if ( callback && ( opts.cors || xhr.readyState === 4 ) ) {
+                    callback = undefined;
+                    xhr.onreadystatechange = function() {};
+
+                    try {
+                        statusText = xhr.statusText;
+                        status = xhr.status;
+                    } catch( e ) {
+                        // We normalize with Webkit giving an empty statusText
+                        statusText = '';
+                        status = '';
+                    }
+
+                    // XDomainRequest also doesn't have status, so we
+                    // again just assume that everything is fine
+                    if ( opts.cors || ( status >= 200 && status < 300 ) ) {
+                        response = ss.parseJSON( xhr.responseText );
+
+                        if ( response === false ) {
+                            self.log( 'Error parsing progress response (expecting JSON)' );
+                            return;
+                        }
+
+                        // Handle response if using Nginx Upload Progress Module
+                        if ( opts.nginxProgressUrl ) {
+
+                            if ( response.state == 'uploading' ) {
+                                size = parseInt( response.size, 10 );
+                                if ( size > 0 ) {
+                                    pct = Math.round( ( parseInt( response.received, 10 ) / size ) * 100 );
+                                    size = Math.round( size / 1024 ); // convert to kilobytes
+                                }
+
+                            } else if ( response.state == 'done' ) {
+                                pct = 100;
+
+                            } else if ( response.state == 'error' ) {
+                                self.log( 'Error requesting upload progress: ' + response.status );
+                                return;
+                            }
+                        }
+
+                        // Handle response if using PHP APC
+                        else if ( opts.sessionProgressUrl || opts.progressUrl ) {
+                            if ( response.success === true ) {
+                                size = parseInt( response.size, 10 );
+                                pct = parseInt( response.pct, 10 );
+                            }
+                        }
+
+                        // Update progress bar width
+                        if ( pct ) {
+                            if ( pctBox ) {
+                                pctBox.innerHTML = pct + '%';
+                            }
+
+                            if ( progBar ) {
+                                progBar.style.width = pct + '%';
+                            }
+
+                            opts.onProgress.call( self, pct );
+                        }
+
+                        if ( size && !self._sizeFlags[key] ) {
+                            if ( sizeBox ) {
+                                sizeBox.innerHTML = size + 'K';
+                            }
+
+                            self._sizeFlags[key] = 1;
+                            opts.onUpdateFileSize.call( self, size );
+                        }
+
+                        // Stop attempting progress checks if we keep failing
+                        if ( !pct &&
+                             !size &&
+                             counter >= self._maxFails )
+                        {
+                            counter++;
+                            self.log( 'Failed progress request limit reached. Count: ' + counter );
+                            return;
+                        }
+
+                        // Begin countdown until next progress update check
+                        if ( pct < 100 && self._progKeys[key] ) {
+                            window.setTimeout( function() {
+                                self._getProg( key, progBar, sizeBox, pctBox, counter );
+
+                                key = progBar = sizeBox = pctBox = counter = null;
+                            }, opts.checkProgressInterval );
+                        }
+
+                        // We didn't get a 2xx status so don't continue sending requests
+                    } else {
+                        delete self._progKeys[key];
+                        self.log( 'Error requesting upload progress: ' + status + ' ' + statusText );
+                    }
+
+                    xhr = size = pct = status = statusText = response = null;
+                }
+
+            } catch( e ) {
+                self.log( 'Error requesting upload progress: ' + e.message );
+            }
+        };
+
+        // CORS requests in IE8 and IE9 must use XDomainRequest
+        if ( opts.cors && !opts.sessionProgressUrl ) {
+
+            if ( window.XDomainRequest ) {
+                xhr = new window.XDomainRequest();
+                xhr.open( 'GET', url, true );
+                xhr.onprogress = xhr.ontimeout = function() {};
+                xhr.onload = callback;
+
+                xhr.onerror = function() {
+                    delete self._progKeys[key];
+                    key = null;
+                    self.log('Error requesting upload progress');
+                };
+
+                // IE7 or some other dinosaur -- just give up
+            } else {
+                return;
+            }
+
+        } else {
+            var method = !opts.sessionProgressUrl ? 'GET' : 'POST',
+                params;
+
+            xhr = ss.newXHR();
+            xhr.onreadystatechange = callback;
+            xhr.open( method, url, true );
+
+            // PHP session progress updates must be a POST request
+            if ( opts.sessionProgressUrl ) {
+                params = encodeURIComponent( opts.sessionProgressName ) + '=' + encodeURIComponent( key );
+                xhr.setRequestHeader( 'Content-type', 'application/x-www-form-urlencoded' );
+            }
+
+            // Set the upload progress header for Nginx
+            if ( opts.nginxProgressUrl ) {
+                xhr.setRequestHeader( opts.nginxProgressHeader, key );
+            }
+
+            xhr.setRequestHeader( 'X-Requested-With', 'XMLHttpRequest' );
+            xhr.setRequestHeader( 'Accept', 'application/json, text/javascript, */*; q=0.01' );
+
+           xhr.send( ( opts.sessionProgressUrl &&  params ) || null );
+        }
+    },
+
+    _initUpload: function( fileObj ) {
+        if ( false === this._opts.startNonXHR.call( this, fileObj.name, fileObj.btn ) ) {
+
+            if ( this._disabled ) {
+                this.enable( true );
+            }
+
+            this._active--;
+            return;
+        }
+
+        this._hasProgUrl = ( this._opts.progressUrl ||
+                             this._opts.sessionProgressUrl ||
+                             this._opts.nginxProgressUrl ) ?
+                             true : false;
+
+        this._uploadIframe( fileObj, this._progBox, this._sizeBox, this._progBar, this._pctBox, this._abortBtn, this._removeAbort );
+
+        this._progBox = this._sizeBox = this._progBar = this._pctBox = this._abortBtn = this._removeAbort = null;
+    }
+};
+
+ss.XhrUpload = {
+
+    _addFiles: function( files ) {
+        var total = files.length,
+            filename,
+            ext,
+            size,
+            i;
+
+        if ( !this._opts.multiple ) {
+            total = 1;
+        }
+
+        for ( i = 0; i < total; i++ ) {
+            filename = ss.getFilename( files[i].name );
+            ext = ss.getExt( filename );
+            size = Math.round( files[i].size / 1024 );
+
+            if ( false === this._opts.onChange.call( this, filename, ext, size ) ) {
+                return false;
+            }
+
+            this._queue.push({
+                id: ss.getUID(),
+                file: files[i],
+                name: filename,
+                ext: ext,
+                btn: this._overBtn,
+                size: size
+            });
+        }
+
+        return true;
+    },
+
+    /**
+    * Handles uploading with XHR
+    */
+    _uploadXhr: function( fileObj, url, params, headers, sizeBox, progBar, progBox, pctBox, abortBtn, removeAbort ) {
+        "use strict";
+
+        var self = this,
+            opts = this._opts,
+            xhr = ss.newXHR(),
+            callback,
+            cancel;
+
+        // Inject file size into size box
+        if ( sizeBox ) {
+            sizeBox.innerHTML = fileObj.size + 'K';
+        }
+
+        // Begin progress bars at 0%
+        if ( pctBox ) {
+            pctBox.innerHTML = '0%';
+        }
+
+        if ( progBar ) {
+            progBar.style.width = '0%';
+        }
+
+        opts.onProgress.call( this, 0 );
+
+        // Borrows heavily from jQuery ajax transport
+        callback = function( _, isAbort ) {
+            var status,
+                statusText;
+
+            // Firefox throws exceptions when accessing properties
+            // of an xhr when a network error occurred
+            try {
+                // Was never called and is aborted or complete
+                if ( callback && ( isAbort || xhr.readyState === 4 ) ) {
+
+                    callback = undefined;
+                    xhr.onreadystatechange = function() {};
+
+                    // If it's an abort
+                    if ( isAbort ) {
+
+                        // Abort it manually if needed
+                        if ( xhr.readyState !== 4 ) {
+                            xhr.abort();
+                        }
+
+                        opts.onAbort.call( self, fileObj.name, fileObj.btn );
+                        self._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+                    } else {
+                        if ( abortBtn ) {
+                            ss.removeEvent( abortBtn, 'click', cancel );
+                        }
+
+                        status = xhr.status;
+
+                        // Firefox throws an exception when accessing
+                        // statusText for faulty cross-domain requests
+                        try {
+                            statusText = xhr.statusText;
+
+                        } catch( e ) {
+                            // We normalize with Webkit giving an empty statusText
+                            statusText = '';
+                        }
+
+                        if ( status >= 200 && status < 300 ) {
+                            opts.endXHR.call( self, fileObj.name, fileObj.size, fileObj.btn );
+                            self._finish( fileObj, status, statusText, xhr.responseText, sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+                            // We didn't get a 2xx status so throw an error
+                        } else {
+                            self._errorFinish( fileObj, status, statusText, xhr.responseText, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                        }
+                    }
+                }
+
+            }
+            catch ( e ) {
+                if ( !isAbort ) {
+                    self._errorFinish( fileObj, -1, e.message, false, 'error', progBox, sizeBox, pctBox, abortBtn, removeAbort );
+                }
+            }
+        };
+
+        if ( abortBtn ) {
+            cancel = function() {
+                ss.removeEvent( abortBtn, 'click', cancel );
+
+                if ( callback ) {
+                    callback( undefined, true );
+                }
+            };
+
+            ss.addEvent( abortBtn, 'click', cancel );
+        }
+
+        xhr.onreadystatechange = callback;
+        xhr.open( opts.method.toUpperCase(), url, true );
+
+        ss.extendObj( headers, opts.customHeaders );
+
+        for ( var i in headers ) {
+            if ( headers.hasOwnProperty( i ) ) {
+                if ( opts.encodeCustomHeaders && opts.customHeaders.hasOwnProperty( i ) ) {
+                    xhr.setRequestHeader( i, encodeURIComponent( headers[ i ] ) + '' );
+                } else {
+                    xhr.setRequestHeader( i, headers[ i ] + '' );
+                }
+            }
+        }
+
+        ss.addEvent( xhr.upload, 'progress', function( event ) {
+            if ( event.lengthComputable ) {
+                var pct = Math.round( ( event.loaded / event.total ) * 100 );
+
+                opts.onProgress.call( self, pct );
+
+                if ( pctBox ) {
+                    pctBox.innerHTML = pct + '%';
+                }
+
+                if ( progBar ) {
+                    progBar.style.width = pct + '%';
+                }
+            }
+        });
+
+        if ( opts.multipart === true ) {
+            var formData = new FormData();
+
+            for ( var prop in params ) {
+                if ( params.hasOwnProperty( prop ) ) {
+                    formData.append( prop, params[prop] );
+                }
+            }
+
+            formData.append( opts.name, fileObj.file );
+            this.log( 'Commencing upload using multipart form' );
+            xhr.send( formData );
+
+        } else {
+            this.log( 'Commencing upload using binary stream' );
+            xhr.send( fileObj.file );
+        }
+
+        // Remove file from upload queue and begin next upload
+        this.removeCurrent( fileObj.id );
+    },
+
+    _initUpload: function( fileObj ) {
+        "use strict";
+
+        var params = {},
+            headers = {},
+            url;
+
+        // Call the startXHR() callback and stop upload if it returns false
+        // We call it before _uploadXhr() in case setProgressBar, setPctBox, etc., is called
+        if ( false === this._opts.startXHR.call( this, fileObj.name, fileObj.size, fileObj.btn ) ) {
+
+            if ( this._disabled ) {
+                this.enable( true );
+            }
+
+            this._active--;
+            return;
+        }
+
+        params[this._opts.name] = fileObj.name;
+
+        headers['X-Requested-With'] = 'XMLHttpRequest';
+        headers['X-File-Name'] = fileObj.name;
+
+        if ( this._opts.responseType.toLowerCase() == 'json' ) {
+            headers['Accept'] = 'application/json, text/javascript, */*; q=0.01';
+        }
+
+        if ( !this._opts.multipart ) {
+            headers['Content-Type'] = 'application/octet-stream';
+        }
+
+        // We get the any additional data here after startXHR()
+        ss.extendObj( params, this._opts.data );
+
+        // Build query string while preserving any existing parameters
+        url = this._opts.noParams === true ?
+                this._opts.url :
+                this._opts.url + ( ( this._opts.url.indexOf( '?' ) > -1 ) ? '&' : '?' ) +ss.obj2string( params );
+
+        this._uploadXhr( fileObj, url, params, headers, this._sizeBox, this._progBar, this._progBox, this._pctBox, this._abortBtn, this._removeAbort );
+
+        this._sizeBox = this._progBar = this._progBox = this._pctBox = this._abortBtn = this._removeAbort = null;
+    }
+
+};
+
+(function(){
+    ss.extendObj( ss.SimpleUpload.prototype, {
+
+        _createInput: function() {
+            "use strict";
+
+            var self = this,
+                div = document.createElement( 'div' );
+
+            this._input = document.createElement( 'input' );
+            this._input.type = 'file';
+            this._input.name = this._opts.name;
+
+            // Don't allow multiple file selection in Safari -- it has a nasty bug
+            // http://stackoverflow.com/q/7231054/1091949
+            if ( XhrOk && !isSafari && this._opts.multiple ) {
+                this._input.multiple = true;
+            }
+
+            // Check support for file input accept attribute
+            if ( 'accept' in this._input && this._opts.accept !== '' ) {
+                this._input.accept = this._opts.accept;
+            }
+
+            ss.addStyles( div, {
+                'display' : 'block',
+                'position' : 'absolute',
+                'overflow' : 'hidden',
+                'margin' : 0,
+                'padding' : 0,
+                'opacity' : 0,
+                'direction' : 'ltr',
+                'zIndex': 2147483582
+            });
+
+            ss.addStyles( this._input, {
+                'position' : 'absolute',
+                'right' : 0,
+                'margin' : 0,
+                'padding' : 0,
+                'fontSize' : '480px',
+                'fontFamily' : 'sans-serif',
+                'cursor' : 'pointer'
+            });
+
+            if ( div.style.opacity !== '0' ) {
+                div.style.filter = 'alpha(opacity=0)';
+            }
+
+            ss.addEvent( this._input, 'change', function() {
+                if ( !self._input || self._input.value === '' ) {
+                    return;
+                }
+
+                if ( false === self._addFiles( XhrOk ? self._input.files : self._input ) ) {
+                    return;
+                }
+
+                ss.removeClass( self._overBtn, self._opts.hoverClass );
+                ss.removeClass( self._overBtn, self._opts.focusClass );
+
+                // Now that file is in upload queue, remove the file input
+                ss.remove( self._input.parentNode );
+                delete self._input;
+
+                // Then create a new file input
+                self._createInput();
+
+                // Submit if autoSubmit option is true
+                if ( self._opts.autoSubmit ) {
+                    self.submit();
+                }
+            });
+
+            if ( self._opts.hoverClass !== '' ) {
+                ss.addEvent( this._input, 'mouseover', function() {
+                    ss.addClass( self._overBtn, self._opts.hoverClass );
+                });
+
+                ss.addEvent( this._input, 'mouseout', function() {
+                    ss.removeClass( self._overBtn, self._opts.hoverClass );
+                    ss.removeClass( self._overBtn, self._opts.focusClass );
+                    self._input.parentNode.style.visibility = 'hidden';
+                });
+            }
+
+            if ( self._opts.focusClass !== '' ) {
+                ss.addEvent( this._input, 'focus', function() {
+                    ss.addClass( self._overBtn, self._opts.focusClass );
+                });
+
+                ss.addEvent( this._input, 'blur', function() {
+                    ss.removeClass( self._overBtn, self._opts.focusClass );
+                });
+            }
+
+            div.appendChild( this._input );
+            document.body.appendChild( div );
+        },
+
+        rerouteClicks: function( elem ) {
+            "use strict";
+
+            var self = this;
+
+            // ss.addEvent() returns a function to detach, which
+            // allows us to call elem.off() to remove mouseover listener
+            elem.off = ss.addEvent( elem, 'mouseover', function() {
+                if ( self._disabled ) {
+                    return;
+                }
+
+                if ( !self._input ) {
+                    self._createInput();
+                }
+
+                self._overBtn = elem;
+                ss.copyLayout( elem, self._input.parentNode );
+                self._input.parentNode.style.visibility = 'visible';
+            });
+
+            return elem;
+        },
+
+        /**
+        * Final cleanup function after upload ends
+        */
+        _last: function( sizeBox, progBox, pctBox, abortBtn, removeAbort ) {
+            "use strict";
+
+            if ( sizeBox ) {
+               sizeBox.innerHTML = '';
+            }
+
+            if ( pctBox ) {
+                pctBox.innerHTML = '';
+            }
+
+            if ( abortBtn && removeAbort ) {
+                ss.remove( abortBtn );
+            }
+
+            if ( progBox ) {
+                ss.remove( progBox );
+            }
+
+            // Decrement the active upload counter
+            this._active--;
+
+            sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+
+            if ( this._disabled ) {
+                this.enable( true );
+            }
+
+            this._cycleQueue();
+        },
+
+        /**
+        * Completes upload request if an error is detected
+        */
+        _errorFinish: function( fileObj, status, statusText, response, errorType, progBox, sizeBox, pctBox, abortBtn, removeAbort ) {
+            "use strict";
+
+            this.log( 'Upload failed: ' + status + ' ' + statusText );
+            this._opts.onError.call( this, fileObj.name, errorType, status, statusText, response, fileObj.btn );
+            this._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+            fileObj = status = statusText = response = errorType = sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+        },
+
+        /**
+        * Completes upload request if the transfer was successful
+        */
+        _finish: function( fileObj, status, statusText, response, sizeBox, progBox, pctBox, abortBtn, removeAbort ) {
+            "use strict";
+
+            this.log( 'Server response: ' + response );
+
+            if ( this._opts.responseType.toLowerCase() == 'json' ) {
+                response = ss.parseJSON( response );
+
+                if ( response === false ) {
+                    this._errorFinish( fileObj, status, statusText, false, 'parseerror', progBox, sizeBox, abortBtn, removeAbort );
+                    return;
+                }
+            }
+
+            this._opts.onComplete.call( this, fileObj.name, response, fileObj.btn );
+            this._last( sizeBox, progBox, pctBox, abortBtn, removeAbort );
+
+            fileObj = status = statusText = response = sizeBox = progBox = pctBox = abortBtn = removeAbort = null;
+        },
+
+        /**
+        * Verifies that file is allowed
+        * Checks file extension and file size if limits are set
+        */
+        _checkFile: function( fileObj ) {
+            "use strict";
+
+            var extOk = false,
+                i = this._opts.allowedExtensions.length;
+
+            // Only file extension if allowedExtensions is set
+            if ( i > 0 ) {
+                while ( i-- ) {
+                    if ( this._opts.allowedExtensions[i].toLowerCase() == fileObj.ext.toLowerCase() ) {
+                        extOk = true;
+                        break;
+                    }
+                }
+
+                if ( !extOk ) {
+                    this.removeCurrent( fileObj.id );
+                    this.log( 'File extension not permitted' );
+                    this._opts.onExtError.call( this, fileObj.name, fileObj.ext );
+                    return false;
+                }
+            }
+
+            if ( fileObj.size &&
+                this._opts.maxSize !== false &&
+                fileObj.size > this._opts.maxSize )
+            {
+                this.removeCurrent( fileObj.id );
+                this.log( fileObj.name + ' exceeds ' + this._opts.maxSize + 'K limit' );
+                this._opts.onSizeError.call( this, fileObj.name, fileObj.size );
+                return false;
+            }
+
+            fileObj = null;
+
+            return true;
+        },
+
+        /**
+        * Validates input and directs to either XHR method or iFrame method
+        */
+        submit: function() {
+            "use strict";
+
+            if ( this._disabled ||
+                this._active >= this._opts.maxUploads ||
+                this._queue.length < 1 )
+            {
+                return;
+            }
+
+            if ( !this._checkFile( this._queue[0] ) ) {
+                return;
+            }
+
+            // User returned false to cancel upload
+            if ( false === this._opts.onSubmit.call( this, this._queue[0].name, this._queue[0].ext, this._queue[0].btn, this._queue[0].size ) ) {
+                return;
+            }
+
+            // Increment the active upload counter
+            this._active++;
+
+            // Disable uploading if multiple file uploads are not enabled
+            // or if queue is disabled and we've reached max uploads
+            if ( this._opts.multiple === false ||
+                this._opts.queue === false && this._active >= this._opts.maxUploads )
+            {
+                this.disable( true );
+            }
+
+            this._initUpload( this._queue[0] );
+        }
+    });
+
+    if ( XhrOk ) {
+        ss.extendObj( ss.SimpleUpload.prototype, ss.XhrUpload );
+
+    } else {
+        ss.extendObj( ss.SimpleUpload.prototype, ss.IframeUpload );
+    }
+
+}());
+
+ss.extendObj(ss.SimpleUpload.prototype, {
+
+    _dragFileCheck: function( e ) {
+        if ( e.dataTransfer.types ) {
+            for ( var i = 0; i < e.dataTransfer.types.length; i++ ) {
+                if ( e.dataTransfer.types[i] == 'Files' ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    },
+
+    addDropZone: function( elem ) {
+        var self = this;
+
+        ss.addStyles( elem, {
+            'zIndex': 2147483583
+        });
+
+        elem.ondragenter = function( e ) {
+            if ( !self._dragFileCheck( e ) ) {
+                return false;
+            }
+            ss.addClass( this, self._opts.dragClass );
+            return false;
+        };
+
+        elem.ondragover = function() {
+            return false;
+        };
+
+        elem.ondragend = function() {
+            ss.removeClass( this, self._opts.dragClass );
+            return false;
+        };
+
+        elem.ondragleave = function() {
+            ss.removeClass( this, self._opts.dragClass );
+            return false;
+        };
+
+        elem.ondrop = function( e ) {
+            e.preventDefault();
+
+            ss.removeClass( this, self._opts.dragClass );
+
+            if ( !self._dragFileCheck( e ) ) {
+                return false;
+            }
+
+            self._addFiles( e.dataTransfer.files );
+            self._cycleQueue();
+        };
+    }
+});
+
+// Expose to the global window object
+window.ss = ss;
+
+})( window, document );
+
+define("simpleUpload", ["jquery"], (function (global) {
+    return function () {
+        var ret, fn;
+        return ret || global.ss;
+    };
+}(this)));
+
+
+define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-class="fileSelected ? \'preview show\' : \'preview\'">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">{{btnLabel}}</button>\n\n\t    </div>\n    </div>\n    <div ng-class="fileSelected ? \'file-name-wrapper show\' : \'file-name-wrapper\'">\n    \t<span class="file-name"></span>\n    \t<a class="glyph-icon glyph-close" ng-click="removeFile()" href=\'\'/>\n    </div>\n</div>\n'); });
+
+define('core/directives/filePicker',['require','./../module','simpleUpload','tpl!./filePicker.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //Check https://github.com/LPology/Simple-Ajax-Uploader for docs
+    var ss = require('simpleUpload');
+
+    require('tpl!./filePicker.html');
+
+    app.directive('filePicker', ['$timeout', function ($timeout) {
+        return {
+            restrict: 'A',
+            require: '?ngModel',
+            scope: {
+                preview: '='
+            },
+            transclude: true,
+
+            templateUrl: 'core/directives/filePicker.html',
+            link: function (scope, elem, attrs, ngModel) {
+                scope.fileSelected = false;
+                scope.btnLabel = 'browse';
+
+                var filePickerWrapper = elem.find('.file-picker')[0],
+                previewImg = elem.find('.image-preview')[0],
+                fileName = elem.find('.file-name')[0];
+
+                var uploader = new ss.SimpleUpload({
+                    button: elem.find('.btn'),
+                    name: 'filename',
+                    //url: 'uploadHandler.php',
+                    hoverClass: 'ui-state-hover',
+                    dropzone: elem.find('.droparea'),
+                    dragClass: 'drag-over',
+                    responseType: 'json',
+                    maxSize: 2000,
+                    accept: 'image/*',
+                    allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
+                    queue: true,
+                    multiple: false,
+                    multipart: true,
+                    autoSubmit: false,
+                    debug: true,
+                    onChange: function (filename) {
+
+                        // Make sure image has no src set
+                        previewImg.src = '';
+                        // Remove any current file in the queue
+                        uploader.removeCurrent();
+
+                        // Needs to be synchronous...
+                        $timeout(function () {
+                            if (uploader._queue[0].file) {
+                                var oFReader = new FileReader();
+                                oFReader.readAsDataURL(uploader._queue[0].file);
+                                oFReader.onload = function (oFREvent) {
+                                    previewImg.src = oFREvent.target.result;
+
+                                    fileName.innerHTML = filename;
+                                    scope.fileSelected = true;
+                                    scope.btnLabel = 'select new file';
+                                    scope.$apply();
+                                };
+                            }
+                        }, 0);
+
+                    },
+                    onSubmit: function () {
+
+                        var progressWrapper = document.createElement('div'),
+                            progressBar = document.createElement('div'),
+                            //sizeBox = document.createElement('div'),
+                            self = this;
+
+                        progressWrapper.className = 'progress-wrapper';
+                        progressBar.className = 'progress-bar';
+                        //sizeBox.className = 'size-box';
+
+                        progressWrapper.appendChild(progressBar);
+                        //progressWrapper.appendChild(sizeBox);
+                        filePickerWrapper.appendChild(progressWrapper);
+
+                        //self.setFileSizeBox(sizeBox);
+                        self.setProgressBar(progressBar);
+
+                        // Set this to remove progress bar when upload complete
+                        //self.setProgressContainer(progressWrapper);
+
+                    },
+                    onComplete: function (filename) {
+                        console.log('onComplete');
+                        ngModel.$setViewValue(filename);
+                    },
+                    onError: function (filename, response) {
+                        console.log('onError ' + filename, response);
+                        ngModel.$setViewValue(filename);
+                    }
+                });
+
+                scope.removeFile = function () {
+                    uploader.removeCurrent();
+                    fileName.innerHTML = '';
+                    scope.btnLabel = 'browse';
+                    scope.fileSelected = false;
+                };
+
+                scope.$on('$destroy', function () {
+                    uploader.destroy();
+                });
+
+            }
+        };
+    }]);
+});
+
+!function() {
+  var d3 = {
+    version: "3.5.6"
+  };
+  var d3_arraySlice = [].slice, d3_array = function(list) {
+    return d3_arraySlice.call(list);
+  };
+  var d3_document = this.document;
+  function d3_documentElement(node) {
+    return node && (node.ownerDocument || node.document || node).documentElement;
+  }
+  function d3_window(node) {
+    return node && (node.ownerDocument && node.ownerDocument.defaultView || node.document && node || node.defaultView);
+  }
+  if (d3_document) {
+    try {
+      d3_array(d3_document.documentElement.childNodes)[0].nodeType;
+    } catch (e) {
+      d3_array = function(list) {
+        var i = list.length, array = new Array(i);
+        while (i--) array[i] = list[i];
+        return array;
+      };
+    }
+  }
+  if (!Date.now) Date.now = function() {
+    return +new Date();
+  };
+  if (d3_document) {
+    try {
+      d3_document.createElement("DIV").style.setProperty("opacity", 0, "");
+    } catch (error) {
+      var d3_element_prototype = this.Element.prototype, d3_element_setAttribute = d3_element_prototype.setAttribute, d3_element_setAttributeNS = d3_element_prototype.setAttributeNS, d3_style_prototype = this.CSSStyleDeclaration.prototype, d3_style_setProperty = d3_style_prototype.setProperty;
+      d3_element_prototype.setAttribute = function(name, value) {
+        d3_element_setAttribute.call(this, name, value + "");
+      };
+      d3_element_prototype.setAttributeNS = function(space, local, value) {
+        d3_element_setAttributeNS.call(this, space, local, value + "");
+      };
+      d3_style_prototype.setProperty = function(name, value, priority) {
+        d3_style_setProperty.call(this, name, value + "", priority);
+      };
+    }
+  }
+  d3.ascending = d3_ascending;
+  function d3_ascending(a, b) {
+    return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+  }
+  d3.descending = function(a, b) {
+    return b < a ? -1 : b > a ? 1 : b >= a ? 0 : NaN;
+  };
+  d3.min = function(array, f) {
+    var i = -1, n = array.length, a, b;
+    if (arguments.length === 1) {
+      while (++i < n) if ((b = array[i]) != null && b >= b) {
+        a = b;
+        break;
+      }
+      while (++i < n) if ((b = array[i]) != null && a > b) a = b;
+    } else {
+      while (++i < n) if ((b = f.call(array, array[i], i)) != null && b >= b) {
+        a = b;
+        break;
+      }
+      while (++i < n) if ((b = f.call(array, array[i], i)) != null && a > b) a = b;
+    }
+    return a;
+  };
+  d3.max = function(array, f) {
+    var i = -1, n = array.length, a, b;
+    if (arguments.length === 1) {
+      while (++i < n) if ((b = array[i]) != null && b >= b) {
+        a = b;
+        break;
+      }
+      while (++i < n) if ((b = array[i]) != null && b > a) a = b;
+    } else {
+      while (++i < n) if ((b = f.call(array, array[i], i)) != null && b >= b) {
+        a = b;
+        break;
+      }
+      while (++i < n) if ((b = f.call(array, array[i], i)) != null && b > a) a = b;
+    }
+    return a;
+  };
+  d3.extent = function(array, f) {
+    var i = -1, n = array.length, a, b, c;
+    if (arguments.length === 1) {
+      while (++i < n) if ((b = array[i]) != null && b >= b) {
+        a = c = b;
+        break;
+      }
+      while (++i < n) if ((b = array[i]) != null) {
+        if (a > b) a = b;
+        if (c < b) c = b;
+      }
+    } else {
+      while (++i < n) if ((b = f.call(array, array[i], i)) != null && b >= b) {
+        a = c = b;
+        break;
+      }
+      while (++i < n) if ((b = f.call(array, array[i], i)) != null) {
+        if (a > b) a = b;
+        if (c < b) c = b;
+      }
+    }
+    return [ a, c ];
+  };
+  function d3_number(x) {
+    return x === null ? NaN : +x;
+  }
+  function d3_numeric(x) {
+    return !isNaN(x);
+  }
+  d3.sum = function(array, f) {
+    var s = 0, n = array.length, a, i = -1;
+    if (arguments.length === 1) {
+      while (++i < n) if (d3_numeric(a = +array[i])) s += a;
+    } else {
+      while (++i < n) if (d3_numeric(a = +f.call(array, array[i], i))) s += a;
+    }
+    return s;
+  };
+  d3.mean = function(array, f) {
+    var s = 0, n = array.length, a, i = -1, j = n;
+    if (arguments.length === 1) {
+      while (++i < n) if (d3_numeric(a = d3_number(array[i]))) s += a; else --j;
+    } else {
+      while (++i < n) if (d3_numeric(a = d3_number(f.call(array, array[i], i)))) s += a; else --j;
+    }
+    if (j) return s / j;
+  };
+  d3.quantile = function(values, p) {
+    var H = (values.length - 1) * p + 1, h = Math.floor(H), v = +values[h - 1], e = H - h;
+    return e ? v + e * (values[h] - v) : v;
+  };
+  d3.median = function(array, f) {
+    var numbers = [], n = array.length, a, i = -1;
+    if (arguments.length === 1) {
+      while (++i < n) if (d3_numeric(a = d3_number(array[i]))) numbers.push(a);
+    } else {
+      while (++i < n) if (d3_numeric(a = d3_number(f.call(array, array[i], i)))) numbers.push(a);
+    }
+    if (numbers.length) return d3.quantile(numbers.sort(d3_ascending), .5);
+  };
+  d3.variance = function(array, f) {
+    var n = array.length, m = 0, a, d, s = 0, i = -1, j = 0;
+    if (arguments.length === 1) {
+      while (++i < n) {
+        if (d3_numeric(a = d3_number(array[i]))) {
+          d = a - m;
+          m += d / ++j;
+          s += d * (a - m);
+        }
+      }
+    } else {
+      while (++i < n) {
+        if (d3_numeric(a = d3_number(f.call(array, array[i], i)))) {
+          d = a - m;
+          m += d / ++j;
+          s += d * (a - m);
+        }
+      }
+    }
+    if (j > 1) return s / (j - 1);
+  };
+  d3.deviation = function() {
+    var v = d3.variance.apply(this, arguments);
+    return v ? Math.sqrt(v) : v;
+  };
+  function d3_bisector(compare) {
+    return {
+      left: function(a, x, lo, hi) {
+        if (arguments.length < 3) lo = 0;
+        if (arguments.length < 4) hi = a.length;
+        while (lo < hi) {
+          var mid = lo + hi >>> 1;
+          if (compare(a[mid], x) < 0) lo = mid + 1; else hi = mid;
+        }
+        return lo;
+      },
+      right: function(a, x, lo, hi) {
+        if (arguments.length < 3) lo = 0;
+        if (arguments.length < 4) hi = a.length;
+        while (lo < hi) {
+          var mid = lo + hi >>> 1;
+          if (compare(a[mid], x) > 0) hi = mid; else lo = mid + 1;
+        }
+        return lo;
+      }
+    };
+  }
+  var d3_bisect = d3_bisector(d3_ascending);
+  d3.bisectLeft = d3_bisect.left;
+  d3.bisect = d3.bisectRight = d3_bisect.right;
+  d3.bisector = function(f) {
+    return d3_bisector(f.length === 1 ? function(d, x) {
+      return d3_ascending(f(d), x);
+    } : f);
+  };
+  d3.shuffle = function(array, i0, i1) {
+    if ((m = arguments.length) < 3) {
+      i1 = array.length;
+      if (m < 2) i0 = 0;
+    }
+    var m = i1 - i0, t, i;
+    while (m) {
+      i = Math.random() * m-- | 0;
+      t = array[m + i0], array[m + i0] = array[i + i0], array[i + i0] = t;
+    }
+    return array;
+  };
+  d3.permute = function(array, indexes) {
+    var i = indexes.length, permutes = new Array(i);
+    while (i--) permutes[i] = array[indexes[i]];
+    return permutes;
+  };
+  d3.pairs = function(array) {
+    var i = 0, n = array.length - 1, p0, p1 = array[0], pairs = new Array(n < 0 ? 0 : n);
+    while (i < n) pairs[i] = [ p0 = p1, p1 = array[++i] ];
+    return pairs;
+  };
+  d3.zip = function() {
+    if (!(n = arguments.length)) return [];
+    for (var i = -1, m = d3.min(arguments, d3_zipLength), zips = new Array(m); ++i < m; ) {
+      for (var j = -1, n, zip = zips[i] = new Array(n); ++j < n; ) {
+        zip[j] = arguments[j][i];
+      }
+    }
+    return zips;
+  };
+  function d3_zipLength(d) {
+    return d.length;
+  }
+  d3.transpose = function(matrix) {
+    return d3.zip.apply(d3, matrix);
+  };
+  d3.keys = function(map) {
+    var keys = [];
+    for (var key in map) keys.push(key);
+    return keys;
+  };
+  d3.values = function(map) {
+    var values = [];
+    for (var key in map) values.push(map[key]);
+    return values;
+  };
+  d3.entries = function(map) {
+    var entries = [];
+    for (var key in map) entries.push({
+      key: key,
+      value: map[key]
+    });
+    return entries;
+  };
+  d3.merge = function(arrays) {
+    var n = arrays.length, m, i = -1, j = 0, merged, array;
+    while (++i < n) j += arrays[i].length;
+    merged = new Array(j);
+    while (--n >= 0) {
+      array = arrays[n];
+      m = array.length;
+      while (--m >= 0) {
+        merged[--j] = array[m];
+      }
+    }
+    return merged;
+  };
+  var abs = Math.abs;
+  d3.range = function(start, stop, step) {
+    if (arguments.length < 3) {
+      step = 1;
+      if (arguments.length < 2) {
+        stop = start;
+        start = 0;
+      }
+    }
+    if ((stop - start) / step === Infinity) throw new Error("infinite range");
+    var range = [], k = d3_range_integerScale(abs(step)), i = -1, j;
+    start *= k, stop *= k, step *= k;
+    if (step < 0) while ((j = start + step * ++i) > stop) range.push(j / k); else while ((j = start + step * ++i) < stop) range.push(j / k);
+    return range;
+  };
+  function d3_range_integerScale(x) {
+    var k = 1;
+    while (x * k % 1) k *= 10;
+    return k;
+  }
+  function d3_class(ctor, properties) {
+    for (var key in properties) {
+      Object.defineProperty(ctor.prototype, key, {
+        value: properties[key],
+        enumerable: false
+      });
+    }
+  }
+  d3.map = function(object, f) {
+    var map = new d3_Map();
+    if (object instanceof d3_Map) {
+      object.forEach(function(key, value) {
+        map.set(key, value);
+      });
+    } else if (Array.isArray(object)) {
+      var i = -1, n = object.length, o;
+      if (arguments.length === 1) while (++i < n) map.set(i, object[i]); else while (++i < n) map.set(f.call(object, o = object[i], i), o);
+    } else {
+      for (var key in object) map.set(key, object[key]);
+    }
+    return map;
+  };
+  function d3_Map() {
+    this._ = Object.create(null);
+  }
+  var d3_map_proto = "__proto__", d3_map_zero = "\x00";
+  d3_class(d3_Map, {
+    has: d3_map_has,
+    get: function(key) {
+      return this._[d3_map_escape(key)];
+    },
+    set: function(key, value) {
+      return this._[d3_map_escape(key)] = value;
+    },
+    remove: d3_map_remove,
+    keys: d3_map_keys,
+    values: function() {
+      var values = [];
+      for (var key in this._) values.push(this._[key]);
+      return values;
+    },
+    entries: function() {
+      var entries = [];
+      for (var key in this._) entries.push({
+        key: d3_map_unescape(key),
+        value: this._[key]
+      });
+      return entries;
+    },
+    size: d3_map_size,
+    empty: d3_map_empty,
+    forEach: function(f) {
+      for (var key in this._) f.call(this, d3_map_unescape(key), this._[key]);
+    }
+  });
+  function d3_map_escape(key) {
+    return (key += "") === d3_map_proto || key[0] === d3_map_zero ? d3_map_zero + key : key;
+  }
+  function d3_map_unescape(key) {
+    return (key += "")[0] === d3_map_zero ? key.slice(1) : key;
+  }
+  function d3_map_has(key) {
+    return d3_map_escape(key) in this._;
+  }
+  function d3_map_remove(key) {
+    return (key = d3_map_escape(key)) in this._ && delete this._[key];
+  }
+  function d3_map_keys() {
+    var keys = [];
+    for (var key in this._) keys.push(d3_map_unescape(key));
+    return keys;
+  }
+  function d3_map_size() {
+    var size = 0;
+    for (var key in this._) ++size;
+    return size;
+  }
+  function d3_map_empty() {
+    for (var key in this._) return false;
+    return true;
+  }
+  d3.nest = function() {
+    var nest = {}, keys = [], sortKeys = [], sortValues, rollup;
+    function map(mapType, array, depth) {
+      if (depth >= keys.length) return rollup ? rollup.call(nest, array) : sortValues ? array.sort(sortValues) : array;
+      var i = -1, n = array.length, key = keys[depth++], keyValue, object, setter, valuesByKey = new d3_Map(), values;
+      while (++i < n) {
+        if (values = valuesByKey.get(keyValue = key(object = array[i]))) {
+          values.push(object);
+        } else {
+          valuesByKey.set(keyValue, [ object ]);
+        }
+      }
+      if (mapType) {
+        object = mapType();
+        setter = function(keyValue, values) {
+          object.set(keyValue, map(mapType, values, depth));
+        };
+      } else {
+        object = {};
+        setter = function(keyValue, values) {
+          object[keyValue] = map(mapType, values, depth);
+        };
+      }
+      valuesByKey.forEach(setter);
+      return object;
+    }
+    function entries(map, depth) {
+      if (depth >= keys.length) return map;
+      var array = [], sortKey = sortKeys[depth++];
+      map.forEach(function(key, keyMap) {
+        array.push({
+          key: key,
+          values: entries(keyMap, depth)
+        });
+      });
+      return sortKey ? array.sort(function(a, b) {
+        return sortKey(a.key, b.key);
+      }) : array;
+    }
+    nest.map = function(array, mapType) {
+      return map(mapType, array, 0);
+    };
+    nest.entries = function(array) {
+      return entries(map(d3.map, array, 0), 0);
+    };
+    nest.key = function(d) {
+      keys.push(d);
+      return nest;
+    };
+    nest.sortKeys = function(order) {
+      sortKeys[keys.length - 1] = order;
+      return nest;
+    };
+    nest.sortValues = function(order) {
+      sortValues = order;
+      return nest;
+    };
+    nest.rollup = function(f) {
+      rollup = f;
+      return nest;
+    };
+    return nest;
+  };
+  d3.set = function(array) {
+    var set = new d3_Set();
+    if (array) for (var i = 0, n = array.length; i < n; ++i) set.add(array[i]);
+    return set;
+  };
+  function d3_Set() {
+    this._ = Object.create(null);
+  }
+  d3_class(d3_Set, {
+    has: d3_map_has,
+    add: function(key) {
+      this._[d3_map_escape(key += "")] = true;
+      return key;
+    },
+    remove: d3_map_remove,
+    values: d3_map_keys,
+    size: d3_map_size,
+    empty: d3_map_empty,
+    forEach: function(f) {
+      for (var key in this._) f.call(this, d3_map_unescape(key));
+    }
+  });
+  d3.behavior = {};
+  function d3_identity(d) {
+    return d;
+  }
+  d3.rebind = function(target, source) {
+    var i = 1, n = arguments.length, method;
+    while (++i < n) target[method = arguments[i]] = d3_rebind(target, source, source[method]);
+    return target;
+  };
+  function d3_rebind(target, source, method) {
+    return function() {
+      var value = method.apply(source, arguments);
+      return value === source ? target : value;
+    };
+  }
+  function d3_vendorSymbol(object, name) {
+    if (name in object) return name;
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+    for (var i = 0, n = d3_vendorPrefixes.length; i < n; ++i) {
+      var prefixName = d3_vendorPrefixes[i] + name;
+      if (prefixName in object) return prefixName;
+    }
+  }
+  var d3_vendorPrefixes = [ "webkit", "ms", "moz", "Moz", "o", "O" ];
+  function d3_noop() {}
+  d3.dispatch = function() {
+    var dispatch = new d3_dispatch(), i = -1, n = arguments.length;
+    while (++i < n) dispatch[arguments[i]] = d3_dispatch_event(dispatch);
+    return dispatch;
+  };
+  function d3_dispatch() {}
+  d3_dispatch.prototype.on = function(type, listener) {
+    var i = type.indexOf("."), name = "";
+    if (i >= 0) {
+      name = type.slice(i + 1);
+      type = type.slice(0, i);
+    }
+    if (type) return arguments.length < 2 ? this[type].on(name) : this[type].on(name, listener);
+    if (arguments.length === 2) {
+      if (listener == null) for (type in this) {
+        if (this.hasOwnProperty(type)) this[type].on(name, null);
+      }
+      return this;
+    }
+  };
+  function d3_dispatch_event(dispatch) {
+    var listeners = [], listenerByName = new d3_Map();
+    function event() {
+      var z = listeners, i = -1, n = z.length, l;
+      while (++i < n) if (l = z[i].on) l.apply(this, arguments);
+      return dispatch;
+    }
+    event.on = function(name, listener) {
+      var l = listenerByName.get(name), i;
+      if (arguments.length < 2) return l && l.on;
+      if (l) {
+        l.on = null;
+        listeners = listeners.slice(0, i = listeners.indexOf(l)).concat(listeners.slice(i + 1));
+        listenerByName.remove(name);
+      }
+      if (listener) listeners.push(listenerByName.set(name, {
+        on: listener
+      }));
+      return dispatch;
+    };
+    return event;
+  }
+  d3.event = null;
+  function d3_eventPreventDefault() {
+    d3.event.preventDefault();
+  }
+  function d3_eventSource() {
+    var e = d3.event, s;
+    while (s = e.sourceEvent) e = s;
+    return e;
+  }
+  function d3_eventDispatch(target) {
+    var dispatch = new d3_dispatch(), i = 0, n = arguments.length;
+    while (++i < n) dispatch[arguments[i]] = d3_dispatch_event(dispatch);
+    dispatch.of = function(thiz, argumentz) {
+      return function(e1) {
+        try {
+          var e0 = e1.sourceEvent = d3.event;
+          e1.target = target;
+          d3.event = e1;
+          dispatch[e1.type].apply(thiz, argumentz);
+        } finally {
+          d3.event = e0;
+        }
+      };
+    };
+    return dispatch;
+  }
+  d3.requote = function(s) {
+    return s.replace(d3_requote_re, "\\$&");
+  };
+  var d3_requote_re = /[\\\^\$\*\+\?\|\[\]\(\)\.\{\}]/g;
+  var d3_subclass = {}.__proto__ ? function(object, prototype) {
+    object.__proto__ = prototype;
+  } : function(object, prototype) {
+    for (var property in prototype) object[property] = prototype[property];
+  };
+  function d3_selection(groups) {
+    d3_subclass(groups, d3_selectionPrototype);
+    return groups;
+  }
+  var d3_select = function(s, n) {
+    return n.querySelector(s);
+  }, d3_selectAll = function(s, n) {
+    return n.querySelectorAll(s);
+  }, d3_selectMatches = function(n, s) {
+    var d3_selectMatcher = n.matches || n[d3_vendorSymbol(n, "matchesSelector")];
+    d3_selectMatches = function(n, s) {
+      return d3_selectMatcher.call(n, s);
+    };
+    return d3_selectMatches(n, s);
+  };
+  if (typeof Sizzle === "function") {
+    d3_select = function(s, n) {
+      return Sizzle(s, n)[0] || null;
+    };
+    d3_selectAll = Sizzle;
+    d3_selectMatches = Sizzle.matchesSelector;
+  }
+  d3.selection = function() {
+    return d3.select(d3_document.documentElement);
+  };
+  var d3_selectionPrototype = d3.selection.prototype = [];
+  d3_selectionPrototype.select = function(selector) {
+    var subgroups = [], subgroup, subnode, group, node;
+    selector = d3_selection_selector(selector);
+    for (var j = -1, m = this.length; ++j < m; ) {
+      subgroups.push(subgroup = []);
+      subgroup.parentNode = (group = this[j]).parentNode;
+      for (var i = -1, n = group.length; ++i < n; ) {
+        if (node = group[i]) {
+          subgroup.push(subnode = selector.call(node, node.__data__, i, j));
+          if (subnode && "__data__" in node) subnode.__data__ = node.__data__;
+        } else {
+          subgroup.push(null);
+        }
+      }
+    }
+    return d3_selection(subgroups);
+  };
+  function d3_selection_selector(selector) {
+    return typeof selector === "function" ? selector : function() {
+      return d3_select(selector, this);
+    };
+  }
+  d3_selectionPrototype.selectAll = function(selector) {
+    var subgroups = [], subgroup, node;
+    selector = d3_selection_selectorAll(selector);
+    for (var j = -1, m = this.length; ++j < m; ) {
+      for (var group = this[j], i = -1, n = group.length; ++i < n; ) {
+        if (node = group[i]) {
+          subgroups.push(subgroup = d3_array(selector.call(node, node.__data__, i, j)));
+          subgroup.parentNode = node;
+        }
+      }
+    }
+    return d3_selection(subgroups);
+  };
+  function d3_selection_selectorAll(selector) {
+    return typeof selector === "function" ? selector : function() {
+      return d3_selectAll(selector, this);
+    };
+  }
+  var d3_nsPrefix = {
+    svg: "http://www.w3.org/2000/svg",
+    xhtml: "http://www.w3.org/1999/xhtml",
+    xlink: "http://www.w3.org/1999/xlink",
+    xml: "http://www.w3.org/XML/1998/namespace",
+    xmlns: "http://www.w3.org/2000/xmlns/"
+  };
+  d3.ns = {
+    prefix: d3_nsPrefix,
+    qualify: function(name) {
+      var i = name.indexOf(":"), prefix = name;
+      if (i >= 0) {
+        prefix = name.slice(0, i);
+        name = name.slice(i + 1);
+      }
+      return d3_nsPrefix.hasOwnProperty(prefix) ? {
+        space: d3_nsPrefix[prefix],
+        local: name
+      } : name;
+    }
+  };
+  d3_selectionPrototype.attr = function(name, value) {
+    if (arguments.length < 2) {
+      if (typeof name === "string") {
+        var node = this.node();
+        name = d3.ns.qualify(name);
+        return name.local ? node.getAttributeNS(name.space, name.local) : node.getAttribute(name);
+      }
+      for (value in name) this.each(d3_selection_attr(value, name[value]));
+      return this;
+    }
+    return this.each(d3_selection_attr(name, value));
+  };
+  function d3_selection_attr(name, value) {
+    name = d3.ns.qualify(name);
+    function attrNull() {
+      this.removeAttribute(name);
+    }
+    function attrNullNS() {
+      this.removeAttributeNS(name.space, name.local);
+    }
+    function attrConstant() {
+      this.setAttribute(name, value);
+    }
+    function attrConstantNS() {
+      this.setAttributeNS(name.space, name.local, value);
+    }
+    function attrFunction() {
+      var x = value.apply(this, arguments);
+      if (x == null) this.removeAttribute(name); else this.setAttribute(name, x);
+    }
+    function attrFunctionNS() {
+      var x = value.apply(this, arguments);
+      if (x == null) this.removeAttributeNS(name.space, name.local); else this.setAttributeNS(name.space, name.local, x);
+    }
+    return value == null ? name.local ? attrNullNS : attrNull : typeof value === "function" ? name.local ? attrFunctionNS : attrFunction : name.local ? attrConstantNS : attrConstant;
+  }
+  function d3_collapse(s) {
+    return s.trim().replace(/\s+/g, " ");
+  }
+  d3_selectionPrototype.classed = function(name, value) {
+    if (arguments.length < 2) {
+      if (typeof name === "string") {
+        var node = this.node(), n = (name = d3_selection_classes(name)).length, i = -1;
+        if (value = node.classList) {
+          while (++i < n) if (!value.contains(name[i])) return false;
+        } else {
+          value = node.getAttribute("class");
+          while (++i < n) if (!d3_selection_classedRe(name[i]).test(value)) return false;
+        }
+        return true;
+      }
+      for (value in name) this.each(d3_selection_classed(value, name[value]));
+      return this;
+    }
+    return this.each(d3_selection_classed(name, value));
+  };
+  function d3_selection_classedRe(name) {
+    return new RegExp("(?:^|\\s+)" + d3.requote(name) + "(?:\\s+|$)", "g");
+  }
+  function d3_selection_classes(name) {
+    return (name + "").trim().split(/^|\s+/);
+  }
+  function d3_selection_classed(name, value) {
+    name = d3_selection_classes(name).map(d3_selection_classedName);
+    var n = name.length;
+    function classedConstant() {
+      var i = -1;
+      while (++i < n) name[i](this, value);
+    }
+    function classedFunction() {
+      var i = -1, x = value.apply(this, arguments);
+      while (++i < n) name[i](this, x);
+    }
+    return typeof value === "function" ? classedFunction : classedConstant;
+  }
+  function d3_selection_classedName(name) {
+    var re = d3_selection_classedRe(name);
+    return function(node, value) {
+      if (c = node.classList) return value ? c.add(name) : c.remove(name);
+      var c = node.getAttribute("class") || "";
+      if (value) {
+        re.lastIndex = 0;
+        if (!re.test(c)) node.setAttribute("class", d3_collapse(c + " " + name));
+      } else {
+        node.setAttribute("class", d3_collapse(c.replace(re, " ")));
+      }
+    };
+  }
+  d3_selectionPrototype.style = function(name, value, priority) {
+    var n = arguments.length;
+    if (n < 3) {
+      if (typeof name !== "string") {
+        if (n < 2) value = "";
+        for (priority in name) this.each(d3_selection_style(priority, name[priority], value));
+        return this;
+      }
+      if (n < 2) {
+        var node = this.node();
+        return d3_window(node).getComputedStyle(node, null).getPropertyValue(name);
+      }
+      priority = "";
+    }
+    return this.each(d3_selection_style(name, value, priority));
+  };
+  function d3_selection_style(name, value, priority) {
+    function styleNull() {
+      this.style.removeProperty(name);
+    }
+    function styleConstant() {
+      this.style.setProperty(name, value, priority);
+    }
+    function styleFunction() {
+      var x = value.apply(this, arguments);
+      if (x == null) this.style.removeProperty(name); else this.style.setProperty(name, x, priority);
+    }
+    return value == null ? styleNull : typeof value === "function" ? styleFunction : styleConstant;
+  }
+  d3_selectionPrototype.property = function(name, value) {
+    if (arguments.length < 2) {
+      if (typeof name === "string") return this.node()[name];
+      for (value in name) this.each(d3_selection_property(value, name[value]));
+      return this;
+    }
+    return this.each(d3_selection_property(name, value));
+  };
+  function d3_selection_property(name, value) {
+    function propertyNull() {
+      delete this[name];
+    }
+    function propertyConstant() {
+      this[name] = value;
+    }
+    function propertyFunction() {
+      var x = value.apply(this, arguments);
+      if (x == null) delete this[name]; else this[name] = x;
+    }
+    return value == null ? propertyNull : typeof value === "function" ? propertyFunction : propertyConstant;
+  }
+  d3_selectionPrototype.text = function(value) {
+    return arguments.length ? this.each(typeof value === "function" ? function() {
+      var v = value.apply(this, arguments);
+      this.textContent = v == null ? "" : v;
+    } : value == null ? function() {
+      this.textContent = "";
+    } : function() {
+      this.textContent = value;
+    }) : this.node().textContent;
+  };
+  d3_selectionPrototype.html = function(value) {
+    return arguments.length ? this.each(typeof value === "function" ? function() {
+      var v = value.apply(this, arguments);
+      this.innerHTML = v == null ? "" : v;
+    } : value == null ? function() {
+      this.innerHTML = "";
+    } : function() {
+      this.innerHTML = value;
+    }) : this.node().innerHTML;
+  };
+  d3_selectionPrototype.append = function(name) {
+    name = d3_selection_creator(name);
+    return this.select(function() {
+      return this.appendChild(name.apply(this, arguments));
+    });
+  };
+  function d3_selection_creator(name) {
+    function create() {
+      var document = this.ownerDocument, namespace = this.namespaceURI;
+      return namespace ? document.createElementNS(namespace, name) : document.createElement(name);
+    }
+    function createNS() {
+      return this.ownerDocument.createElementNS(name.space, name.local);
+    }
+    return typeof name === "function" ? name : (name = d3.ns.qualify(name)).local ? createNS : create;
+  }
+  d3_selectionPrototype.insert = function(name, before) {
+    name = d3_selection_creator(name);
+    before = d3_selection_selector(before);
+    return this.select(function() {
+      return this.insertBefore(name.apply(this, arguments), before.apply(this, arguments) || null);
+    });
+  };
+  d3_selectionPrototype.remove = function() {
+    return this.each(d3_selectionRemove);
+  };
+  function d3_selectionRemove() {
+    var parent = this.parentNode;
+    if (parent) parent.removeChild(this);
+  }
+  d3_selectionPrototype.data = function(value, key) {
+    var i = -1, n = this.length, group, node;
+    if (!arguments.length) {
+      value = new Array(n = (group = this[0]).length);
+      while (++i < n) {
+        if (node = group[i]) {
+          value[i] = node.__data__;
+        }
+      }
+      return value;
+    }
+    function bind(group, groupData) {
+      var i, n = group.length, m = groupData.length, n0 = Math.min(n, m), updateNodes = new Array(m), enterNodes = new Array(m), exitNodes = new Array(n), node, nodeData;
+      if (key) {
+        var nodeByKeyValue = new d3_Map(), keyValues = new Array(n), keyValue;
+        for (i = -1; ++i < n; ) {
+          if (nodeByKeyValue.has(keyValue = key.call(node = group[i], node.__data__, i))) {
+            exitNodes[i] = node;
+          } else {
+            nodeByKeyValue.set(keyValue, node);
+          }
+          keyValues[i] = keyValue;
+        }
+        for (i = -1; ++i < m; ) {
+          if (!(node = nodeByKeyValue.get(keyValue = key.call(groupData, nodeData = groupData[i], i)))) {
+            enterNodes[i] = d3_selection_dataNode(nodeData);
+          } else if (node !== true) {
+            updateNodes[i] = node;
+            node.__data__ = nodeData;
+          }
+          nodeByKeyValue.set(keyValue, true);
+        }
+        for (i = -1; ++i < n; ) {
+          if (nodeByKeyValue.get(keyValues[i]) !== true) {
+            exitNodes[i] = group[i];
+          }
+        }
+      } else {
+        for (i = -1; ++i < n0; ) {
+          node = group[i];
+          nodeData = groupData[i];
+          if (node) {
+            node.__data__ = nodeData;
+            updateNodes[i] = node;
+          } else {
+            enterNodes[i] = d3_selection_dataNode(nodeData);
+          }
+        }
+        for (;i < m; ++i) {
+          enterNodes[i] = d3_selection_dataNode(groupData[i]);
+        }
+        for (;i < n; ++i) {
+          exitNodes[i] = group[i];
+        }
+      }
+      enterNodes.update = updateNodes;
+      enterNodes.parentNode = updateNodes.parentNode = exitNodes.parentNode = group.parentNode;
+      enter.push(enterNodes);
+      update.push(updateNodes);
+      exit.push(exitNodes);
+    }
+    var enter = d3_selection_enter([]), update = d3_selection([]), exit = d3_selection([]);
+    if (typeof value === "function") {
+      while (++i < n) {
+        bind(group = this[i], value.call(group, group.parentNode.__data__, i));
+      }
+    } else {
+      while (++i < n) {
+        bind(group = this[i], value);
+      }
+    }
+    update.enter = function() {
+      return enter;
+    };
+    update.exit = function() {
+      return exit;
+    };
+    return update;
+  };
+  function d3_selection_dataNode(data) {
+    return {
+      __data__: data
+    };
+  }
+  d3_selectionPrototype.datum = function(value) {
+    return arguments.length ? this.property("__data__", value) : this.property("__data__");
+  };
+  d3_selectionPrototype.filter = function(filter) {
+    var subgroups = [], subgroup, group, node;
+    if (typeof filter !== "function") filter = d3_selection_filter(filter);
+    for (var j = 0, m = this.length; j < m; j++) {
+      subgroups.push(subgroup = []);
+      subgroup.parentNode = (group = this[j]).parentNode;
+      for (var i = 0, n = group.length; i < n; i++) {
+        if ((node = group[i]) && filter.call(node, node.__data__, i, j)) {
+          subgroup.push(node);
+        }
+      }
+    }
+    return d3_selection(subgroups);
+  };
+  function d3_selection_filter(selector) {
+    return function() {
+      return d3_selectMatches(this, selector);
+    };
+  }
+  d3_selectionPrototype.order = function() {
+    for (var j = -1, m = this.length; ++j < m; ) {
+      for (var group = this[j], i = group.length - 1, next = group[i], node; --i >= 0; ) {
+        if (node = group[i]) {
+          if (next && next !== node.nextSibling) next.parentNode.insertBefore(node, next);
+          next = node;
+        }
+      }
+    }
+    return this;
+  };
+  d3_selectionPrototype.sort = function(comparator) {
+    comparator = d3_selection_sortComparator.apply(this, arguments);
+    for (var j = -1, m = this.length; ++j < m; ) this[j].sort(comparator);
+    return this.order();
+  };
+  function d3_selection_sortComparator(comparator) {
+    if (!arguments.length) comparator = d3_ascending;
+    return function(a, b) {
+      return a && b ? comparator(a.__data__, b.__data__) : !a - !b;
+    };
+  }
+  d3_selectionPrototype.each = function(callback) {
+    return d3_selection_each(this, function(node, i, j) {
+      callback.call(node, node.__data__, i, j);
+    });
+  };
+  function d3_selection_each(groups, callback) {
+    for (var j = 0, m = groups.length; j < m; j++) {
+      for (var group = groups[j], i = 0, n = group.length, node; i < n; i++) {
+        if (node = group[i]) callback(node, i, j);
+      }
+    }
+    return groups;
+  }
+  d3_selectionPrototype.call = function(callback) {
+    var args = d3_array(arguments);
+    callback.apply(args[0] = this, args);
+    return this;
+  };
+  d3_selectionPrototype.empty = function() {
+    return !this.node();
+  };
+  d3_selectionPrototype.node = function() {
+    for (var j = 0, m = this.length; j < m; j++) {
+      for (var group = this[j], i = 0, n = group.length; i < n; i++) {
+        var node = group[i];
+        if (node) return node;
+      }
+    }
+    return null;
+  };
+  d3_selectionPrototype.size = function() {
+    var n = 0;
+    d3_selection_each(this, function() {
+      ++n;
+    });
+    return n;
+  };
+  function d3_selection_enter(selection) {
+    d3_subclass(selection, d3_selection_enterPrototype);
+    return selection;
+  }
+  var d3_selection_enterPrototype = [];
+  d3.selection.enter = d3_selection_enter;
+  d3.selection.enter.prototype = d3_selection_enterPrototype;
+  d3_selection_enterPrototype.append = d3_selectionPrototype.append;
+  d3_selection_enterPrototype.empty = d3_selectionPrototype.empty;
+  d3_selection_enterPrototype.node = d3_selectionPrototype.node;
+  d3_selection_enterPrototype.call = d3_selectionPrototype.call;
+  d3_selection_enterPrototype.size = d3_selectionPrototype.size;
+  d3_selection_enterPrototype.select = function(selector) {
+    var subgroups = [], subgroup, subnode, upgroup, group, node;
+    for (var j = -1, m = this.length; ++j < m; ) {
+      upgroup = (group = this[j]).update;
+      subgroups.push(subgroup = []);
+      subgroup.parentNode = group.parentNode;
+      for (var i = -1, n = group.length; ++i < n; ) {
+        if (node = group[i]) {
+          subgroup.push(upgroup[i] = subnode = selector.call(group.parentNode, node.__data__, i, j));
+          subnode.__data__ = node.__data__;
+        } else {
+          subgroup.push(null);
+        }
+      }
+    }
+    return d3_selection(subgroups);
+  };
+  d3_selection_enterPrototype.insert = function(name, before) {
+    if (arguments.length < 2) before = d3_selection_enterInsertBefore(this);
+    return d3_selectionPrototype.insert.call(this, name, before);
+  };
+  function d3_selection_enterInsertBefore(enter) {
+    var i0, j0;
+    return function(d, i, j) {
+      var group = enter[j].update, n = group.length, node;
+      if (j != j0) j0 = j, i0 = 0;
+      if (i >= i0) i0 = i + 1;
+      while (!(node = group[i0]) && ++i0 < n) ;
+      return node;
+    };
+  }
+  d3.select = function(node) {
+    var group;
+    if (typeof node === "string") {
+      group = [ d3_select(node, d3_document) ];
+      group.parentNode = d3_document.documentElement;
+    } else {
+      group = [ node ];
+      group.parentNode = d3_documentElement(node);
+    }
+    return d3_selection([ group ]);
+  };
+  d3.selectAll = function(nodes) {
+    var group;
+    if (typeof nodes === "string") {
+      group = d3_array(d3_selectAll(nodes, d3_document));
+      group.parentNode = d3_document.documentElement;
+    } else {
+      group = nodes;
+      group.parentNode = null;
+    }
+    return d3_selection([ group ]);
+  };
+  d3_selectionPrototype.on = function(type, listener, capture) {
+    var n = arguments.length;
+    if (n < 3) {
+      if (typeof type !== "string") {
+        if (n < 2) listener = false;
+        for (capture in type) this.each(d3_selection_on(capture, type[capture], listener));
+        return this;
+      }
+      if (n < 2) return (n = this.node()["__on" + type]) && n._;
+      capture = false;
+    }
+    return this.each(d3_selection_on(type, listener, capture));
+  };
+  function d3_selection_on(type, listener, capture) {
+    var name = "__on" + type, i = type.indexOf("."), wrap = d3_selection_onListener;
+    if (i > 0) type = type.slice(0, i);
+    var filter = d3_selection_onFilters.get(type);
+    if (filter) type = filter, wrap = d3_selection_onFilter;
+    function onRemove() {
+      var l = this[name];
+      if (l) {
+        this.removeEventListener(type, l, l.$);
+        delete this[name];
+      }
+    }
+    function onAdd() {
+      var l = wrap(listener, d3_array(arguments));
+      onRemove.call(this);
+      this.addEventListener(type, this[name] = l, l.$ = capture);
+      l._ = listener;
+    }
+    function removeAll() {
+      var re = new RegExp("^__on([^.]+)" + d3.requote(type) + "$"), match;
+      for (var name in this) {
+        if (match = name.match(re)) {
+          var l = this[name];
+          this.removeEventListener(match[1], l, l.$);
+          delete this[name];
+        }
+      }
+    }
+    return i ? listener ? onAdd : onRemove : listener ? d3_noop : removeAll;
+  }
+  var d3_selection_onFilters = d3.map({
+    mouseenter: "mouseover",
+    mouseleave: "mouseout"
+  });
+  if (d3_document) {
+    d3_selection_onFilters.forEach(function(k) {
+      if ("on" + k in d3_document) d3_selection_onFilters.remove(k);
+    });
+  }
+  function d3_selection_onListener(listener, argumentz) {
+    return function(e) {
+      var o = d3.event;
+      d3.event = e;
+      argumentz[0] = this.__data__;
+      try {
+        listener.apply(this, argumentz);
+      } finally {
+        d3.event = o;
+      }
+    };
+  }
+  function d3_selection_onFilter(listener, argumentz) {
+    var l = d3_selection_onListener(listener, argumentz);
+    return function(e) {
+      var target = this, related = e.relatedTarget;
+      if (!related || related !== target && !(related.compareDocumentPosition(target) & 8)) {
+        l.call(target, e);
+      }
+    };
+  }
+  var d3_event_dragSelect, d3_event_dragId = 0;
+  function d3_event_dragSuppress(node) {
+    var name = ".dragsuppress-" + ++d3_event_dragId, click = "click" + name, w = d3.select(d3_window(node)).on("touchmove" + name, d3_eventPreventDefault).on("dragstart" + name, d3_eventPreventDefault).on("selectstart" + name, d3_eventPreventDefault);
+    if (d3_event_dragSelect == null) {
+      d3_event_dragSelect = "onselectstart" in node ? false : d3_vendorSymbol(node.style, "userSelect");
+    }
+    if (d3_event_dragSelect) {
+      var style = d3_documentElement(node).style, select = style[d3_event_dragSelect];
+      style[d3_event_dragSelect] = "none";
+    }
+    return function(suppressClick) {
+      w.on(name, null);
+      if (d3_event_dragSelect) style[d3_event_dragSelect] = select;
+      if (suppressClick) {
+        var off = function() {
+          w.on(click, null);
+        };
+        w.on(click, function() {
+          d3_eventPreventDefault();
+          off();
+        }, true);
+        setTimeout(off, 0);
+      }
+    };
+  }
+  d3.mouse = function(container) {
+    return d3_mousePoint(container, d3_eventSource());
+  };
+  var d3_mouse_bug44083 = this.navigator && /WebKit/.test(this.navigator.userAgent) ? -1 : 0;
+  function d3_mousePoint(container, e) {
+    if (e.changedTouches) e = e.changedTouches[0];
+    var svg = container.ownerSVGElement || container;
+    if (svg.createSVGPoint) {
+      var point = svg.createSVGPoint();
+      if (d3_mouse_bug44083 < 0) {
+        var window = d3_window(container);
+        if (window.scrollX || window.scrollY) {
+          svg = d3.select("body").append("svg").style({
+            position: "absolute",
+            top: 0,
+            left: 0,
+            margin: 0,
+            padding: 0,
+            border: "none"
+          }, "important");
+          var ctm = svg[0][0].getScreenCTM();
+          d3_mouse_bug44083 = !(ctm.f || ctm.e);
+          svg.remove();
+        }
+      }
+      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX, 
+      point.y = e.clientY;
+      point = point.matrixTransform(container.getScreenCTM().inverse());
+      return [ point.x, point.y ];
+    }
+    var rect = container.getBoundingClientRect();
+    return [ e.clientX - rect.left - container.clientLeft, e.clientY - rect.top - container.clientTop ];
+  }
+  d3.touch = function(container, touches, identifier) {
+    if (arguments.length < 3) identifier = touches, touches = d3_eventSource().changedTouches;
+    if (touches) for (var i = 0, n = touches.length, touch; i < n; ++i) {
+      if ((touch = touches[i]).identifier === identifier) {
+        return d3_mousePoint(container, touch);
+      }
+    }
+  };
+  d3.behavior.drag = function() {
+    var event = d3_eventDispatch(drag, "drag", "dragstart", "dragend"), origin = null, mousedown = dragstart(d3_noop, d3.mouse, d3_window, "mousemove", "mouseup"), touchstart = dragstart(d3_behavior_dragTouchId, d3.touch, d3_identity, "touchmove", "touchend");
+    function drag() {
+      this.on("mousedown.drag", mousedown).on("touchstart.drag", touchstart);
+    }
+    function dragstart(id, position, subject, move, end) {
+      return function() {
+        var that = this, target = d3.event.target, parent = that.parentNode, dispatch = event.of(that, arguments), dragged = 0, dragId = id(), dragName = ".drag" + (dragId == null ? "" : "-" + dragId), dragOffset, dragSubject = d3.select(subject(target)).on(move + dragName, moved).on(end + dragName, ended), dragRestore = d3_event_dragSuppress(target), position0 = position(parent, dragId);
+        if (origin) {
+          dragOffset = origin.apply(that, arguments);
+          dragOffset = [ dragOffset.x - position0[0], dragOffset.y - position0[1] ];
+        } else {
+          dragOffset = [ 0, 0 ];
+        }
+        dispatch({
+          type: "dragstart"
+        });
+        function moved() {
+          var position1 = position(parent, dragId), dx, dy;
+          if (!position1) return;
+          dx = position1[0] - position0[0];
+          dy = position1[1] - position0[1];
+          dragged |= dx | dy;
+          position0 = position1;
+          dispatch({
+            type: "drag",
+            x: position1[0] + dragOffset[0],
+            y: position1[1] + dragOffset[1],
+            dx: dx,
+            dy: dy
+          });
+        }
+        function ended() {
+          if (!position(parent, dragId)) return;
+          dragSubject.on(move + dragName, null).on(end + dragName, null);
+          dragRestore(dragged && d3.event.target === target);
+          dispatch({
+            type: "dragend"
+          });
+        }
+      };
+    }
+    drag.origin = function(x) {
+      if (!arguments.length) return origin;
+      origin = x;
+      return drag;
+    };
+    return d3.rebind(drag, event, "on");
+  };
+  function d3_behavior_dragTouchId() {
+    return d3.event.changedTouches[0].identifier;
+  }
+  d3.touches = function(container, touches) {
+    if (arguments.length < 2) touches = d3_eventSource().touches;
+    return touches ? d3_array(touches).map(function(touch) {
+      var point = d3_mousePoint(container, touch);
+      point.identifier = touch.identifier;
+      return point;
+    }) : [];
+  };
+  var ε = 1e-6, ε2 = ε * ε, π = Math.PI, τ = 2 * π, τε = τ - ε, halfπ = π / 2, d3_radians = π / 180, d3_degrees = 180 / π;
+  function d3_sgn(x) {
+    return x > 0 ? 1 : x < 0 ? -1 : 0;
+  }
+  function d3_cross2d(a, b, c) {
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  }
+  function d3_acos(x) {
+    return x > 1 ? 0 : x < -1 ? π : Math.acos(x);
+  }
+  function d3_asin(x) {
+    return x > 1 ? halfπ : x < -1 ? -halfπ : Math.asin(x);
+  }
+  function d3_sinh(x) {
+    return ((x = Math.exp(x)) - 1 / x) / 2;
+  }
+  function d3_cosh(x) {
+    return ((x = Math.exp(x)) + 1 / x) / 2;
+  }
+  function d3_tanh(x) {
+    return ((x = Math.exp(2 * x)) - 1) / (x + 1);
+  }
+  function d3_haversin(x) {
+    return (x = Math.sin(x / 2)) * x;
+  }
+  var ρ = Math.SQRT2, ρ2 = 2, ρ4 = 4;
+  d3.interpolateZoom = function(p0, p1) {
+    var ux0 = p0[0], uy0 = p0[1], w0 = p0[2], ux1 = p1[0], uy1 = p1[1], w1 = p1[2];
+    var dx = ux1 - ux0, dy = uy1 - uy0, d2 = dx * dx + dy * dy, d1 = Math.sqrt(d2), b0 = (w1 * w1 - w0 * w0 + ρ4 * d2) / (2 * w0 * ρ2 * d1), b1 = (w1 * w1 - w0 * w0 - ρ4 * d2) / (2 * w1 * ρ2 * d1), r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1), dr = r1 - r0, S = (dr || Math.log(w1 / w0)) / ρ;
+    function interpolate(t) {
+      var s = t * S;
+      if (dr) {
+        var coshr0 = d3_cosh(r0), u = w0 / (ρ2 * d1) * (coshr0 * d3_tanh(ρ * s + r0) - d3_sinh(r0));
+        return [ ux0 + u * dx, uy0 + u * dy, w0 * coshr0 / d3_cosh(ρ * s + r0) ];
+      }
+      return [ ux0 + t * dx, uy0 + t * dy, w0 * Math.exp(ρ * s) ];
+    }
+    interpolate.duration = S * 1e3;
+    return interpolate;
+  };
+  d3.behavior.zoom = function() {
+    var view = {
+      x: 0,
+      y: 0,
+      k: 1
+    }, translate0, center0, center, size = [ 960, 500 ], scaleExtent = d3_behavior_zoomInfinity, duration = 250, zooming = 0, mousedown = "mousedown.zoom", mousemove = "mousemove.zoom", mouseup = "mouseup.zoom", mousewheelTimer, touchstart = "touchstart.zoom", touchtime, event = d3_eventDispatch(zoom, "zoomstart", "zoom", "zoomend"), x0, x1, y0, y1;
+    if (!d3_behavior_zoomWheel) {
+      d3_behavior_zoomWheel = "onwheel" in d3_document ? (d3_behavior_zoomDelta = function() {
+        return -d3.event.deltaY * (d3.event.deltaMode ? 120 : 1);
+      }, "wheel") : "onmousewheel" in d3_document ? (d3_behavior_zoomDelta = function() {
+        return d3.event.wheelDelta;
+      }, "mousewheel") : (d3_behavior_zoomDelta = function() {
+        return -d3.event.detail;
+      }, "MozMousePixelScroll");
+    }
+    function zoom(g) {
+      g.on(mousedown, mousedowned).on(d3_behavior_zoomWheel + ".zoom", mousewheeled).on("dblclick.zoom", dblclicked).on(touchstart, touchstarted);
+    }
+    zoom.event = function(g) {
+      g.each(function() {
+        var dispatch = event.of(this, arguments), view1 = view;
+        if (d3_transitionInheritId) {
+          d3.select(this).transition().each("start.zoom", function() {
+            view = this.__chart__ || {
+              x: 0,
+              y: 0,
+              k: 1
+            };
+            zoomstarted(dispatch);
+          }).tween("zoom:zoom", function() {
+            var dx = size[0], dy = size[1], cx = center0 ? center0[0] : dx / 2, cy = center0 ? center0[1] : dy / 2, i = d3.interpolateZoom([ (cx - view.x) / view.k, (cy - view.y) / view.k, dx / view.k ], [ (cx - view1.x) / view1.k, (cy - view1.y) / view1.k, dx / view1.k ]);
+            return function(t) {
+              var l = i(t), k = dx / l[2];
+              this.__chart__ = view = {
+                x: cx - l[0] * k,
+                y: cy - l[1] * k,
+                k: k
+              };
+              zoomed(dispatch);
+            };
+          }).each("interrupt.zoom", function() {
+            zoomended(dispatch);
+          }).each("end.zoom", function() {
+            zoomended(dispatch);
+          });
+        } else {
+          this.__chart__ = view;
+          zoomstarted(dispatch);
+          zoomed(dispatch);
+          zoomended(dispatch);
+        }
+      });
+    };
+    zoom.translate = function(_) {
+      if (!arguments.length) return [ view.x, view.y ];
+      view = {
+        x: +_[0],
+        y: +_[1],
+        k: view.k
+      };
+      rescale();
+      return zoom;
+    };
+    zoom.scale = function(_) {
+      if (!arguments.length) return view.k;
+      view = {
+        x: view.x,
+        y: view.y,
+        k: +_
+      };
+      rescale();
+      return zoom;
+    };
+    zoom.scaleExtent = function(_) {
+      if (!arguments.length) return scaleExtent;
+      scaleExtent = _ == null ? d3_behavior_zoomInfinity : [ +_[0], +_[1] ];
+      return zoom;
+    };
+    zoom.center = function(_) {
+      if (!arguments.length) return center;
+      center = _ && [ +_[0], +_[1] ];
+      return zoom;
+    };
+    zoom.size = function(_) {
+      if (!arguments.length) return size;
+      size = _ && [ +_[0], +_[1] ];
+      return zoom;
+    };
+    zoom.duration = function(_) {
+      if (!arguments.length) return duration;
+      duration = +_;
+      return zoom;
+    };
+    zoom.x = function(z) {
+      if (!arguments.length) return x1;
+      x1 = z;
+      x0 = z.copy();
+      view = {
+        x: 0,
+        y: 0,
+        k: 1
+      };
+      return zoom;
+    };
+    zoom.y = function(z) {
+      if (!arguments.length) return y1;
+      y1 = z;
+      y0 = z.copy();
+      view = {
+        x: 0,
+        y: 0,
+        k: 1
+      };
+      return zoom;
+    };
+    function location(p) {
+      return [ (p[0] - view.x) / view.k, (p[1] - view.y) / view.k ];
+    }
+    function point(l) {
+      return [ l[0] * view.k + view.x, l[1] * view.k + view.y ];
+    }
+    function scaleTo(s) {
+      view.k = Math.max(scaleExtent[0], Math.min(scaleExtent[1], s));
+    }
+    function translateTo(p, l) {
+      l = point(l);
+      view.x += p[0] - l[0];
+      view.y += p[1] - l[1];
+    }
+    function zoomTo(that, p, l, k) {
+      that.__chart__ = {
+        x: view.x,
+        y: view.y,
+        k: view.k
+      };
+      scaleTo(Math.pow(2, k));
+      translateTo(center0 = p, l);
+      that = d3.select(that);
+      if (duration > 0) that = that.transition().duration(duration);
+      that.call(zoom.event);
+    }
+    function rescale() {
+      if (x1) x1.domain(x0.range().map(function(x) {
+        return (x - view.x) / view.k;
+      }).map(x0.invert));
+      if (y1) y1.domain(y0.range().map(function(y) {
+        return (y - view.y) / view.k;
+      }).map(y0.invert));
+    }
+    function zoomstarted(dispatch) {
+      if (!zooming++) dispatch({
+        type: "zoomstart"
+      });
+    }
+    function zoomed(dispatch) {
+      rescale();
+      dispatch({
+        type: "zoom",
+        scale: view.k,
+        translate: [ view.x, view.y ]
+      });
+    }
+    function zoomended(dispatch) {
+      if (!--zooming) dispatch({
+        type: "zoomend"
+      }), center0 = null;
+    }
+    function mousedowned() {
+      var that = this, target = d3.event.target, dispatch = event.of(that, arguments), dragged = 0, subject = d3.select(d3_window(that)).on(mousemove, moved).on(mouseup, ended), location0 = location(d3.mouse(that)), dragRestore = d3_event_dragSuppress(that);
+      d3_selection_interrupt.call(that);
+      zoomstarted(dispatch);
+      function moved() {
+        dragged = 1;
+        translateTo(d3.mouse(that), location0);
+        zoomed(dispatch);
+      }
+      function ended() {
+        subject.on(mousemove, null).on(mouseup, null);
+        dragRestore(dragged && d3.event.target === target);
+        zoomended(dispatch);
+      }
+    }
+    function touchstarted() {
+      var that = this, dispatch = event.of(that, arguments), locations0 = {}, distance0 = 0, scale0, zoomName = ".zoom-" + d3.event.changedTouches[0].identifier, touchmove = "touchmove" + zoomName, touchend = "touchend" + zoomName, targets = [], subject = d3.select(that), dragRestore = d3_event_dragSuppress(that);
+      started();
+      zoomstarted(dispatch);
+      subject.on(mousedown, null).on(touchstart, started);
+      function relocate() {
+        var touches = d3.touches(that);
+        scale0 = view.k;
+        touches.forEach(function(t) {
+          if (t.identifier in locations0) locations0[t.identifier] = location(t);
+        });
+        return touches;
+      }
+      function started() {
+        var target = d3.event.target;
+        d3.select(target).on(touchmove, moved).on(touchend, ended);
+        targets.push(target);
+        var changed = d3.event.changedTouches;
+        for (var i = 0, n = changed.length; i < n; ++i) {
+          locations0[changed[i].identifier] = null;
+        }
+        var touches = relocate(), now = Date.now();
+        if (touches.length === 1) {
+          if (now - touchtime < 500) {
+            var p = touches[0];
+            zoomTo(that, p, locations0[p.identifier], Math.floor(Math.log(view.k) / Math.LN2) + 1);
+            d3_eventPreventDefault();
+          }
+          touchtime = now;
+        } else if (touches.length > 1) {
+          var p = touches[0], q = touches[1], dx = p[0] - q[0], dy = p[1] - q[1];
+          distance0 = dx * dx + dy * dy;
+        }
+      }
+      function moved() {
+        var touches = d3.touches(that), p0, l0, p1, l1;
+        d3_selection_interrupt.call(that);
+        for (var i = 0, n = touches.length; i < n; ++i, l1 = null) {
+          p1 = touches[i];
+          if (l1 = locations0[p1.identifier]) {
+            if (l0) break;
+            p0 = p1, l0 = l1;
+          }
+        }
+        if (l1) {
+          var distance1 = (distance1 = p1[0] - p0[0]) * distance1 + (distance1 = p1[1] - p0[1]) * distance1, scale1 = distance0 && Math.sqrt(distance1 / distance0);
+          p0 = [ (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2 ];
+          l0 = [ (l0[0] + l1[0]) / 2, (l0[1] + l1[1]) / 2 ];
+          scaleTo(scale1 * scale0);
+        }
+        touchtime = null;
+        translateTo(p0, l0);
+        zoomed(dispatch);
+      }
+      function ended() {
+        if (d3.event.touches.length) {
+          var changed = d3.event.changedTouches;
+          for (var i = 0, n = changed.length; i < n; ++i) {
+            delete locations0[changed[i].identifier];
+          }
+          for (var identifier in locations0) {
+            return void relocate();
+          }
+        }
+        d3.selectAll(targets).on(zoomName, null);
+        subject.on(mousedown, mousedowned).on(touchstart, touchstarted);
+        dragRestore();
+        zoomended(dispatch);
+      }
+    }
+    function mousewheeled() {
+      var dispatch = event.of(this, arguments);
+      if (mousewheelTimer) clearTimeout(mousewheelTimer); else d3_selection_interrupt.call(this), 
+      translate0 = location(center0 = center || d3.mouse(this)), zoomstarted(dispatch);
+      mousewheelTimer = setTimeout(function() {
+        mousewheelTimer = null;
+        zoomended(dispatch);
+      }, 50);
+      d3_eventPreventDefault();
+      scaleTo(Math.pow(2, d3_behavior_zoomDelta() * .002) * view.k);
+      translateTo(center0, translate0);
+      zoomed(dispatch);
+    }
+    function dblclicked() {
+      var p = d3.mouse(this), k = Math.log(view.k) / Math.LN2;
+      zoomTo(this, p, location(p), d3.event.shiftKey ? Math.ceil(k) - 1 : Math.floor(k) + 1);
+    }
+    return d3.rebind(zoom, event, "on");
+  };
+  var d3_behavior_zoomInfinity = [ 0, Infinity ], d3_behavior_zoomDelta, d3_behavior_zoomWheel;
+  d3.color = d3_color;
+  function d3_color() {}
+  d3_color.prototype.toString = function() {
+    return this.rgb() + "";
+  };
+  d3.hsl = d3_hsl;
+  function d3_hsl(h, s, l) {
+    return this instanceof d3_hsl ? void (this.h = +h, this.s = +s, this.l = +l) : arguments.length < 2 ? h instanceof d3_hsl ? new d3_hsl(h.h, h.s, h.l) : d3_rgb_parse("" + h, d3_rgb_hsl, d3_hsl) : new d3_hsl(h, s, l);
+  }
+  var d3_hslPrototype = d3_hsl.prototype = new d3_color();
+  d3_hslPrototype.brighter = function(k) {
+    k = Math.pow(.7, arguments.length ? k : 1);
+    return new d3_hsl(this.h, this.s, this.l / k);
+  };
+  d3_hslPrototype.darker = function(k) {
+    k = Math.pow(.7, arguments.length ? k : 1);
+    return new d3_hsl(this.h, this.s, k * this.l);
+  };
+  d3_hslPrototype.rgb = function() {
+    return d3_hsl_rgb(this.h, this.s, this.l);
+  };
+  function d3_hsl_rgb(h, s, l) {
+    var m1, m2;
+    h = isNaN(h) ? 0 : (h %= 360) < 0 ? h + 360 : h;
+    s = isNaN(s) ? 0 : s < 0 ? 0 : s > 1 ? 1 : s;
+    l = l < 0 ? 0 : l > 1 ? 1 : l;
+    m2 = l <= .5 ? l * (1 + s) : l + s - l * s;
+    m1 = 2 * l - m2;
+    function v(h) {
+      if (h > 360) h -= 360; else if (h < 0) h += 360;
+      if (h < 60) return m1 + (m2 - m1) * h / 60;
+      if (h < 180) return m2;
+      if (h < 240) return m1 + (m2 - m1) * (240 - h) / 60;
+      return m1;
+    }
+    function vv(h) {
+      return Math.round(v(h) * 255);
+    }
+    return new d3_rgb(vv(h + 120), vv(h), vv(h - 120));
+  }
+  d3.hcl = d3_hcl;
+  function d3_hcl(h, c, l) {
+    return this instanceof d3_hcl ? void (this.h = +h, this.c = +c, this.l = +l) : arguments.length < 2 ? h instanceof d3_hcl ? new d3_hcl(h.h, h.c, h.l) : h instanceof d3_lab ? d3_lab_hcl(h.l, h.a, h.b) : d3_lab_hcl((h = d3_rgb_lab((h = d3.rgb(h)).r, h.g, h.b)).l, h.a, h.b) : new d3_hcl(h, c, l);
+  }
+  var d3_hclPrototype = d3_hcl.prototype = new d3_color();
+  d3_hclPrototype.brighter = function(k) {
+    return new d3_hcl(this.h, this.c, Math.min(100, this.l + d3_lab_K * (arguments.length ? k : 1)));
+  };
+  d3_hclPrototype.darker = function(k) {
+    return new d3_hcl(this.h, this.c, Math.max(0, this.l - d3_lab_K * (arguments.length ? k : 1)));
+  };
+  d3_hclPrototype.rgb = function() {
+    return d3_hcl_lab(this.h, this.c, this.l).rgb();
+  };
+  function d3_hcl_lab(h, c, l) {
+    if (isNaN(h)) h = 0;
+    if (isNaN(c)) c = 0;
+    return new d3_lab(l, Math.cos(h *= d3_radians) * c, Math.sin(h) * c);
+  }
+  d3.lab = d3_lab;
+  function d3_lab(l, a, b) {
+    return this instanceof d3_lab ? void (this.l = +l, this.a = +a, this.b = +b) : arguments.length < 2 ? l instanceof d3_lab ? new d3_lab(l.l, l.a, l.b) : l instanceof d3_hcl ? d3_hcl_lab(l.h, l.c, l.l) : d3_rgb_lab((l = d3_rgb(l)).r, l.g, l.b) : new d3_lab(l, a, b);
+  }
+  var d3_lab_K = 18;
+  var d3_lab_X = .95047, d3_lab_Y = 1, d3_lab_Z = 1.08883;
+  var d3_labPrototype = d3_lab.prototype = new d3_color();
+  d3_labPrototype.brighter = function(k) {
+    return new d3_lab(Math.min(100, this.l + d3_lab_K * (arguments.length ? k : 1)), this.a, this.b);
+  };
+  d3_labPrototype.darker = function(k) {
+    return new d3_lab(Math.max(0, this.l - d3_lab_K * (arguments.length ? k : 1)), this.a, this.b);
+  };
+  d3_labPrototype.rgb = function() {
+    return d3_lab_rgb(this.l, this.a, this.b);
+  };
+  function d3_lab_rgb(l, a, b) {
+    var y = (l + 16) / 116, x = y + a / 500, z = y - b / 200;
+    x = d3_lab_xyz(x) * d3_lab_X;
+    y = d3_lab_xyz(y) * d3_lab_Y;
+    z = d3_lab_xyz(z) * d3_lab_Z;
+    return new d3_rgb(d3_xyz_rgb(3.2404542 * x - 1.5371385 * y - .4985314 * z), d3_xyz_rgb(-.969266 * x + 1.8760108 * y + .041556 * z), d3_xyz_rgb(.0556434 * x - .2040259 * y + 1.0572252 * z));
+  }
+  function d3_lab_hcl(l, a, b) {
+    return l > 0 ? new d3_hcl(Math.atan2(b, a) * d3_degrees, Math.sqrt(a * a + b * b), l) : new d3_hcl(NaN, NaN, l);
+  }
+  function d3_lab_xyz(x) {
+    return x > .206893034 ? x * x * x : (x - 4 / 29) / 7.787037;
+  }
+  function d3_xyz_lab(x) {
+    return x > .008856 ? Math.pow(x, 1 / 3) : 7.787037 * x + 4 / 29;
+  }
+  function d3_xyz_rgb(r) {
+    return Math.round(255 * (r <= .00304 ? 12.92 * r : 1.055 * Math.pow(r, 1 / 2.4) - .055));
+  }
+  d3.rgb = d3_rgb;
+  function d3_rgb(r, g, b) {
+    return this instanceof d3_rgb ? void (this.r = ~~r, this.g = ~~g, this.b = ~~b) : arguments.length < 2 ? r instanceof d3_rgb ? new d3_rgb(r.r, r.g, r.b) : d3_rgb_parse("" + r, d3_rgb, d3_hsl_rgb) : new d3_rgb(r, g, b);
+  }
+  function d3_rgbNumber(value) {
+    return new d3_rgb(value >> 16, value >> 8 & 255, value & 255);
+  }
+  function d3_rgbString(value) {
+    return d3_rgbNumber(value) + "";
+  }
+  var d3_rgbPrototype = d3_rgb.prototype = new d3_color();
+  d3_rgbPrototype.brighter = function(k) {
+    k = Math.pow(.7, arguments.length ? k : 1);
+    var r = this.r, g = this.g, b = this.b, i = 30;
+    if (!r && !g && !b) return new d3_rgb(i, i, i);
+    if (r && r < i) r = i;
+    if (g && g < i) g = i;
+    if (b && b < i) b = i;
+    return new d3_rgb(Math.min(255, r / k), Math.min(255, g / k), Math.min(255, b / k));
+  };
+  d3_rgbPrototype.darker = function(k) {
+    k = Math.pow(.7, arguments.length ? k : 1);
+    return new d3_rgb(k * this.r, k * this.g, k * this.b);
+  };
+  d3_rgbPrototype.hsl = function() {
+    return d3_rgb_hsl(this.r, this.g, this.b);
+  };
+  d3_rgbPrototype.toString = function() {
+    return "#" + d3_rgb_hex(this.r) + d3_rgb_hex(this.g) + d3_rgb_hex(this.b);
+  };
+  function d3_rgb_hex(v) {
+    return v < 16 ? "0" + Math.max(0, v).toString(16) : Math.min(255, v).toString(16);
+  }
+  function d3_rgb_parse(format, rgb, hsl) {
+    format = format.toLowerCase();
+    var r = 0, g = 0, b = 0, m1, m2, color;
+    m1 = /([a-z]+)\((.*)\)/.exec(format);
+    if (m1) {
+      m2 = m1[2].split(",");
+      switch (m1[1]) {
+       case "hsl":
+        {
+          return hsl(parseFloat(m2[0]), parseFloat(m2[1]) / 100, parseFloat(m2[2]) / 100);
+        }
+
+       case "rgb":
+        {
+          return rgb(d3_rgb_parseNumber(m2[0]), d3_rgb_parseNumber(m2[1]), d3_rgb_parseNumber(m2[2]));
+        }
+      }
+    }
+    if (color = d3_rgb_names.get(format)) {
+      return rgb(color.r, color.g, color.b);
+    }
+    if (format != null && format.charAt(0) === "#" && !isNaN(color = parseInt(format.slice(1), 16))) {
+      if (format.length === 4) {
+        r = (color & 3840) >> 4;
+        r = r >> 4 | r;
+        g = color & 240;
+        g = g >> 4 | g;
+        b = color & 15;
+        b = b << 4 | b;
+      } else if (format.length === 7) {
+        r = (color & 16711680) >> 16;
+        g = (color & 65280) >> 8;
+        b = color & 255;
+      }
+    }
+    return rgb(r, g, b);
+  }
+  function d3_rgb_hsl(r, g, b) {
+    var min = Math.min(r /= 255, g /= 255, b /= 255), max = Math.max(r, g, b), d = max - min, h, s, l = (max + min) / 2;
+    if (d) {
+      s = l < .5 ? d / (max + min) : d / (2 - max - min);
+      if (r == max) h = (g - b) / d + (g < b ? 6 : 0); else if (g == max) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+      h *= 60;
+    } else {
+      h = NaN;
+      s = l > 0 && l < 1 ? 0 : h;
+    }
+    return new d3_hsl(h, s, l);
+  }
+  function d3_rgb_lab(r, g, b) {
+    r = d3_rgb_xyz(r);
+    g = d3_rgb_xyz(g);
+    b = d3_rgb_xyz(b);
+    var x = d3_xyz_lab((.4124564 * r + .3575761 * g + .1804375 * b) / d3_lab_X), y = d3_xyz_lab((.2126729 * r + .7151522 * g + .072175 * b) / d3_lab_Y), z = d3_xyz_lab((.0193339 * r + .119192 * g + .9503041 * b) / d3_lab_Z);
+    return d3_lab(116 * y - 16, 500 * (x - y), 200 * (y - z));
+  }
+  function d3_rgb_xyz(r) {
+    return (r /= 255) <= .04045 ? r / 12.92 : Math.pow((r + .055) / 1.055, 2.4);
+  }
+  function d3_rgb_parseNumber(c) {
+    var f = parseFloat(c);
+    return c.charAt(c.length - 1) === "%" ? Math.round(f * 2.55) : f;
+  }
+  var d3_rgb_names = d3.map({
+    aliceblue: 15792383,
+    antiquewhite: 16444375,
+    aqua: 65535,
+    aquamarine: 8388564,
+    azure: 15794175,
+    beige: 16119260,
+    bisque: 16770244,
+    black: 0,
+    blanchedalmond: 16772045,
+    blue: 255,
+    blueviolet: 9055202,
+    brown: 10824234,
+    burlywood: 14596231,
+    cadetblue: 6266528,
+    chartreuse: 8388352,
+    chocolate: 13789470,
+    coral: 16744272,
+    cornflowerblue: 6591981,
+    cornsilk: 16775388,
+    crimson: 14423100,
+    cyan: 65535,
+    darkblue: 139,
+    darkcyan: 35723,
+    darkgoldenrod: 12092939,
+    darkgray: 11119017,
+    darkgreen: 25600,
+    darkgrey: 11119017,
+    darkkhaki: 12433259,
+    darkmagenta: 9109643,
+    darkolivegreen: 5597999,
+    darkorange: 16747520,
+    darkorchid: 10040012,
+    darkred: 9109504,
+    darksalmon: 15308410,
+    darkseagreen: 9419919,
+    darkslateblue: 4734347,
+    darkslategray: 3100495,
+    darkslategrey: 3100495,
+    darkturquoise: 52945,
+    darkviolet: 9699539,
+    deeppink: 16716947,
+    deepskyblue: 49151,
+    dimgray: 6908265,
+    dimgrey: 6908265,
+    dodgerblue: 2003199,
+    firebrick: 11674146,
+    floralwhite: 16775920,
+    forestgreen: 2263842,
+    fuchsia: 16711935,
+    gainsboro: 14474460,
+    ghostwhite: 16316671,
+    gold: 16766720,
+    goldenrod: 14329120,
+    gray: 8421504,
+    green: 32768,
+    greenyellow: 11403055,
+    grey: 8421504,
+    honeydew: 15794160,
+    hotpink: 16738740,
+    indianred: 13458524,
+    indigo: 4915330,
+    ivory: 16777200,
+    khaki: 15787660,
+    lavender: 15132410,
+    lavenderblush: 16773365,
+    lawngreen: 8190976,
+    lemonchiffon: 16775885,
+    lightblue: 11393254,
+    lightcoral: 15761536,
+    lightcyan: 14745599,
+    lightgoldenrodyellow: 16448210,
+    lightgray: 13882323,
+    lightgreen: 9498256,
+    lightgrey: 13882323,
+    lightpink: 16758465,
+    lightsalmon: 16752762,
+    lightseagreen: 2142890,
+    lightskyblue: 8900346,
+    lightslategray: 7833753,
+    lightslategrey: 7833753,
+    lightsteelblue: 11584734,
+    lightyellow: 16777184,
+    lime: 65280,
+    limegreen: 3329330,
+    linen: 16445670,
+    magenta: 16711935,
+    maroon: 8388608,
+    mediumaquamarine: 6737322,
+    mediumblue: 205,
+    mediumorchid: 12211667,
+    mediumpurple: 9662683,
+    mediumseagreen: 3978097,
+    mediumslateblue: 8087790,
+    mediumspringgreen: 64154,
+    mediumturquoise: 4772300,
+    mediumvioletred: 13047173,
+    midnightblue: 1644912,
+    mintcream: 16121850,
+    mistyrose: 16770273,
+    moccasin: 16770229,
+    navajowhite: 16768685,
+    navy: 128,
+    oldlace: 16643558,
+    olive: 8421376,
+    olivedrab: 7048739,
+    orange: 16753920,
+    orangered: 16729344,
+    orchid: 14315734,
+    palegoldenrod: 15657130,
+    palegreen: 10025880,
+    paleturquoise: 11529966,
+    palevioletred: 14381203,
+    papayawhip: 16773077,
+    peachpuff: 16767673,
+    peru: 13468991,
+    pink: 16761035,
+    plum: 14524637,
+    powderblue: 11591910,
+    purple: 8388736,
+    rebeccapurple: 6697881,
+    red: 16711680,
+    rosybrown: 12357519,
+    royalblue: 4286945,
+    saddlebrown: 9127187,
+    salmon: 16416882,
+    sandybrown: 16032864,
+    seagreen: 3050327,
+    seashell: 16774638,
+    sienna: 10506797,
+    silver: 12632256,
+    skyblue: 8900331,
+    slateblue: 6970061,
+    slategray: 7372944,
+    slategrey: 7372944,
+    snow: 16775930,
+    springgreen: 65407,
+    steelblue: 4620980,
+    tan: 13808780,
+    teal: 32896,
+    thistle: 14204888,
+    tomato: 16737095,
+    turquoise: 4251856,
+    violet: 15631086,
+    wheat: 16113331,
+    white: 16777215,
+    whitesmoke: 16119285,
+    yellow: 16776960,
+    yellowgreen: 10145074
+  });
+  d3_rgb_names.forEach(function(key, value) {
+    d3_rgb_names.set(key, d3_rgbNumber(value));
+  });
+  function d3_functor(v) {
+    return typeof v === "function" ? v : function() {
+      return v;
+    };
+  }
+  d3.functor = d3_functor;
+  d3.xhr = d3_xhrType(d3_identity);
+  function d3_xhrType(response) {
+    return function(url, mimeType, callback) {
+      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType, 
+      mimeType = null;
+      return d3_xhr(url, mimeType, response, callback);
+    };
+  }
+  function d3_xhr(url, mimeType, response, callback) {
+    var xhr = {}, dispatch = d3.dispatch("beforesend", "progress", "load", "error"), headers = {}, request = new XMLHttpRequest(), responseType = null;
+    if (this.XDomainRequest && !("withCredentials" in request) && /^(http(s)?:)?\/\//.test(url)) request = new XDomainRequest();
+    "onload" in request ? request.onload = request.onerror = respond : request.onreadystatechange = function() {
+      request.readyState > 3 && respond();
+    };
+    function respond() {
+      var status = request.status, result;
+      if (!status && d3_xhrHasResponse(request) || status >= 200 && status < 300 || status === 304) {
+        try {
+          result = response.call(xhr, request);
+        } catch (e) {
+          dispatch.error.call(xhr, e);
+          return;
+        }
+        dispatch.load.call(xhr, result);
+      } else {
+        dispatch.error.call(xhr, request);
+      }
+    }
+    request.onprogress = function(event) {
+      var o = d3.event;
+      d3.event = event;
+      try {
+        dispatch.progress.call(xhr, request);
+      } finally {
+        d3.event = o;
+      }
+    };
+    xhr.header = function(name, value) {
+      name = (name + "").toLowerCase();
+      if (arguments.length < 2) return headers[name];
+      if (value == null) delete headers[name]; else headers[name] = value + "";
+      return xhr;
+    };
+    xhr.mimeType = function(value) {
+      if (!arguments.length) return mimeType;
+      mimeType = value == null ? null : value + "";
+      return xhr;
+    };
+    xhr.responseType = function(value) {
+      if (!arguments.length) return responseType;
+      responseType = value;
+      return xhr;
+    };
+    xhr.response = function(value) {
+      response = value;
+      return xhr;
+    };
+    [ "get", "post" ].forEach(function(method) {
+      xhr[method] = function() {
+        return xhr.send.apply(xhr, [ method ].concat(d3_array(arguments)));
+      };
+    });
+    xhr.send = function(method, data, callback) {
+      if (arguments.length === 2 && typeof data === "function") callback = data, data = null;
+      request.open(method, url, true);
+      if (mimeType != null && !("accept" in headers)) headers["accept"] = mimeType + ",*/*";
+      if (request.setRequestHeader) for (var name in headers) request.setRequestHeader(name, headers[name]);
+      if (mimeType != null && request.overrideMimeType) request.overrideMimeType(mimeType);
+      if (responseType != null) request.responseType = responseType;
+      if (callback != null) xhr.on("error", callback).on("load", function(request) {
+        callback(null, request);
+      });
+      dispatch.beforesend.call(xhr, request);
+      request.send(data == null ? null : data);
+      return xhr;
+    };
+    xhr.abort = function() {
+      request.abort();
+      return xhr;
+    };
+    d3.rebind(xhr, dispatch, "on");
+    return callback == null ? xhr : xhr.get(d3_xhr_fixCallback(callback));
+  }
+  function d3_xhr_fixCallback(callback) {
+    return callback.length === 1 ? function(error, request) {
+      callback(error == null ? request : null);
+    } : callback;
+  }
+  function d3_xhrHasResponse(request) {
+    var type = request.responseType;
+    return type && type !== "text" ? request.response : request.responseText;
+  }
+  d3.dsv = function(delimiter, mimeType) {
+    var reFormat = new RegExp('["' + delimiter + "\n]"), delimiterCode = delimiter.charCodeAt(0);
+    function dsv(url, row, callback) {
+      if (arguments.length < 3) callback = row, row = null;
+      var xhr = d3_xhr(url, mimeType, row == null ? response : typedResponse(row), callback);
+      xhr.row = function(_) {
+        return arguments.length ? xhr.response((row = _) == null ? response : typedResponse(_)) : row;
+      };
+      return xhr;
+    }
+    function response(request) {
+      return dsv.parse(request.responseText);
+    }
+    function typedResponse(f) {
+      return function(request) {
+        return dsv.parse(request.responseText, f);
+      };
+    }
+    dsv.parse = function(text, f) {
+      var o;
+      return dsv.parseRows(text, function(row, i) {
+        if (o) return o(row, i - 1);
+        var a = new Function("d", "return {" + row.map(function(name, i) {
+          return JSON.stringify(name) + ": d[" + i + "]";
+        }).join(",") + "}");
+        o = f ? function(row, i) {
+          return f(a(row), i);
+        } : a;
+      });
+    };
+    dsv.parseRows = function(text, f) {
+      var EOL = {}, EOF = {}, rows = [], N = text.length, I = 0, n = 0, t, eol;
+      function token() {
+        if (I >= N) return EOF;
+        if (eol) return eol = false, EOL;
+        var j = I;
+        if (text.charCodeAt(j) === 34) {
+          var i = j;
+          while (i++ < N) {
+            if (text.charCodeAt(i) === 34) {
+              if (text.charCodeAt(i + 1) !== 34) break;
+              ++i;
+            }
+          }
+          I = i + 2;
+          var c = text.charCodeAt(i + 1);
+          if (c === 13) {
+            eol = true;
+            if (text.charCodeAt(i + 2) === 10) ++I;
+          } else if (c === 10) {
+            eol = true;
+          }
+          return text.slice(j + 1, i).replace(/""/g, '"');
+        }
+        while (I < N) {
+          var c = text.charCodeAt(I++), k = 1;
+          if (c === 10) eol = true; else if (c === 13) {
+            eol = true;
+            if (text.charCodeAt(I) === 10) ++I, ++k;
+          } else if (c !== delimiterCode) continue;
+          return text.slice(j, I - k);
+        }
+        return text.slice(j);
+      }
+      while ((t = token()) !== EOF) {
+        var a = [];
+        while (t !== EOL && t !== EOF) {
+          a.push(t);
+          t = token();
+        }
+        if (f && (a = f(a, n++)) == null) continue;
+        rows.push(a);
+      }
+      return rows;
+    };
+    dsv.format = function(rows) {
+      if (Array.isArray(rows[0])) return dsv.formatRows(rows);
+      var fieldSet = new d3_Set(), fields = [];
+      rows.forEach(function(row) {
+        for (var field in row) {
+          if (!fieldSet.has(field)) {
+            fields.push(fieldSet.add(field));
+          }
+        }
+      });
+      return [ fields.map(formatValue).join(delimiter) ].concat(rows.map(function(row) {
+        return fields.map(function(field) {
+          return formatValue(row[field]);
+        }).join(delimiter);
+      })).join("\n");
+    };
+    dsv.formatRows = function(rows) {
+      return rows.map(formatRow).join("\n");
+    };
+    function formatRow(row) {
+      return row.map(formatValue).join(delimiter);
+    }
+    function formatValue(text) {
+      return reFormat.test(text) ? '"' + text.replace(/\"/g, '""') + '"' : text;
+    }
+    return dsv;
+  };
+  d3.csv = d3.dsv(",", "text/csv");
+  d3.tsv = d3.dsv("	", "text/tab-separated-values");
+  var d3_timer_queueHead, d3_timer_queueTail, d3_timer_interval, d3_timer_timeout, d3_timer_active, d3_timer_frame = this[d3_vendorSymbol(this, "requestAnimationFrame")] || function(callback) {
+    setTimeout(callback, 17);
+  };
+  d3.timer = function(callback, delay, then) {
+    var n = arguments.length;
+    if (n < 2) delay = 0;
+    if (n < 3) then = Date.now();
+    var time = then + delay, timer = {
+      c: callback,
+      t: time,
+      f: false,
+      n: null
+    };
+    if (d3_timer_queueTail) d3_timer_queueTail.n = timer; else d3_timer_queueHead = timer;
+    d3_timer_queueTail = timer;
+    if (!d3_timer_interval) {
+      d3_timer_timeout = clearTimeout(d3_timer_timeout);
+      d3_timer_interval = 1;
+      d3_timer_frame(d3_timer_step);
+    }
+  };
+  function d3_timer_step() {
+    var now = d3_timer_mark(), delay = d3_timer_sweep() - now;
+    if (delay > 24) {
+      if (isFinite(delay)) {
+        clearTimeout(d3_timer_timeout);
+        d3_timer_timeout = setTimeout(d3_timer_step, delay);
+      }
+      d3_timer_interval = 0;
+    } else {
+      d3_timer_interval = 1;
+      d3_timer_frame(d3_timer_step);
+    }
+  }
+  d3.timer.flush = function() {
+    d3_timer_mark();
+    d3_timer_sweep();
+  };
+  function d3_timer_mark() {
+    var now = Date.now();
+    d3_timer_active = d3_timer_queueHead;
+    while (d3_timer_active) {
+      if (now >= d3_timer_active.t) d3_timer_active.f = d3_timer_active.c(now - d3_timer_active.t);
+      d3_timer_active = d3_timer_active.n;
+    }
+    return now;
+  }
+  function d3_timer_sweep() {
+    var t0, t1 = d3_timer_queueHead, time = Infinity;
+    while (t1) {
+      if (t1.f) {
+        t1 = t0 ? t0.n = t1.n : d3_timer_queueHead = t1.n;
+      } else {
+        if (t1.t < time) time = t1.t;
+        t1 = (t0 = t1).n;
+      }
+    }
+    d3_timer_queueTail = t0;
+    return time;
+  }
+  function d3_format_precision(x, p) {
+    return p - (x ? Math.ceil(Math.log(x) / Math.LN10) : 1);
+  }
+  d3.round = function(x, n) {
+    return n ? Math.round(x * (n = Math.pow(10, n))) / n : Math.round(x);
+  };
+  var d3_formatPrefixes = [ "y", "z", "a", "f", "p", "n", "µ", "m", "", "k", "M", "G", "T", "P", "E", "Z", "Y" ].map(d3_formatPrefix);
+  d3.formatPrefix = function(value, precision) {
+    var i = 0;
+    if (value) {
+      if (value < 0) value *= -1;
+      if (precision) value = d3.round(value, d3_format_precision(value, precision));
+      i = 1 + Math.floor(1e-12 + Math.log(value) / Math.LN10);
+      i = Math.max(-24, Math.min(24, Math.floor((i - 1) / 3) * 3));
+    }
+    return d3_formatPrefixes[8 + i / 3];
+  };
+  function d3_formatPrefix(d, i) {
+    var k = Math.pow(10, abs(8 - i) * 3);
+    return {
+      scale: i > 8 ? function(d) {
+        return d / k;
+      } : function(d) {
+        return d * k;
+      },
+      symbol: d
+    };
+  }
+  function d3_locale_numberFormat(locale) {
+    var locale_decimal = locale.decimal, locale_thousands = locale.thousands, locale_grouping = locale.grouping, locale_currency = locale.currency, formatGroup = locale_grouping && locale_thousands ? function(value, width) {
+      var i = value.length, t = [], j = 0, g = locale_grouping[0], length = 0;
+      while (i > 0 && g > 0) {
+        if (length + g + 1 > width) g = Math.max(1, width - length);
+        t.push(value.substring(i -= g, i + g));
+        if ((length += g + 1) > width) break;
+        g = locale_grouping[j = (j + 1) % locale_grouping.length];
+      }
+      return t.reverse().join(locale_thousands);
+    } : d3_identity;
+    return function(specifier) {
+      var match = d3_format_re.exec(specifier), fill = match[1] || " ", align = match[2] || ">", sign = match[3] || "-", symbol = match[4] || "", zfill = match[5], width = +match[6], comma = match[7], precision = match[8], type = match[9], scale = 1, prefix = "", suffix = "", integer = false, exponent = true;
+      if (precision) precision = +precision.substring(1);
+      if (zfill || fill === "0" && align === "=") {
+        zfill = fill = "0";
+        align = "=";
+      }
+      switch (type) {
+       case "n":
+        comma = true;
+        type = "g";
+        break;
+
+       case "%":
+        scale = 100;
+        suffix = "%";
+        type = "f";
+        break;
+
+       case "p":
+        scale = 100;
+        suffix = "%";
+        type = "r";
+        break;
+
+       case "b":
+       case "o":
+       case "x":
+       case "X":
+        if (symbol === "#") prefix = "0" + type.toLowerCase();
+
+       case "c":
+        exponent = false;
+
+       case "d":
+        integer = true;
+        precision = 0;
+        break;
+
+       case "s":
+        scale = -1;
+        type = "r";
+        break;
+      }
+      if (symbol === "$") prefix = locale_currency[0], suffix = locale_currency[1];
+      if (type == "r" && !precision) type = "g";
+      if (precision != null) {
+        if (type == "g") precision = Math.max(1, Math.min(21, precision)); else if (type == "e" || type == "f") precision = Math.max(0, Math.min(20, precision));
+      }
+      type = d3_format_types.get(type) || d3_format_typeDefault;
+      var zcomma = zfill && comma;
+      return function(value) {
+        var fullSuffix = suffix;
+        if (integer && value % 1) return "";
+        var negative = value < 0 || value === 0 && 1 / value < 0 ? (value = -value, "-") : sign === "-" ? "" : sign;
+        if (scale < 0) {
+          var unit = d3.formatPrefix(value, precision);
+          value = unit.scale(value);
+          fullSuffix = unit.symbol + suffix;
+        } else {
+          value *= scale;
+        }
+        value = type(value, precision);
+        var i = value.lastIndexOf("."), before, after;
+        if (i < 0) {
+          var j = exponent ? value.lastIndexOf("e") : -1;
+          if (j < 0) before = value, after = ""; else before = value.substring(0, j), after = value.substring(j);
+        } else {
+          before = value.substring(0, i);
+          after = locale_decimal + value.substring(i + 1);
+        }
+        if (!zfill && comma) before = formatGroup(before, Infinity);
+        var length = prefix.length + before.length + after.length + (zcomma ? 0 : negative.length), padding = length < width ? new Array(length = width - length + 1).join(fill) : "";
+        if (zcomma) before = formatGroup(padding + before, padding.length ? width - after.length : Infinity);
+        negative += prefix;
+        value = before + after;
+        return (align === "<" ? negative + value + padding : align === ">" ? padding + negative + value : align === "^" ? padding.substring(0, length >>= 1) + negative + value + padding.substring(length) : negative + (zcomma ? value : padding + value)) + fullSuffix;
+      };
+    };
+  }
+  var d3_format_re = /(?:([^{])?([<>=^]))?([+\- ])?([$#])?(0)?(\d+)?(,)?(\.-?\d+)?([a-z%])?/i;
+  var d3_format_types = d3.map({
+    b: function(x) {
+      return x.toString(2);
+    },
+    c: function(x) {
+      return String.fromCharCode(x);
+    },
+    o: function(x) {
+      return x.toString(8);
+    },
+    x: function(x) {
+      return x.toString(16);
+    },
+    X: function(x) {
+      return x.toString(16).toUpperCase();
+    },
+    g: function(x, p) {
+      return x.toPrecision(p);
+    },
+    e: function(x, p) {
+      return x.toExponential(p);
+    },
+    f: function(x, p) {
+      return x.toFixed(p);
+    },
+    r: function(x, p) {
+      return (x = d3.round(x, d3_format_precision(x, p))).toFixed(Math.max(0, Math.min(20, d3_format_precision(x * (1 + 1e-15), p))));
+    }
+  });
+  function d3_format_typeDefault(x) {
+    return x + "";
+  }
+  var d3_time = d3.time = {}, d3_date = Date;
+  function d3_date_utc() {
+    this._ = new Date(arguments.length > 1 ? Date.UTC.apply(this, arguments) : arguments[0]);
+  }
+  d3_date_utc.prototype = {
+    getDate: function() {
+      return this._.getUTCDate();
+    },
+    getDay: function() {
+      return this._.getUTCDay();
+    },
+    getFullYear: function() {
+      return this._.getUTCFullYear();
+    },
+    getHours: function() {
+      return this._.getUTCHours();
+    },
+    getMilliseconds: function() {
+      return this._.getUTCMilliseconds();
+    },
+    getMinutes: function() {
+      return this._.getUTCMinutes();
+    },
+    getMonth: function() {
+      return this._.getUTCMonth();
+    },
+    getSeconds: function() {
+      return this._.getUTCSeconds();
+    },
+    getTime: function() {
+      return this._.getTime();
+    },
+    getTimezoneOffset: function() {
+      return 0;
+    },
+    valueOf: function() {
+      return this._.valueOf();
+    },
+    setDate: function() {
+      d3_time_prototype.setUTCDate.apply(this._, arguments);
+    },
+    setDay: function() {
+      d3_time_prototype.setUTCDay.apply(this._, arguments);
+    },
+    setFullYear: function() {
+      d3_time_prototype.setUTCFullYear.apply(this._, arguments);
+    },
+    setHours: function() {
+      d3_time_prototype.setUTCHours.apply(this._, arguments);
+    },
+    setMilliseconds: function() {
+      d3_time_prototype.setUTCMilliseconds.apply(this._, arguments);
+    },
+    setMinutes: function() {
+      d3_time_prototype.setUTCMinutes.apply(this._, arguments);
+    },
+    setMonth: function() {
+      d3_time_prototype.setUTCMonth.apply(this._, arguments);
+    },
+    setSeconds: function() {
+      d3_time_prototype.setUTCSeconds.apply(this._, arguments);
+    },
+    setTime: function() {
+      d3_time_prototype.setTime.apply(this._, arguments);
+    }
+  };
+  var d3_time_prototype = Date.prototype;
+  function d3_time_interval(local, step, number) {
+    function round(date) {
+      var d0 = local(date), d1 = offset(d0, 1);
+      return date - d0 < d1 - date ? d0 : d1;
+    }
+    function ceil(date) {
+      step(date = local(new d3_date(date - 1)), 1);
+      return date;
+    }
+    function offset(date, k) {
+      step(date = new d3_date(+date), k);
+      return date;
+    }
+    function range(t0, t1, dt) {
+      var time = ceil(t0), times = [];
+      if (dt > 1) {
+        while (time < t1) {
+          if (!(number(time) % dt)) times.push(new Date(+time));
+          step(time, 1);
+        }
+      } else {
+        while (time < t1) times.push(new Date(+time)), step(time, 1);
+      }
+      return times;
+    }
+    function range_utc(t0, t1, dt) {
+      try {
+        d3_date = d3_date_utc;
+        var utc = new d3_date_utc();
+        utc._ = t0;
+        return range(utc, t1, dt);
+      } finally {
+        d3_date = Date;
+      }
+    }
+    local.floor = local;
+    local.round = round;
+    local.ceil = ceil;
+    local.offset = offset;
+    local.range = range;
+    var utc = local.utc = d3_time_interval_utc(local);
+    utc.floor = utc;
+    utc.round = d3_time_interval_utc(round);
+    utc.ceil = d3_time_interval_utc(ceil);
+    utc.offset = d3_time_interval_utc(offset);
+    utc.range = range_utc;
+    return local;
+  }
+  function d3_time_interval_utc(method) {
+    return function(date, k) {
+      try {
+        d3_date = d3_date_utc;
+        var utc = new d3_date_utc();
+        utc._ = date;
+        return method(utc, k)._;
+      } finally {
+        d3_date = Date;
+      }
+    };
+  }
+  d3_time.year = d3_time_interval(function(date) {
+    date = d3_time.day(date);
+    date.setMonth(0, 1);
+    return date;
+  }, function(date, offset) {
+    date.setFullYear(date.getFullYear() + offset);
+  }, function(date) {
+    return date.getFullYear();
+  });
+  d3_time.years = d3_time.year.range;
+  d3_time.years.utc = d3_time.year.utc.range;
+  d3_time.day = d3_time_interval(function(date) {
+    var day = new d3_date(2e3, 0);
+    day.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+    return day;
+  }, function(date, offset) {
+    date.setDate(date.getDate() + offset);
+  }, function(date) {
+    return date.getDate() - 1;
+  });
+  d3_time.days = d3_time.day.range;
+  d3_time.days.utc = d3_time.day.utc.range;
+  d3_time.dayOfYear = function(date) {
+    var year = d3_time.year(date);
+    return Math.floor((date - year - (date.getTimezoneOffset() - year.getTimezoneOffset()) * 6e4) / 864e5);
+  };
+  [ "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday" ].forEach(function(day, i) {
+    i = 7 - i;
+    var interval = d3_time[day] = d3_time_interval(function(date) {
+      (date = d3_time.day(date)).setDate(date.getDate() - (date.getDay() + i) % 7);
+      return date;
+    }, function(date, offset) {
+      date.setDate(date.getDate() + Math.floor(offset) * 7);
+    }, function(date) {
+      var day = d3_time.year(date).getDay();
+      return Math.floor((d3_time.dayOfYear(date) + (day + i) % 7) / 7) - (day !== i);
+    });
+    d3_time[day + "s"] = interval.range;
+    d3_time[day + "s"].utc = interval.utc.range;
+    d3_time[day + "OfYear"] = function(date) {
+      var day = d3_time.year(date).getDay();
+      return Math.floor((d3_time.dayOfYear(date) + (day + i) % 7) / 7);
+    };
+  });
+  d3_time.week = d3_time.sunday;
+  d3_time.weeks = d3_time.sunday.range;
+  d3_time.weeks.utc = d3_time.sunday.utc.range;
+  d3_time.weekOfYear = d3_time.sundayOfYear;
+  function d3_locale_timeFormat(locale) {
+    var locale_dateTime = locale.dateTime, locale_date = locale.date, locale_time = locale.time, locale_periods = locale.periods, locale_days = locale.days, locale_shortDays = locale.shortDays, locale_months = locale.months, locale_shortMonths = locale.shortMonths;
+    function d3_time_format(template) {
+      var n = template.length;
+      function format(date) {
+        var string = [], i = -1, j = 0, c, p, f;
+        while (++i < n) {
+          if (template.charCodeAt(i) === 37) {
+            string.push(template.slice(j, i));
+            if ((p = d3_time_formatPads[c = template.charAt(++i)]) != null) c = template.charAt(++i);
+            if (f = d3_time_formats[c]) c = f(date, p == null ? c === "e" ? " " : "0" : p);
+            string.push(c);
+            j = i + 1;
+          }
+        }
+        string.push(template.slice(j, i));
+        return string.join("");
+      }
+      format.parse = function(string) {
+        var d = {
+          y: 1900,
+          m: 0,
+          d: 1,
+          H: 0,
+          M: 0,
+          S: 0,
+          L: 0,
+          Z: null
+        }, i = d3_time_parse(d, template, string, 0);
+        if (i != string.length) return null;
+        if ("p" in d) d.H = d.H % 12 + d.p * 12;
+        var localZ = d.Z != null && d3_date !== d3_date_utc, date = new (localZ ? d3_date_utc : d3_date)();
+        if ("j" in d) date.setFullYear(d.y, 0, d.j); else if ("w" in d && ("W" in d || "U" in d)) {
+          date.setFullYear(d.y, 0, 1);
+          date.setFullYear(d.y, 0, "W" in d ? (d.w + 6) % 7 + d.W * 7 - (date.getDay() + 5) % 7 : d.w + d.U * 7 - (date.getDay() + 6) % 7);
+        } else date.setFullYear(d.y, d.m, d.d);
+        date.setHours(d.H + (d.Z / 100 | 0), d.M + d.Z % 100, d.S, d.L);
+        return localZ ? date._ : date;
+      };
+      format.toString = function() {
+        return template;
+      };
+      return format;
+    }
+    function d3_time_parse(date, template, string, j) {
+      var c, p, t, i = 0, n = template.length, m = string.length;
+      while (i < n) {
+        if (j >= m) return -1;
+        c = template.charCodeAt(i++);
+        if (c === 37) {
+          t = template.charAt(i++);
+          p = d3_time_parsers[t in d3_time_formatPads ? template.charAt(i++) : t];
+          if (!p || (j = p(date, string, j)) < 0) return -1;
+        } else if (c != string.charCodeAt(j++)) {
+          return -1;
+        }
+      }
+      return j;
+    }
+    d3_time_format.utc = function(template) {
+      var local = d3_time_format(template);
+      function format(date) {
+        try {
+          d3_date = d3_date_utc;
+          var utc = new d3_date();
+          utc._ = date;
+          return local(utc);
+        } finally {
+          d3_date = Date;
+        }
+      }
+      format.parse = function(string) {
+        try {
+          d3_date = d3_date_utc;
+          var date = local.parse(string);
+          return date && date._;
+        } finally {
+          d3_date = Date;
+        }
+      };
+      format.toString = local.toString;
+      return format;
+    };
+    d3_time_format.multi = d3_time_format.utc.multi = d3_time_formatMulti;
+    var d3_time_periodLookup = d3.map(), d3_time_dayRe = d3_time_formatRe(locale_days), d3_time_dayLookup = d3_time_formatLookup(locale_days), d3_time_dayAbbrevRe = d3_time_formatRe(locale_shortDays), d3_time_dayAbbrevLookup = d3_time_formatLookup(locale_shortDays), d3_time_monthRe = d3_time_formatRe(locale_months), d3_time_monthLookup = d3_time_formatLookup(locale_months), d3_time_monthAbbrevRe = d3_time_formatRe(locale_shortMonths), d3_time_monthAbbrevLookup = d3_time_formatLookup(locale_shortMonths);
+    locale_periods.forEach(function(p, i) {
+      d3_time_periodLookup.set(p.toLowerCase(), i);
+    });
+    var d3_time_formats = {
+      a: function(d) {
+        return locale_shortDays[d.getDay()];
+      },
+      A: function(d) {
+        return locale_days[d.getDay()];
+      },
+      b: function(d) {
+        return locale_shortMonths[d.getMonth()];
+      },
+      B: function(d) {
+        return locale_months[d.getMonth()];
+      },
+      c: d3_time_format(locale_dateTime),
+      d: function(d, p) {
+        return d3_time_formatPad(d.getDate(), p, 2);
+      },
+      e: function(d, p) {
+        return d3_time_formatPad(d.getDate(), p, 2);
+      },
+      H: function(d, p) {
+        return d3_time_formatPad(d.getHours(), p, 2);
+      },
+      I: function(d, p) {
+        return d3_time_formatPad(d.getHours() % 12 || 12, p, 2);
+      },
+      j: function(d, p) {
+        return d3_time_formatPad(1 + d3_time.dayOfYear(d), p, 3);
+      },
+      L: function(d, p) {
+        return d3_time_formatPad(d.getMilliseconds(), p, 3);
+      },
+      m: function(d, p) {
+        return d3_time_formatPad(d.getMonth() + 1, p, 2);
+      },
+      M: function(d, p) {
+        return d3_time_formatPad(d.getMinutes(), p, 2);
+      },
+      p: function(d) {
+        return locale_periods[+(d.getHours() >= 12)];
+      },
+      S: function(d, p) {
+        return d3_time_formatPad(d.getSeconds(), p, 2);
+      },
+      U: function(d, p) {
+        return d3_time_formatPad(d3_time.sundayOfYear(d), p, 2);
+      },
+      w: function(d) {
+        return d.getDay();
+      },
+      W: function(d, p) {
+        return d3_time_formatPad(d3_time.mondayOfYear(d), p, 2);
+      },
+      x: d3_time_format(locale_date),
+      X: d3_time_format(locale_time),
+      y: function(d, p) {
+        return d3_time_formatPad(d.getFullYear() % 100, p, 2);
+      },
+      Y: function(d, p) {
+        return d3_time_formatPad(d.getFullYear() % 1e4, p, 4);
+      },
+      Z: d3_time_zone,
+      "%": function() {
+        return "%";
+      }
+    };
+    var d3_time_parsers = {
+      a: d3_time_parseWeekdayAbbrev,
+      A: d3_time_parseWeekday,
+      b: d3_time_parseMonthAbbrev,
+      B: d3_time_parseMonth,
+      c: d3_time_parseLocaleFull,
+      d: d3_time_parseDay,
+      e: d3_time_parseDay,
+      H: d3_time_parseHour24,
+      I: d3_time_parseHour24,
+      j: d3_time_parseDayOfYear,
+      L: d3_time_parseMilliseconds,
+      m: d3_time_parseMonthNumber,
+      M: d3_time_parseMinutes,
+      p: d3_time_parseAmPm,
+      S: d3_time_parseSeconds,
+      U: d3_time_parseWeekNumberSunday,
+      w: d3_time_parseWeekdayNumber,
+      W: d3_time_parseWeekNumberMonday,
+      x: d3_time_parseLocaleDate,
+      X: d3_time_parseLocaleTime,
+      y: d3_time_parseYear,
+      Y: d3_time_parseFullYear,
+      Z: d3_time_parseZone,
+      "%": d3_time_parseLiteralPercent
+    };
+    function d3_time_parseWeekdayAbbrev(date, string, i) {
+      d3_time_dayAbbrevRe.lastIndex = 0;
+      var n = d3_time_dayAbbrevRe.exec(string.slice(i));
+      return n ? (date.w = d3_time_dayAbbrevLookup.get(n[0].toLowerCase()), i + n[0].length) : -1;
+    }
+    function d3_time_parseWeekday(date, string, i) {
+      d3_time_dayRe.lastIndex = 0;
+      var n = d3_time_dayRe.exec(string.slice(i));
+      return n ? (date.w = d3_time_dayLookup.get(n[0].toLowerCase()), i + n[0].length) : -1;
+    }
+    function d3_time_parseMonthAbbrev(date, string, i) {
+      d3_time_monthAbbrevRe.lastIndex = 0;
+      var n = d3_time_monthAbbrevRe.exec(string.slice(i));
+      return n ? (date.m = d3_time_monthAbbrevLookup.get(n[0].toLowerCase()), i + n[0].length) : -1;
+    }
+    function d3_time_parseMonth(date, string, i) {
+      d3_time_monthRe.lastIndex = 0;
+      var n = d3_time_monthRe.exec(string.slice(i));
+      return n ? (date.m = d3_time_monthLookup.get(n[0].toLowerCase()), i + n[0].length) : -1;
+    }
+    function d3_time_parseLocaleFull(date, string, i) {
+      return d3_time_parse(date, d3_time_formats.c.toString(), string, i);
+    }
+    function d3_time_parseLocaleDate(date, string, i) {
+      return d3_time_parse(date, d3_time_formats.x.toString(), string, i);
+    }
+    function d3_time_parseLocaleTime(date, string, i) {
+      return d3_time_parse(date, d3_time_formats.X.toString(), string, i);
+    }
+    function d3_time_parseAmPm(date, string, i) {
+      var n = d3_time_periodLookup.get(string.slice(i, i += 2).toLowerCase());
+      return n == null ? -1 : (date.p = n, i);
+    }
+    return d3_time_format;
+  }
+  var d3_time_formatPads = {
+    "-": "",
+    _: " ",
+    "0": "0"
+  }, d3_time_numberRe = /^\s*\d+/, d3_time_percentRe = /^%/;
+  function d3_time_formatPad(value, fill, width) {
+    var sign = value < 0 ? "-" : "", string = (sign ? -value : value) + "", length = string.length;
+    return sign + (length < width ? new Array(width - length + 1).join(fill) + string : string);
+  }
+  function d3_time_formatRe(names) {
+    return new RegExp("^(?:" + names.map(d3.requote).join("|") + ")", "i");
+  }
+  function d3_time_formatLookup(names) {
+    var map = new d3_Map(), i = -1, n = names.length;
+    while (++i < n) map.set(names[i].toLowerCase(), i);
+    return map;
+  }
+  function d3_time_parseWeekdayNumber(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 1));
+    return n ? (date.w = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseWeekNumberSunday(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i));
+    return n ? (date.U = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseWeekNumberMonday(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i));
+    return n ? (date.W = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseFullYear(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 4));
+    return n ? (date.y = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseYear(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 2));
+    return n ? (date.y = d3_time_expandYear(+n[0]), i + n[0].length) : -1;
+  }
+  function d3_time_parseZone(date, string, i) {
+    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string, 
+    i + 5) : -1;
+  }
+  function d3_time_expandYear(d) {
+    return d + (d > 68 ? 1900 : 2e3);
+  }
+  function d3_time_parseMonthNumber(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 2));
+    return n ? (date.m = n[0] - 1, i + n[0].length) : -1;
+  }
+  function d3_time_parseDay(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 2));
+    return n ? (date.d = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseDayOfYear(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 3));
+    return n ? (date.j = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseHour24(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 2));
+    return n ? (date.H = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseMinutes(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 2));
+    return n ? (date.M = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseSeconds(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 2));
+    return n ? (date.S = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_parseMilliseconds(date, string, i) {
+    d3_time_numberRe.lastIndex = 0;
+    var n = d3_time_numberRe.exec(string.slice(i, i + 3));
+    return n ? (date.L = +n[0], i + n[0].length) : -1;
+  }
+  function d3_time_zone(d) {
+    var z = d.getTimezoneOffset(), zs = z > 0 ? "-" : "+", zh = abs(z) / 60 | 0, zm = abs(z) % 60;
+    return zs + d3_time_formatPad(zh, "0", 2) + d3_time_formatPad(zm, "0", 2);
+  }
+  function d3_time_parseLiteralPercent(date, string, i) {
+    d3_time_percentRe.lastIndex = 0;
+    var n = d3_time_percentRe.exec(string.slice(i, i + 1));
+    return n ? i + n[0].length : -1;
+  }
+  function d3_time_formatMulti(formats) {
+    var n = formats.length, i = -1;
+    while (++i < n) formats[i][0] = this(formats[i][0]);
+    return function(date) {
+      var i = 0, f = formats[i];
+      while (!f[1](date)) f = formats[++i];
+      return f[0](date);
+    };
+  }
+  d3.locale = function(locale) {
+    return {
+      numberFormat: d3_locale_numberFormat(locale),
+      timeFormat: d3_locale_timeFormat(locale)
+    };
+  };
+  var d3_locale_enUS = d3.locale({
+    decimal: ".",
+    thousands: ",",
+    grouping: [ 3 ],
+    currency: [ "$", "" ],
+    dateTime: "%a %b %e %X %Y",
+    date: "%m/%d/%Y",
+    time: "%H:%M:%S",
+    periods: [ "AM", "PM" ],
+    days: [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ],
+    shortDays: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" ],
+    months: [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ],
+    shortMonths: [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ]
+  });
+  d3.format = d3_locale_enUS.numberFormat;
+  d3.geo = {};
+  function d3_adder() {}
+  d3_adder.prototype = {
+    s: 0,
+    t: 0,
+    add: function(y) {
+      d3_adderSum(y, this.t, d3_adderTemp);
+      d3_adderSum(d3_adderTemp.s, this.s, this);
+      if (this.s) this.t += d3_adderTemp.t; else this.s = d3_adderTemp.t;
+    },
+    reset: function() {
+      this.s = this.t = 0;
+    },
+    valueOf: function() {
+      return this.s;
+    }
+  };
+  var d3_adderTemp = new d3_adder();
+  function d3_adderSum(a, b, o) {
+    var x = o.s = a + b, bv = x - a, av = x - bv;
+    o.t = a - av + (b - bv);
+  }
+  d3.geo.stream = function(object, listener) {
+    if (object && d3_geo_streamObjectType.hasOwnProperty(object.type)) {
+      d3_geo_streamObjectType[object.type](object, listener);
+    } else {
+      d3_geo_streamGeometry(object, listener);
+    }
+  };
+  function d3_geo_streamGeometry(geometry, listener) {
+    if (geometry && d3_geo_streamGeometryType.hasOwnProperty(geometry.type)) {
+      d3_geo_streamGeometryType[geometry.type](geometry, listener);
+    }
+  }
+  var d3_geo_streamObjectType = {
+    Feature: function(feature, listener) {
+      d3_geo_streamGeometry(feature.geometry, listener);
+    },
+    FeatureCollection: function(object, listener) {
+      var features = object.features, i = -1, n = features.length;
+      while (++i < n) d3_geo_streamGeometry(features[i].geometry, listener);
+    }
+  };
+  var d3_geo_streamGeometryType = {
+    Sphere: function(object, listener) {
+      listener.sphere();
+    },
+    Point: function(object, listener) {
+      object = object.coordinates;
+      listener.point(object[0], object[1], object[2]);
+    },
+    MultiPoint: function(object, listener) {
+      var coordinates = object.coordinates, i = -1, n = coordinates.length;
+      while (++i < n) object = coordinates[i], listener.point(object[0], object[1], object[2]);
+    },
+    LineString: function(object, listener) {
+      d3_geo_streamLine(object.coordinates, listener, 0);
+    },
+    MultiLineString: function(object, listener) {
+      var coordinates = object.coordinates, i = -1, n = coordinates.length;
+      while (++i < n) d3_geo_streamLine(coordinates[i], listener, 0);
+    },
+    Polygon: function(object, listener) {
+      d3_geo_streamPolygon(object.coordinates, listener);
+    },
+    MultiPolygon: function(object, listener) {
+      var coordinates = object.coordinates, i = -1, n = coordinates.length;
+      while (++i < n) d3_geo_streamPolygon(coordinates[i], listener);
+    },
+    GeometryCollection: function(object, listener) {
+      var geometries = object.geometries, i = -1, n = geometries.length;
+      while (++i < n) d3_geo_streamGeometry(geometries[i], listener);
+    }
+  };
+  function d3_geo_streamLine(coordinates, listener, closed) {
+    var i = -1, n = coordinates.length - closed, coordinate;
+    listener.lineStart();
+    while (++i < n) coordinate = coordinates[i], listener.point(coordinate[0], coordinate[1], coordinate[2]);
+    listener.lineEnd();
+  }
+  function d3_geo_streamPolygon(coordinates, listener) {
+    var i = -1, n = coordinates.length;
+    listener.polygonStart();
+    while (++i < n) d3_geo_streamLine(coordinates[i], listener, 1);
+    listener.polygonEnd();
+  }
+  d3.geo.area = function(object) {
+    d3_geo_areaSum = 0;
+    d3.geo.stream(object, d3_geo_area);
+    return d3_geo_areaSum;
+  };
+  var d3_geo_areaSum, d3_geo_areaRingSum = new d3_adder();
+  var d3_geo_area = {
+    sphere: function() {
+      d3_geo_areaSum += 4 * π;
+    },
+    point: d3_noop,
+    lineStart: d3_noop,
+    lineEnd: d3_noop,
+    polygonStart: function() {
+      d3_geo_areaRingSum.reset();
+      d3_geo_area.lineStart = d3_geo_areaRingStart;
+    },
+    polygonEnd: function() {
+      var area = 2 * d3_geo_areaRingSum;
+      d3_geo_areaSum += area < 0 ? 4 * π + area : area;
+      d3_geo_area.lineStart = d3_geo_area.lineEnd = d3_geo_area.point = d3_noop;
+    }
+  };
+  function d3_geo_areaRingStart() {
+    var λ00, φ00, λ0, cosφ0, sinφ0;
+    d3_geo_area.point = function(λ, φ) {
+      d3_geo_area.point = nextPoint;
+      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4), 
+      sinφ0 = Math.sin(φ);
+    };
+    function nextPoint(λ, φ) {
+      λ *= d3_radians;
+      φ = φ * d3_radians / 2 + π / 4;
+      var dλ = λ - λ0, sdλ = dλ >= 0 ? 1 : -1, adλ = sdλ * dλ, cosφ = Math.cos(φ), sinφ = Math.sin(φ), k = sinφ0 * sinφ, u = cosφ0 * cosφ + k * Math.cos(adλ), v = k * sdλ * Math.sin(adλ);
+      d3_geo_areaRingSum.add(Math.atan2(v, u));
+      λ0 = λ, cosφ0 = cosφ, sinφ0 = sinφ;
+    }
+    d3_geo_area.lineEnd = function() {
+      nextPoint(λ00, φ00);
+    };
+  }
+  function d3_geo_cartesian(spherical) {
+    var λ = spherical[0], φ = spherical[1], cosφ = Math.cos(φ);
+    return [ cosφ * Math.cos(λ), cosφ * Math.sin(λ), Math.sin(φ) ];
+  }
+  function d3_geo_cartesianDot(a, b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  }
+  function d3_geo_cartesianCross(a, b) {
+    return [ a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0] ];
+  }
+  function d3_geo_cartesianAdd(a, b) {
+    a[0] += b[0];
+    a[1] += b[1];
+    a[2] += b[2];
+  }
+  function d3_geo_cartesianScale(vector, k) {
+    return [ vector[0] * k, vector[1] * k, vector[2] * k ];
+  }
+  function d3_geo_cartesianNormalize(d) {
+    var l = Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    d[0] /= l;
+    d[1] /= l;
+    d[2] /= l;
+  }
+  function d3_geo_spherical(cartesian) {
+    return [ Math.atan2(cartesian[1], cartesian[0]), d3_asin(cartesian[2]) ];
+  }
+  function d3_geo_sphericalEqual(a, b) {
+    return abs(a[0] - b[0]) < ε && abs(a[1] - b[1]) < ε;
+  }
+  d3.geo.bounds = function() {
+    var λ0, φ0, λ1, φ1, λ_, λ__, φ__, p0, dλSum, ranges, range;
+    var bound = {
+      point: point,
+      lineStart: lineStart,
+      lineEnd: lineEnd,
+      polygonStart: function() {
+        bound.point = ringPoint;
+        bound.lineStart = ringStart;
+        bound.lineEnd = ringEnd;
+        dλSum = 0;
+        d3_geo_area.polygonStart();
+      },
+      polygonEnd: function() {
+        d3_geo_area.polygonEnd();
+        bound.point = point;
+        bound.lineStart = lineStart;
+        bound.lineEnd = lineEnd;
+        if (d3_geo_areaRingSum < 0) λ0 = -(λ1 = 180), φ0 = -(φ1 = 90); else if (dλSum > ε) φ1 = 90; else if (dλSum < -ε) φ0 = -90;
+        range[0] = λ0, range[1] = λ1;
+      }
+    };
+    function point(λ, φ) {
+      ranges.push(range = [ λ0 = λ, λ1 = λ ]);
+      if (φ < φ0) φ0 = φ;
+      if (φ > φ1) φ1 = φ;
+    }
+    function linePoint(λ, φ) {
+      var p = d3_geo_cartesian([ λ * d3_radians, φ * d3_radians ]);
+      if (p0) {
+        var normal = d3_geo_cartesianCross(p0, p), equatorial = [ normal[1], -normal[0], 0 ], inflection = d3_geo_cartesianCross(equatorial, normal);
+        d3_geo_cartesianNormalize(inflection);
+        inflection = d3_geo_spherical(inflection);
+        var dλ = λ - λ_, s = dλ > 0 ? 1 : -1, λi = inflection[0] * d3_degrees * s, antimeridian = abs(dλ) > 180;
+        if (antimeridian ^ (s * λ_ < λi && λi < s * λ)) {
+          var φi = inflection[1] * d3_degrees;
+          if (φi > φ1) φ1 = φi;
+        } else if (λi = (λi + 360) % 360 - 180, antimeridian ^ (s * λ_ < λi && λi < s * λ)) {
+          var φi = -inflection[1] * d3_degrees;
+          if (φi < φ0) φ0 = φi;
+        } else {
+          if (φ < φ0) φ0 = φ;
+          if (φ > φ1) φ1 = φ;
+        }
+        if (antimeridian) {
+          if (λ < λ_) {
+            if (angle(λ0, λ) > angle(λ0, λ1)) λ1 = λ;
+          } else {
+            if (angle(λ, λ1) > angle(λ0, λ1)) λ0 = λ;
+          }
+        } else {
+          if (λ1 >= λ0) {
+            if (λ < λ0) λ0 = λ;
+            if (λ > λ1) λ1 = λ;
+          } else {
+            if (λ > λ_) {
+              if (angle(λ0, λ) > angle(λ0, λ1)) λ1 = λ;
+            } else {
+              if (angle(λ, λ1) > angle(λ0, λ1)) λ0 = λ;
+            }
+          }
+        }
+      } else {
+        point(λ, φ);
+      }
+      p0 = p, λ_ = λ;
+    }
+    function lineStart() {
+      bound.point = linePoint;
+    }
+    function lineEnd() {
+      range[0] = λ0, range[1] = λ1;
+      bound.point = point;
+      p0 = null;
+    }
+    function ringPoint(λ, φ) {
+      if (p0) {
+        var dλ = λ - λ_;
+        dλSum += abs(dλ) > 180 ? dλ + (dλ > 0 ? 360 : -360) : dλ;
+      } else λ__ = λ, φ__ = φ;
+      d3_geo_area.point(λ, φ);
+      linePoint(λ, φ);
+    }
+    function ringStart() {
+      d3_geo_area.lineStart();
+    }
+    function ringEnd() {
+      ringPoint(λ__, φ__);
+      d3_geo_area.lineEnd();
+      if (abs(dλSum) > ε) λ0 = -(λ1 = 180);
+      range[0] = λ0, range[1] = λ1;
+      p0 = null;
+    }
+    function angle(λ0, λ1) {
+      return (λ1 -= λ0) < 0 ? λ1 + 360 : λ1;
+    }
+    function compareRanges(a, b) {
+      return a[0] - b[0];
+    }
+    function withinRange(x, range) {
+      return range[0] <= range[1] ? range[0] <= x && x <= range[1] : x < range[0] || range[1] < x;
+    }
+    return function(feature) {
+      φ1 = λ1 = -(λ0 = φ0 = Infinity);
+      ranges = [];
+      d3.geo.stream(feature, bound);
+      var n = ranges.length;
+      if (n) {
+        ranges.sort(compareRanges);
+        for (var i = 1, a = ranges[0], b, merged = [ a ]; i < n; ++i) {
+          b = ranges[i];
+          if (withinRange(b[0], a) || withinRange(b[1], a)) {
+            if (angle(a[0], b[1]) > angle(a[0], a[1])) a[1] = b[1];
+            if (angle(b[0], a[1]) > angle(a[0], a[1])) a[0] = b[0];
+          } else {
+            merged.push(a = b);
+          }
+        }
+        var best = -Infinity, dλ;
+        for (var n = merged.length - 1, i = 0, a = merged[n], b; i <= n; a = b, ++i) {
+          b = merged[i];
+          if ((dλ = angle(a[1], b[0])) > best) best = dλ, λ0 = b[0], λ1 = a[1];
+        }
+      }
+      ranges = range = null;
+      return λ0 === Infinity || φ0 === Infinity ? [ [ NaN, NaN ], [ NaN, NaN ] ] : [ [ λ0, φ0 ], [ λ1, φ1 ] ];
+    };
+  }();
+  d3.geo.centroid = function(object) {
+    d3_geo_centroidW0 = d3_geo_centroidW1 = d3_geo_centroidX0 = d3_geo_centroidY0 = d3_geo_centroidZ0 = d3_geo_centroidX1 = d3_geo_centroidY1 = d3_geo_centroidZ1 = d3_geo_centroidX2 = d3_geo_centroidY2 = d3_geo_centroidZ2 = 0;
+    d3.geo.stream(object, d3_geo_centroid);
+    var x = d3_geo_centroidX2, y = d3_geo_centroidY2, z = d3_geo_centroidZ2, m = x * x + y * y + z * z;
+    if (m < ε2) {
+      x = d3_geo_centroidX1, y = d3_geo_centroidY1, z = d3_geo_centroidZ1;
+      if (d3_geo_centroidW1 < ε) x = d3_geo_centroidX0, y = d3_geo_centroidY0, z = d3_geo_centroidZ0;
+      m = x * x + y * y + z * z;
+      if (m < ε2) return [ NaN, NaN ];
+    }
+    return [ Math.atan2(y, x) * d3_degrees, d3_asin(z / Math.sqrt(m)) * d3_degrees ];
+  };
+  var d3_geo_centroidW0, d3_geo_centroidW1, d3_geo_centroidX0, d3_geo_centroidY0, d3_geo_centroidZ0, d3_geo_centroidX1, d3_geo_centroidY1, d3_geo_centroidZ1, d3_geo_centroidX2, d3_geo_centroidY2, d3_geo_centroidZ2;
+  var d3_geo_centroid = {
+    sphere: d3_noop,
+    point: d3_geo_centroidPoint,
+    lineStart: d3_geo_centroidLineStart,
+    lineEnd: d3_geo_centroidLineEnd,
+    polygonStart: function() {
+      d3_geo_centroid.lineStart = d3_geo_centroidRingStart;
+    },
+    polygonEnd: function() {
+      d3_geo_centroid.lineStart = d3_geo_centroidLineStart;
+    }
+  };
+  function d3_geo_centroidPoint(λ, φ) {
+    λ *= d3_radians;
+    var cosφ = Math.cos(φ *= d3_radians);
+    d3_geo_centroidPointXYZ(cosφ * Math.cos(λ), cosφ * Math.sin(λ), Math.sin(φ));
+  }
+  function d3_geo_centroidPointXYZ(x, y, z) {
+    ++d3_geo_centroidW0;
+    d3_geo_centroidX0 += (x - d3_geo_centroidX0) / d3_geo_centroidW0;
+    d3_geo_centroidY0 += (y - d3_geo_centroidY0) / d3_geo_centroidW0;
+    d3_geo_centroidZ0 += (z - d3_geo_centroidZ0) / d3_geo_centroidW0;
+  }
+  function d3_geo_centroidLineStart() {
+    var x0, y0, z0;
+    d3_geo_centroid.point = function(λ, φ) {
+      λ *= d3_radians;
+      var cosφ = Math.cos(φ *= d3_radians);
+      x0 = cosφ * Math.cos(λ);
+      y0 = cosφ * Math.sin(λ);
+      z0 = Math.sin(φ);
+      d3_geo_centroid.point = nextPoint;
+      d3_geo_centroidPointXYZ(x0, y0, z0);
+    };
+    function nextPoint(λ, φ) {
+      λ *= d3_radians;
+      var cosφ = Math.cos(φ *= d3_radians), x = cosφ * Math.cos(λ), y = cosφ * Math.sin(λ), z = Math.sin(φ), w = Math.atan2(Math.sqrt((w = y0 * z - z0 * y) * w + (w = z0 * x - x0 * z) * w + (w = x0 * y - y0 * x) * w), x0 * x + y0 * y + z0 * z);
+      d3_geo_centroidW1 += w;
+      d3_geo_centroidX1 += w * (x0 + (x0 = x));
+      d3_geo_centroidY1 += w * (y0 + (y0 = y));
+      d3_geo_centroidZ1 += w * (z0 + (z0 = z));
+      d3_geo_centroidPointXYZ(x0, y0, z0);
+    }
+  }
+  function d3_geo_centroidLineEnd() {
+    d3_geo_centroid.point = d3_geo_centroidPoint;
+  }
+  function d3_geo_centroidRingStart() {
+    var λ00, φ00, x0, y0, z0;
+    d3_geo_centroid.point = function(λ, φ) {
+      λ00 = λ, φ00 = φ;
+      d3_geo_centroid.point = nextPoint;
+      λ *= d3_radians;
+      var cosφ = Math.cos(φ *= d3_radians);
+      x0 = cosφ * Math.cos(λ);
+      y0 = cosφ * Math.sin(λ);
+      z0 = Math.sin(φ);
+      d3_geo_centroidPointXYZ(x0, y0, z0);
+    };
+    d3_geo_centroid.lineEnd = function() {
+      nextPoint(λ00, φ00);
+      d3_geo_centroid.lineEnd = d3_geo_centroidLineEnd;
+      d3_geo_centroid.point = d3_geo_centroidPoint;
+    };
+    function nextPoint(λ, φ) {
+      λ *= d3_radians;
+      var cosφ = Math.cos(φ *= d3_radians), x = cosφ * Math.cos(λ), y = cosφ * Math.sin(λ), z = Math.sin(φ), cx = y0 * z - z0 * y, cy = z0 * x - x0 * z, cz = x0 * y - y0 * x, m = Math.sqrt(cx * cx + cy * cy + cz * cz), u = x0 * x + y0 * y + z0 * z, v = m && -d3_acos(u) / m, w = Math.atan2(m, u);
+      d3_geo_centroidX2 += v * cx;
+      d3_geo_centroidY2 += v * cy;
+      d3_geo_centroidZ2 += v * cz;
+      d3_geo_centroidW1 += w;
+      d3_geo_centroidX1 += w * (x0 + (x0 = x));
+      d3_geo_centroidY1 += w * (y0 + (y0 = y));
+      d3_geo_centroidZ1 += w * (z0 + (z0 = z));
+      d3_geo_centroidPointXYZ(x0, y0, z0);
+    }
+  }
+  function d3_geo_compose(a, b) {
+    function compose(x, y) {
+      return x = a(x, y), b(x[0], x[1]);
+    }
+    if (a.invert && b.invert) compose.invert = function(x, y) {
+      return x = b.invert(x, y), x && a.invert(x[0], x[1]);
+    };
+    return compose;
+  }
+  function d3_true() {
+    return true;
+  }
+  function d3_geo_clipPolygon(segments, compare, clipStartInside, interpolate, listener) {
+    var subject = [], clip = [];
+    segments.forEach(function(segment) {
+      if ((n = segment.length - 1) <= 0) return;
+      var n, p0 = segment[0], p1 = segment[n];
+      if (d3_geo_sphericalEqual(p0, p1)) {
+        listener.lineStart();
+        for (var i = 0; i < n; ++i) listener.point((p0 = segment[i])[0], p0[1]);
+        listener.lineEnd();
+        return;
+      }
+      var a = new d3_geo_clipPolygonIntersection(p0, segment, null, true), b = new d3_geo_clipPolygonIntersection(p0, null, a, false);
+      a.o = b;
+      subject.push(a);
+      clip.push(b);
+      a = new d3_geo_clipPolygonIntersection(p1, segment, null, false);
+      b = new d3_geo_clipPolygonIntersection(p1, null, a, true);
+      a.o = b;
+      subject.push(a);
+      clip.push(b);
+    });
+    clip.sort(compare);
+    d3_geo_clipPolygonLinkCircular(subject);
+    d3_geo_clipPolygonLinkCircular(clip);
+    if (!subject.length) return;
+    for (var i = 0, entry = clipStartInside, n = clip.length; i < n; ++i) {
+      clip[i].e = entry = !entry;
+    }
+    var start = subject[0], points, point;
+    while (1) {
+      var current = start, isSubject = true;
+      while (current.v) if ((current = current.n) === start) return;
+      points = current.z;
+      listener.lineStart();
+      do {
+        current.v = current.o.v = true;
+        if (current.e) {
+          if (isSubject) {
+            for (var i = 0, n = points.length; i < n; ++i) listener.point((point = points[i])[0], point[1]);
+          } else {
+            interpolate(current.x, current.n.x, 1, listener);
+          }
+          current = current.n;
+        } else {
+          if (isSubject) {
+            points = current.p.z;
+            for (var i = points.length - 1; i >= 0; --i) listener.point((point = points[i])[0], point[1]);
+          } else {
+            interpolate(current.x, current.p.x, -1, listener);
+          }
+          current = current.p;
+        }
+        current = current.o;
+        points = current.z;
+        isSubject = !isSubject;
+      } while (!current.v);
+      listener.lineEnd();
+    }
+  }
+  function d3_geo_clipPolygonLinkCircular(array) {
+    if (!(n = array.length)) return;
+    var n, i = 0, a = array[0], b;
+    while (++i < n) {
+      a.n = b = array[i];
+      b.p = a;
+      a = b;
+    }
+    a.n = b = array[0];
+    b.p = a;
+  }
+  function d3_geo_clipPolygonIntersection(point, points, other, entry) {
+    this.x = point;
+    this.z = points;
+    this.o = other;
+    this.e = entry;
+    this.v = false;
+    this.n = this.p = null;
+  }
+  function d3_geo_clip(pointVisible, clipLine, interpolate, clipStart) {
+    return function(rotate, listener) {
+      var line = clipLine(listener), rotatedClipStart = rotate.invert(clipStart[0], clipStart[1]);
+      var clip = {
+        point: point,
+        lineStart: lineStart,
+        lineEnd: lineEnd,
+        polygonStart: function() {
+          clip.point = pointRing;
+          clip.lineStart = ringStart;
+          clip.lineEnd = ringEnd;
+          segments = [];
+          polygon = [];
+        },
+        polygonEnd: function() {
+          clip.point = point;
+          clip.lineStart = lineStart;
+          clip.lineEnd = lineEnd;
+          segments = d3.merge(segments);
+          var clipStartInside = d3_geo_pointInPolygon(rotatedClipStart, polygon);
+          if (segments.length) {
+            if (!polygonStarted) listener.polygonStart(), polygonStarted = true;
+            d3_geo_clipPolygon(segments, d3_geo_clipSort, clipStartInside, interpolate, listener);
+          } else if (clipStartInside) {
+            if (!polygonStarted) listener.polygonStart(), polygonStarted = true;
+            listener.lineStart();
+            interpolate(null, null, 1, listener);
+            listener.lineEnd();
+          }
+          if (polygonStarted) listener.polygonEnd(), polygonStarted = false;
+          segments = polygon = null;
+        },
+        sphere: function() {
+          listener.polygonStart();
+          listener.lineStart();
+          interpolate(null, null, 1, listener);
+          listener.lineEnd();
+          listener.polygonEnd();
+        }
+      };
+      function point(λ, φ) {
+        var point = rotate(λ, φ);
+        if (pointVisible(λ = point[0], φ = point[1])) listener.point(λ, φ);
+      }
+      function pointLine(λ, φ) {
+        var point = rotate(λ, φ);
+        line.point(point[0], point[1]);
+      }
+      function lineStart() {
+        clip.point = pointLine;
+        line.lineStart();
+      }
+      function lineEnd() {
+        clip.point = point;
+        line.lineEnd();
+      }
+      var segments;
+      var buffer = d3_geo_clipBufferListener(), ringListener = clipLine(buffer), polygonStarted = false, polygon, ring;
+      function pointRing(λ, φ) {
+        ring.push([ λ, φ ]);
+        var point = rotate(λ, φ);
+        ringListener.point(point[0], point[1]);
+      }
+      function ringStart() {
+        ringListener.lineStart();
+        ring = [];
+      }
+      function ringEnd() {
+        pointRing(ring[0][0], ring[0][1]);
+        ringListener.lineEnd();
+        var clean = ringListener.clean(), ringSegments = buffer.buffer(), segment, n = ringSegments.length;
+        ring.pop();
+        polygon.push(ring);
+        ring = null;
+        if (!n) return;
+        if (clean & 1) {
+          segment = ringSegments[0];
+          var n = segment.length - 1, i = -1, point;
+          if (n > 0) {
+            if (!polygonStarted) listener.polygonStart(), polygonStarted = true;
+            listener.lineStart();
+            while (++i < n) listener.point((point = segment[i])[0], point[1]);
+            listener.lineEnd();
+          }
+          return;
+        }
+        if (n > 1 && clean & 2) ringSegments.push(ringSegments.pop().concat(ringSegments.shift()));
+        segments.push(ringSegments.filter(d3_geo_clipSegmentLength1));
+      }
+      return clip;
+    };
+  }
+  function d3_geo_clipSegmentLength1(segment) {
+    return segment.length > 1;
+  }
+  function d3_geo_clipBufferListener() {
+    var lines = [], line;
+    return {
+      lineStart: function() {
+        lines.push(line = []);
+      },
+      point: function(λ, φ) {
+        line.push([ λ, φ ]);
+      },
+      lineEnd: d3_noop,
+      buffer: function() {
+        var buffer = lines;
+        lines = [];
+        line = null;
+        return buffer;
+      },
+      rejoin: function() {
+        if (lines.length > 1) lines.push(lines.pop().concat(lines.shift()));
+      }
+    };
+  }
+  function d3_geo_clipSort(a, b) {
+    return ((a = a.x)[0] < 0 ? a[1] - halfπ - ε : halfπ - a[1]) - ((b = b.x)[0] < 0 ? b[1] - halfπ - ε : halfπ - b[1]);
+  }
+  var d3_geo_clipAntimeridian = d3_geo_clip(d3_true, d3_geo_clipAntimeridianLine, d3_geo_clipAntimeridianInterpolate, [ -π, -π / 2 ]);
+  function d3_geo_clipAntimeridianLine(listener) {
+    var λ0 = NaN, φ0 = NaN, sλ0 = NaN, clean;
+    return {
+      lineStart: function() {
+        listener.lineStart();
+        clean = 1;
+      },
+      point: function(λ1, φ1) {
+        var sλ1 = λ1 > 0 ? π : -π, dλ = abs(λ1 - λ0);
+        if (abs(dλ - π) < ε) {
+          listener.point(λ0, φ0 = (φ0 + φ1) / 2 > 0 ? halfπ : -halfπ);
+          listener.point(sλ0, φ0);
+          listener.lineEnd();
+          listener.lineStart();
+          listener.point(sλ1, φ0);
+          listener.point(λ1, φ0);
+          clean = 0;
+        } else if (sλ0 !== sλ1 && dλ >= π) {
+          if (abs(λ0 - sλ0) < ε) λ0 -= sλ0 * ε;
+          if (abs(λ1 - sλ1) < ε) λ1 -= sλ1 * ε;
+          φ0 = d3_geo_clipAntimeridianIntersect(λ0, φ0, λ1, φ1);
+          listener.point(sλ0, φ0);
+          listener.lineEnd();
+          listener.lineStart();
+          listener.point(sλ1, φ0);
+          clean = 0;
+        }
+        listener.point(λ0 = λ1, φ0 = φ1);
+        sλ0 = sλ1;
+      },
+      lineEnd: function() {
+        listener.lineEnd();
+        λ0 = φ0 = NaN;
+      },
+      clean: function() {
+        return 2 - clean;
+      }
+    };
+  }
+  function d3_geo_clipAntimeridianIntersect(λ0, φ0, λ1, φ1) {
+    var cosφ0, cosφ1, sinλ0_λ1 = Math.sin(λ0 - λ1);
+    return abs(sinλ0_λ1) > ε ? Math.atan((Math.sin(φ0) * (cosφ1 = Math.cos(φ1)) * Math.sin(λ1) - Math.sin(φ1) * (cosφ0 = Math.cos(φ0)) * Math.sin(λ0)) / (cosφ0 * cosφ1 * sinλ0_λ1)) : (φ0 + φ1) / 2;
+  }
+  function d3_geo_clipAntimeridianInterpolate(from, to, direction, listener) {
+    var φ;
+    if (from == null) {
+      φ = direction * halfπ;
+      listener.point(-π, φ);
+      listener.point(0, φ);
+      listener.point(π, φ);
+      listener.point(π, 0);
+      listener.point(π, -φ);
+      listener.point(0, -φ);
+      listener.point(-π, -φ);
+      listener.point(-π, 0);
+      listener.point(-π, φ);
+    } else if (abs(from[0] - to[0]) > ε) {
+      var s = from[0] < to[0] ? π : -π;
+      φ = direction * s / 2;
+      listener.point(-s, φ);
+      listener.point(0, φ);
+      listener.point(s, φ);
+    } else {
+      listener.point(to[0], to[1]);
+    }
+  }
+  function d3_geo_pointInPolygon(point, polygon) {
+    var meridian = point[0], parallel = point[1], meridianNormal = [ Math.sin(meridian), -Math.cos(meridian), 0 ], polarAngle = 0, winding = 0;
+    d3_geo_areaRingSum.reset();
+    for (var i = 0, n = polygon.length; i < n; ++i) {
+      var ring = polygon[i], m = ring.length;
+      if (!m) continue;
+      var point0 = ring[0], λ0 = point0[0], φ0 = point0[1] / 2 + π / 4, sinφ0 = Math.sin(φ0), cosφ0 = Math.cos(φ0), j = 1;
+      while (true) {
+        if (j === m) j = 0;
+        point = ring[j];
+        var λ = point[0], φ = point[1] / 2 + π / 4, sinφ = Math.sin(φ), cosφ = Math.cos(φ), dλ = λ - λ0, sdλ = dλ >= 0 ? 1 : -1, adλ = sdλ * dλ, antimeridian = adλ > π, k = sinφ0 * sinφ;
+        d3_geo_areaRingSum.add(Math.atan2(k * sdλ * Math.sin(adλ), cosφ0 * cosφ + k * Math.cos(adλ)));
+        polarAngle += antimeridian ? dλ + sdλ * τ : dλ;
+        if (antimeridian ^ λ0 >= meridian ^ λ >= meridian) {
+          var arc = d3_geo_cartesianCross(d3_geo_cartesian(point0), d3_geo_cartesian(point));
+          d3_geo_cartesianNormalize(arc);
+          var intersection = d3_geo_cartesianCross(meridianNormal, arc);
+          d3_geo_cartesianNormalize(intersection);
+          var φarc = (antimeridian ^ dλ >= 0 ? -1 : 1) * d3_asin(intersection[2]);
+          if (parallel > φarc || parallel === φarc && (arc[0] || arc[1])) {
+            winding += antimeridian ^ dλ >= 0 ? 1 : -1;
+          }
+        }
+        if (!j++) break;
+        λ0 = λ, sinφ0 = sinφ, cosφ0 = cosφ, point0 = point;
+      }
+    }
+    return (polarAngle < -ε || polarAngle < ε && d3_geo_areaRingSum < 0) ^ winding & 1;
+  }
+  function d3_geo_clipCircle(radius) {
+    var cr = Math.cos(radius), smallRadius = cr > 0, notHemisphere = abs(cr) > ε, interpolate = d3_geo_circleInterpolate(radius, 6 * d3_radians);
+    return d3_geo_clip(visible, clipLine, interpolate, smallRadius ? [ 0, -radius ] : [ -π, radius - π ]);
+    function visible(λ, φ) {
+      return Math.cos(λ) * Math.cos(φ) > cr;
+    }
+    function clipLine(listener) {
+      var point0, c0, v0, v00, clean;
+      return {
+        lineStart: function() {
+          v00 = v0 = false;
+          clean = 1;
+        },
+        point: function(λ, φ) {
+          var point1 = [ λ, φ ], point2, v = visible(λ, φ), c = smallRadius ? v ? 0 : code(λ, φ) : v ? code(λ + (λ < 0 ? π : -π), φ) : 0;
+          if (!point0 && (v00 = v0 = v)) listener.lineStart();
+          if (v !== v0) {
+            point2 = intersect(point0, point1);
+            if (d3_geo_sphericalEqual(point0, point2) || d3_geo_sphericalEqual(point1, point2)) {
+              point1[0] += ε;
+              point1[1] += ε;
+              v = visible(point1[0], point1[1]);
+            }
+          }
+          if (v !== v0) {
+            clean = 0;
+            if (v) {
+              listener.lineStart();
+              point2 = intersect(point1, point0);
+              listener.point(point2[0], point2[1]);
+            } else {
+              point2 = intersect(point0, point1);
+              listener.point(point2[0], point2[1]);
+              listener.lineEnd();
+            }
+            point0 = point2;
+          } else if (notHemisphere && point0 && smallRadius ^ v) {
+            var t;
+            if (!(c & c0) && (t = intersect(point1, point0, true))) {
+              clean = 0;
+              if (smallRadius) {
+                listener.lineStart();
+                listener.point(t[0][0], t[0][1]);
+                listener.point(t[1][0], t[1][1]);
+                listener.lineEnd();
+              } else {
+                listener.point(t[1][0], t[1][1]);
+                listener.lineEnd();
+                listener.lineStart();
+                listener.point(t[0][0], t[0][1]);
+              }
+            }
+          }
+          if (v && (!point0 || !d3_geo_sphericalEqual(point0, point1))) {
+            listener.point(point1[0], point1[1]);
+          }
+          point0 = point1, v0 = v, c0 = c;
+        },
+        lineEnd: function() {
+          if (v0) listener.lineEnd();
+          point0 = null;
+        },
+        clean: function() {
+          return clean | (v00 && v0) << 1;
+        }
+      };
+    }
+    function intersect(a, b, two) {
+      var pa = d3_geo_cartesian(a), pb = d3_geo_cartesian(b);
+      var n1 = [ 1, 0, 0 ], n2 = d3_geo_cartesianCross(pa, pb), n2n2 = d3_geo_cartesianDot(n2, n2), n1n2 = n2[0], determinant = n2n2 - n1n2 * n1n2;
+      if (!determinant) return !two && a;
+      var c1 = cr * n2n2 / determinant, c2 = -cr * n1n2 / determinant, n1xn2 = d3_geo_cartesianCross(n1, n2), A = d3_geo_cartesianScale(n1, c1), B = d3_geo_cartesianScale(n2, c2);
+      d3_geo_cartesianAdd(A, B);
+      var u = n1xn2, w = d3_geo_cartesianDot(A, u), uu = d3_geo_cartesianDot(u, u), t2 = w * w - uu * (d3_geo_cartesianDot(A, A) - 1);
+      if (t2 < 0) return;
+      var t = Math.sqrt(t2), q = d3_geo_cartesianScale(u, (-w - t) / uu);
+      d3_geo_cartesianAdd(q, A);
+      q = d3_geo_spherical(q);
+      if (!two) return q;
+      var λ0 = a[0], λ1 = b[0], φ0 = a[1], φ1 = b[1], z;
+      if (λ1 < λ0) z = λ0, λ0 = λ1, λ1 = z;
+      var δλ = λ1 - λ0, polar = abs(δλ - π) < ε, meridian = polar || δλ < ε;
+      if (!polar && φ1 < φ0) z = φ0, φ0 = φ1, φ1 = z;
+      if (meridian ? polar ? φ0 + φ1 > 0 ^ q[1] < (abs(q[0] - λ0) < ε ? φ0 : φ1) : φ0 <= q[1] && q[1] <= φ1 : δλ > π ^ (λ0 <= q[0] && q[0] <= λ1)) {
+        var q1 = d3_geo_cartesianScale(u, (-w + t) / uu);
+        d3_geo_cartesianAdd(q1, A);
+        return [ q, d3_geo_spherical(q1) ];
+      }
+    }
+    function code(λ, φ) {
+      var r = smallRadius ? radius : π - radius, code = 0;
+      if (λ < -r) code |= 1; else if (λ > r) code |= 2;
+      if (φ < -r) code |= 4; else if (φ > r) code |= 8;
+      return code;
+    }
+  }
+  function d3_geom_clipLine(x0, y0, x1, y1) {
+    return function(line) {
+      var a = line.a, b = line.b, ax = a.x, ay = a.y, bx = b.x, by = b.y, t0 = 0, t1 = 1, dx = bx - ax, dy = by - ay, r;
+      r = x0 - ax;
+      if (!dx && r > 0) return;
+      r /= dx;
+      if (dx < 0) {
+        if (r < t0) return;
+        if (r < t1) t1 = r;
+      } else if (dx > 0) {
+        if (r > t1) return;
+        if (r > t0) t0 = r;
+      }
+      r = x1 - ax;
+      if (!dx && r < 0) return;
+      r /= dx;
+      if (dx < 0) {
+        if (r > t1) return;
+        if (r > t0) t0 = r;
+      } else if (dx > 0) {
+        if (r < t0) return;
+        if (r < t1) t1 = r;
+      }
+      r = y0 - ay;
+      if (!dy && r > 0) return;
+      r /= dy;
+      if (dy < 0) {
+        if (r < t0) return;
+        if (r < t1) t1 = r;
+      } else if (dy > 0) {
+        if (r > t1) return;
+        if (r > t0) t0 = r;
+      }
+      r = y1 - ay;
+      if (!dy && r < 0) return;
+      r /= dy;
+      if (dy < 0) {
+        if (r > t1) return;
+        if (r > t0) t0 = r;
+      } else if (dy > 0) {
+        if (r < t0) return;
+        if (r < t1) t1 = r;
+      }
+      if (t0 > 0) line.a = {
+        x: ax + t0 * dx,
+        y: ay + t0 * dy
+      };
+      if (t1 < 1) line.b = {
+        x: ax + t1 * dx,
+        y: ay + t1 * dy
+      };
+      return line;
+    };
+  }
+  var d3_geo_clipExtentMAX = 1e9;
+  d3.geo.clipExtent = function() {
+    var x0, y0, x1, y1, stream, clip, clipExtent = {
+      stream: function(output) {
+        if (stream) stream.valid = false;
+        stream = clip(output);
+        stream.valid = true;
+        return stream;
+      },
+      extent: function(_) {
+        if (!arguments.length) return [ [ x0, y0 ], [ x1, y1 ] ];
+        clip = d3_geo_clipExtent(x0 = +_[0][0], y0 = +_[0][1], x1 = +_[1][0], y1 = +_[1][1]);
+        if (stream) stream.valid = false, stream = null;
+        return clipExtent;
+      }
+    };
+    return clipExtent.extent([ [ 0, 0 ], [ 960, 500 ] ]);
+  };
+  function d3_geo_clipExtent(x0, y0, x1, y1) {
+    return function(listener) {
+      var listener_ = listener, bufferListener = d3_geo_clipBufferListener(), clipLine = d3_geom_clipLine(x0, y0, x1, y1), segments, polygon, ring;
+      var clip = {
+        point: point,
+        lineStart: lineStart,
+        lineEnd: lineEnd,
+        polygonStart: function() {
+          listener = bufferListener;
+          segments = [];
+          polygon = [];
+          clean = true;
+        },
+        polygonEnd: function() {
+          listener = listener_;
+          segments = d3.merge(segments);
+          var clipStartInside = insidePolygon([ x0, y1 ]), inside = clean && clipStartInside, visible = segments.length;
+          if (inside || visible) {
+            listener.polygonStart();
+            if (inside) {
+              listener.lineStart();
+              interpolate(null, null, 1, listener);
+              listener.lineEnd();
+            }
+            if (visible) {
+              d3_geo_clipPolygon(segments, compare, clipStartInside, interpolate, listener);
+            }
+            listener.polygonEnd();
+          }
+          segments = polygon = ring = null;
+        }
+      };
+      function insidePolygon(p) {
+        var wn = 0, n = polygon.length, y = p[1];
+        for (var i = 0; i < n; ++i) {
+          for (var j = 1, v = polygon[i], m = v.length, a = v[0], b; j < m; ++j) {
+            b = v[j];
+            if (a[1] <= y) {
+              if (b[1] > y && d3_cross2d(a, b, p) > 0) ++wn;
+            } else {
+              if (b[1] <= y && d3_cross2d(a, b, p) < 0) --wn;
+            }
+            a = b;
+          }
+        }
+        return wn !== 0;
+      }
+      function interpolate(from, to, direction, listener) {
+        var a = 0, a1 = 0;
+        if (from == null || (a = corner(from, direction)) !== (a1 = corner(to, direction)) || comparePoints(from, to) < 0 ^ direction > 0) {
+          do {
+            listener.point(a === 0 || a === 3 ? x0 : x1, a > 1 ? y1 : y0);
+          } while ((a = (a + direction + 4) % 4) !== a1);
+        } else {
+          listener.point(to[0], to[1]);
+        }
+      }
+      function pointVisible(x, y) {
+        return x0 <= x && x <= x1 && y0 <= y && y <= y1;
+      }
+      function point(x, y) {
+        if (pointVisible(x, y)) listener.point(x, y);
+      }
+      var x__, y__, v__, x_, y_, v_, first, clean;
+      function lineStart() {
+        clip.point = linePoint;
+        if (polygon) polygon.push(ring = []);
+        first = true;
+        v_ = false;
+        x_ = y_ = NaN;
+      }
+      function lineEnd() {
+        if (segments) {
+          linePoint(x__, y__);
+          if (v__ && v_) bufferListener.rejoin();
+          segments.push(bufferListener.buffer());
+        }
+        clip.point = point;
+        if (v_) listener.lineEnd();
+      }
+      function linePoint(x, y) {
+        x = Math.max(-d3_geo_clipExtentMAX, Math.min(d3_geo_clipExtentMAX, x));
+        y = Math.max(-d3_geo_clipExtentMAX, Math.min(d3_geo_clipExtentMAX, y));
+        var v = pointVisible(x, y);
+        if (polygon) ring.push([ x, y ]);
+        if (first) {
+          x__ = x, y__ = y, v__ = v;
+          first = false;
+          if (v) {
+            listener.lineStart();
+            listener.point(x, y);
+          }
+        } else {
+          if (v && v_) listener.point(x, y); else {
+            var l = {
+              a: {
+                x: x_,
+                y: y_
+              },
+              b: {
+                x: x,
+                y: y
+              }
+            };
+            if (clipLine(l)) {
+              if (!v_) {
+                listener.lineStart();
+                listener.point(l.a.x, l.a.y);
+              }
+              listener.point(l.b.x, l.b.y);
+              if (!v) listener.lineEnd();
+              clean = false;
+            } else if (v) {
+              listener.lineStart();
+              listener.point(x, y);
+              clean = false;
+            }
+          }
+        }
+        x_ = x, y_ = y, v_ = v;
+      }
+      return clip;
+    };
+    function corner(p, direction) {
+      return abs(p[0] - x0) < ε ? direction > 0 ? 0 : 3 : abs(p[0] - x1) < ε ? direction > 0 ? 2 : 1 : abs(p[1] - y0) < ε ? direction > 0 ? 1 : 0 : direction > 0 ? 3 : 2;
+    }
+    function compare(a, b) {
+      return comparePoints(a.x, b.x);
+    }
+    function comparePoints(a, b) {
+      var ca = corner(a, 1), cb = corner(b, 1);
+      return ca !== cb ? ca - cb : ca === 0 ? b[1] - a[1] : ca === 1 ? a[0] - b[0] : ca === 2 ? a[1] - b[1] : b[0] - a[0];
+    }
+  }
+  function d3_geo_conic(projectAt) {
+    var φ0 = 0, φ1 = π / 3, m = d3_geo_projectionMutator(projectAt), p = m(φ0, φ1);
+    p.parallels = function(_) {
+      if (!arguments.length) return [ φ0 / π * 180, φ1 / π * 180 ];
+      return m(φ0 = _[0] * π / 180, φ1 = _[1] * π / 180);
+    };
+    return p;
+  }
+  function d3_geo_conicEqualArea(φ0, φ1) {
+    var sinφ0 = Math.sin(φ0), n = (sinφ0 + Math.sin(φ1)) / 2, C = 1 + sinφ0 * (2 * n - sinφ0), ρ0 = Math.sqrt(C) / n;
+    function forward(λ, φ) {
+      var ρ = Math.sqrt(C - 2 * n * Math.sin(φ)) / n;
+      return [ ρ * Math.sin(λ *= n), ρ0 - ρ * Math.cos(λ) ];
+    }
+    forward.invert = function(x, y) {
+      var ρ0_y = ρ0 - y;
+      return [ Math.atan2(x, ρ0_y) / n, d3_asin((C - (x * x + ρ0_y * ρ0_y) * n * n) / (2 * n)) ];
+    };
+    return forward;
+  }
+  (d3.geo.conicEqualArea = function() {
+    return d3_geo_conic(d3_geo_conicEqualArea);
+  }).raw = d3_geo_conicEqualArea;
+  d3.geo.albers = function() {
+    return d3.geo.conicEqualArea().rotate([ 96, 0 ]).center([ -.6, 38.7 ]).parallels([ 29.5, 45.5 ]).scale(1070);
+  };
+  d3.geo.albersUsa = function() {
+    var lower48 = d3.geo.albers();
+    var alaska = d3.geo.conicEqualArea().rotate([ 154, 0 ]).center([ -2, 58.5 ]).parallels([ 55, 65 ]);
+    var hawaii = d3.geo.conicEqualArea().rotate([ 157, 0 ]).center([ -3, 19.9 ]).parallels([ 8, 18 ]);
+    var point, pointStream = {
+      point: function(x, y) {
+        point = [ x, y ];
+      }
+    }, lower48Point, alaskaPoint, hawaiiPoint;
+    function albersUsa(coordinates) {
+      var x = coordinates[0], y = coordinates[1];
+      point = null;
+      (lower48Point(x, y), point) || (alaskaPoint(x, y), point) || hawaiiPoint(x, y);
+      return point;
+    }
+    albersUsa.invert = function(coordinates) {
+      var k = lower48.scale(), t = lower48.translate(), x = (coordinates[0] - t[0]) / k, y = (coordinates[1] - t[1]) / k;
+      return (y >= .12 && y < .234 && x >= -.425 && x < -.214 ? alaska : y >= .166 && y < .234 && x >= -.214 && x < -.115 ? hawaii : lower48).invert(coordinates);
+    };
+    albersUsa.stream = function(stream) {
+      var lower48Stream = lower48.stream(stream), alaskaStream = alaska.stream(stream), hawaiiStream = hawaii.stream(stream);
+      return {
+        point: function(x, y) {
+          lower48Stream.point(x, y);
+          alaskaStream.point(x, y);
+          hawaiiStream.point(x, y);
+        },
+        sphere: function() {
+          lower48Stream.sphere();
+          alaskaStream.sphere();
+          hawaiiStream.sphere();
+        },
+        lineStart: function() {
+          lower48Stream.lineStart();
+          alaskaStream.lineStart();
+          hawaiiStream.lineStart();
+        },
+        lineEnd: function() {
+          lower48Stream.lineEnd();
+          alaskaStream.lineEnd();
+          hawaiiStream.lineEnd();
+        },
+        polygonStart: function() {
+          lower48Stream.polygonStart();
+          alaskaStream.polygonStart();
+          hawaiiStream.polygonStart();
+        },
+        polygonEnd: function() {
+          lower48Stream.polygonEnd();
+          alaskaStream.polygonEnd();
+          hawaiiStream.polygonEnd();
+        }
+      };
+    };
+    albersUsa.precision = function(_) {
+      if (!arguments.length) return lower48.precision();
+      lower48.precision(_);
+      alaska.precision(_);
+      hawaii.precision(_);
+      return albersUsa;
+    };
+    albersUsa.scale = function(_) {
+      if (!arguments.length) return lower48.scale();
+      lower48.scale(_);
+      alaska.scale(_ * .35);
+      hawaii.scale(_);
+      return albersUsa.translate(lower48.translate());
+    };
+    albersUsa.translate = function(_) {
+      if (!arguments.length) return lower48.translate();
+      var k = lower48.scale(), x = +_[0], y = +_[1];
+      lower48Point = lower48.translate(_).clipExtent([ [ x - .455 * k, y - .238 * k ], [ x + .455 * k, y + .238 * k ] ]).stream(pointStream).point;
+      alaskaPoint = alaska.translate([ x - .307 * k, y + .201 * k ]).clipExtent([ [ x - .425 * k + ε, y + .12 * k + ε ], [ x - .214 * k - ε, y + .234 * k - ε ] ]).stream(pointStream).point;
+      hawaiiPoint = hawaii.translate([ x - .205 * k, y + .212 * k ]).clipExtent([ [ x - .214 * k + ε, y + .166 * k + ε ], [ x - .115 * k - ε, y + .234 * k - ε ] ]).stream(pointStream).point;
+      return albersUsa;
+    };
+    return albersUsa.scale(1070);
+  };
+  var d3_geo_pathAreaSum, d3_geo_pathAreaPolygon, d3_geo_pathArea = {
+    point: d3_noop,
+    lineStart: d3_noop,
+    lineEnd: d3_noop,
+    polygonStart: function() {
+      d3_geo_pathAreaPolygon = 0;
+      d3_geo_pathArea.lineStart = d3_geo_pathAreaRingStart;
+    },
+    polygonEnd: function() {
+      d3_geo_pathArea.lineStart = d3_geo_pathArea.lineEnd = d3_geo_pathArea.point = d3_noop;
+      d3_geo_pathAreaSum += abs(d3_geo_pathAreaPolygon / 2);
+    }
+  };
+  function d3_geo_pathAreaRingStart() {
+    var x00, y00, x0, y0;
+    d3_geo_pathArea.point = function(x, y) {
+      d3_geo_pathArea.point = nextPoint;
+      x00 = x0 = x, y00 = y0 = y;
+    };
+    function nextPoint(x, y) {
+      d3_geo_pathAreaPolygon += y0 * x - x0 * y;
+      x0 = x, y0 = y;
+    }
+    d3_geo_pathArea.lineEnd = function() {
+      nextPoint(x00, y00);
+    };
+  }
+  var d3_geo_pathBoundsX0, d3_geo_pathBoundsY0, d3_geo_pathBoundsX1, d3_geo_pathBoundsY1;
+  var d3_geo_pathBounds = {
+    point: d3_geo_pathBoundsPoint,
+    lineStart: d3_noop,
+    lineEnd: d3_noop,
+    polygonStart: d3_noop,
+    polygonEnd: d3_noop
+  };
+  function d3_geo_pathBoundsPoint(x, y) {
+    if (x < d3_geo_pathBoundsX0) d3_geo_pathBoundsX0 = x;
+    if (x > d3_geo_pathBoundsX1) d3_geo_pathBoundsX1 = x;
+    if (y < d3_geo_pathBoundsY0) d3_geo_pathBoundsY0 = y;
+    if (y > d3_geo_pathBoundsY1) d3_geo_pathBoundsY1 = y;
+  }
+  function d3_geo_pathBuffer() {
+    var pointCircle = d3_geo_pathBufferCircle(4.5), buffer = [];
+    var stream = {
+      point: point,
+      lineStart: function() {
+        stream.point = pointLineStart;
+      },
+      lineEnd: lineEnd,
+      polygonStart: function() {
+        stream.lineEnd = lineEndPolygon;
+      },
+      polygonEnd: function() {
+        stream.lineEnd = lineEnd;
+        stream.point = point;
+      },
+      pointRadius: function(_) {
+        pointCircle = d3_geo_pathBufferCircle(_);
+        return stream;
+      },
+      result: function() {
+        if (buffer.length) {
+          var result = buffer.join("");
+          buffer = [];
+          return result;
+        }
+      }
+    };
+    function point(x, y) {
+      buffer.push("M", x, ",", y, pointCircle);
+    }
+    function pointLineStart(x, y) {
+      buffer.push("M", x, ",", y);
+      stream.point = pointLine;
+    }
+    function pointLine(x, y) {
+      buffer.push("L", x, ",", y);
+    }
+    function lineEnd() {
+      stream.point = point;
+    }
+    function lineEndPolygon() {
+      buffer.push("Z");
+    }
+    return stream;
+  }
+  function d3_geo_pathBufferCircle(radius) {
+    return "m0," + radius + "a" + radius + "," + radius + " 0 1,1 0," + -2 * radius + "a" + radius + "," + radius + " 0 1,1 0," + 2 * radius + "z";
+  }
+  var d3_geo_pathCentroid = {
+    point: d3_geo_pathCentroidPoint,
+    lineStart: d3_geo_pathCentroidLineStart,
+    lineEnd: d3_geo_pathCentroidLineEnd,
+    polygonStart: function() {
+      d3_geo_pathCentroid.lineStart = d3_geo_pathCentroidRingStart;
+    },
+    polygonEnd: function() {
+      d3_geo_pathCentroid.point = d3_geo_pathCentroidPoint;
+      d3_geo_pathCentroid.lineStart = d3_geo_pathCentroidLineStart;
+      d3_geo_pathCentroid.lineEnd = d3_geo_pathCentroidLineEnd;
+    }
+  };
+  function d3_geo_pathCentroidPoint(x, y) {
+    d3_geo_centroidX0 += x;
+    d3_geo_centroidY0 += y;
+    ++d3_geo_centroidZ0;
+  }
+  function d3_geo_pathCentroidLineStart() {
+    var x0, y0;
+    d3_geo_pathCentroid.point = function(x, y) {
+      d3_geo_pathCentroid.point = nextPoint;
+      d3_geo_pathCentroidPoint(x0 = x, y0 = y);
+    };
+    function nextPoint(x, y) {
+      var dx = x - x0, dy = y - y0, z = Math.sqrt(dx * dx + dy * dy);
+      d3_geo_centroidX1 += z * (x0 + x) / 2;
+      d3_geo_centroidY1 += z * (y0 + y) / 2;
+      d3_geo_centroidZ1 += z;
+      d3_geo_pathCentroidPoint(x0 = x, y0 = y);
+    }
+  }
+  function d3_geo_pathCentroidLineEnd() {
+    d3_geo_pathCentroid.point = d3_geo_pathCentroidPoint;
+  }
+  function d3_geo_pathCentroidRingStart() {
+    var x00, y00, x0, y0;
+    d3_geo_pathCentroid.point = function(x, y) {
+      d3_geo_pathCentroid.point = nextPoint;
+      d3_geo_pathCentroidPoint(x00 = x0 = x, y00 = y0 = y);
+    };
+    function nextPoint(x, y) {
+      var dx = x - x0, dy = y - y0, z = Math.sqrt(dx * dx + dy * dy);
+      d3_geo_centroidX1 += z * (x0 + x) / 2;
+      d3_geo_centroidY1 += z * (y0 + y) / 2;
+      d3_geo_centroidZ1 += z;
+      z = y0 * x - x0 * y;
+      d3_geo_centroidX2 += z * (x0 + x);
+      d3_geo_centroidY2 += z * (y0 + y);
+      d3_geo_centroidZ2 += z * 3;
+      d3_geo_pathCentroidPoint(x0 = x, y0 = y);
+    }
+    d3_geo_pathCentroid.lineEnd = function() {
+      nextPoint(x00, y00);
+    };
+  }
+  function d3_geo_pathContext(context) {
+    var pointRadius = 4.5;
+    var stream = {
+      point: point,
+      lineStart: function() {
+        stream.point = pointLineStart;
+      },
+      lineEnd: lineEnd,
+      polygonStart: function() {
+        stream.lineEnd = lineEndPolygon;
+      },
+      polygonEnd: function() {
+        stream.lineEnd = lineEnd;
+        stream.point = point;
+      },
+      pointRadius: function(_) {
+        pointRadius = _;
+        return stream;
+      },
+      result: d3_noop
+    };
+    function point(x, y) {
+      context.moveTo(x + pointRadius, y);
+      context.arc(x, y, pointRadius, 0, τ);
+    }
+    function pointLineStart(x, y) {
+      context.moveTo(x, y);
+      stream.point = pointLine;
+    }
+    function pointLine(x, y) {
+      context.lineTo(x, y);
+    }
+    function lineEnd() {
+      stream.point = point;
+    }
+    function lineEndPolygon() {
+      context.closePath();
+    }
+    return stream;
+  }
+  function d3_geo_resample(project) {
+    var δ2 = .5, cosMinDistance = Math.cos(30 * d3_radians), maxDepth = 16;
+    function resample(stream) {
+      return (maxDepth ? resampleRecursive : resampleNone)(stream);
+    }
+    function resampleNone(stream) {
+      return d3_geo_transformPoint(stream, function(x, y) {
+        x = project(x, y);
+        stream.point(x[0], x[1]);
+      });
+    }
+    function resampleRecursive(stream) {
+      var λ00, φ00, x00, y00, a00, b00, c00, λ0, x0, y0, a0, b0, c0;
+      var resample = {
+        point: point,
+        lineStart: lineStart,
+        lineEnd: lineEnd,
+        polygonStart: function() {
+          stream.polygonStart();
+          resample.lineStart = ringStart;
+        },
+        polygonEnd: function() {
+          stream.polygonEnd();
+          resample.lineStart = lineStart;
+        }
+      };
+      function point(x, y) {
+        x = project(x, y);
+        stream.point(x[0], x[1]);
+      }
+      function lineStart() {
+        x0 = NaN;
+        resample.point = linePoint;
+        stream.lineStart();
+      }
+      function linePoint(λ, φ) {
+        var c = d3_geo_cartesian([ λ, φ ]), p = project(λ, φ);
+        resampleLineTo(x0, y0, λ0, a0, b0, c0, x0 = p[0], y0 = p[1], λ0 = λ, a0 = c[0], b0 = c[1], c0 = c[2], maxDepth, stream);
+        stream.point(x0, y0);
+      }
+      function lineEnd() {
+        resample.point = point;
+        stream.lineEnd();
+      }
+      function ringStart() {
+        lineStart();
+        resample.point = ringPoint;
+        resample.lineEnd = ringEnd;
+      }
+      function ringPoint(λ, φ) {
+        linePoint(λ00 = λ, φ00 = φ), x00 = x0, y00 = y0, a00 = a0, b00 = b0, c00 = c0;
+        resample.point = linePoint;
+      }
+      function ringEnd() {
+        resampleLineTo(x0, y0, λ0, a0, b0, c0, x00, y00, λ00, a00, b00, c00, maxDepth, stream);
+        resample.lineEnd = lineEnd;
+        lineEnd();
+      }
+      return resample;
+    }
+    function resampleLineTo(x0, y0, λ0, a0, b0, c0, x1, y1, λ1, a1, b1, c1, depth, stream) {
+      var dx = x1 - x0, dy = y1 - y0, d2 = dx * dx + dy * dy;
+      if (d2 > 4 * δ2 && depth--) {
+        var a = a0 + a1, b = b0 + b1, c = c0 + c1, m = Math.sqrt(a * a + b * b + c * c), φ2 = Math.asin(c /= m), λ2 = abs(abs(c) - 1) < ε || abs(λ0 - λ1) < ε ? (λ0 + λ1) / 2 : Math.atan2(b, a), p = project(λ2, φ2), x2 = p[0], y2 = p[1], dx2 = x2 - x0, dy2 = y2 - y0, dz = dy * dx2 - dx * dy2;
+        if (dz * dz / d2 > δ2 || abs((dx * dx2 + dy * dy2) / d2 - .5) > .3 || a0 * a1 + b0 * b1 + c0 * c1 < cosMinDistance) {
+          resampleLineTo(x0, y0, λ0, a0, b0, c0, x2, y2, λ2, a /= m, b /= m, c, depth, stream);
+          stream.point(x2, y2);
+          resampleLineTo(x2, y2, λ2, a, b, c, x1, y1, λ1, a1, b1, c1, depth, stream);
+        }
+      }
+    }
+    resample.precision = function(_) {
+      if (!arguments.length) return Math.sqrt(δ2);
+      maxDepth = (δ2 = _ * _) > 0 && 16;
+      return resample;
+    };
+    return resample;
+  }
+  d3.geo.path = function() {
+    var pointRadius = 4.5, projection, context, projectStream, contextStream, cacheStream;
+    function path(object) {
+      if (object) {
+        if (typeof pointRadius === "function") contextStream.pointRadius(+pointRadius.apply(this, arguments));
+        if (!cacheStream || !cacheStream.valid) cacheStream = projectStream(contextStream);
+        d3.geo.stream(object, cacheStream);
+      }
+      return contextStream.result();
+    }
+    path.area = function(object) {
+      d3_geo_pathAreaSum = 0;
+      d3.geo.stream(object, projectStream(d3_geo_pathArea));
+      return d3_geo_pathAreaSum;
+    };
+    path.centroid = function(object) {
+      d3_geo_centroidX0 = d3_geo_centroidY0 = d3_geo_centroidZ0 = d3_geo_centroidX1 = d3_geo_centroidY1 = d3_geo_centroidZ1 = d3_geo_centroidX2 = d3_geo_centroidY2 = d3_geo_centroidZ2 = 0;
+      d3.geo.stream(object, projectStream(d3_geo_pathCentroid));
+      return d3_geo_centroidZ2 ? [ d3_geo_centroidX2 / d3_geo_centroidZ2, d3_geo_centroidY2 / d3_geo_centroidZ2 ] : d3_geo_centroidZ1 ? [ d3_geo_centroidX1 / d3_geo_centroidZ1, d3_geo_centroidY1 / d3_geo_centroidZ1 ] : d3_geo_centroidZ0 ? [ d3_geo_centroidX0 / d3_geo_centroidZ0, d3_geo_centroidY0 / d3_geo_centroidZ0 ] : [ NaN, NaN ];
+    };
+    path.bounds = function(object) {
+      d3_geo_pathBoundsX1 = d3_geo_pathBoundsY1 = -(d3_geo_pathBoundsX0 = d3_geo_pathBoundsY0 = Infinity);
+      d3.geo.stream(object, projectStream(d3_geo_pathBounds));
+      return [ [ d3_geo_pathBoundsX0, d3_geo_pathBoundsY0 ], [ d3_geo_pathBoundsX1, d3_geo_pathBoundsY1 ] ];
+    };
+    path.projection = function(_) {
+      if (!arguments.length) return projection;
+      projectStream = (projection = _) ? _.stream || d3_geo_pathProjectStream(_) : d3_identity;
+      return reset();
+    };
+    path.context = function(_) {
+      if (!arguments.length) return context;
+      contextStream = (context = _) == null ? new d3_geo_pathBuffer() : new d3_geo_pathContext(_);
+      if (typeof pointRadius !== "function") contextStream.pointRadius(pointRadius);
+      return reset();
+    };
+    path.pointRadius = function(_) {
+      if (!arguments.length) return pointRadius;
+      pointRadius = typeof _ === "function" ? _ : (contextStream.pointRadius(+_), +_);
+      return path;
+    };
+    function reset() {
+      cacheStream = null;
+      return path;
+    }
+    return path.projection(d3.geo.albersUsa()).context(null);
+  };
+  function d3_geo_pathProjectStream(project) {
+    var resample = d3_geo_resample(function(x, y) {
+      return project([ x * d3_degrees, y * d3_degrees ]);
+    });
+    return function(stream) {
+      return d3_geo_projectionRadians(resample(stream));
+    };
+  }
+  d3.geo.transform = function(methods) {
+    return {
+      stream: function(stream) {
+        var transform = new d3_geo_transform(stream);
+        for (var k in methods) transform[k] = methods[k];
+        return transform;
+      }
+    };
+  };
+  function d3_geo_transform(stream) {
+    this.stream = stream;
+  }
+  d3_geo_transform.prototype = {
+    point: function(x, y) {
+      this.stream.point(x, y);
+    },
+    sphere: function() {
+      this.stream.sphere();
+    },
+    lineStart: function() {
+      this.stream.lineStart();
+    },
+    lineEnd: function() {
+      this.stream.lineEnd();
+    },
+    polygonStart: function() {
+      this.stream.polygonStart();
+    },
+    polygonEnd: function() {
+      this.stream.polygonEnd();
+    }
+  };
+  function d3_geo_transformPoint(stream, point) {
+    return {
+      point: point,
+      sphere: function() {
+        stream.sphere();
+      },
+      lineStart: function() {
+        stream.lineStart();
+      },
+      lineEnd: function() {
+        stream.lineEnd();
+      },
+      polygonStart: function() {
+        stream.polygonStart();
+      },
+      polygonEnd: function() {
+        stream.polygonEnd();
+      }
+    };
+  }
+  d3.geo.projection = d3_geo_projection;
+  d3.geo.projectionMutator = d3_geo_projectionMutator;
+  function d3_geo_projection(project) {
+    return d3_geo_projectionMutator(function() {
+      return project;
+    })();
+  }
+  function d3_geo_projectionMutator(projectAt) {
+    var project, rotate, projectRotate, projectResample = d3_geo_resample(function(x, y) {
+      x = project(x, y);
+      return [ x[0] * k + δx, δy - x[1] * k ];
+    }), k = 150, x = 480, y = 250, λ = 0, φ = 0, δλ = 0, δφ = 0, δγ = 0, δx, δy, preclip = d3_geo_clipAntimeridian, postclip = d3_identity, clipAngle = null, clipExtent = null, stream;
+    function projection(point) {
+      point = projectRotate(point[0] * d3_radians, point[1] * d3_radians);
+      return [ point[0] * k + δx, δy - point[1] * k ];
+    }
+    function invert(point) {
+      point = projectRotate.invert((point[0] - δx) / k, (δy - point[1]) / k);
+      return point && [ point[0] * d3_degrees, point[1] * d3_degrees ];
+    }
+    projection.stream = function(output) {
+      if (stream) stream.valid = false;
+      stream = d3_geo_projectionRadians(preclip(rotate, projectResample(postclip(output))));
+      stream.valid = true;
+      return stream;
+    };
+    projection.clipAngle = function(_) {
+      if (!arguments.length) return clipAngle;
+      preclip = _ == null ? (clipAngle = _, d3_geo_clipAntimeridian) : d3_geo_clipCircle((clipAngle = +_) * d3_radians);
+      return invalidate();
+    };
+    projection.clipExtent = function(_) {
+      if (!arguments.length) return clipExtent;
+      clipExtent = _;
+      postclip = _ ? d3_geo_clipExtent(_[0][0], _[0][1], _[1][0], _[1][1]) : d3_identity;
+      return invalidate();
+    };
+    projection.scale = function(_) {
+      if (!arguments.length) return k;
+      k = +_;
+      return reset();
+    };
+    projection.translate = function(_) {
+      if (!arguments.length) return [ x, y ];
+      x = +_[0];
+      y = +_[1];
+      return reset();
+    };
+    projection.center = function(_) {
+      if (!arguments.length) return [ λ * d3_degrees, φ * d3_degrees ];
+      λ = _[0] % 360 * d3_radians;
+      φ = _[1] % 360 * d3_radians;
+      return reset();
+    };
+    projection.rotate = function(_) {
+      if (!arguments.length) return [ δλ * d3_degrees, δφ * d3_degrees, δγ * d3_degrees ];
+      δλ = _[0] % 360 * d3_radians;
+      δφ = _[1] % 360 * d3_radians;
+      δγ = _.length > 2 ? _[2] % 360 * d3_radians : 0;
+      return reset();
+    };
+    d3.rebind(projection, projectResample, "precision");
+    function reset() {
+      projectRotate = d3_geo_compose(rotate = d3_geo_rotation(δλ, δφ, δγ), project);
+      var center = project(λ, φ);
+      δx = x - center[0] * k;
+      δy = y + center[1] * k;
+      return invalidate();
+    }
+    function invalidate() {
+      if (stream) stream.valid = false, stream = null;
+      return projection;
+    }
+    return function() {
+      project = projectAt.apply(this, arguments);
+      projection.invert = project.invert && invert;
+      return reset();
+    };
+  }
+  function d3_geo_projectionRadians(stream) {
+    return d3_geo_transformPoint(stream, function(x, y) {
+      stream.point(x * d3_radians, y * d3_radians);
+    });
+  }
+  function d3_geo_equirectangular(λ, φ) {
+    return [ λ, φ ];
+  }
+  (d3.geo.equirectangular = function() {
+    return d3_geo_projection(d3_geo_equirectangular);
+  }).raw = d3_geo_equirectangular.invert = d3_geo_equirectangular;
+  d3.geo.rotation = function(rotate) {
+    rotate = d3_geo_rotation(rotate[0] % 360 * d3_radians, rotate[1] * d3_radians, rotate.length > 2 ? rotate[2] * d3_radians : 0);
+    function forward(coordinates) {
+      coordinates = rotate(coordinates[0] * d3_radians, coordinates[1] * d3_radians);
+      return coordinates[0] *= d3_degrees, coordinates[1] *= d3_degrees, coordinates;
+    }
+    forward.invert = function(coordinates) {
+      coordinates = rotate.invert(coordinates[0] * d3_radians, coordinates[1] * d3_radians);
+      return coordinates[0] *= d3_degrees, coordinates[1] *= d3_degrees, coordinates;
+    };
+    return forward;
+  };
+  function d3_geo_identityRotation(λ, φ) {
+    return [ λ > π ? λ - τ : λ < -π ? λ + τ : λ, φ ];
+  }
+  d3_geo_identityRotation.invert = d3_geo_equirectangular;
+  function d3_geo_rotation(δλ, δφ, δγ) {
+    return δλ ? δφ || δγ ? d3_geo_compose(d3_geo_rotationλ(δλ), d3_geo_rotationφγ(δφ, δγ)) : d3_geo_rotationλ(δλ) : δφ || δγ ? d3_geo_rotationφγ(δφ, δγ) : d3_geo_identityRotation;
+  }
+  function d3_geo_forwardRotationλ(δλ) {
+    return function(λ, φ) {
+      return λ += δλ, [ λ > π ? λ - τ : λ < -π ? λ + τ : λ, φ ];
+    };
+  }
+  function d3_geo_rotationλ(δλ) {
+    var rotation = d3_geo_forwardRotationλ(δλ);
+    rotation.invert = d3_geo_forwardRotationλ(-δλ);
+    return rotation;
+  }
+  function d3_geo_rotationφγ(δφ, δγ) {
+    var cosδφ = Math.cos(δφ), sinδφ = Math.sin(δφ), cosδγ = Math.cos(δγ), sinδγ = Math.sin(δγ);
+    function rotation(λ, φ) {
+      var cosφ = Math.cos(φ), x = Math.cos(λ) * cosφ, y = Math.sin(λ) * cosφ, z = Math.sin(φ), k = z * cosδφ + x * sinδφ;
+      return [ Math.atan2(y * cosδγ - k * sinδγ, x * cosδφ - z * sinδφ), d3_asin(k * cosδγ + y * sinδγ) ];
+    }
+    rotation.invert = function(λ, φ) {
+      var cosφ = Math.cos(φ), x = Math.cos(λ) * cosφ, y = Math.sin(λ) * cosφ, z = Math.sin(φ), k = z * cosδγ - y * sinδγ;
+      return [ Math.atan2(y * cosδγ + z * sinδγ, x * cosδφ + k * sinδφ), d3_asin(k * cosδφ - x * sinδφ) ];
+    };
+    return rotation;
+  }
+  d3.geo.circle = function() {
+    var origin = [ 0, 0 ], angle, precision = 6, interpolate;
+    function circle() {
+      var center = typeof origin === "function" ? origin.apply(this, arguments) : origin, rotate = d3_geo_rotation(-center[0] * d3_radians, -center[1] * d3_radians, 0).invert, ring = [];
+      interpolate(null, null, 1, {
+        point: function(x, y) {
+          ring.push(x = rotate(x, y));
+          x[0] *= d3_degrees, x[1] *= d3_degrees;
+        }
+      });
+      return {
+        type: "Polygon",
+        coordinates: [ ring ]
+      };
+    }
+    circle.origin = function(x) {
+      if (!arguments.length) return origin;
+      origin = x;
+      return circle;
+    };
+    circle.angle = function(x) {
+      if (!arguments.length) return angle;
+      interpolate = d3_geo_circleInterpolate((angle = +x) * d3_radians, precision * d3_radians);
+      return circle;
+    };
+    circle.precision = function(_) {
+      if (!arguments.length) return precision;
+      interpolate = d3_geo_circleInterpolate(angle * d3_radians, (precision = +_) * d3_radians);
+      return circle;
+    };
+    return circle.angle(90);
+  };
+  function d3_geo_circleInterpolate(radius, precision) {
+    var cr = Math.cos(radius), sr = Math.sin(radius);
+    return function(from, to, direction, listener) {
+      var step = direction * precision;
+      if (from != null) {
+        from = d3_geo_circleAngle(cr, from);
+        to = d3_geo_circleAngle(cr, to);
+        if (direction > 0 ? from < to : from > to) from += direction * τ;
+      } else {
+        from = radius + direction * τ;
+        to = radius - .5 * step;
+      }
+      for (var point, t = from; direction > 0 ? t > to : t < to; t -= step) {
+        listener.point((point = d3_geo_spherical([ cr, -sr * Math.cos(t), -sr * Math.sin(t) ]))[0], point[1]);
+      }
+    };
+  }
+  function d3_geo_circleAngle(cr, point) {
+    var a = d3_geo_cartesian(point);
+    a[0] -= cr;
+    d3_geo_cartesianNormalize(a);
+    var angle = d3_acos(-a[1]);
+    return ((-a[2] < 0 ? -angle : angle) + 2 * Math.PI - ε) % (2 * Math.PI);
+  }
+  d3.geo.distance = function(a, b) {
+    var Δλ = (b[0] - a[0]) * d3_radians, φ0 = a[1] * d3_radians, φ1 = b[1] * d3_radians, sinΔλ = Math.sin(Δλ), cosΔλ = Math.cos(Δλ), sinφ0 = Math.sin(φ0), cosφ0 = Math.cos(φ0), sinφ1 = Math.sin(φ1), cosφ1 = Math.cos(φ1), t;
+    return Math.atan2(Math.sqrt((t = cosφ1 * sinΔλ) * t + (t = cosφ0 * sinφ1 - sinφ0 * cosφ1 * cosΔλ) * t), sinφ0 * sinφ1 + cosφ0 * cosφ1 * cosΔλ);
+  };
+  d3.geo.graticule = function() {
+    var x1, x0, X1, X0, y1, y0, Y1, Y0, dx = 10, dy = dx, DX = 90, DY = 360, x, y, X, Y, precision = 2.5;
+    function graticule() {
+      return {
+        type: "MultiLineString",
+        coordinates: lines()
+      };
+    }
+    function lines() {
+      return d3.range(Math.ceil(X0 / DX) * DX, X1, DX).map(X).concat(d3.range(Math.ceil(Y0 / DY) * DY, Y1, DY).map(Y)).concat(d3.range(Math.ceil(x0 / dx) * dx, x1, dx).filter(function(x) {
+        return abs(x % DX) > ε;
+      }).map(x)).concat(d3.range(Math.ceil(y0 / dy) * dy, y1, dy).filter(function(y) {
+        return abs(y % DY) > ε;
+      }).map(y));
+    }
+    graticule.lines = function() {
+      return lines().map(function(coordinates) {
+        return {
+          type: "LineString",
+          coordinates: coordinates
+        };
+      });
+    };
+    graticule.outline = function() {
+      return {
+        type: "Polygon",
+        coordinates: [ X(X0).concat(Y(Y1).slice(1), X(X1).reverse().slice(1), Y(Y0).reverse().slice(1)) ]
+      };
+    };
+    graticule.extent = function(_) {
+      if (!arguments.length) return graticule.minorExtent();
+      return graticule.majorExtent(_).minorExtent(_);
+    };
+    graticule.majorExtent = function(_) {
+      if (!arguments.length) return [ [ X0, Y0 ], [ X1, Y1 ] ];
+      X0 = +_[0][0], X1 = +_[1][0];
+      Y0 = +_[0][1], Y1 = +_[1][1];
+      if (X0 > X1) _ = X0, X0 = X1, X1 = _;
+      if (Y0 > Y1) _ = Y0, Y0 = Y1, Y1 = _;
+      return graticule.precision(precision);
+    };
+    graticule.minorExtent = function(_) {
+      if (!arguments.length) return [ [ x0, y0 ], [ x1, y1 ] ];
+      x0 = +_[0][0], x1 = +_[1][0];
+      y0 = +_[0][1], y1 = +_[1][1];
+      if (x0 > x1) _ = x0, x0 = x1, x1 = _;
+      if (y0 > y1) _ = y0, y0 = y1, y1 = _;
+      return graticule.precision(precision);
+    };
+    graticule.step = function(_) {
+      if (!arguments.length) return graticule.minorStep();
+      return graticule.majorStep(_).minorStep(_);
+    };
+    graticule.majorStep = function(_) {
+      if (!arguments.length) return [ DX, DY ];
+      DX = +_[0], DY = +_[1];
+      return graticule;
+    };
+    graticule.minorStep = function(_) {
+      if (!arguments.length) return [ dx, dy ];
+      dx = +_[0], dy = +_[1];
+      return graticule;
+    };
+    graticule.precision = function(_) {
+      if (!arguments.length) return precision;
+      precision = +_;
+      x = d3_geo_graticuleX(y0, y1, 90);
+      y = d3_geo_graticuleY(x0, x1, precision);
+      X = d3_geo_graticuleX(Y0, Y1, 90);
+      Y = d3_geo_graticuleY(X0, X1, precision);
+      return graticule;
+    };
+    return graticule.majorExtent([ [ -180, -90 + ε ], [ 180, 90 - ε ] ]).minorExtent([ [ -180, -80 - ε ], [ 180, 80 + ε ] ]);
+  };
+  function d3_geo_graticuleX(y0, y1, dy) {
+    var y = d3.range(y0, y1 - ε, dy).concat(y1);
+    return function(x) {
+      return y.map(function(y) {
+        return [ x, y ];
+      });
+    };
+  }
+  function d3_geo_graticuleY(x0, x1, dx) {
+    var x = d3.range(x0, x1 - ε, dx).concat(x1);
+    return function(y) {
+      return x.map(function(x) {
+        return [ x, y ];
+      });
+    };
+  }
+  function d3_source(d) {
+    return d.source;
+  }
+  function d3_target(d) {
+    return d.target;
+  }
+  d3.geo.greatArc = function() {
+    var source = d3_source, source_, target = d3_target, target_;
+    function greatArc() {
+      return {
+        type: "LineString",
+        coordinates: [ source_ || source.apply(this, arguments), target_ || target.apply(this, arguments) ]
+      };
+    }
+    greatArc.distance = function() {
+      return d3.geo.distance(source_ || source.apply(this, arguments), target_ || target.apply(this, arguments));
+    };
+    greatArc.source = function(_) {
+      if (!arguments.length) return source;
+      source = _, source_ = typeof _ === "function" ? null : _;
+      return greatArc;
+    };
+    greatArc.target = function(_) {
+      if (!arguments.length) return target;
+      target = _, target_ = typeof _ === "function" ? null : _;
+      return greatArc;
+    };
+    greatArc.precision = function() {
+      return arguments.length ? greatArc : 0;
+    };
+    return greatArc;
+  };
+  d3.geo.interpolate = function(source, target) {
+    return d3_geo_interpolate(source[0] * d3_radians, source[1] * d3_radians, target[0] * d3_radians, target[1] * d3_radians);
+  };
+  function d3_geo_interpolate(x0, y0, x1, y1) {
+    var cy0 = Math.cos(y0), sy0 = Math.sin(y0), cy1 = Math.cos(y1), sy1 = Math.sin(y1), kx0 = cy0 * Math.cos(x0), ky0 = cy0 * Math.sin(x0), kx1 = cy1 * Math.cos(x1), ky1 = cy1 * Math.sin(x1), d = 2 * Math.asin(Math.sqrt(d3_haversin(y1 - y0) + cy0 * cy1 * d3_haversin(x1 - x0))), k = 1 / Math.sin(d);
+    var interpolate = d ? function(t) {
+      var B = Math.sin(t *= d) * k, A = Math.sin(d - t) * k, x = A * kx0 + B * kx1, y = A * ky0 + B * ky1, z = A * sy0 + B * sy1;
+      return [ Math.atan2(y, x) * d3_degrees, Math.atan2(z, Math.sqrt(x * x + y * y)) * d3_degrees ];
+    } : function() {
+      return [ x0 * d3_degrees, y0 * d3_degrees ];
+    };
+    interpolate.distance = d;
+    return interpolate;
+  }
+  d3.geo.length = function(object) {
+    d3_geo_lengthSum = 0;
+    d3.geo.stream(object, d3_geo_length);
+    return d3_geo_lengthSum;
+  };
+  var d3_geo_lengthSum;
+  var d3_geo_length = {
+    sphere: d3_noop,
+    point: d3_noop,
+    lineStart: d3_geo_lengthLineStart,
+    lineEnd: d3_noop,
+    polygonStart: d3_noop,
+    polygonEnd: d3_noop
+  };
+  function d3_geo_lengthLineStart() {
+    var λ0, sinφ0, cosφ0;
+    d3_geo_length.point = function(λ, φ) {
+      λ0 = λ * d3_radians, sinφ0 = Math.sin(φ *= d3_radians), cosφ0 = Math.cos(φ);
+      d3_geo_length.point = nextPoint;
+    };
+    d3_geo_length.lineEnd = function() {
+      d3_geo_length.point = d3_geo_length.lineEnd = d3_noop;
+    };
+    function nextPoint(λ, φ) {
+      var sinφ = Math.sin(φ *= d3_radians), cosφ = Math.cos(φ), t = abs((λ *= d3_radians) - λ0), cosΔλ = Math.cos(t);
+      d3_geo_lengthSum += Math.atan2(Math.sqrt((t = cosφ * Math.sin(t)) * t + (t = cosφ0 * sinφ - sinφ0 * cosφ * cosΔλ) * t), sinφ0 * sinφ + cosφ0 * cosφ * cosΔλ);
+      λ0 = λ, sinφ0 = sinφ, cosφ0 = cosφ;
+    }
+  }
+  function d3_geo_azimuthal(scale, angle) {
+    function azimuthal(λ, φ) {
+      var cosλ = Math.cos(λ), cosφ = Math.cos(φ), k = scale(cosλ * cosφ);
+      return [ k * cosφ * Math.sin(λ), k * Math.sin(φ) ];
+    }
+    azimuthal.invert = function(x, y) {
+      var ρ = Math.sqrt(x * x + y * y), c = angle(ρ), sinc = Math.sin(c), cosc = Math.cos(c);
+      return [ Math.atan2(x * sinc, ρ * cosc), Math.asin(ρ && y * sinc / ρ) ];
+    };
+    return azimuthal;
+  }
+  var d3_geo_azimuthalEqualArea = d3_geo_azimuthal(function(cosλcosφ) {
+    return Math.sqrt(2 / (1 + cosλcosφ));
+  }, function(ρ) {
+    return 2 * Math.asin(ρ / 2);
+  });
+  (d3.geo.azimuthalEqualArea = function() {
+    return d3_geo_projection(d3_geo_azimuthalEqualArea);
+  }).raw = d3_geo_azimuthalEqualArea;
+  var d3_geo_azimuthalEquidistant = d3_geo_azimuthal(function(cosλcosφ) {
+    var c = Math.acos(cosλcosφ);
+    return c && c / Math.sin(c);
+  }, d3_identity);
+  (d3.geo.azimuthalEquidistant = function() {
+    return d3_geo_projection(d3_geo_azimuthalEquidistant);
+  }).raw = d3_geo_azimuthalEquidistant;
+  function d3_geo_conicConformal(φ0, φ1) {
+    var cosφ0 = Math.cos(φ0), t = function(φ) {
+      return Math.tan(π / 4 + φ / 2);
+    }, n = φ0 === φ1 ? Math.sin(φ0) : Math.log(cosφ0 / Math.cos(φ1)) / Math.log(t(φ1) / t(φ0)), F = cosφ0 * Math.pow(t(φ0), n) / n;
+    if (!n) return d3_geo_mercator;
+    function forward(λ, φ) {
+      if (F > 0) {
+        if (φ < -halfπ + ε) φ = -halfπ + ε;
+      } else {
+        if (φ > halfπ - ε) φ = halfπ - ε;
+      }
+      var ρ = F / Math.pow(t(φ), n);
+      return [ ρ * Math.sin(n * λ), F - ρ * Math.cos(n * λ) ];
+    }
+    forward.invert = function(x, y) {
+      var ρ0_y = F - y, ρ = d3_sgn(n) * Math.sqrt(x * x + ρ0_y * ρ0_y);
+      return [ Math.atan2(x, ρ0_y) / n, 2 * Math.atan(Math.pow(F / ρ, 1 / n)) - halfπ ];
+    };
+    return forward;
+  }
+  (d3.geo.conicConformal = function() {
+    return d3_geo_conic(d3_geo_conicConformal);
+  }).raw = d3_geo_conicConformal;
+  function d3_geo_conicEquidistant(φ0, φ1) {
+    var cosφ0 = Math.cos(φ0), n = φ0 === φ1 ? Math.sin(φ0) : (cosφ0 - Math.cos(φ1)) / (φ1 - φ0), G = cosφ0 / n + φ0;
+    if (abs(n) < ε) return d3_geo_equirectangular;
+    function forward(λ, φ) {
+      var ρ = G - φ;
+      return [ ρ * Math.sin(n * λ), G - ρ * Math.cos(n * λ) ];
+    }
+    forward.invert = function(x, y) {
+      var ρ0_y = G - y;
+      return [ Math.atan2(x, ρ0_y) / n, G - d3_sgn(n) * Math.sqrt(x * x + ρ0_y * ρ0_y) ];
+    };
+    return forward;
+  }
+  (d3.geo.conicEquidistant = function() {
+    return d3_geo_conic(d3_geo_conicEquidistant);
+  }).raw = d3_geo_conicEquidistant;
+  var d3_geo_gnomonic = d3_geo_azimuthal(function(cosλcosφ) {
+    return 1 / cosλcosφ;
+  }, Math.atan);
+  (d3.geo.gnomonic = function() {
+    return d3_geo_projection(d3_geo_gnomonic);
+  }).raw = d3_geo_gnomonic;
+  function d3_geo_mercator(λ, φ) {
+    return [ λ, Math.log(Math.tan(π / 4 + φ / 2)) ];
+  }
+  d3_geo_mercator.invert = function(x, y) {
+    return [ x, 2 * Math.atan(Math.exp(y)) - halfπ ];
+  };
+  function d3_geo_mercatorProjection(project) {
+    var m = d3_geo_projection(project), scale = m.scale, translate = m.translate, clipExtent = m.clipExtent, clipAuto;
+    m.scale = function() {
+      var v = scale.apply(m, arguments);
+      return v === m ? clipAuto ? m.clipExtent(null) : m : v;
+    };
+    m.translate = function() {
+      var v = translate.apply(m, arguments);
+      return v === m ? clipAuto ? m.clipExtent(null) : m : v;
+    };
+    m.clipExtent = function(_) {
+      var v = clipExtent.apply(m, arguments);
+      if (v === m) {
+        if (clipAuto = _ == null) {
+          var k = π * scale(), t = translate();
+          clipExtent([ [ t[0] - k, t[1] - k ], [ t[0] + k, t[1] + k ] ]);
+        }
+      } else if (clipAuto) {
+        v = null;
+      }
+      return v;
+    };
+    return m.clipExtent(null);
+  }
+  (d3.geo.mercator = function() {
+    return d3_geo_mercatorProjection(d3_geo_mercator);
+  }).raw = d3_geo_mercator;
+  var d3_geo_orthographic = d3_geo_azimuthal(function() {
+    return 1;
+  }, Math.asin);
+  (d3.geo.orthographic = function() {
+    return d3_geo_projection(d3_geo_orthographic);
+  }).raw = d3_geo_orthographic;
+  var d3_geo_stereographic = d3_geo_azimuthal(function(cosλcosφ) {
+    return 1 / (1 + cosλcosφ);
+  }, function(ρ) {
+    return 2 * Math.atan(ρ);
+  });
+  (d3.geo.stereographic = function() {
+    return d3_geo_projection(d3_geo_stereographic);
+  }).raw = d3_geo_stereographic;
+  function d3_geo_transverseMercator(λ, φ) {
+    return [ Math.log(Math.tan(π / 4 + φ / 2)), -λ ];
+  }
+  d3_geo_transverseMercator.invert = function(x, y) {
+    return [ -y, 2 * Math.atan(Math.exp(x)) - halfπ ];
+  };
+  (d3.geo.transverseMercator = function() {
+    var projection = d3_geo_mercatorProjection(d3_geo_transverseMercator), center = projection.center, rotate = projection.rotate;
+    projection.center = function(_) {
+      return _ ? center([ -_[1], _[0] ]) : (_ = center(), [ _[1], -_[0] ]);
+    };
+    projection.rotate = function(_) {
+      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(), 
+      [ _[0], _[1], _[2] - 90 ]);
+    };
+    return rotate([ 0, 0, 90 ]);
+  }).raw = d3_geo_transverseMercator;
+  d3.geom = {};
+  function d3_geom_pointX(d) {
+    return d[0];
+  }
+  function d3_geom_pointY(d) {
+    return d[1];
+  }
+  d3.geom.hull = function(vertices) {
+    var x = d3_geom_pointX, y = d3_geom_pointY;
+    if (arguments.length) return hull(vertices);
+    function hull(data) {
+      if (data.length < 3) return [];
+      var fx = d3_functor(x), fy = d3_functor(y), i, n = data.length, points = [], flippedPoints = [];
+      for (i = 0; i < n; i++) {
+        points.push([ +fx.call(this, data[i], i), +fy.call(this, data[i], i), i ]);
+      }
+      points.sort(d3_geom_hullOrder);
+      for (i = 0; i < n; i++) flippedPoints.push([ points[i][0], -points[i][1] ]);
+      var upper = d3_geom_hullUpper(points), lower = d3_geom_hullUpper(flippedPoints);
+      var skipLeft = lower[0] === upper[0], skipRight = lower[lower.length - 1] === upper[upper.length - 1], polygon = [];
+      for (i = upper.length - 1; i >= 0; --i) polygon.push(data[points[upper[i]][2]]);
+      for (i = +skipLeft; i < lower.length - skipRight; ++i) polygon.push(data[points[lower[i]][2]]);
+      return polygon;
+    }
+    hull.x = function(_) {
+      return arguments.length ? (x = _, hull) : x;
+    };
+    hull.y = function(_) {
+      return arguments.length ? (y = _, hull) : y;
+    };
+    return hull;
+  };
+  function d3_geom_hullUpper(points) {
+    var n = points.length, hull = [ 0, 1 ], hs = 2;
+    for (var i = 2; i < n; i++) {
+      while (hs > 1 && d3_cross2d(points[hull[hs - 2]], points[hull[hs - 1]], points[i]) <= 0) --hs;
+      hull[hs++] = i;
+    }
+    return hull.slice(0, hs);
+  }
+  function d3_geom_hullOrder(a, b) {
+    return a[0] - b[0] || a[1] - b[1];
+  }
+  d3.geom.polygon = function(coordinates) {
+    d3_subclass(coordinates, d3_geom_polygonPrototype);
+    return coordinates;
+  };
+  var d3_geom_polygonPrototype = d3.geom.polygon.prototype = [];
+  d3_geom_polygonPrototype.area = function() {
+    var i = -1, n = this.length, a, b = this[n - 1], area = 0;
+    while (++i < n) {
+      a = b;
+      b = this[i];
+      area += a[1] * b[0] - a[0] * b[1];
+    }
+    return area * .5;
+  };
+  d3_geom_polygonPrototype.centroid = function(k) {
+    var i = -1, n = this.length, x = 0, y = 0, a, b = this[n - 1], c;
+    if (!arguments.length) k = -1 / (6 * this.area());
+    while (++i < n) {
+      a = b;
+      b = this[i];
+      c = a[0] * b[1] - b[0] * a[1];
+      x += (a[0] + b[0]) * c;
+      y += (a[1] + b[1]) * c;
+    }
+    return [ x * k, y * k ];
+  };
+  d3_geom_polygonPrototype.clip = function(subject) {
+    var input, closed = d3_geom_polygonClosed(subject), i = -1, n = this.length - d3_geom_polygonClosed(this), j, m, a = this[n - 1], b, c, d;
+    while (++i < n) {
+      input = subject.slice();
+      subject.length = 0;
+      b = this[i];
+      c = input[(m = input.length - closed) - 1];
+      j = -1;
+      while (++j < m) {
+        d = input[j];
+        if (d3_geom_polygonInside(d, a, b)) {
+          if (!d3_geom_polygonInside(c, a, b)) {
+            subject.push(d3_geom_polygonIntersect(c, d, a, b));
+          }
+          subject.push(d);
+        } else if (d3_geom_polygonInside(c, a, b)) {
+          subject.push(d3_geom_polygonIntersect(c, d, a, b));
+        }
+        c = d;
+      }
+      if (closed) subject.push(subject[0]);
+      a = b;
+    }
+    return subject;
+  };
+  function d3_geom_polygonInside(p, a, b) {
+    return (b[0] - a[0]) * (p[1] - a[1]) < (b[1] - a[1]) * (p[0] - a[0]);
+  }
+  function d3_geom_polygonIntersect(c, d, a, b) {
+    var x1 = c[0], x3 = a[0], x21 = d[0] - x1, x43 = b[0] - x3, y1 = c[1], y3 = a[1], y21 = d[1] - y1, y43 = b[1] - y3, ua = (x43 * (y1 - y3) - y43 * (x1 - x3)) / (y43 * x21 - x43 * y21);
+    return [ x1 + ua * x21, y1 + ua * y21 ];
+  }
+  function d3_geom_polygonClosed(coordinates) {
+    var a = coordinates[0], b = coordinates[coordinates.length - 1];
+    return !(a[0] - b[0] || a[1] - b[1]);
+  }
+  var d3_geom_voronoiEdges, d3_geom_voronoiCells, d3_geom_voronoiBeaches, d3_geom_voronoiBeachPool = [], d3_geom_voronoiFirstCircle, d3_geom_voronoiCircles, d3_geom_voronoiCirclePool = [];
+  function d3_geom_voronoiBeach() {
+    d3_geom_voronoiRedBlackNode(this);
+    this.edge = this.site = this.circle = null;
+  }
+  function d3_geom_voronoiCreateBeach(site) {
+    var beach = d3_geom_voronoiBeachPool.pop() || new d3_geom_voronoiBeach();
+    beach.site = site;
+    return beach;
+  }
+  function d3_geom_voronoiDetachBeach(beach) {
+    d3_geom_voronoiDetachCircle(beach);
+    d3_geom_voronoiBeaches.remove(beach);
+    d3_geom_voronoiBeachPool.push(beach);
+    d3_geom_voronoiRedBlackNode(beach);
+  }
+  function d3_geom_voronoiRemoveBeach(beach) {
+    var circle = beach.circle, x = circle.x, y = circle.cy, vertex = {
+      x: x,
+      y: y
+    }, previous = beach.P, next = beach.N, disappearing = [ beach ];
+    d3_geom_voronoiDetachBeach(beach);
+    var lArc = previous;
+    while (lArc.circle && abs(x - lArc.circle.x) < ε && abs(y - lArc.circle.cy) < ε) {
+      previous = lArc.P;
+      disappearing.unshift(lArc);
+      d3_geom_voronoiDetachBeach(lArc);
+      lArc = previous;
+    }
+    disappearing.unshift(lArc);
+    d3_geom_voronoiDetachCircle(lArc);
+    var rArc = next;
+    while (rArc.circle && abs(x - rArc.circle.x) < ε && abs(y - rArc.circle.cy) < ε) {
+      next = rArc.N;
+      disappearing.push(rArc);
+      d3_geom_voronoiDetachBeach(rArc);
+      rArc = next;
+    }
+    disappearing.push(rArc);
+    d3_geom_voronoiDetachCircle(rArc);
+    var nArcs = disappearing.length, iArc;
+    for (iArc = 1; iArc < nArcs; ++iArc) {
+      rArc = disappearing[iArc];
+      lArc = disappearing[iArc - 1];
+      d3_geom_voronoiSetEdgeEnd(rArc.edge, lArc.site, rArc.site, vertex);
+    }
+    lArc = disappearing[0];
+    rArc = disappearing[nArcs - 1];
+    rArc.edge = d3_geom_voronoiCreateEdge(lArc.site, rArc.site, null, vertex);
+    d3_geom_voronoiAttachCircle(lArc);
+    d3_geom_voronoiAttachCircle(rArc);
+  }
+  function d3_geom_voronoiAddBeach(site) {
+    var x = site.x, directrix = site.y, lArc, rArc, dxl, dxr, node = d3_geom_voronoiBeaches._;
+    while (node) {
+      dxl = d3_geom_voronoiLeftBreakPoint(node, directrix) - x;
+      if (dxl > ε) node = node.L; else {
+        dxr = x - d3_geom_voronoiRightBreakPoint(node, directrix);
+        if (dxr > ε) {
+          if (!node.R) {
+            lArc = node;
+            break;
+          }
+          node = node.R;
+        } else {
+          if (dxl > -ε) {
+            lArc = node.P;
+            rArc = node;
+          } else if (dxr > -ε) {
+            lArc = node;
+            rArc = node.N;
+          } else {
+            lArc = rArc = node;
+          }
+          break;
+        }
+      }
+    }
+    var newArc = d3_geom_voronoiCreateBeach(site);
+    d3_geom_voronoiBeaches.insert(lArc, newArc);
+    if (!lArc && !rArc) return;
+    if (lArc === rArc) {
+      d3_geom_voronoiDetachCircle(lArc);
+      rArc = d3_geom_voronoiCreateBeach(lArc.site);
+      d3_geom_voronoiBeaches.insert(newArc, rArc);
+      newArc.edge = rArc.edge = d3_geom_voronoiCreateEdge(lArc.site, newArc.site);
+      d3_geom_voronoiAttachCircle(lArc);
+      d3_geom_voronoiAttachCircle(rArc);
+      return;
+    }
+    if (!rArc) {
+      newArc.edge = d3_geom_voronoiCreateEdge(lArc.site, newArc.site);
+      return;
+    }
+    d3_geom_voronoiDetachCircle(lArc);
+    d3_geom_voronoiDetachCircle(rArc);
+    var lSite = lArc.site, ax = lSite.x, ay = lSite.y, bx = site.x - ax, by = site.y - ay, rSite = rArc.site, cx = rSite.x - ax, cy = rSite.y - ay, d = 2 * (bx * cy - by * cx), hb = bx * bx + by * by, hc = cx * cx + cy * cy, vertex = {
+      x: (cy * hb - by * hc) / d + ax,
+      y: (bx * hc - cx * hb) / d + ay
+    };
+    d3_geom_voronoiSetEdgeEnd(rArc.edge, lSite, rSite, vertex);
+    newArc.edge = d3_geom_voronoiCreateEdge(lSite, site, null, vertex);
+    rArc.edge = d3_geom_voronoiCreateEdge(site, rSite, null, vertex);
+    d3_geom_voronoiAttachCircle(lArc);
+    d3_geom_voronoiAttachCircle(rArc);
+  }
+  function d3_geom_voronoiLeftBreakPoint(arc, directrix) {
+    var site = arc.site, rfocx = site.x, rfocy = site.y, pby2 = rfocy - directrix;
+    if (!pby2) return rfocx;
+    var lArc = arc.P;
+    if (!lArc) return -Infinity;
+    site = lArc.site;
+    var lfocx = site.x, lfocy = site.y, plby2 = lfocy - directrix;
+    if (!plby2) return lfocx;
+    var hl = lfocx - rfocx, aby2 = 1 / pby2 - 1 / plby2, b = hl / plby2;
+    if (aby2) return (-b + Math.sqrt(b * b - 2 * aby2 * (hl * hl / (-2 * plby2) - lfocy + plby2 / 2 + rfocy - pby2 / 2))) / aby2 + rfocx;
+    return (rfocx + lfocx) / 2;
+  }
+  function d3_geom_voronoiRightBreakPoint(arc, directrix) {
+    var rArc = arc.N;
+    if (rArc) return d3_geom_voronoiLeftBreakPoint(rArc, directrix);
+    var site = arc.site;
+    return site.y === directrix ? site.x : Infinity;
+  }
+  function d3_geom_voronoiCell(site) {
+    this.site = site;
+    this.edges = [];
+  }
+  d3_geom_voronoiCell.prototype.prepare = function() {
+    var halfEdges = this.edges, iHalfEdge = halfEdges.length, edge;
+    while (iHalfEdge--) {
+      edge = halfEdges[iHalfEdge].edge;
+      if (!edge.b || !edge.a) halfEdges.splice(iHalfEdge, 1);
+    }
+    halfEdges.sort(d3_geom_voronoiHalfEdgeOrder);
+    return halfEdges.length;
+  };
+  function d3_geom_voronoiCloseCells(extent) {
+    var x0 = extent[0][0], x1 = extent[1][0], y0 = extent[0][1], y1 = extent[1][1], x2, y2, x3, y3, cells = d3_geom_voronoiCells, iCell = cells.length, cell, iHalfEdge, halfEdges, nHalfEdges, start, end;
+    while (iCell--) {
+      cell = cells[iCell];
+      if (!cell || !cell.prepare()) continue;
+      halfEdges = cell.edges;
+      nHalfEdges = halfEdges.length;
+      iHalfEdge = 0;
+      while (iHalfEdge < nHalfEdges) {
+        end = halfEdges[iHalfEdge].end(), x3 = end.x, y3 = end.y;
+        start = halfEdges[++iHalfEdge % nHalfEdges].start(), x2 = start.x, y2 = start.y;
+        if (abs(x3 - x2) > ε || abs(y3 - y2) > ε) {
+          halfEdges.splice(iHalfEdge, 0, new d3_geom_voronoiHalfEdge(d3_geom_voronoiCreateBorderEdge(cell.site, end, abs(x3 - x0) < ε && y1 - y3 > ε ? {
+            x: x0,
+            y: abs(x2 - x0) < ε ? y2 : y1
+          } : abs(y3 - y1) < ε && x1 - x3 > ε ? {
+            x: abs(y2 - y1) < ε ? x2 : x1,
+            y: y1
+          } : abs(x3 - x1) < ε && y3 - y0 > ε ? {
+            x: x1,
+            y: abs(x2 - x1) < ε ? y2 : y0
+          } : abs(y3 - y0) < ε && x3 - x0 > ε ? {
+            x: abs(y2 - y0) < ε ? x2 : x0,
+            y: y0
+          } : null), cell.site, null));
+          ++nHalfEdges;
+        }
+      }
+    }
+  }
+  function d3_geom_voronoiHalfEdgeOrder(a, b) {
+    return b.angle - a.angle;
+  }
+  function d3_geom_voronoiCircle() {
+    d3_geom_voronoiRedBlackNode(this);
+    this.x = this.y = this.arc = this.site = this.cy = null;
+  }
+  function d3_geom_voronoiAttachCircle(arc) {
+    var lArc = arc.P, rArc = arc.N;
+    if (!lArc || !rArc) return;
+    var lSite = lArc.site, cSite = arc.site, rSite = rArc.site;
+    if (lSite === rSite) return;
+    var bx = cSite.x, by = cSite.y, ax = lSite.x - bx, ay = lSite.y - by, cx = rSite.x - bx, cy = rSite.y - by;
+    var d = 2 * (ax * cy - ay * cx);
+    if (d >= -ε2) return;
+    var ha = ax * ax + ay * ay, hc = cx * cx + cy * cy, x = (cy * ha - ay * hc) / d, y = (ax * hc - cx * ha) / d, cy = y + by;
+    var circle = d3_geom_voronoiCirclePool.pop() || new d3_geom_voronoiCircle();
+    circle.arc = arc;
+    circle.site = cSite;
+    circle.x = x + bx;
+    circle.y = cy + Math.sqrt(x * x + y * y);
+    circle.cy = cy;
+    arc.circle = circle;
+    var before = null, node = d3_geom_voronoiCircles._;
+    while (node) {
+      if (circle.y < node.y || circle.y === node.y && circle.x <= node.x) {
+        if (node.L) node = node.L; else {
+          before = node.P;
+          break;
+        }
+      } else {
+        if (node.R) node = node.R; else {
+          before = node;
+          break;
+        }
+      }
+    }
+    d3_geom_voronoiCircles.insert(before, circle);
+    if (!before) d3_geom_voronoiFirstCircle = circle;
+  }
+  function d3_geom_voronoiDetachCircle(arc) {
+    var circle = arc.circle;
+    if (circle) {
+      if (!circle.P) d3_geom_voronoiFirstCircle = circle.N;
+      d3_geom_voronoiCircles.remove(circle);
+      d3_geom_voronoiCirclePool.push(circle);
+      d3_geom_voronoiRedBlackNode(circle);
+      arc.circle = null;
+    }
+  }
+  function d3_geom_voronoiClipEdges(extent) {
+    var edges = d3_geom_voronoiEdges, clip = d3_geom_clipLine(extent[0][0], extent[0][1], extent[1][0], extent[1][1]), i = edges.length, e;
+    while (i--) {
+      e = edges[i];
+      if (!d3_geom_voronoiConnectEdge(e, extent) || !clip(e) || abs(e.a.x - e.b.x) < ε && abs(e.a.y - e.b.y) < ε) {
+        e.a = e.b = null;
+        edges.splice(i, 1);
+      }
+    }
+  }
+  function d3_geom_voronoiConnectEdge(edge, extent) {
+    var vb = edge.b;
+    if (vb) return true;
+    var va = edge.a, x0 = extent[0][0], x1 = extent[1][0], y0 = extent[0][1], y1 = extent[1][1], lSite = edge.l, rSite = edge.r, lx = lSite.x, ly = lSite.y, rx = rSite.x, ry = rSite.y, fx = (lx + rx) / 2, fy = (ly + ry) / 2, fm, fb;
+    if (ry === ly) {
+      if (fx < x0 || fx >= x1) return;
+      if (lx > rx) {
+        if (!va) va = {
+          x: fx,
+          y: y0
+        }; else if (va.y >= y1) return;
+        vb = {
+          x: fx,
+          y: y1
+        };
+      } else {
+        if (!va) va = {
+          x: fx,
+          y: y1
+        }; else if (va.y < y0) return;
+        vb = {
+          x: fx,
+          y: y0
+        };
+      }
+    } else {
+      fm = (lx - rx) / (ry - ly);
+      fb = fy - fm * fx;
+      if (fm < -1 || fm > 1) {
+        if (lx > rx) {
+          if (!va) va = {
+            x: (y0 - fb) / fm,
+            y: y0
+          }; else if (va.y >= y1) return;
+          vb = {
+            x: (y1 - fb) / fm,
+            y: y1
+          };
+        } else {
+          if (!va) va = {
+            x: (y1 - fb) / fm,
+            y: y1
+          }; else if (va.y < y0) return;
+          vb = {
+            x: (y0 - fb) / fm,
+            y: y0
+          };
+        }
+      } else {
+        if (ly < ry) {
+          if (!va) va = {
+            x: x0,
+            y: fm * x0 + fb
+          }; else if (va.x >= x1) return;
+          vb = {
+            x: x1,
+            y: fm * x1 + fb
+          };
+        } else {
+          if (!va) va = {
+            x: x1,
+            y: fm * x1 + fb
+          }; else if (va.x < x0) return;
+          vb = {
+            x: x0,
+            y: fm * x0 + fb
+          };
+        }
+      }
+    }
+    edge.a = va;
+    edge.b = vb;
+    return true;
+  }
+  function d3_geom_voronoiEdge(lSite, rSite) {
+    this.l = lSite;
+    this.r = rSite;
+    this.a = this.b = null;
+  }
+  function d3_geom_voronoiCreateEdge(lSite, rSite, va, vb) {
+    var edge = new d3_geom_voronoiEdge(lSite, rSite);
+    d3_geom_voronoiEdges.push(edge);
+    if (va) d3_geom_voronoiSetEdgeEnd(edge, lSite, rSite, va);
+    if (vb) d3_geom_voronoiSetEdgeEnd(edge, rSite, lSite, vb);
+    d3_geom_voronoiCells[lSite.i].edges.push(new d3_geom_voronoiHalfEdge(edge, lSite, rSite));
+    d3_geom_voronoiCells[rSite.i].edges.push(new d3_geom_voronoiHalfEdge(edge, rSite, lSite));
+    return edge;
+  }
+  function d3_geom_voronoiCreateBorderEdge(lSite, va, vb) {
+    var edge = new d3_geom_voronoiEdge(lSite, null);
+    edge.a = va;
+    edge.b = vb;
+    d3_geom_voronoiEdges.push(edge);
+    return edge;
+  }
+  function d3_geom_voronoiSetEdgeEnd(edge, lSite, rSite, vertex) {
+    if (!edge.a && !edge.b) {
+      edge.a = vertex;
+      edge.l = lSite;
+      edge.r = rSite;
+    } else if (edge.l === rSite) {
+      edge.b = vertex;
+    } else {
+      edge.a = vertex;
+    }
+  }
+  function d3_geom_voronoiHalfEdge(edge, lSite, rSite) {
+    var va = edge.a, vb = edge.b;
+    this.edge = edge;
+    this.site = lSite;
+    this.angle = rSite ? Math.atan2(rSite.y - lSite.y, rSite.x - lSite.x) : edge.l === lSite ? Math.atan2(vb.x - va.x, va.y - vb.y) : Math.atan2(va.x - vb.x, vb.y - va.y);
+  }
+  d3_geom_voronoiHalfEdge.prototype = {
+    start: function() {
+      return this.edge.l === this.site ? this.edge.a : this.edge.b;
+    },
+    end: function() {
+      return this.edge.l === this.site ? this.edge.b : this.edge.a;
+    }
+  };
+  function d3_geom_voronoiRedBlackTree() {
+    this._ = null;
+  }
+  function d3_geom_voronoiRedBlackNode(node) {
+    node.U = node.C = node.L = node.R = node.P = node.N = null;
+  }
+  d3_geom_voronoiRedBlackTree.prototype = {
+    insert: function(after, node) {
+      var parent, grandpa, uncle;
+      if (after) {
+        node.P = after;
+        node.N = after.N;
+        if (after.N) after.N.P = node;
+        after.N = node;
+        if (after.R) {
+          after = after.R;
+          while (after.L) after = after.L;
+          after.L = node;
+        } else {
+          after.R = node;
+        }
+        parent = after;
+      } else if (this._) {
+        after = d3_geom_voronoiRedBlackFirst(this._);
+        node.P = null;
+        node.N = after;
+        after.P = after.L = node;
+        parent = after;
+      } else {
+        node.P = node.N = null;
+        this._ = node;
+        parent = null;
+      }
+      node.L = node.R = null;
+      node.U = parent;
+      node.C = true;
+      after = node;
+      while (parent && parent.C) {
+        grandpa = parent.U;
+        if (parent === grandpa.L) {
+          uncle = grandpa.R;
+          if (uncle && uncle.C) {
+            parent.C = uncle.C = false;
+            grandpa.C = true;
+            after = grandpa;
+          } else {
+            if (after === parent.R) {
+              d3_geom_voronoiRedBlackRotateLeft(this, parent);
+              after = parent;
+              parent = after.U;
+            }
+            parent.C = false;
+            grandpa.C = true;
+            d3_geom_voronoiRedBlackRotateRight(this, grandpa);
+          }
+        } else {
+          uncle = grandpa.L;
+          if (uncle && uncle.C) {
+            parent.C = uncle.C = false;
+            grandpa.C = true;
+            after = grandpa;
+          } else {
+            if (after === parent.L) {
+              d3_geom_voronoiRedBlackRotateRight(this, parent);
+              after = parent;
+              parent = after.U;
+            }
+            parent.C = false;
+            grandpa.C = true;
+            d3_geom_voronoiRedBlackRotateLeft(this, grandpa);
+          }
+        }
+        parent = after.U;
+      }
+      this._.C = false;
+    },
+    remove: function(node) {
+      if (node.N) node.N.P = node.P;
+      if (node.P) node.P.N = node.N;
+      node.N = node.P = null;
+      var parent = node.U, sibling, left = node.L, right = node.R, next, red;
+      if (!left) next = right; else if (!right) next = left; else next = d3_geom_voronoiRedBlackFirst(right);
+      if (parent) {
+        if (parent.L === node) parent.L = next; else parent.R = next;
+      } else {
+        this._ = next;
+      }
+      if (left && right) {
+        red = next.C;
+        next.C = node.C;
+        next.L = left;
+        left.U = next;
+        if (next !== right) {
+          parent = next.U;
+          next.U = node.U;
+          node = next.R;
+          parent.L = node;
+          next.R = right;
+          right.U = next;
+        } else {
+          next.U = parent;
+          parent = next;
+          node = next.R;
+        }
+      } else {
+        red = node.C;
+        node = next;
+      }
+      if (node) node.U = parent;
+      if (red) return;
+      if (node && node.C) {
+        node.C = false;
+        return;
+      }
+      do {
+        if (node === this._) break;
+        if (node === parent.L) {
+          sibling = parent.R;
+          if (sibling.C) {
+            sibling.C = false;
+            parent.C = true;
+            d3_geom_voronoiRedBlackRotateLeft(this, parent);
+            sibling = parent.R;
+          }
+          if (sibling.L && sibling.L.C || sibling.R && sibling.R.C) {
+            if (!sibling.R || !sibling.R.C) {
+              sibling.L.C = false;
+              sibling.C = true;
+              d3_geom_voronoiRedBlackRotateRight(this, sibling);
+              sibling = parent.R;
+            }
+            sibling.C = parent.C;
+            parent.C = sibling.R.C = false;
+            d3_geom_voronoiRedBlackRotateLeft(this, parent);
+            node = this._;
+            break;
+          }
+        } else {
+          sibling = parent.L;
+          if (sibling.C) {
+            sibling.C = false;
+            parent.C = true;
+            d3_geom_voronoiRedBlackRotateRight(this, parent);
+            sibling = parent.L;
+          }
+          if (sibling.L && sibling.L.C || sibling.R && sibling.R.C) {
+            if (!sibling.L || !sibling.L.C) {
+              sibling.R.C = false;
+              sibling.C = true;
+              d3_geom_voronoiRedBlackRotateLeft(this, sibling);
+              sibling = parent.L;
+            }
+            sibling.C = parent.C;
+            parent.C = sibling.L.C = false;
+            d3_geom_voronoiRedBlackRotateRight(this, parent);
+            node = this._;
+            break;
+          }
+        }
+        sibling.C = true;
+        node = parent;
+        parent = parent.U;
+      } while (!node.C);
+      if (node) node.C = false;
+    }
+  };
+  function d3_geom_voronoiRedBlackRotateLeft(tree, node) {
+    var p = node, q = node.R, parent = p.U;
+    if (parent) {
+      if (parent.L === p) parent.L = q; else parent.R = q;
+    } else {
+      tree._ = q;
+    }
+    q.U = parent;
+    p.U = q;
+    p.R = q.L;
+    if (p.R) p.R.U = p;
+    q.L = p;
+  }
+  function d3_geom_voronoiRedBlackRotateRight(tree, node) {
+    var p = node, q = node.L, parent = p.U;
+    if (parent) {
+      if (parent.L === p) parent.L = q; else parent.R = q;
+    } else {
+      tree._ = q;
+    }
+    q.U = parent;
+    p.U = q;
+    p.L = q.R;
+    if (p.L) p.L.U = p;
+    q.R = p;
+  }
+  function d3_geom_voronoiRedBlackFirst(node) {
+    while (node.L) node = node.L;
+    return node;
+  }
+  function d3_geom_voronoi(sites, bbox) {
+    var site = sites.sort(d3_geom_voronoiVertexOrder).pop(), x0, y0, circle;
+    d3_geom_voronoiEdges = [];
+    d3_geom_voronoiCells = new Array(sites.length);
+    d3_geom_voronoiBeaches = new d3_geom_voronoiRedBlackTree();
+    d3_geom_voronoiCircles = new d3_geom_voronoiRedBlackTree();
+    while (true) {
+      circle = d3_geom_voronoiFirstCircle;
+      if (site && (!circle || site.y < circle.y || site.y === circle.y && site.x < circle.x)) {
+        if (site.x !== x0 || site.y !== y0) {
+          d3_geom_voronoiCells[site.i] = new d3_geom_voronoiCell(site);
+          d3_geom_voronoiAddBeach(site);
+          x0 = site.x, y0 = site.y;
+        }
+        site = sites.pop();
+      } else if (circle) {
+        d3_geom_voronoiRemoveBeach(circle.arc);
+      } else {
+        break;
+      }
+    }
+    if (bbox) d3_geom_voronoiClipEdges(bbox), d3_geom_voronoiCloseCells(bbox);
+    var diagram = {
+      cells: d3_geom_voronoiCells,
+      edges: d3_geom_voronoiEdges
+    };
+    d3_geom_voronoiBeaches = d3_geom_voronoiCircles = d3_geom_voronoiEdges = d3_geom_voronoiCells = null;
+    return diagram;
+  }
+  function d3_geom_voronoiVertexOrder(a, b) {
+    return b.y - a.y || b.x - a.x;
+  }
+  d3.geom.voronoi = function(points) {
+    var x = d3_geom_pointX, y = d3_geom_pointY, fx = x, fy = y, clipExtent = d3_geom_voronoiClipExtent;
+    if (points) return voronoi(points);
+    function voronoi(data) {
+      var polygons = new Array(data.length), x0 = clipExtent[0][0], y0 = clipExtent[0][1], x1 = clipExtent[1][0], y1 = clipExtent[1][1];
+      d3_geom_voronoi(sites(data), clipExtent).cells.forEach(function(cell, i) {
+        var edges = cell.edges, site = cell.site, polygon = polygons[i] = edges.length ? edges.map(function(e) {
+          var s = e.start();
+          return [ s.x, s.y ];
+        }) : site.x >= x0 && site.x <= x1 && site.y >= y0 && site.y <= y1 ? [ [ x0, y1 ], [ x1, y1 ], [ x1, y0 ], [ x0, y0 ] ] : [];
+        polygon.point = data[i];
+      });
+      return polygons;
+    }
+    function sites(data) {
+      return data.map(function(d, i) {
+        return {
+          x: Math.round(fx(d, i) / ε) * ε,
+          y: Math.round(fy(d, i) / ε) * ε,
+          i: i
+        };
+      });
+    }
+    voronoi.links = function(data) {
+      return d3_geom_voronoi(sites(data)).edges.filter(function(edge) {
+        return edge.l && edge.r;
+      }).map(function(edge) {
+        return {
+          source: data[edge.l.i],
+          target: data[edge.r.i]
+        };
+      });
+    };
+    voronoi.triangles = function(data) {
+      var triangles = [];
+      d3_geom_voronoi(sites(data)).cells.forEach(function(cell, i) {
+        var site = cell.site, edges = cell.edges.sort(d3_geom_voronoiHalfEdgeOrder), j = -1, m = edges.length, e0, s0, e1 = edges[m - 1].edge, s1 = e1.l === site ? e1.r : e1.l;
+        while (++j < m) {
+          e0 = e1;
+          s0 = s1;
+          e1 = edges[j].edge;
+          s1 = e1.l === site ? e1.r : e1.l;
+          if (i < s0.i && i < s1.i && d3_geom_voronoiTriangleArea(site, s0, s1) < 0) {
+            triangles.push([ data[i], data[s0.i], data[s1.i] ]);
+          }
+        }
+      });
+      return triangles;
+    };
+    voronoi.x = function(_) {
+      return arguments.length ? (fx = d3_functor(x = _), voronoi) : x;
+    };
+    voronoi.y = function(_) {
+      return arguments.length ? (fy = d3_functor(y = _), voronoi) : y;
+    };
+    voronoi.clipExtent = function(_) {
+      if (!arguments.length) return clipExtent === d3_geom_voronoiClipExtent ? null : clipExtent;
+      clipExtent = _ == null ? d3_geom_voronoiClipExtent : _;
+      return voronoi;
+    };
+    voronoi.size = function(_) {
+      if (!arguments.length) return clipExtent === d3_geom_voronoiClipExtent ? null : clipExtent && clipExtent[1];
+      return voronoi.clipExtent(_ && [ [ 0, 0 ], _ ]);
+    };
+    return voronoi;
+  };
+  var d3_geom_voronoiClipExtent = [ [ -1e6, -1e6 ], [ 1e6, 1e6 ] ];
+  function d3_geom_voronoiTriangleArea(a, b, c) {
+    return (a.x - c.x) * (b.y - a.y) - (a.x - b.x) * (c.y - a.y);
+  }
+  d3.geom.delaunay = function(vertices) {
+    return d3.geom.voronoi().triangles(vertices);
+  };
+  d3.geom.quadtree = function(points, x1, y1, x2, y2) {
+    var x = d3_geom_pointX, y = d3_geom_pointY, compat;
+    if (compat = arguments.length) {
+      x = d3_geom_quadtreeCompatX;
+      y = d3_geom_quadtreeCompatY;
+      if (compat === 3) {
+        y2 = y1;
+        x2 = x1;
+        y1 = x1 = 0;
+      }
+      return quadtree(points);
+    }
+    function quadtree(data) {
+      var d, fx = d3_functor(x), fy = d3_functor(y), xs, ys, i, n, x1_, y1_, x2_, y2_;
+      if (x1 != null) {
+        x1_ = x1, y1_ = y1, x2_ = x2, y2_ = y2;
+      } else {
+        x2_ = y2_ = -(x1_ = y1_ = Infinity);
+        xs = [], ys = [];
+        n = data.length;
+        if (compat) for (i = 0; i < n; ++i) {
+          d = data[i];
+          if (d.x < x1_) x1_ = d.x;
+          if (d.y < y1_) y1_ = d.y;
+          if (d.x > x2_) x2_ = d.x;
+          if (d.y > y2_) y2_ = d.y;
+          xs.push(d.x);
+          ys.push(d.y);
+        } else for (i = 0; i < n; ++i) {
+          var x_ = +fx(d = data[i], i), y_ = +fy(d, i);
+          if (x_ < x1_) x1_ = x_;
+          if (y_ < y1_) y1_ = y_;
+          if (x_ > x2_) x2_ = x_;
+          if (y_ > y2_) y2_ = y_;
+          xs.push(x_);
+          ys.push(y_);
+        }
+      }
+      var dx = x2_ - x1_, dy = y2_ - y1_;
+      if (dx > dy) y2_ = y1_ + dx; else x2_ = x1_ + dy;
+      function insert(n, d, x, y, x1, y1, x2, y2) {
+        if (isNaN(x) || isNaN(y)) return;
+        if (n.leaf) {
+          var nx = n.x, ny = n.y;
+          if (nx != null) {
+            if (abs(nx - x) + abs(ny - y) < .01) {
+              insertChild(n, d, x, y, x1, y1, x2, y2);
+            } else {
+              var nPoint = n.point;
+              n.x = n.y = n.point = null;
+              insertChild(n, nPoint, nx, ny, x1, y1, x2, y2);
+              insertChild(n, d, x, y, x1, y1, x2, y2);
+            }
+          } else {
+            n.x = x, n.y = y, n.point = d;
+          }
+        } else {
+          insertChild(n, d, x, y, x1, y1, x2, y2);
+        }
+      }
+      function insertChild(n, d, x, y, x1, y1, x2, y2) {
+        var xm = (x1 + x2) * .5, ym = (y1 + y2) * .5, right = x >= xm, below = y >= ym, i = below << 1 | right;
+        n.leaf = false;
+        n = n.nodes[i] || (n.nodes[i] = d3_geom_quadtreeNode());
+        if (right) x1 = xm; else x2 = xm;
+        if (below) y1 = ym; else y2 = ym;
+        insert(n, d, x, y, x1, y1, x2, y2);
+      }
+      var root = d3_geom_quadtreeNode();
+      root.add = function(d) {
+        insert(root, d, +fx(d, ++i), +fy(d, i), x1_, y1_, x2_, y2_);
+      };
+      root.visit = function(f) {
+        d3_geom_quadtreeVisit(f, root, x1_, y1_, x2_, y2_);
+      };
+      root.find = function(point) {
+        return d3_geom_quadtreeFind(root, point[0], point[1], x1_, y1_, x2_, y2_);
+      };
+      i = -1;
+      if (x1 == null) {
+        while (++i < n) {
+          insert(root, data[i], xs[i], ys[i], x1_, y1_, x2_, y2_);
+        }
+        --i;
+      } else data.forEach(root.add);
+      xs = ys = data = d = null;
+      return root;
+    }
+    quadtree.x = function(_) {
+      return arguments.length ? (x = _, quadtree) : x;
+    };
+    quadtree.y = function(_) {
+      return arguments.length ? (y = _, quadtree) : y;
+    };
+    quadtree.extent = function(_) {
+      if (!arguments.length) return x1 == null ? null : [ [ x1, y1 ], [ x2, y2 ] ];
+      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0], 
+      y2 = +_[1][1];
+      return quadtree;
+    };
+    quadtree.size = function(_) {
+      if (!arguments.length) return x1 == null ? null : [ x2 - x1, y2 - y1 ];
+      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = y1 = 0, x2 = +_[0], y2 = +_[1];
+      return quadtree;
+    };
+    return quadtree;
+  };
+  function d3_geom_quadtreeCompatX(d) {
+    return d.x;
+  }
+  function d3_geom_quadtreeCompatY(d) {
+    return d.y;
+  }
+  function d3_geom_quadtreeNode() {
+    return {
+      leaf: true,
+      nodes: [],
+      point: null,
+      x: null,
+      y: null
+    };
+  }
+  function d3_geom_quadtreeVisit(f, node, x1, y1, x2, y2) {
+    if (!f(node, x1, y1, x2, y2)) {
+      var sx = (x1 + x2) * .5, sy = (y1 + y2) * .5, children = node.nodes;
+      if (children[0]) d3_geom_quadtreeVisit(f, children[0], x1, y1, sx, sy);
+      if (children[1]) d3_geom_quadtreeVisit(f, children[1], sx, y1, x2, sy);
+      if (children[2]) d3_geom_quadtreeVisit(f, children[2], x1, sy, sx, y2);
+      if (children[3]) d3_geom_quadtreeVisit(f, children[3], sx, sy, x2, y2);
+    }
+  }
+  function d3_geom_quadtreeFind(root, x, y, x0, y0, x3, y3) {
+    var minDistance2 = Infinity, closestPoint;
+    (function find(node, x1, y1, x2, y2) {
+      if (x1 > x3 || y1 > y3 || x2 < x0 || y2 < y0) return;
+      if (point = node.point) {
+        var point, dx = x - node.x, dy = y - node.y, distance2 = dx * dx + dy * dy;
+        if (distance2 < minDistance2) {
+          var distance = Math.sqrt(minDistance2 = distance2);
+          x0 = x - distance, y0 = y - distance;
+          x3 = x + distance, y3 = y + distance;
+          closestPoint = point;
+        }
+      }
+      var children = node.nodes, xm = (x1 + x2) * .5, ym = (y1 + y2) * .5, right = x >= xm, below = y >= ym;
+      for (var i = below << 1 | right, j = i + 4; i < j; ++i) {
+        if (node = children[i & 3]) switch (i & 3) {
+         case 0:
+          find(node, x1, y1, xm, ym);
+          break;
+
+         case 1:
+          find(node, xm, y1, x2, ym);
+          break;
+
+         case 2:
+          find(node, x1, ym, xm, y2);
+          break;
+
+         case 3:
+          find(node, xm, ym, x2, y2);
+          break;
+        }
+      }
+    })(root, x0, y0, x3, y3);
+    return closestPoint;
+  }
+  d3.interpolateRgb = d3_interpolateRgb;
+  function d3_interpolateRgb(a, b) {
+    a = d3.rgb(a);
+    b = d3.rgb(b);
+    var ar = a.r, ag = a.g, ab = a.b, br = b.r - ar, bg = b.g - ag, bb = b.b - ab;
+    return function(t) {
+      return "#" + d3_rgb_hex(Math.round(ar + br * t)) + d3_rgb_hex(Math.round(ag + bg * t)) + d3_rgb_hex(Math.round(ab + bb * t));
+    };
+  }
+  d3.interpolateObject = d3_interpolateObject;
+  function d3_interpolateObject(a, b) {
+    var i = {}, c = {}, k;
+    for (k in a) {
+      if (k in b) {
+        i[k] = d3_interpolate(a[k], b[k]);
+      } else {
+        c[k] = a[k];
+      }
+    }
+    for (k in b) {
+      if (!(k in a)) {
+        c[k] = b[k];
+      }
+    }
+    return function(t) {
+      for (k in i) c[k] = i[k](t);
+      return c;
+    };
+  }
+  d3.interpolateNumber = d3_interpolateNumber;
+  function d3_interpolateNumber(a, b) {
+    a = +a, b = +b;
+    return function(t) {
+      return a * (1 - t) + b * t;
+    };
+  }
+  d3.interpolateString = d3_interpolateString;
+  function d3_interpolateString(a, b) {
+    var bi = d3_interpolate_numberA.lastIndex = d3_interpolate_numberB.lastIndex = 0, am, bm, bs, i = -1, s = [], q = [];
+    a = a + "", b = b + "";
+    while ((am = d3_interpolate_numberA.exec(a)) && (bm = d3_interpolate_numberB.exec(b))) {
+      if ((bs = bm.index) > bi) {
+        bs = b.slice(bi, bs);
+        if (s[i]) s[i] += bs; else s[++i] = bs;
+      }
+      if ((am = am[0]) === (bm = bm[0])) {
+        if (s[i]) s[i] += bm; else s[++i] = bm;
+      } else {
+        s[++i] = null;
+        q.push({
+          i: i,
+          x: d3_interpolateNumber(am, bm)
+        });
+      }
+      bi = d3_interpolate_numberB.lastIndex;
+    }
+    if (bi < b.length) {
+      bs = b.slice(bi);
+      if (s[i]) s[i] += bs; else s[++i] = bs;
+    }
+    return s.length < 2 ? q[0] ? (b = q[0].x, function(t) {
+      return b(t) + "";
+    }) : function() {
+      return b;
+    } : (b = q.length, function(t) {
+      for (var i = 0, o; i < b; ++i) s[(o = q[i]).i] = o.x(t);
+      return s.join("");
+    });
+  }
+  var d3_interpolate_numberA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g, d3_interpolate_numberB = new RegExp(d3_interpolate_numberA.source, "g");
+  d3.interpolate = d3_interpolate;
+  function d3_interpolate(a, b) {
+    var i = d3.interpolators.length, f;
+    while (--i >= 0 && !(f = d3.interpolators[i](a, b))) ;
+    return f;
+  }
+  d3.interpolators = [ function(a, b) {
+    var t = typeof b;
+    return (t === "string" ? d3_rgb_names.has(b.toLowerCase()) || /^(#|rgb\(|hsl\()/i.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
+  } ];
+  d3.interpolateArray = d3_interpolateArray;
+  function d3_interpolateArray(a, b) {
+    var x = [], c = [], na = a.length, nb = b.length, n0 = Math.min(a.length, b.length), i;
+    for (i = 0; i < n0; ++i) x.push(d3_interpolate(a[i], b[i]));
+    for (;i < na; ++i) c[i] = a[i];
+    for (;i < nb; ++i) c[i] = b[i];
+    return function(t) {
+      for (i = 0; i < n0; ++i) c[i] = x[i](t);
+      return c;
+    };
+  }
+  var d3_ease_default = function() {
+    return d3_identity;
+  };
+  var d3_ease = d3.map({
+    linear: d3_ease_default,
+    poly: d3_ease_poly,
+    quad: function() {
+      return d3_ease_quad;
+    },
+    cubic: function() {
+      return d3_ease_cubic;
+    },
+    sin: function() {
+      return d3_ease_sin;
+    },
+    exp: function() {
+      return d3_ease_exp;
+    },
+    circle: function() {
+      return d3_ease_circle;
+    },
+    elastic: d3_ease_elastic,
+    back: d3_ease_back,
+    bounce: function() {
+      return d3_ease_bounce;
+    }
+  });
+  var d3_ease_mode = d3.map({
+    "in": d3_identity,
+    out: d3_ease_reverse,
+    "in-out": d3_ease_reflect,
+    "out-in": function(f) {
+      return d3_ease_reflect(d3_ease_reverse(f));
+    }
+  });
+  d3.ease = function(name) {
+    var i = name.indexOf("-"), t = i >= 0 ? name.slice(0, i) : name, m = i >= 0 ? name.slice(i + 1) : "in";
+    t = d3_ease.get(t) || d3_ease_default;
+    m = d3_ease_mode.get(m) || d3_identity;
+    return d3_ease_clamp(m(t.apply(null, d3_arraySlice.call(arguments, 1))));
+  };
+  function d3_ease_clamp(f) {
+    return function(t) {
+      return t <= 0 ? 0 : t >= 1 ? 1 : f(t);
+    };
+  }
+  function d3_ease_reverse(f) {
+    return function(t) {
+      return 1 - f(1 - t);
+    };
+  }
+  function d3_ease_reflect(f) {
+    return function(t) {
+      return .5 * (t < .5 ? f(2 * t) : 2 - f(2 - 2 * t));
+    };
+  }
+  function d3_ease_quad(t) {
+    return t * t;
+  }
+  function d3_ease_cubic(t) {
+    return t * t * t;
+  }
+  function d3_ease_cubicInOut(t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    var t2 = t * t, t3 = t2 * t;
+    return 4 * (t < .5 ? t3 : 3 * (t - t2) + t3 - .75);
+  }
+  function d3_ease_poly(e) {
+    return function(t) {
+      return Math.pow(t, e);
+    };
+  }
+  function d3_ease_sin(t) {
+    return 1 - Math.cos(t * halfπ);
+  }
+  function d3_ease_exp(t) {
+    return Math.pow(2, 10 * (t - 1));
+  }
+  function d3_ease_circle(t) {
+    return 1 - Math.sqrt(1 - t * t);
+  }
+  function d3_ease_elastic(a, p) {
+    var s;
+    if (arguments.length < 2) p = .45;
+    if (arguments.length) s = p / τ * Math.asin(1 / a); else a = 1, s = p / 4;
+    return function(t) {
+      return 1 + a * Math.pow(2, -10 * t) * Math.sin((t - s) * τ / p);
+    };
+  }
+  function d3_ease_back(s) {
+    if (!s) s = 1.70158;
+    return function(t) {
+      return t * t * ((s + 1) * t - s);
+    };
+  }
+  function d3_ease_bounce(t) {
+    return t < 1 / 2.75 ? 7.5625 * t * t : t < 2 / 2.75 ? 7.5625 * (t -= 1.5 / 2.75) * t + .75 : t < 2.5 / 2.75 ? 7.5625 * (t -= 2.25 / 2.75) * t + .9375 : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
+  }
+  d3.interpolateHcl = d3_interpolateHcl;
+  function d3_interpolateHcl(a, b) {
+    a = d3.hcl(a);
+    b = d3.hcl(b);
+    var ah = a.h, ac = a.c, al = a.l, bh = b.h - ah, bc = b.c - ac, bl = b.l - al;
+    if (isNaN(bc)) bc = 0, ac = isNaN(ac) ? b.c : ac;
+    if (isNaN(bh)) bh = 0, ah = isNaN(ah) ? b.h : ah; else if (bh > 180) bh -= 360; else if (bh < -180) bh += 360;
+    return function(t) {
+      return d3_hcl_lab(ah + bh * t, ac + bc * t, al + bl * t) + "";
+    };
+  }
+  d3.interpolateHsl = d3_interpolateHsl;
+  function d3_interpolateHsl(a, b) {
+    a = d3.hsl(a);
+    b = d3.hsl(b);
+    var ah = a.h, as = a.s, al = a.l, bh = b.h - ah, bs = b.s - as, bl = b.l - al;
+    if (isNaN(bs)) bs = 0, as = isNaN(as) ? b.s : as;
+    if (isNaN(bh)) bh = 0, ah = isNaN(ah) ? b.h : ah; else if (bh > 180) bh -= 360; else if (bh < -180) bh += 360;
+    return function(t) {
+      return d3_hsl_rgb(ah + bh * t, as + bs * t, al + bl * t) + "";
+    };
+  }
+  d3.interpolateLab = d3_interpolateLab;
+  function d3_interpolateLab(a, b) {
+    a = d3.lab(a);
+    b = d3.lab(b);
+    var al = a.l, aa = a.a, ab = a.b, bl = b.l - al, ba = b.a - aa, bb = b.b - ab;
+    return function(t) {
+      return d3_lab_rgb(al + bl * t, aa + ba * t, ab + bb * t) + "";
+    };
+  }
+  d3.interpolateRound = d3_interpolateRound;
+  function d3_interpolateRound(a, b) {
+    b -= a;
+    return function(t) {
+      return Math.round(a + b * t);
+    };
+  }
+  d3.transform = function(string) {
+    var g = d3_document.createElementNS(d3.ns.prefix.svg, "g");
+    return (d3.transform = function(string) {
+      if (string != null) {
+        g.setAttribute("transform", string);
+        var t = g.transform.baseVal.consolidate();
+      }
+      return new d3_transform(t ? t.matrix : d3_transformIdentity);
+    })(string);
+  };
+  function d3_transform(m) {
+    var r0 = [ m.a, m.b ], r1 = [ m.c, m.d ], kx = d3_transformNormalize(r0), kz = d3_transformDot(r0, r1), ky = d3_transformNormalize(d3_transformCombine(r1, r0, -kz)) || 0;
+    if (r0[0] * r1[1] < r1[0] * r0[1]) {
+      r0[0] *= -1;
+      r0[1] *= -1;
+      kx *= -1;
+      kz *= -1;
+    }
+    this.rotate = (kx ? Math.atan2(r0[1], r0[0]) : Math.atan2(-r1[0], r1[1])) * d3_degrees;
+    this.translate = [ m.e, m.f ];
+    this.scale = [ kx, ky ];
+    this.skew = ky ? Math.atan2(kz, ky) * d3_degrees : 0;
+  }
+  d3_transform.prototype.toString = function() {
+    return "translate(" + this.translate + ")rotate(" + this.rotate + ")skewX(" + this.skew + ")scale(" + this.scale + ")";
+  };
+  function d3_transformDot(a, b) {
+    return a[0] * b[0] + a[1] * b[1];
+  }
+  function d3_transformNormalize(a) {
+    var k = Math.sqrt(d3_transformDot(a, a));
+    if (k) {
+      a[0] /= k;
+      a[1] /= k;
+    }
+    return k;
+  }
+  function d3_transformCombine(a, b, k) {
+    a[0] += k * b[0];
+    a[1] += k * b[1];
+    return a;
+  }
+  var d3_transformIdentity = {
+    a: 1,
+    b: 0,
+    c: 0,
+    d: 1,
+    e: 0,
+    f: 0
+  };
+  d3.interpolateTransform = d3_interpolateTransform;
+  function d3_interpolateTransform(a, b) {
+    var s = [], q = [], n, A = d3.transform(a), B = d3.transform(b), ta = A.translate, tb = B.translate, ra = A.rotate, rb = B.rotate, wa = A.skew, wb = B.skew, ka = A.scale, kb = B.scale;
+    if (ta[0] != tb[0] || ta[1] != tb[1]) {
+      s.push("translate(", null, ",", null, ")");
+      q.push({
+        i: 1,
+        x: d3_interpolateNumber(ta[0], tb[0])
+      }, {
+        i: 3,
+        x: d3_interpolateNumber(ta[1], tb[1])
+      });
+    } else if (tb[0] || tb[1]) {
+      s.push("translate(" + tb + ")");
+    } else {
+      s.push("");
+    }
+    if (ra != rb) {
+      if (ra - rb > 180) rb += 360; else if (rb - ra > 180) ra += 360;
+      q.push({
+        i: s.push(s.pop() + "rotate(", null, ")") - 2,
+        x: d3_interpolateNumber(ra, rb)
+      });
+    } else if (rb) {
+      s.push(s.pop() + "rotate(" + rb + ")");
+    }
+    if (wa != wb) {
+      q.push({
+        i: s.push(s.pop() + "skewX(", null, ")") - 2,
+        x: d3_interpolateNumber(wa, wb)
+      });
+    } else if (wb) {
+      s.push(s.pop() + "skewX(" + wb + ")");
+    }
+    if (ka[0] != kb[0] || ka[1] != kb[1]) {
+      n = s.push(s.pop() + "scale(", null, ",", null, ")");
+      q.push({
+        i: n - 4,
+        x: d3_interpolateNumber(ka[0], kb[0])
+      }, {
+        i: n - 2,
+        x: d3_interpolateNumber(ka[1], kb[1])
+      });
+    } else if (kb[0] != 1 || kb[1] != 1) {
+      s.push(s.pop() + "scale(" + kb + ")");
+    }
+    n = q.length;
+    return function(t) {
+      var i = -1, o;
+      while (++i < n) s[(o = q[i]).i] = o.x(t);
+      return s.join("");
+    };
+  }
+  function d3_uninterpolateNumber(a, b) {
+    b = (b -= a = +a) || 1 / b;
+    return function(x) {
+      return (x - a) / b;
+    };
+  }
+  function d3_uninterpolateClamp(a, b) {
+    b = (b -= a = +a) || 1 / b;
+    return function(x) {
+      return Math.max(0, Math.min(1, (x - a) / b));
+    };
+  }
+  d3.layout = {};
+  d3.layout.bundle = function() {
+    return function(links) {
+      var paths = [], i = -1, n = links.length;
+      while (++i < n) paths.push(d3_layout_bundlePath(links[i]));
+      return paths;
+    };
+  };
+  function d3_layout_bundlePath(link) {
+    var start = link.source, end = link.target, lca = d3_layout_bundleLeastCommonAncestor(start, end), points = [ start ];
+    while (start !== lca) {
+      start = start.parent;
+      points.push(start);
+    }
+    var k = points.length;
+    while (end !== lca) {
+      points.splice(k, 0, end);
+      end = end.parent;
+    }
+    return points;
+  }
+  function d3_layout_bundleAncestors(node) {
+    var ancestors = [], parent = node.parent;
+    while (parent != null) {
+      ancestors.push(node);
+      node = parent;
+      parent = parent.parent;
+    }
+    ancestors.push(node);
+    return ancestors;
+  }
+  function d3_layout_bundleLeastCommonAncestor(a, b) {
+    if (a === b) return a;
+    var aNodes = d3_layout_bundleAncestors(a), bNodes = d3_layout_bundleAncestors(b), aNode = aNodes.pop(), bNode = bNodes.pop(), sharedNode = null;
+    while (aNode === bNode) {
+      sharedNode = aNode;
+      aNode = aNodes.pop();
+      bNode = bNodes.pop();
+    }
+    return sharedNode;
+  }
+  d3.layout.chord = function() {
+    var chord = {}, chords, groups, matrix, n, padding = 0, sortGroups, sortSubgroups, sortChords;
+    function relayout() {
+      var subgroups = {}, groupSums = [], groupIndex = d3.range(n), subgroupIndex = [], k, x, x0, i, j;
+      chords = [];
+      groups = [];
+      k = 0, i = -1;
+      while (++i < n) {
+        x = 0, j = -1;
+        while (++j < n) {
+          x += matrix[i][j];
+        }
+        groupSums.push(x);
+        subgroupIndex.push(d3.range(n));
+        k += x;
+      }
+      if (sortGroups) {
+        groupIndex.sort(function(a, b) {
+          return sortGroups(groupSums[a], groupSums[b]);
+        });
+      }
+      if (sortSubgroups) {
+        subgroupIndex.forEach(function(d, i) {
+          d.sort(function(a, b) {
+            return sortSubgroups(matrix[i][a], matrix[i][b]);
+          });
+        });
+      }
+      k = (τ - padding * n) / k;
+      x = 0, i = -1;
+      while (++i < n) {
+        x0 = x, j = -1;
+        while (++j < n) {
+          var di = groupIndex[i], dj = subgroupIndex[di][j], v = matrix[di][dj], a0 = x, a1 = x += v * k;
+          subgroups[di + "-" + dj] = {
+            index: di,
+            subindex: dj,
+            startAngle: a0,
+            endAngle: a1,
+            value: v
+          };
+        }
+        groups[di] = {
+          index: di,
+          startAngle: x0,
+          endAngle: x,
+          value: (x - x0) / k
+        };
+        x += padding;
+      }
+      i = -1;
+      while (++i < n) {
+        j = i - 1;
+        while (++j < n) {
+          var source = subgroups[i + "-" + j], target = subgroups[j + "-" + i];
+          if (source.value || target.value) {
+            chords.push(source.value < target.value ? {
+              source: target,
+              target: source
+            } : {
+              source: source,
+              target: target
+            });
+          }
+        }
+      }
+      if (sortChords) resort();
+    }
+    function resort() {
+      chords.sort(function(a, b) {
+        return sortChords((a.source.value + a.target.value) / 2, (b.source.value + b.target.value) / 2);
+      });
+    }
+    chord.matrix = function(x) {
+      if (!arguments.length) return matrix;
+      n = (matrix = x) && matrix.length;
+      chords = groups = null;
+      return chord;
+    };
+    chord.padding = function(x) {
+      if (!arguments.length) return padding;
+      padding = x;
+      chords = groups = null;
+      return chord;
+    };
+    chord.sortGroups = function(x) {
+      if (!arguments.length) return sortGroups;
+      sortGroups = x;
+      chords = groups = null;
+      return chord;
+    };
+    chord.sortSubgroups = function(x) {
+      if (!arguments.length) return sortSubgroups;
+      sortSubgroups = x;
+      chords = null;
+      return chord;
+    };
+    chord.sortChords = function(x) {
+      if (!arguments.length) return sortChords;
+      sortChords = x;
+      if (chords) resort();
+      return chord;
+    };
+    chord.chords = function() {
+      if (!chords) relayout();
+      return chords;
+    };
+    chord.groups = function() {
+      if (!groups) relayout();
+      return groups;
+    };
+    return chord;
+  };
+  d3.layout.force = function() {
+    var force = {}, event = d3.dispatch("start", "tick", "end"), size = [ 1, 1 ], drag, alpha, friction = .9, linkDistance = d3_layout_forceLinkDistance, linkStrength = d3_layout_forceLinkStrength, charge = -30, chargeDistance2 = d3_layout_forceChargeDistance2, gravity = .1, theta2 = .64, nodes = [], links = [], distances, strengths, charges;
+    function repulse(node) {
+      return function(quad, x1, _, x2) {
+        if (quad.point !== node) {
+          var dx = quad.cx - node.x, dy = quad.cy - node.y, dw = x2 - x1, dn = dx * dx + dy * dy;
+          if (dw * dw / theta2 < dn) {
+            if (dn < chargeDistance2) {
+              var k = quad.charge / dn;
+              node.px -= dx * k;
+              node.py -= dy * k;
+            }
+            return true;
+          }
+          if (quad.point && dn && dn < chargeDistance2) {
+            var k = quad.pointCharge / dn;
+            node.px -= dx * k;
+            node.py -= dy * k;
+          }
+        }
+        return !quad.charge;
+      };
+    }
+    force.tick = function() {
+      if ((alpha *= .99) < .005) {
+        event.end({
+          type: "end",
+          alpha: alpha = 0
+        });
+        return true;
+      }
+      var n = nodes.length, m = links.length, q, i, o, s, t, l, k, x, y;
+      for (i = 0; i < m; ++i) {
+        o = links[i];
+        s = o.source;
+        t = o.target;
+        x = t.x - s.x;
+        y = t.y - s.y;
+        if (l = x * x + y * y) {
+          l = alpha * strengths[i] * ((l = Math.sqrt(l)) - distances[i]) / l;
+          x *= l;
+          y *= l;
+          t.x -= x * (k = s.weight / (t.weight + s.weight));
+          t.y -= y * k;
+          s.x += x * (k = 1 - k);
+          s.y += y * k;
+        }
+      }
+      if (k = alpha * gravity) {
+        x = size[0] / 2;
+        y = size[1] / 2;
+        i = -1;
+        if (k) while (++i < n) {
+          o = nodes[i];
+          o.x += (x - o.x) * k;
+          o.y += (y - o.y) * k;
+        }
+      }
+      if (charge) {
+        d3_layout_forceAccumulate(q = d3.geom.quadtree(nodes), alpha, charges);
+        i = -1;
+        while (++i < n) {
+          if (!(o = nodes[i]).fixed) {
+            q.visit(repulse(o));
+          }
+        }
+      }
+      i = -1;
+      while (++i < n) {
+        o = nodes[i];
+        if (o.fixed) {
+          o.x = o.px;
+          o.y = o.py;
+        } else {
+          o.x -= (o.px - (o.px = o.x)) * friction;
+          o.y -= (o.py - (o.py = o.y)) * friction;
+        }
+      }
+      event.tick({
+        type: "tick",
+        alpha: alpha
+      });
+    };
+    force.nodes = function(x) {
+      if (!arguments.length) return nodes;
+      nodes = x;
+      return force;
+    };
+    force.links = function(x) {
+      if (!arguments.length) return links;
+      links = x;
+      return force;
+    };
+    force.size = function(x) {
+      if (!arguments.length) return size;
+      size = x;
+      return force;
+    };
+    force.linkDistance = function(x) {
+      if (!arguments.length) return linkDistance;
+      linkDistance = typeof x === "function" ? x : +x;
+      return force;
+    };
+    force.distance = force.linkDistance;
+    force.linkStrength = function(x) {
+      if (!arguments.length) return linkStrength;
+      linkStrength = typeof x === "function" ? x : +x;
+      return force;
+    };
+    force.friction = function(x) {
+      if (!arguments.length) return friction;
+      friction = +x;
+      return force;
+    };
+    force.charge = function(x) {
+      if (!arguments.length) return charge;
+      charge = typeof x === "function" ? x : +x;
+      return force;
+    };
+    force.chargeDistance = function(x) {
+      if (!arguments.length) return Math.sqrt(chargeDistance2);
+      chargeDistance2 = x * x;
+      return force;
+    };
+    force.gravity = function(x) {
+      if (!arguments.length) return gravity;
+      gravity = +x;
+      return force;
+    };
+    force.theta = function(x) {
+      if (!arguments.length) return Math.sqrt(theta2);
+      theta2 = x * x;
+      return force;
+    };
+    force.alpha = function(x) {
+      if (!arguments.length) return alpha;
+      x = +x;
+      if (alpha) {
+        if (x > 0) alpha = x; else alpha = 0;
+      } else if (x > 0) {
+        event.start({
+          type: "start",
+          alpha: alpha = x
+        });
+        d3.timer(force.tick);
+      }
+      return force;
+    };
+    force.start = function() {
+      var i, n = nodes.length, m = links.length, w = size[0], h = size[1], neighbors, o;
+      for (i = 0; i < n; ++i) {
+        (o = nodes[i]).index = i;
+        o.weight = 0;
+      }
+      for (i = 0; i < m; ++i) {
+        o = links[i];
+        if (typeof o.source == "number") o.source = nodes[o.source];
+        if (typeof o.target == "number") o.target = nodes[o.target];
+        ++o.source.weight;
+        ++o.target.weight;
+      }
+      for (i = 0; i < n; ++i) {
+        o = nodes[i];
+        if (isNaN(o.x)) o.x = position("x", w);
+        if (isNaN(o.y)) o.y = position("y", h);
+        if (isNaN(o.px)) o.px = o.x;
+        if (isNaN(o.py)) o.py = o.y;
+      }
+      distances = [];
+      if (typeof linkDistance === "function") for (i = 0; i < m; ++i) distances[i] = +linkDistance.call(this, links[i], i); else for (i = 0; i < m; ++i) distances[i] = linkDistance;
+      strengths = [];
+      if (typeof linkStrength === "function") for (i = 0; i < m; ++i) strengths[i] = +linkStrength.call(this, links[i], i); else for (i = 0; i < m; ++i) strengths[i] = linkStrength;
+      charges = [];
+      if (typeof charge === "function") for (i = 0; i < n; ++i) charges[i] = +charge.call(this, nodes[i], i); else for (i = 0; i < n; ++i) charges[i] = charge;
+      function position(dimension, size) {
+        if (!neighbors) {
+          neighbors = new Array(n);
+          for (j = 0; j < n; ++j) {
+            neighbors[j] = [];
+          }
+          for (j = 0; j < m; ++j) {
+            var o = links[j];
+            neighbors[o.source.index].push(o.target);
+            neighbors[o.target.index].push(o.source);
+          }
+        }
+        var candidates = neighbors[i], j = -1, l = candidates.length, x;
+        while (++j < l) if (!isNaN(x = candidates[j][dimension])) return x;
+        return Math.random() * size;
+      }
+      return force.resume();
+    };
+    force.resume = function() {
+      return force.alpha(.1);
+    };
+    force.stop = function() {
+      return force.alpha(0);
+    };
+    force.drag = function() {
+      if (!drag) drag = d3.behavior.drag().origin(d3_identity).on("dragstart.force", d3_layout_forceDragstart).on("drag.force", dragmove).on("dragend.force", d3_layout_forceDragend);
+      if (!arguments.length) return drag;
+      this.on("mouseover.force", d3_layout_forceMouseover).on("mouseout.force", d3_layout_forceMouseout).call(drag);
+    };
+    function dragmove(d) {
+      d.px = d3.event.x, d.py = d3.event.y;
+      force.resume();
+    }
+    return d3.rebind(force, event, "on");
+  };
+  function d3_layout_forceDragstart(d) {
+    d.fixed |= 2;
+  }
+  function d3_layout_forceDragend(d) {
+    d.fixed &= ~6;
+  }
+  function d3_layout_forceMouseover(d) {
+    d.fixed |= 4;
+    d.px = d.x, d.py = d.y;
+  }
+  function d3_layout_forceMouseout(d) {
+    d.fixed &= ~4;
+  }
+  function d3_layout_forceAccumulate(quad, alpha, charges) {
+    var cx = 0, cy = 0;
+    quad.charge = 0;
+    if (!quad.leaf) {
+      var nodes = quad.nodes, n = nodes.length, i = -1, c;
+      while (++i < n) {
+        c = nodes[i];
+        if (c == null) continue;
+        d3_layout_forceAccumulate(c, alpha, charges);
+        quad.charge += c.charge;
+        cx += c.charge * c.cx;
+        cy += c.charge * c.cy;
+      }
+    }
+    if (quad.point) {
+      if (!quad.leaf) {
+        quad.point.x += Math.random() - .5;
+        quad.point.y += Math.random() - .5;
+      }
+      var k = alpha * charges[quad.point.index];
+      quad.charge += quad.pointCharge = k;
+      cx += k * quad.point.x;
+      cy += k * quad.point.y;
+    }
+    quad.cx = cx / quad.charge;
+    quad.cy = cy / quad.charge;
+  }
+  var d3_layout_forceLinkDistance = 20, d3_layout_forceLinkStrength = 1, d3_layout_forceChargeDistance2 = Infinity;
+  d3.layout.hierarchy = function() {
+    var sort = d3_layout_hierarchySort, children = d3_layout_hierarchyChildren, value = d3_layout_hierarchyValue;
+    function hierarchy(root) {
+      var stack = [ root ], nodes = [], node;
+      root.depth = 0;
+      while ((node = stack.pop()) != null) {
+        nodes.push(node);
+        if ((childs = children.call(hierarchy, node, node.depth)) && (n = childs.length)) {
+          var n, childs, child;
+          while (--n >= 0) {
+            stack.push(child = childs[n]);
+            child.parent = node;
+            child.depth = node.depth + 1;
+          }
+          if (value) node.value = 0;
+          node.children = childs;
+        } else {
+          if (value) node.value = +value.call(hierarchy, node, node.depth) || 0;
+          delete node.children;
+        }
+      }
+      d3_layout_hierarchyVisitAfter(root, function(node) {
+        var childs, parent;
+        if (sort && (childs = node.children)) childs.sort(sort);
+        if (value && (parent = node.parent)) parent.value += node.value;
+      });
+      return nodes;
+    }
+    hierarchy.sort = function(x) {
+      if (!arguments.length) return sort;
+      sort = x;
+      return hierarchy;
+    };
+    hierarchy.children = function(x) {
+      if (!arguments.length) return children;
+      children = x;
+      return hierarchy;
+    };
+    hierarchy.value = function(x) {
+      if (!arguments.length) return value;
+      value = x;
+      return hierarchy;
+    };
+    hierarchy.revalue = function(root) {
+      if (value) {
+        d3_layout_hierarchyVisitBefore(root, function(node) {
+          if (node.children) node.value = 0;
+        });
+        d3_layout_hierarchyVisitAfter(root, function(node) {
+          var parent;
+          if (!node.children) node.value = +value.call(hierarchy, node, node.depth) || 0;
+          if (parent = node.parent) parent.value += node.value;
+        });
+      }
+      return root;
+    };
+    return hierarchy;
+  };
+  function d3_layout_hierarchyRebind(object, hierarchy) {
+    d3.rebind(object, hierarchy, "sort", "children", "value");
+    object.nodes = object;
+    object.links = d3_layout_hierarchyLinks;
+    return object;
+  }
+  function d3_layout_hierarchyVisitBefore(node, callback) {
+    var nodes = [ node ];
+    while ((node = nodes.pop()) != null) {
+      callback(node);
+      if ((children = node.children) && (n = children.length)) {
+        var n, children;
+        while (--n >= 0) nodes.push(children[n]);
+      }
+    }
+  }
+  function d3_layout_hierarchyVisitAfter(node, callback) {
+    var nodes = [ node ], nodes2 = [];
+    while ((node = nodes.pop()) != null) {
+      nodes2.push(node);
+      if ((children = node.children) && (n = children.length)) {
+        var i = -1, n, children;
+        while (++i < n) nodes.push(children[i]);
+      }
+    }
+    while ((node = nodes2.pop()) != null) {
+      callback(node);
+    }
+  }
+  function d3_layout_hierarchyChildren(d) {
+    return d.children;
+  }
+  function d3_layout_hierarchyValue(d) {
+    return d.value;
+  }
+  function d3_layout_hierarchySort(a, b) {
+    return b.value - a.value;
+  }
+  function d3_layout_hierarchyLinks(nodes) {
+    return d3.merge(nodes.map(function(parent) {
+      return (parent.children || []).map(function(child) {
+        return {
+          source: parent,
+          target: child
+        };
+      });
+    }));
+  }
+  d3.layout.partition = function() {
+    var hierarchy = d3.layout.hierarchy(), size = [ 1, 1 ];
+    function position(node, x, dx, dy) {
+      var children = node.children;
+      node.x = x;
+      node.y = node.depth * dy;
+      node.dx = dx;
+      node.dy = dy;
+      if (children && (n = children.length)) {
+        var i = -1, n, c, d;
+        dx = node.value ? dx / node.value : 0;
+        while (++i < n) {
+          position(c = children[i], x, d = c.value * dx, dy);
+          x += d;
+        }
+      }
+    }
+    function depth(node) {
+      var children = node.children, d = 0;
+      if (children && (n = children.length)) {
+        var i = -1, n;
+        while (++i < n) d = Math.max(d, depth(children[i]));
+      }
+      return 1 + d;
+    }
+    function partition(d, i) {
+      var nodes = hierarchy.call(this, d, i);
+      position(nodes[0], 0, size[0], size[1] / depth(nodes[0]));
+      return nodes;
+    }
+    partition.size = function(x) {
+      if (!arguments.length) return size;
+      size = x;
+      return partition;
+    };
+    return d3_layout_hierarchyRebind(partition, hierarchy);
+  };
+  d3.layout.pie = function() {
+    var value = Number, sort = d3_layout_pieSortByValue, startAngle = 0, endAngle = τ, padAngle = 0;
+    function pie(data) {
+      var n = data.length, values = data.map(function(d, i) {
+        return +value.call(pie, d, i);
+      }), a = +(typeof startAngle === "function" ? startAngle.apply(this, arguments) : startAngle), da = (typeof endAngle === "function" ? endAngle.apply(this, arguments) : endAngle) - a, p = Math.min(Math.abs(da) / n, +(typeof padAngle === "function" ? padAngle.apply(this, arguments) : padAngle)), pa = p * (da < 0 ? -1 : 1), k = (da - n * pa) / d3.sum(values), index = d3.range(n), arcs = [], v;
+      if (sort != null) index.sort(sort === d3_layout_pieSortByValue ? function(i, j) {
+        return values[j] - values[i];
+      } : function(i, j) {
+        return sort(data[i], data[j]);
+      });
+      index.forEach(function(i) {
+        arcs[i] = {
+          data: data[i],
+          value: v = values[i],
+          startAngle: a,
+          endAngle: a += v * k + pa,
+          padAngle: p
+        };
+      });
+      return arcs;
+    }
+    pie.value = function(_) {
+      if (!arguments.length) return value;
+      value = _;
+      return pie;
+    };
+    pie.sort = function(_) {
+      if (!arguments.length) return sort;
+      sort = _;
+      return pie;
+    };
+    pie.startAngle = function(_) {
+      if (!arguments.length) return startAngle;
+      startAngle = _;
+      return pie;
+    };
+    pie.endAngle = function(_) {
+      if (!arguments.length) return endAngle;
+      endAngle = _;
+      return pie;
+    };
+    pie.padAngle = function(_) {
+      if (!arguments.length) return padAngle;
+      padAngle = _;
+      return pie;
+    };
+    return pie;
+  };
+  var d3_layout_pieSortByValue = {};
+  d3.layout.stack = function() {
+    var values = d3_identity, order = d3_layout_stackOrderDefault, offset = d3_layout_stackOffsetZero, out = d3_layout_stackOut, x = d3_layout_stackX, y = d3_layout_stackY;
+    function stack(data, index) {
+      if (!(n = data.length)) return data;
+      var series = data.map(function(d, i) {
+        return values.call(stack, d, i);
+      });
+      var points = series.map(function(d) {
+        return d.map(function(v, i) {
+          return [ x.call(stack, v, i), y.call(stack, v, i) ];
+        });
+      });
+      var orders = order.call(stack, points, index);
+      series = d3.permute(series, orders);
+      points = d3.permute(points, orders);
+      var offsets = offset.call(stack, points, index);
+      var m = series[0].length, n, i, j, o;
+      for (j = 0; j < m; ++j) {
+        out.call(stack, series[0][j], o = offsets[j], points[0][j][1]);
+        for (i = 1; i < n; ++i) {
+          out.call(stack, series[i][j], o += points[i - 1][j][1], points[i][j][1]);
+        }
+      }
+      return data;
+    }
+    stack.values = function(x) {
+      if (!arguments.length) return values;
+      values = x;
+      return stack;
+    };
+    stack.order = function(x) {
+      if (!arguments.length) return order;
+      order = typeof x === "function" ? x : d3_layout_stackOrders.get(x) || d3_layout_stackOrderDefault;
+      return stack;
+    };
+    stack.offset = function(x) {
+      if (!arguments.length) return offset;
+      offset = typeof x === "function" ? x : d3_layout_stackOffsets.get(x) || d3_layout_stackOffsetZero;
+      return stack;
+    };
+    stack.x = function(z) {
+      if (!arguments.length) return x;
+      x = z;
+      return stack;
+    };
+    stack.y = function(z) {
+      if (!arguments.length) return y;
+      y = z;
+      return stack;
+    };
+    stack.out = function(z) {
+      if (!arguments.length) return out;
+      out = z;
+      return stack;
+    };
+    return stack;
+  };
+  function d3_layout_stackX(d) {
+    return d.x;
+  }
+  function d3_layout_stackY(d) {
+    return d.y;
+  }
+  function d3_layout_stackOut(d, y0, y) {
+    d.y0 = y0;
+    d.y = y;
+  }
+  var d3_layout_stackOrders = d3.map({
+    "inside-out": function(data) {
+      var n = data.length, i, j, max = data.map(d3_layout_stackMaxIndex), sums = data.map(d3_layout_stackReduceSum), index = d3.range(n).sort(function(a, b) {
+        return max[a] - max[b];
+      }), top = 0, bottom = 0, tops = [], bottoms = [];
+      for (i = 0; i < n; ++i) {
+        j = index[i];
+        if (top < bottom) {
+          top += sums[j];
+          tops.push(j);
+        } else {
+          bottom += sums[j];
+          bottoms.push(j);
+        }
+      }
+      return bottoms.reverse().concat(tops);
+    },
+    reverse: function(data) {
+      return d3.range(data.length).reverse();
+    },
+    "default": d3_layout_stackOrderDefault
+  });
+  var d3_layout_stackOffsets = d3.map({
+    silhouette: function(data) {
+      var n = data.length, m = data[0].length, sums = [], max = 0, i, j, o, y0 = [];
+      for (j = 0; j < m; ++j) {
+        for (i = 0, o = 0; i < n; i++) o += data[i][j][1];
+        if (o > max) max = o;
+        sums.push(o);
+      }
+      for (j = 0; j < m; ++j) {
+        y0[j] = (max - sums[j]) / 2;
+      }
+      return y0;
+    },
+    wiggle: function(data) {
+      var n = data.length, x = data[0], m = x.length, i, j, k, s1, s2, s3, dx, o, o0, y0 = [];
+      y0[0] = o = o0 = 0;
+      for (j = 1; j < m; ++j) {
+        for (i = 0, s1 = 0; i < n; ++i) s1 += data[i][j][1];
+        for (i = 0, s2 = 0, dx = x[j][0] - x[j - 1][0]; i < n; ++i) {
+          for (k = 0, s3 = (data[i][j][1] - data[i][j - 1][1]) / (2 * dx); k < i; ++k) {
+            s3 += (data[k][j][1] - data[k][j - 1][1]) / dx;
+          }
+          s2 += s3 * data[i][j][1];
+        }
+        y0[j] = o -= s1 ? s2 / s1 * dx : 0;
+        if (o < o0) o0 = o;
+      }
+      for (j = 0; j < m; ++j) y0[j] -= o0;
+      return y0;
+    },
+    expand: function(data) {
+      var n = data.length, m = data[0].length, k = 1 / n, i, j, o, y0 = [];
+      for (j = 0; j < m; ++j) {
+        for (i = 0, o = 0; i < n; i++) o += data[i][j][1];
+        if (o) for (i = 0; i < n; i++) data[i][j][1] /= o; else for (i = 0; i < n; i++) data[i][j][1] = k;
+      }
+      for (j = 0; j < m; ++j) y0[j] = 0;
+      return y0;
+    },
+    zero: d3_layout_stackOffsetZero
+  });
+  function d3_layout_stackOrderDefault(data) {
+    return d3.range(data.length);
+  }
+  function d3_layout_stackOffsetZero(data) {
+    var j = -1, m = data[0].length, y0 = [];
+    while (++j < m) y0[j] = 0;
+    return y0;
+  }
+  function d3_layout_stackMaxIndex(array) {
+    var i = 1, j = 0, v = array[0][1], k, n = array.length;
+    for (;i < n; ++i) {
+      if ((k = array[i][1]) > v) {
+        j = i;
+        v = k;
+      }
+    }
+    return j;
+  }
+  function d3_layout_stackReduceSum(d) {
+    return d.reduce(d3_layout_stackSum, 0);
+  }
+  function d3_layout_stackSum(p, d) {
+    return p + d[1];
+  }
+  d3.layout.histogram = function() {
+    var frequency = true, valuer = Number, ranger = d3_layout_histogramRange, binner = d3_layout_histogramBinSturges;
+    function histogram(data, i) {
+      var bins = [], values = data.map(valuer, this), range = ranger.call(this, values, i), thresholds = binner.call(this, range, values, i), bin, i = -1, n = values.length, m = thresholds.length - 1, k = frequency ? 1 : 1 / n, x;
+      while (++i < m) {
+        bin = bins[i] = [];
+        bin.dx = thresholds[i + 1] - (bin.x = thresholds[i]);
+        bin.y = 0;
+      }
+      if (m > 0) {
+        i = -1;
+        while (++i < n) {
+          x = values[i];
+          if (x >= range[0] && x <= range[1]) {
+            bin = bins[d3.bisect(thresholds, x, 1, m) - 1];
+            bin.y += k;
+            bin.push(data[i]);
+          }
+        }
+      }
+      return bins;
+    }
+    histogram.value = function(x) {
+      if (!arguments.length) return valuer;
+      valuer = x;
+      return histogram;
+    };
+    histogram.range = function(x) {
+      if (!arguments.length) return ranger;
+      ranger = d3_functor(x);
+      return histogram;
+    };
+    histogram.bins = function(x) {
+      if (!arguments.length) return binner;
+      binner = typeof x === "number" ? function(range) {
+        return d3_layout_histogramBinFixed(range, x);
+      } : d3_functor(x);
+      return histogram;
+    };
+    histogram.frequency = function(x) {
+      if (!arguments.length) return frequency;
+      frequency = !!x;
+      return histogram;
+    };
+    return histogram;
+  };
+  function d3_layout_histogramBinSturges(range, values) {
+    return d3_layout_histogramBinFixed(range, Math.ceil(Math.log(values.length) / Math.LN2 + 1));
+  }
+  function d3_layout_histogramBinFixed(range, n) {
+    var x = -1, b = +range[0], m = (range[1] - b) / n, f = [];
+    while (++x <= n) f[x] = m * x + b;
+    return f;
+  }
+  function d3_layout_histogramRange(values) {
+    return [ d3.min(values), d3.max(values) ];
+  }
+  d3.layout.pack = function() {
+    var hierarchy = d3.layout.hierarchy().sort(d3_layout_packSort), padding = 0, size = [ 1, 1 ], radius;
+    function pack(d, i) {
+      var nodes = hierarchy.call(this, d, i), root = nodes[0], w = size[0], h = size[1], r = radius == null ? Math.sqrt : typeof radius === "function" ? radius : function() {
+        return radius;
+      };
+      root.x = root.y = 0;
+      d3_layout_hierarchyVisitAfter(root, function(d) {
+        d.r = +r(d.value);
+      });
+      d3_layout_hierarchyVisitAfter(root, d3_layout_packSiblings);
+      if (padding) {
+        var dr = padding * (radius ? 1 : Math.max(2 * root.r / w, 2 * root.r / h)) / 2;
+        d3_layout_hierarchyVisitAfter(root, function(d) {
+          d.r += dr;
+        });
+        d3_layout_hierarchyVisitAfter(root, d3_layout_packSiblings);
+        d3_layout_hierarchyVisitAfter(root, function(d) {
+          d.r -= dr;
+        });
+      }
+      d3_layout_packTransform(root, w / 2, h / 2, radius ? 1 : 1 / Math.max(2 * root.r / w, 2 * root.r / h));
+      return nodes;
+    }
+    pack.size = function(_) {
+      if (!arguments.length) return size;
+      size = _;
+      return pack;
+    };
+    pack.radius = function(_) {
+      if (!arguments.length) return radius;
+      radius = _ == null || typeof _ === "function" ? _ : +_;
+      return pack;
+    };
+    pack.padding = function(_) {
+      if (!arguments.length) return padding;
+      padding = +_;
+      return pack;
+    };
+    return d3_layout_hierarchyRebind(pack, hierarchy);
+  };
+  function d3_layout_packSort(a, b) {
+    return a.value - b.value;
+  }
+  function d3_layout_packInsert(a, b) {
+    var c = a._pack_next;
+    a._pack_next = b;
+    b._pack_prev = a;
+    b._pack_next = c;
+    c._pack_prev = b;
+  }
+  function d3_layout_packSplice(a, b) {
+    a._pack_next = b;
+    b._pack_prev = a;
+  }
+  function d3_layout_packIntersects(a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y, dr = a.r + b.r;
+    return .999 * dr * dr > dx * dx + dy * dy;
+  }
+  function d3_layout_packSiblings(node) {
+    if (!(nodes = node.children) || !(n = nodes.length)) return;
+    var nodes, xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity, a, b, c, i, j, k, n;
+    function bound(node) {
+      xMin = Math.min(node.x - node.r, xMin);
+      xMax = Math.max(node.x + node.r, xMax);
+      yMin = Math.min(node.y - node.r, yMin);
+      yMax = Math.max(node.y + node.r, yMax);
+    }
+    nodes.forEach(d3_layout_packLink);
+    a = nodes[0];
+    a.x = -a.r;
+    a.y = 0;
+    bound(a);
+    if (n > 1) {
+      b = nodes[1];
+      b.x = b.r;
+      b.y = 0;
+      bound(b);
+      if (n > 2) {
+        c = nodes[2];
+        d3_layout_packPlace(a, b, c);
+        bound(c);
+        d3_layout_packInsert(a, c);
+        a._pack_prev = c;
+        d3_layout_packInsert(c, b);
+        b = a._pack_next;
+        for (i = 3; i < n; i++) {
+          d3_layout_packPlace(a, b, c = nodes[i]);
+          var isect = 0, s1 = 1, s2 = 1;
+          for (j = b._pack_next; j !== b; j = j._pack_next, s1++) {
+            if (d3_layout_packIntersects(j, c)) {
+              isect = 1;
+              break;
+            }
+          }
+          if (isect == 1) {
+            for (k = a._pack_prev; k !== j._pack_prev; k = k._pack_prev, s2++) {
+              if (d3_layout_packIntersects(k, c)) {
+                break;
+              }
+            }
+          }
+          if (isect) {
+            if (s1 < s2 || s1 == s2 && b.r < a.r) d3_layout_packSplice(a, b = j); else d3_layout_packSplice(a = k, b);
+            i--;
+          } else {
+            d3_layout_packInsert(a, c);
+            b = c;
+            bound(c);
+          }
+        }
+      }
+    }
+    var cx = (xMin + xMax) / 2, cy = (yMin + yMax) / 2, cr = 0;
+    for (i = 0; i < n; i++) {
+      c = nodes[i];
+      c.x -= cx;
+      c.y -= cy;
+      cr = Math.max(cr, c.r + Math.sqrt(c.x * c.x + c.y * c.y));
+    }
+    node.r = cr;
+    nodes.forEach(d3_layout_packUnlink);
+  }
+  function d3_layout_packLink(node) {
+    node._pack_next = node._pack_prev = node;
+  }
+  function d3_layout_packUnlink(node) {
+    delete node._pack_next;
+    delete node._pack_prev;
+  }
+  function d3_layout_packTransform(node, x, y, k) {
+    var children = node.children;
+    node.x = x += k * node.x;
+    node.y = y += k * node.y;
+    node.r *= k;
+    if (children) {
+      var i = -1, n = children.length;
+      while (++i < n) d3_layout_packTransform(children[i], x, y, k);
+    }
+  }
+  function d3_layout_packPlace(a, b, c) {
+    var db = a.r + c.r, dx = b.x - a.x, dy = b.y - a.y;
+    if (db && (dx || dy)) {
+      var da = b.r + c.r, dc = dx * dx + dy * dy;
+      da *= da;
+      db *= db;
+      var x = .5 + (db - da) / (2 * dc), y = Math.sqrt(Math.max(0, 2 * da * (db + dc) - (db -= dc) * db - da * da)) / (2 * dc);
+      c.x = a.x + x * dx + y * dy;
+      c.y = a.y + x * dy - y * dx;
+    } else {
+      c.x = a.x + db;
+      c.y = a.y;
+    }
+  }
+  d3.layout.tree = function() {
+    var hierarchy = d3.layout.hierarchy().sort(null).value(null), separation = d3_layout_treeSeparation, size = [ 1, 1 ], nodeSize = null;
+    function tree(d, i) {
+      var nodes = hierarchy.call(this, d, i), root0 = nodes[0], root1 = wrapTree(root0);
+      d3_layout_hierarchyVisitAfter(root1, firstWalk), root1.parent.m = -root1.z;
+      d3_layout_hierarchyVisitBefore(root1, secondWalk);
+      if (nodeSize) d3_layout_hierarchyVisitBefore(root0, sizeNode); else {
+        var left = root0, right = root0, bottom = root0;
+        d3_layout_hierarchyVisitBefore(root0, function(node) {
+          if (node.x < left.x) left = node;
+          if (node.x > right.x) right = node;
+          if (node.depth > bottom.depth) bottom = node;
+        });
+        var tx = separation(left, right) / 2 - left.x, kx = size[0] / (right.x + separation(right, left) / 2 + tx), ky = size[1] / (bottom.depth || 1);
+        d3_layout_hierarchyVisitBefore(root0, function(node) {
+          node.x = (node.x + tx) * kx;
+          node.y = node.depth * ky;
+        });
+      }
+      return nodes;
+    }
+    function wrapTree(root0) {
+      var root1 = {
+        A: null,
+        children: [ root0 ]
+      }, queue = [ root1 ], node1;
+      while ((node1 = queue.pop()) != null) {
+        for (var children = node1.children, child, i = 0, n = children.length; i < n; ++i) {
+          queue.push((children[i] = child = {
+            _: children[i],
+            parent: node1,
+            children: (child = children[i].children) && child.slice() || [],
+            A: null,
+            a: null,
+            z: 0,
+            m: 0,
+            c: 0,
+            s: 0,
+            t: null,
+            i: i
+          }).a = child);
+        }
+      }
+      return root1.children[0];
+    }
+    function firstWalk(v) {
+      var children = v.children, siblings = v.parent.children, w = v.i ? siblings[v.i - 1] : null;
+      if (children.length) {
+        d3_layout_treeShift(v);
+        var midpoint = (children[0].z + children[children.length - 1].z) / 2;
+        if (w) {
+          v.z = w.z + separation(v._, w._);
+          v.m = v.z - midpoint;
+        } else {
+          v.z = midpoint;
+        }
+      } else if (w) {
+        v.z = w.z + separation(v._, w._);
+      }
+      v.parent.A = apportion(v, w, v.parent.A || siblings[0]);
+    }
+    function secondWalk(v) {
+      v._.x = v.z + v.parent.m;
+      v.m += v.parent.m;
+    }
+    function apportion(v, w, ancestor) {
+      if (w) {
+        var vip = v, vop = v, vim = w, vom = vip.parent.children[0], sip = vip.m, sop = vop.m, sim = vim.m, som = vom.m, shift;
+        while (vim = d3_layout_treeRight(vim), vip = d3_layout_treeLeft(vip), vim && vip) {
+          vom = d3_layout_treeLeft(vom);
+          vop = d3_layout_treeRight(vop);
+          vop.a = v;
+          shift = vim.z + sim - vip.z - sip + separation(vim._, vip._);
+          if (shift > 0) {
+            d3_layout_treeMove(d3_layout_treeAncestor(vim, v, ancestor), v, shift);
+            sip += shift;
+            sop += shift;
+          }
+          sim += vim.m;
+          sip += vip.m;
+          som += vom.m;
+          sop += vop.m;
+        }
+        if (vim && !d3_layout_treeRight(vop)) {
+          vop.t = vim;
+          vop.m += sim - sop;
+        }
+        if (vip && !d3_layout_treeLeft(vom)) {
+          vom.t = vip;
+          vom.m += sip - som;
+          ancestor = v;
+        }
+      }
+      return ancestor;
+    }
+    function sizeNode(node) {
+      node.x *= size[0];
+      node.y = node.depth * size[1];
+    }
+    tree.separation = function(x) {
+      if (!arguments.length) return separation;
+      separation = x;
+      return tree;
+    };
+    tree.size = function(x) {
+      if (!arguments.length) return nodeSize ? null : size;
+      nodeSize = (size = x) == null ? sizeNode : null;
+      return tree;
+    };
+    tree.nodeSize = function(x) {
+      if (!arguments.length) return nodeSize ? size : null;
+      nodeSize = (size = x) == null ? null : sizeNode;
+      return tree;
+    };
+    return d3_layout_hierarchyRebind(tree, hierarchy);
+  };
+  function d3_layout_treeSeparation(a, b) {
+    return a.parent == b.parent ? 1 : 2;
+  }
+  function d3_layout_treeLeft(v) {
+    var children = v.children;
+    return children.length ? children[0] : v.t;
+  }
+  function d3_layout_treeRight(v) {
+    var children = v.children, n;
+    return (n = children.length) ? children[n - 1] : v.t;
+  }
+  function d3_layout_treeMove(wm, wp, shift) {
+    var change = shift / (wp.i - wm.i);
+    wp.c -= change;
+    wp.s += shift;
+    wm.c += change;
+    wp.z += shift;
+    wp.m += shift;
+  }
+  function d3_layout_treeShift(v) {
+    var shift = 0, change = 0, children = v.children, i = children.length, w;
+    while (--i >= 0) {
+      w = children[i];
+      w.z += shift;
+      w.m += shift;
+      shift += w.s + (change += w.c);
+    }
+  }
+  function d3_layout_treeAncestor(vim, v, ancestor) {
+    return vim.a.parent === v.parent ? vim.a : ancestor;
+  }
+  d3.layout.cluster = function() {
+    var hierarchy = d3.layout.hierarchy().sort(null).value(null), separation = d3_layout_treeSeparation, size = [ 1, 1 ], nodeSize = false;
+    function cluster(d, i) {
+      var nodes = hierarchy.call(this, d, i), root = nodes[0], previousNode, x = 0;
+      d3_layout_hierarchyVisitAfter(root, function(node) {
+        var children = node.children;
+        if (children && children.length) {
+          node.x = d3_layout_clusterX(children);
+          node.y = d3_layout_clusterY(children);
+        } else {
+          node.x = previousNode ? x += separation(node, previousNode) : 0;
+          node.y = 0;
+          previousNode = node;
+        }
+      });
+      var left = d3_layout_clusterLeft(root), right = d3_layout_clusterRight(root), x0 = left.x - separation(left, right) / 2, x1 = right.x + separation(right, left) / 2;
+      d3_layout_hierarchyVisitAfter(root, nodeSize ? function(node) {
+        node.x = (node.x - root.x) * size[0];
+        node.y = (root.y - node.y) * size[1];
+      } : function(node) {
+        node.x = (node.x - x0) / (x1 - x0) * size[0];
+        node.y = (1 - (root.y ? node.y / root.y : 1)) * size[1];
+      });
+      return nodes;
+    }
+    cluster.separation = function(x) {
+      if (!arguments.length) return separation;
+      separation = x;
+      return cluster;
+    };
+    cluster.size = function(x) {
+      if (!arguments.length) return nodeSize ? null : size;
+      nodeSize = (size = x) == null;
+      return cluster;
+    };
+    cluster.nodeSize = function(x) {
+      if (!arguments.length) return nodeSize ? size : null;
+      nodeSize = (size = x) != null;
+      return cluster;
+    };
+    return d3_layout_hierarchyRebind(cluster, hierarchy);
+  };
+  function d3_layout_clusterY(children) {
+    return 1 + d3.max(children, function(child) {
+      return child.y;
+    });
+  }
+  function d3_layout_clusterX(children) {
+    return children.reduce(function(x, child) {
+      return x + child.x;
+    }, 0) / children.length;
+  }
+  function d3_layout_clusterLeft(node) {
+    var children = node.children;
+    return children && children.length ? d3_layout_clusterLeft(children[0]) : node;
+  }
+  function d3_layout_clusterRight(node) {
+    var children = node.children, n;
+    return children && (n = children.length) ? d3_layout_clusterRight(children[n - 1]) : node;
+  }
+  d3.layout.treemap = function() {
+    var hierarchy = d3.layout.hierarchy(), round = Math.round, size = [ 1, 1 ], padding = null, pad = d3_layout_treemapPadNull, sticky = false, stickies, mode = "squarify", ratio = .5 * (1 + Math.sqrt(5));
+    function scale(children, k) {
+      var i = -1, n = children.length, child, area;
+      while (++i < n) {
+        area = (child = children[i]).value * (k < 0 ? 0 : k);
+        child.area = isNaN(area) || area <= 0 ? 0 : area;
+      }
+    }
+    function squarify(node) {
+      var children = node.children;
+      if (children && children.length) {
+        var rect = pad(node), row = [], remaining = children.slice(), child, best = Infinity, score, u = mode === "slice" ? rect.dx : mode === "dice" ? rect.dy : mode === "slice-dice" ? node.depth & 1 ? rect.dy : rect.dx : Math.min(rect.dx, rect.dy), n;
+        scale(remaining, rect.dx * rect.dy / node.value);
+        row.area = 0;
+        while ((n = remaining.length) > 0) {
+          row.push(child = remaining[n - 1]);
+          row.area += child.area;
+          if (mode !== "squarify" || (score = worst(row, u)) <= best) {
+            remaining.pop();
+            best = score;
+          } else {
+            row.area -= row.pop().area;
+            position(row, u, rect, false);
+            u = Math.min(rect.dx, rect.dy);
+            row.length = row.area = 0;
+            best = Infinity;
+          }
+        }
+        if (row.length) {
+          position(row, u, rect, true);
+          row.length = row.area = 0;
+        }
+        children.forEach(squarify);
+      }
+    }
+    function stickify(node) {
+      var children = node.children;
+      if (children && children.length) {
+        var rect = pad(node), remaining = children.slice(), child, row = [];
+        scale(remaining, rect.dx * rect.dy / node.value);
+        row.area = 0;
+        while (child = remaining.pop()) {
+          row.push(child);
+          row.area += child.area;
+          if (child.z != null) {
+            position(row, child.z ? rect.dx : rect.dy, rect, !remaining.length);
+            row.length = row.area = 0;
+          }
+        }
+        children.forEach(stickify);
+      }
+    }
+    function worst(row, u) {
+      var s = row.area, r, rmax = 0, rmin = Infinity, i = -1, n = row.length;
+      while (++i < n) {
+        if (!(r = row[i].area)) continue;
+        if (r < rmin) rmin = r;
+        if (r > rmax) rmax = r;
+      }
+      s *= s;
+      u *= u;
+      return s ? Math.max(u * rmax * ratio / s, s / (u * rmin * ratio)) : Infinity;
+    }
+    function position(row, u, rect, flush) {
+      var i = -1, n = row.length, x = rect.x, y = rect.y, v = u ? round(row.area / u) : 0, o;
+      if (u == rect.dx) {
+        if (flush || v > rect.dy) v = rect.dy;
+        while (++i < n) {
+          o = row[i];
+          o.x = x;
+          o.y = y;
+          o.dy = v;
+          x += o.dx = Math.min(rect.x + rect.dx - x, v ? round(o.area / v) : 0);
+        }
+        o.z = true;
+        o.dx += rect.x + rect.dx - x;
+        rect.y += v;
+        rect.dy -= v;
+      } else {
+        if (flush || v > rect.dx) v = rect.dx;
+        while (++i < n) {
+          o = row[i];
+          o.x = x;
+          o.y = y;
+          o.dx = v;
+          y += o.dy = Math.min(rect.y + rect.dy - y, v ? round(o.area / v) : 0);
+        }
+        o.z = false;
+        o.dy += rect.y + rect.dy - y;
+        rect.x += v;
+        rect.dx -= v;
+      }
+    }
+    function treemap(d) {
+      var nodes = stickies || hierarchy(d), root = nodes[0];
+      root.x = 0;
+      root.y = 0;
+      root.dx = size[0];
+      root.dy = size[1];
+      if (stickies) hierarchy.revalue(root);
+      scale([ root ], root.dx * root.dy / root.value);
+      (stickies ? stickify : squarify)(root);
+      if (sticky) stickies = nodes;
+      return nodes;
+    }
+    treemap.size = function(x) {
+      if (!arguments.length) return size;
+      size = x;
+      return treemap;
+    };
+    treemap.padding = function(x) {
+      if (!arguments.length) return padding;
+      function padFunction(node) {
+        var p = x.call(treemap, node, node.depth);
+        return p == null ? d3_layout_treemapPadNull(node) : d3_layout_treemapPad(node, typeof p === "number" ? [ p, p, p, p ] : p);
+      }
+      function padConstant(node) {
+        return d3_layout_treemapPad(node, x);
+      }
+      var type;
+      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ], 
+      padConstant) : padConstant;
+      return treemap;
+    };
+    treemap.round = function(x) {
+      if (!arguments.length) return round != Number;
+      round = x ? Math.round : Number;
+      return treemap;
+    };
+    treemap.sticky = function(x) {
+      if (!arguments.length) return sticky;
+      sticky = x;
+      stickies = null;
+      return treemap;
+    };
+    treemap.ratio = function(x) {
+      if (!arguments.length) return ratio;
+      ratio = x;
+      return treemap;
+    };
+    treemap.mode = function(x) {
+      if (!arguments.length) return mode;
+      mode = x + "";
+      return treemap;
+    };
+    return d3_layout_hierarchyRebind(treemap, hierarchy);
+  };
+  function d3_layout_treemapPadNull(node) {
+    return {
+      x: node.x,
+      y: node.y,
+      dx: node.dx,
+      dy: node.dy
+    };
+  }
+  function d3_layout_treemapPad(node, padding) {
+    var x = node.x + padding[3], y = node.y + padding[0], dx = node.dx - padding[1] - padding[3], dy = node.dy - padding[0] - padding[2];
+    if (dx < 0) {
+      x += dx / 2;
+      dx = 0;
+    }
+    if (dy < 0) {
+      y += dy / 2;
+      dy = 0;
+    }
+    return {
+      x: x,
+      y: y,
+      dx: dx,
+      dy: dy
+    };
+  }
+  d3.random = {
+    normal: function(µ, σ) {
+      var n = arguments.length;
+      if (n < 2) σ = 1;
+      if (n < 1) µ = 0;
+      return function() {
+        var x, y, r;
+        do {
+          x = Math.random() * 2 - 1;
+          y = Math.random() * 2 - 1;
+          r = x * x + y * y;
+        } while (!r || r > 1);
+        return µ + σ * x * Math.sqrt(-2 * Math.log(r) / r);
+      };
+    },
+    logNormal: function() {
+      var random = d3.random.normal.apply(d3, arguments);
+      return function() {
+        return Math.exp(random());
+      };
+    },
+    bates: function(m) {
+      var random = d3.random.irwinHall(m);
+      return function() {
+        return random() / m;
+      };
+    },
+    irwinHall: function(m) {
+      return function() {
+        for (var s = 0, j = 0; j < m; j++) s += Math.random();
+        return s;
+      };
+    }
+  };
+  d3.scale = {};
+  function d3_scaleExtent(domain) {
+    var start = domain[0], stop = domain[domain.length - 1];
+    return start < stop ? [ start, stop ] : [ stop, start ];
+  }
+  function d3_scaleRange(scale) {
+    return scale.rangeExtent ? scale.rangeExtent() : d3_scaleExtent(scale.range());
+  }
+  function d3_scale_bilinear(domain, range, uninterpolate, interpolate) {
+    var u = uninterpolate(domain[0], domain[1]), i = interpolate(range[0], range[1]);
+    return function(x) {
+      return i(u(x));
+    };
+  }
+  function d3_scale_nice(domain, nice) {
+    var i0 = 0, i1 = domain.length - 1, x0 = domain[i0], x1 = domain[i1], dx;
+    if (x1 < x0) {
+      dx = i0, i0 = i1, i1 = dx;
+      dx = x0, x0 = x1, x1 = dx;
+    }
+    domain[i0] = nice.floor(x0);
+    domain[i1] = nice.ceil(x1);
+    return domain;
+  }
+  function d3_scale_niceStep(step) {
+    return step ? {
+      floor: function(x) {
+        return Math.floor(x / step) * step;
+      },
+      ceil: function(x) {
+        return Math.ceil(x / step) * step;
+      }
+    } : d3_scale_niceIdentity;
+  }
+  var d3_scale_niceIdentity = {
+    floor: d3_identity,
+    ceil: d3_identity
+  };
+  function d3_scale_polylinear(domain, range, uninterpolate, interpolate) {
+    var u = [], i = [], j = 0, k = Math.min(domain.length, range.length) - 1;
+    if (domain[k] < domain[0]) {
+      domain = domain.slice().reverse();
+      range = range.slice().reverse();
+    }
+    while (++j <= k) {
+      u.push(uninterpolate(domain[j - 1], domain[j]));
+      i.push(interpolate(range[j - 1], range[j]));
+    }
+    return function(x) {
+      var j = d3.bisect(domain, x, 1, k) - 1;
+      return i[j](u[j](x));
+    };
+  }
+  d3.scale.linear = function() {
+    return d3_scale_linear([ 0, 1 ], [ 0, 1 ], d3_interpolate, false);
+  };
+  function d3_scale_linear(domain, range, interpolate, clamp) {
+    var output, input;
+    function rescale() {
+      var linear = Math.min(domain.length, range.length) > 2 ? d3_scale_polylinear : d3_scale_bilinear, uninterpolate = clamp ? d3_uninterpolateClamp : d3_uninterpolateNumber;
+      output = linear(domain, range, uninterpolate, interpolate);
+      input = linear(range, domain, uninterpolate, d3_interpolate);
+      return scale;
+    }
+    function scale(x) {
+      return output(x);
+    }
+    scale.invert = function(y) {
+      return input(y);
+    };
+    scale.domain = function(x) {
+      if (!arguments.length) return domain;
+      domain = x.map(Number);
+      return rescale();
+    };
+    scale.range = function(x) {
+      if (!arguments.length) return range;
+      range = x;
+      return rescale();
+    };
+    scale.rangeRound = function(x) {
+      return scale.range(x).interpolate(d3_interpolateRound);
+    };
+    scale.clamp = function(x) {
+      if (!arguments.length) return clamp;
+      clamp = x;
+      return rescale();
+    };
+    scale.interpolate = function(x) {
+      if (!arguments.length) return interpolate;
+      interpolate = x;
+      return rescale();
+    };
+    scale.ticks = function(m) {
+      return d3_scale_linearTicks(domain, m);
+    };
+    scale.tickFormat = function(m, format) {
+      return d3_scale_linearTickFormat(domain, m, format);
+    };
+    scale.nice = function(m) {
+      d3_scale_linearNice(domain, m);
+      return rescale();
+    };
+    scale.copy = function() {
+      return d3_scale_linear(domain, range, interpolate, clamp);
+    };
+    return rescale();
+  }
+  function d3_scale_linearRebind(scale, linear) {
+    return d3.rebind(scale, linear, "range", "rangeRound", "interpolate", "clamp");
+  }
+  function d3_scale_linearNice(domain, m) {
+    return d3_scale_nice(domain, d3_scale_niceStep(d3_scale_linearTickRange(domain, m)[2]));
+  }
+  function d3_scale_linearTickRange(domain, m) {
+    if (m == null) m = 10;
+    var extent = d3_scaleExtent(domain), span = extent[1] - extent[0], step = Math.pow(10, Math.floor(Math.log(span / m) / Math.LN10)), err = m / span * step;
+    if (err <= .15) step *= 10; else if (err <= .35) step *= 5; else if (err <= .75) step *= 2;
+    extent[0] = Math.ceil(extent[0] / step) * step;
+    extent[1] = Math.floor(extent[1] / step) * step + step * .5;
+    extent[2] = step;
+    return extent;
+  }
+  function d3_scale_linearTicks(domain, m) {
+    return d3.range.apply(d3, d3_scale_linearTickRange(domain, m));
+  }
+  function d3_scale_linearTickFormat(domain, m, format) {
+    var range = d3_scale_linearTickRange(domain, m);
+    if (format) {
+      var match = d3_format_re.exec(format);
+      match.shift();
+      if (match[8] === "s") {
+        var prefix = d3.formatPrefix(Math.max(abs(range[0]), abs(range[1])));
+        if (!match[7]) match[7] = "." + d3_scale_linearPrecision(prefix.scale(range[2]));
+        match[8] = "f";
+        format = d3.format(match.join(""));
+        return function(d) {
+          return format(prefix.scale(d)) + prefix.symbol;
+        };
+      }
+      if (!match[7]) match[7] = "." + d3_scale_linearFormatPrecision(match[8], range);
+      format = match.join("");
+    } else {
+      format = ",." + d3_scale_linearPrecision(range[2]) + "f";
+    }
+    return d3.format(format);
+  }
+  var d3_scale_linearFormatSignificant = {
+    s: 1,
+    g: 1,
+    p: 1,
+    r: 1,
+    e: 1
+  };
+  function d3_scale_linearPrecision(value) {
+    return -Math.floor(Math.log(value) / Math.LN10 + .01);
+  }
+  function d3_scale_linearFormatPrecision(type, range) {
+    var p = d3_scale_linearPrecision(range[2]);
+    return type in d3_scale_linearFormatSignificant ? Math.abs(p - d3_scale_linearPrecision(Math.max(abs(range[0]), abs(range[1])))) + +(type !== "e") : p - (type === "%") * 2;
+  }
+  d3.scale.log = function() {
+    return d3_scale_log(d3.scale.linear().domain([ 0, 1 ]), 10, true, [ 1, 10 ]);
+  };
+  function d3_scale_log(linear, base, positive, domain) {
+    function log(x) {
+      return (positive ? Math.log(x < 0 ? 0 : x) : -Math.log(x > 0 ? 0 : -x)) / Math.log(base);
+    }
+    function pow(x) {
+      return positive ? Math.pow(base, x) : -Math.pow(base, -x);
+    }
+    function scale(x) {
+      return linear(log(x));
+    }
+    scale.invert = function(x) {
+      return pow(linear.invert(x));
+    };
+    scale.domain = function(x) {
+      if (!arguments.length) return domain;
+      positive = x[0] >= 0;
+      linear.domain((domain = x.map(Number)).map(log));
+      return scale;
+    };
+    scale.base = function(_) {
+      if (!arguments.length) return base;
+      base = +_;
+      linear.domain(domain.map(log));
+      return scale;
+    };
+    scale.nice = function() {
+      var niced = d3_scale_nice(domain.map(log), positive ? Math : d3_scale_logNiceNegative);
+      linear.domain(niced);
+      domain = niced.map(pow);
+      return scale;
+    };
+    scale.ticks = function() {
+      var extent = d3_scaleExtent(domain), ticks = [], u = extent[0], v = extent[1], i = Math.floor(log(u)), j = Math.ceil(log(v)), n = base % 1 ? 2 : base;
+      if (isFinite(j - i)) {
+        if (positive) {
+          for (;i < j; i++) for (var k = 1; k < n; k++) ticks.push(pow(i) * k);
+          ticks.push(pow(i));
+        } else {
+          ticks.push(pow(i));
+          for (;i++ < j; ) for (var k = n - 1; k > 0; k--) ticks.push(pow(i) * k);
+        }
+        for (i = 0; ticks[i] < u; i++) {}
+        for (j = ticks.length; ticks[j - 1] > v; j--) {}
+        ticks = ticks.slice(i, j);
+      }
+      return ticks;
+    };
+    scale.tickFormat = function(n, format) {
+      if (!arguments.length) return d3_scale_logFormat;
+      if (arguments.length < 2) format = d3_scale_logFormat; else if (typeof format !== "function") format = d3.format(format);
+      var k = Math.max(.1, n / scale.ticks().length), f = positive ? (e = 1e-12, Math.ceil) : (e = -1e-12, 
+      Math.floor), e;
+      return function(d) {
+        return d / pow(f(log(d) + e)) <= k ? format(d) : "";
+      };
+    };
+    scale.copy = function() {
+      return d3_scale_log(linear.copy(), base, positive, domain);
+    };
+    return d3_scale_linearRebind(scale, linear);
+  }
+  var d3_scale_logFormat = d3.format(".0e"), d3_scale_logNiceNegative = {
+    floor: function(x) {
+      return -Math.ceil(-x);
+    },
+    ceil: function(x) {
+      return -Math.floor(-x);
+    }
+  };
+  d3.scale.pow = function() {
+    return d3_scale_pow(d3.scale.linear(), 1, [ 0, 1 ]);
+  };
+  function d3_scale_pow(linear, exponent, domain) {
+    var powp = d3_scale_powPow(exponent), powb = d3_scale_powPow(1 / exponent);
+    function scale(x) {
+      return linear(powp(x));
+    }
+    scale.invert = function(x) {
+      return powb(linear.invert(x));
+    };
+    scale.domain = function(x) {
+      if (!arguments.length) return domain;
+      linear.domain((domain = x.map(Number)).map(powp));
+      return scale;
+    };
+    scale.ticks = function(m) {
+      return d3_scale_linearTicks(domain, m);
+    };
+    scale.tickFormat = function(m, format) {
+      return d3_scale_linearTickFormat(domain, m, format);
+    };
+    scale.nice = function(m) {
+      return scale.domain(d3_scale_linearNice(domain, m));
+    };
+    scale.exponent = function(x) {
+      if (!arguments.length) return exponent;
+      powp = d3_scale_powPow(exponent = x);
+      powb = d3_scale_powPow(1 / exponent);
+      linear.domain(domain.map(powp));
+      return scale;
+    };
+    scale.copy = function() {
+      return d3_scale_pow(linear.copy(), exponent, domain);
+    };
+    return d3_scale_linearRebind(scale, linear);
+  }
+  function d3_scale_powPow(e) {
+    return function(x) {
+      return x < 0 ? -Math.pow(-x, e) : Math.pow(x, e);
+    };
+  }
+  d3.scale.sqrt = function() {
+    return d3.scale.pow().exponent(.5);
+  };
+  d3.scale.ordinal = function() {
+    return d3_scale_ordinal([], {
+      t: "range",
+      a: [ [] ]
+    });
+  };
+  function d3_scale_ordinal(domain, ranger) {
+    var index, range, rangeBand;
+    function scale(x) {
+      return range[((index.get(x) || (ranger.t === "range" ? index.set(x, domain.push(x)) : NaN)) - 1) % range.length];
+    }
+    function steps(start, step) {
+      return d3.range(domain.length).map(function(i) {
+        return start + step * i;
+      });
+    }
+    scale.domain = function(x) {
+      if (!arguments.length) return domain;
+      domain = [];
+      index = new d3_Map();
+      var i = -1, n = x.length, xi;
+      while (++i < n) if (!index.has(xi = x[i])) index.set(xi, domain.push(xi));
+      return scale[ranger.t].apply(scale, ranger.a);
+    };
+    scale.range = function(x) {
+      if (!arguments.length) return range;
+      range = x;
+      rangeBand = 0;
+      ranger = {
+        t: "range",
+        a: arguments
+      };
+      return scale;
+    };
+    scale.rangePoints = function(x, padding) {
+      if (arguments.length < 2) padding = 0;
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2, 
+      0) : (stop - start) / (domain.length - 1 + padding);
+      range = steps(start + step * padding / 2, step);
+      rangeBand = 0;
+      ranger = {
+        t: "rangePoints",
+        a: arguments
+      };
+      return scale;
+    };
+    scale.rangeRoundPoints = function(x, padding) {
+      if (arguments.length < 2) padding = 0;
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2), 
+      0) : (stop - start) / (domain.length - 1 + padding) | 0;
+      range = steps(start + Math.round(step * padding / 2 + (stop - start - (domain.length - 1 + padding) * step) / 2), step);
+      rangeBand = 0;
+      ranger = {
+        t: "rangeRoundPoints",
+        a: arguments
+      };
+      return scale;
+    };
+    scale.rangeBands = function(x, padding, outerPadding) {
+      if (arguments.length < 2) padding = 0;
+      if (arguments.length < 3) outerPadding = padding;
+      var reverse = x[1] < x[0], start = x[reverse - 0], stop = x[1 - reverse], step = (stop - start) / (domain.length - padding + 2 * outerPadding);
+      range = steps(start + step * outerPadding, step);
+      if (reverse) range.reverse();
+      rangeBand = step * (1 - padding);
+      ranger = {
+        t: "rangeBands",
+        a: arguments
+      };
+      return scale;
+    };
+    scale.rangeRoundBands = function(x, padding, outerPadding) {
+      if (arguments.length < 2) padding = 0;
+      if (arguments.length < 3) outerPadding = padding;
+      var reverse = x[1] < x[0], start = x[reverse - 0], stop = x[1 - reverse], step = Math.floor((stop - start) / (domain.length - padding + 2 * outerPadding));
+      range = steps(start + Math.round((stop - start - (domain.length - padding) * step) / 2), step);
+      if (reverse) range.reverse();
+      rangeBand = Math.round(step * (1 - padding));
+      ranger = {
+        t: "rangeRoundBands",
+        a: arguments
+      };
+      return scale;
+    };
+    scale.rangeBand = function() {
+      return rangeBand;
+    };
+    scale.rangeExtent = function() {
+      return d3_scaleExtent(ranger.a[0]);
+    };
+    scale.copy = function() {
+      return d3_scale_ordinal(domain, ranger);
+    };
+    return scale.domain(domain);
+  }
+  d3.scale.category10 = function() {
+    return d3.scale.ordinal().range(d3_category10);
+  };
+  d3.scale.category20 = function() {
+    return d3.scale.ordinal().range(d3_category20);
+  };
+  d3.scale.category20b = function() {
+    return d3.scale.ordinal().range(d3_category20b);
+  };
+  d3.scale.category20c = function() {
+    return d3.scale.ordinal().range(d3_category20c);
+  };
+  var d3_category10 = [ 2062260, 16744206, 2924588, 14034728, 9725885, 9197131, 14907330, 8355711, 12369186, 1556175 ].map(d3_rgbString);
+  var d3_category20 = [ 2062260, 11454440, 16744206, 16759672, 2924588, 10018698, 14034728, 16750742, 9725885, 12955861, 9197131, 12885140, 14907330, 16234194, 8355711, 13092807, 12369186, 14408589, 1556175, 10410725 ].map(d3_rgbString);
+  var d3_category20b = [ 3750777, 5395619, 7040719, 10264286, 6519097, 9216594, 11915115, 13556636, 9202993, 12426809, 15186514, 15190932, 8666169, 11356490, 14049643, 15177372, 8077683, 10834324, 13528509, 14589654 ].map(d3_rgbString);
+  var d3_category20c = [ 3244733, 7057110, 10406625, 13032431, 15095053, 16616764, 16625259, 16634018, 3253076, 7652470, 10607003, 13101504, 7695281, 10394312, 12369372, 14342891, 6513507, 9868950, 12434877, 14277081 ].map(d3_rgbString);
+  d3.scale.quantile = function() {
+    return d3_scale_quantile([], []);
+  };
+  function d3_scale_quantile(domain, range) {
+    var thresholds;
+    function rescale() {
+      var k = 0, q = range.length;
+      thresholds = [];
+      while (++k < q) thresholds[k - 1] = d3.quantile(domain, k / q);
+      return scale;
+    }
+    function scale(x) {
+      if (!isNaN(x = +x)) return range[d3.bisect(thresholds, x)];
+    }
+    scale.domain = function(x) {
+      if (!arguments.length) return domain;
+      domain = x.map(d3_number).filter(d3_numeric).sort(d3_ascending);
+      return rescale();
+    };
+    scale.range = function(x) {
+      if (!arguments.length) return range;
+      range = x;
+      return rescale();
+    };
+    scale.quantiles = function() {
+      return thresholds;
+    };
+    scale.invertExtent = function(y) {
+      y = range.indexOf(y);
+      return y < 0 ? [ NaN, NaN ] : [ y > 0 ? thresholds[y - 1] : domain[0], y < thresholds.length ? thresholds[y] : domain[domain.length - 1] ];
+    };
+    scale.copy = function() {
+      return d3_scale_quantile(domain, range);
+    };
+    return rescale();
+  }
+  d3.scale.quantize = function() {
+    return d3_scale_quantize(0, 1, [ 0, 1 ]);
+  };
+  function d3_scale_quantize(x0, x1, range) {
+    var kx, i;
+    function scale(x) {
+      return range[Math.max(0, Math.min(i, Math.floor(kx * (x - x0))))];
+    }
+    function rescale() {
+      kx = range.length / (x1 - x0);
+      i = range.length - 1;
+      return scale;
+    }
+    scale.domain = function(x) {
+      if (!arguments.length) return [ x0, x1 ];
+      x0 = +x[0];
+      x1 = +x[x.length - 1];
+      return rescale();
+    };
+    scale.range = function(x) {
+      if (!arguments.length) return range;
+      range = x;
+      return rescale();
+    };
+    scale.invertExtent = function(y) {
+      y = range.indexOf(y);
+      y = y < 0 ? NaN : y / kx + x0;
+      return [ y, y + 1 / kx ];
+    };
+    scale.copy = function() {
+      return d3_scale_quantize(x0, x1, range);
+    };
+    return rescale();
+  }
+  d3.scale.threshold = function() {
+    return d3_scale_threshold([ .5 ], [ 0, 1 ]);
+  };
+  function d3_scale_threshold(domain, range) {
+    function scale(x) {
+      if (x <= x) return range[d3.bisect(domain, x)];
+    }
+    scale.domain = function(_) {
+      if (!arguments.length) return domain;
+      domain = _;
+      return scale;
+    };
+    scale.range = function(_) {
+      if (!arguments.length) return range;
+      range = _;
+      return scale;
+    };
+    scale.invertExtent = function(y) {
+      y = range.indexOf(y);
+      return [ domain[y - 1], domain[y] ];
+    };
+    scale.copy = function() {
+      return d3_scale_threshold(domain, range);
+    };
+    return scale;
+  }
+  d3.scale.identity = function() {
+    return d3_scale_identity([ 0, 1 ]);
+  };
+  function d3_scale_identity(domain) {
+    function identity(x) {
+      return +x;
+    }
+    identity.invert = identity;
+    identity.domain = identity.range = function(x) {
+      if (!arguments.length) return domain;
+      domain = x.map(identity);
+      return identity;
+    };
+    identity.ticks = function(m) {
+      return d3_scale_linearTicks(domain, m);
+    };
+    identity.tickFormat = function(m, format) {
+      return d3_scale_linearTickFormat(domain, m, format);
+    };
+    identity.copy = function() {
+      return d3_scale_identity(domain);
+    };
+    return identity;
+  }
+  d3.svg = {};
+  function d3_zero() {
+    return 0;
+  }
+  d3.svg.arc = function() {
+    var innerRadius = d3_svg_arcInnerRadius, outerRadius = d3_svg_arcOuterRadius, cornerRadius = d3_zero, padRadius = d3_svg_arcAuto, startAngle = d3_svg_arcStartAngle, endAngle = d3_svg_arcEndAngle, padAngle = d3_svg_arcPadAngle;
+    function arc() {
+      var r0 = Math.max(0, +innerRadius.apply(this, arguments)), r1 = Math.max(0, +outerRadius.apply(this, arguments)), a0 = startAngle.apply(this, arguments) - halfπ, a1 = endAngle.apply(this, arguments) - halfπ, da = Math.abs(a1 - a0), cw = a0 > a1 ? 0 : 1;
+      if (r1 < r0) rc = r1, r1 = r0, r0 = rc;
+      if (da >= τε) return circleSegment(r1, cw) + (r0 ? circleSegment(r0, 1 - cw) : "") + "Z";
+      var rc, cr, rp, ap, p0 = 0, p1 = 0, x0, y0, x1, y1, x2, y2, x3, y3, path = [];
+      if (ap = (+padAngle.apply(this, arguments) || 0) / 2) {
+        rp = padRadius === d3_svg_arcAuto ? Math.sqrt(r0 * r0 + r1 * r1) : +padRadius.apply(this, arguments);
+        if (!cw) p1 *= -1;
+        if (r1) p1 = d3_asin(rp / r1 * Math.sin(ap));
+        if (r0) p0 = d3_asin(rp / r0 * Math.sin(ap));
+      }
+      if (r1) {
+        x0 = r1 * Math.cos(a0 + p1);
+        y0 = r1 * Math.sin(a0 + p1);
+        x1 = r1 * Math.cos(a1 - p1);
+        y1 = r1 * Math.sin(a1 - p1);
+        var l1 = Math.abs(a1 - a0 - 2 * p1) <= π ? 0 : 1;
+        if (p1 && d3_svg_arcSweep(x0, y0, x1, y1) === cw ^ l1) {
+          var h1 = (a0 + a1) / 2;
+          x0 = r1 * Math.cos(h1);
+          y0 = r1 * Math.sin(h1);
+          x1 = y1 = null;
+        }
+      } else {
+        x0 = y0 = 0;
+      }
+      if (r0) {
+        x2 = r0 * Math.cos(a1 - p0);
+        y2 = r0 * Math.sin(a1 - p0);
+        x3 = r0 * Math.cos(a0 + p0);
+        y3 = r0 * Math.sin(a0 + p0);
+        var l0 = Math.abs(a0 - a1 + 2 * p0) <= π ? 0 : 1;
+        if (p0 && d3_svg_arcSweep(x2, y2, x3, y3) === 1 - cw ^ l0) {
+          var h0 = (a0 + a1) / 2;
+          x2 = r0 * Math.cos(h0);
+          y2 = r0 * Math.sin(h0);
+          x3 = y3 = null;
+        }
+      } else {
+        x2 = y2 = 0;
+      }
+      if ((rc = Math.min(Math.abs(r1 - r0) / 2, +cornerRadius.apply(this, arguments))) > .001) {
+        cr = r0 < r1 ^ cw ? 0 : 1;
+        var oc = x3 == null ? [ x2, y2 ] : x1 == null ? [ x0, y0 ] : d3_geom_polygonIntersect([ x0, y0 ], [ x3, y3 ], [ x1, y1 ], [ x2, y2 ]), ax = x0 - oc[0], ay = y0 - oc[1], bx = x1 - oc[0], by = y1 - oc[1], kc = 1 / Math.sin(Math.acos((ax * bx + ay * by) / (Math.sqrt(ax * ax + ay * ay) * Math.sqrt(bx * bx + by * by))) / 2), lc = Math.sqrt(oc[0] * oc[0] + oc[1] * oc[1]);
+        if (x1 != null) {
+          var rc1 = Math.min(rc, (r1 - lc) / (kc + 1)), t30 = d3_svg_arcCornerTangents(x3 == null ? [ x2, y2 ] : [ x3, y3 ], [ x0, y0 ], r1, rc1, cw), t12 = d3_svg_arcCornerTangents([ x1, y1 ], [ x2, y2 ], r1, rc1, cw);
+          if (rc === rc1) {
+            path.push("M", t30[0], "A", rc1, ",", rc1, " 0 0,", cr, " ", t30[1], "A", r1, ",", r1, " 0 ", 1 - cw ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1], "A", rc1, ",", rc1, " 0 0,", cr, " ", t12[0]);
+          } else {
+            path.push("M", t30[0], "A", rc1, ",", rc1, " 0 1,", cr, " ", t12[0]);
+          }
+        } else {
+          path.push("M", x0, ",", y0);
+        }
+        if (x3 != null) {
+          var rc0 = Math.min(rc, (r0 - lc) / (kc - 1)), t03 = d3_svg_arcCornerTangents([ x0, y0 ], [ x3, y3 ], r0, -rc0, cw), t21 = d3_svg_arcCornerTangents([ x2, y2 ], x1 == null ? [ x0, y0 ] : [ x1, y1 ], r0, -rc0, cw);
+          if (rc === rc0) {
+            path.push("L", t21[0], "A", rc0, ",", rc0, " 0 0,", cr, " ", t21[1], "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1], "A", rc0, ",", rc0, " 0 0,", cr, " ", t03[0]);
+          } else {
+            path.push("L", t21[0], "A", rc0, ",", rc0, " 0 0,", cr, " ", t03[0]);
+          }
+        } else {
+          path.push("L", x2, ",", y2);
+        }
+      } else {
+        path.push("M", x0, ",", y0);
+        if (x1 != null) path.push("A", r1, ",", r1, " 0 ", l1, ",", cw, " ", x1, ",", y1);
+        path.push("L", x2, ",", y2);
+        if (x3 != null) path.push("A", r0, ",", r0, " 0 ", l0, ",", 1 - cw, " ", x3, ",", y3);
+      }
+      path.push("Z");
+      return path.join("");
+    }
+    function circleSegment(r1, cw) {
+      return "M0," + r1 + "A" + r1 + "," + r1 + " 0 1," + cw + " 0," + -r1 + "A" + r1 + "," + r1 + " 0 1," + cw + " 0," + r1;
+    }
+    arc.innerRadius = function(v) {
+      if (!arguments.length) return innerRadius;
+      innerRadius = d3_functor(v);
+      return arc;
+    };
+    arc.outerRadius = function(v) {
+      if (!arguments.length) return outerRadius;
+      outerRadius = d3_functor(v);
+      return arc;
+    };
+    arc.cornerRadius = function(v) {
+      if (!arguments.length) return cornerRadius;
+      cornerRadius = d3_functor(v);
+      return arc;
+    };
+    arc.padRadius = function(v) {
+      if (!arguments.length) return padRadius;
+      padRadius = v == d3_svg_arcAuto ? d3_svg_arcAuto : d3_functor(v);
+      return arc;
+    };
+    arc.startAngle = function(v) {
+      if (!arguments.length) return startAngle;
+      startAngle = d3_functor(v);
+      return arc;
+    };
+    arc.endAngle = function(v) {
+      if (!arguments.length) return endAngle;
+      endAngle = d3_functor(v);
+      return arc;
+    };
+    arc.padAngle = function(v) {
+      if (!arguments.length) return padAngle;
+      padAngle = d3_functor(v);
+      return arc;
+    };
+    arc.centroid = function() {
+      var r = (+innerRadius.apply(this, arguments) + +outerRadius.apply(this, arguments)) / 2, a = (+startAngle.apply(this, arguments) + +endAngle.apply(this, arguments)) / 2 - halfπ;
+      return [ Math.cos(a) * r, Math.sin(a) * r ];
+    };
+    return arc;
+  };
+  var d3_svg_arcAuto = "auto";
+  function d3_svg_arcInnerRadius(d) {
+    return d.innerRadius;
+  }
+  function d3_svg_arcOuterRadius(d) {
+    return d.outerRadius;
+  }
+  function d3_svg_arcStartAngle(d) {
+    return d.startAngle;
+  }
+  function d3_svg_arcEndAngle(d) {
+    return d.endAngle;
+  }
+  function d3_svg_arcPadAngle(d) {
+    return d && d.padAngle;
+  }
+  function d3_svg_arcSweep(x0, y0, x1, y1) {
+    return (x0 - x1) * y0 - (y0 - y1) * x0 > 0 ? 0 : 1;
+  }
+  function d3_svg_arcCornerTangents(p0, p1, r1, rc, cw) {
+    var x01 = p0[0] - p1[0], y01 = p0[1] - p1[1], lo = (cw ? rc : -rc) / Math.sqrt(x01 * x01 + y01 * y01), ox = lo * y01, oy = -lo * x01, x1 = p0[0] + ox, y1 = p0[1] + oy, x2 = p1[0] + ox, y2 = p1[1] + oy, x3 = (x1 + x2) / 2, y3 = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1, d2 = dx * dx + dy * dy, r = r1 - rc, D = x1 * y2 - x2 * y1, d = (dy < 0 ? -1 : 1) * Math.sqrt(r * r * d2 - D * D), cx0 = (D * dy - dx * d) / d2, cy0 = (-D * dx - dy * d) / d2, cx1 = (D * dy + dx * d) / d2, cy1 = (-D * dx + dy * d) / d2, dx0 = cx0 - x3, dy0 = cy0 - y3, dx1 = cx1 - x3, dy1 = cy1 - y3;
+    if (dx0 * dx0 + dy0 * dy0 > dx1 * dx1 + dy1 * dy1) cx0 = cx1, cy0 = cy1;
+    return [ [ cx0 - ox, cy0 - oy ], [ cx0 * r1 / r, cy0 * r1 / r ] ];
+  }
+  function d3_svg_line(projection) {
+    var x = d3_geom_pointX, y = d3_geom_pointY, defined = d3_true, interpolate = d3_svg_lineLinear, interpolateKey = interpolate.key, tension = .7;
+    function line(data) {
+      var segments = [], points = [], i = -1, n = data.length, d, fx = d3_functor(x), fy = d3_functor(y);
+      function segment() {
+        segments.push("M", interpolate(projection(points), tension));
+      }
+      while (++i < n) {
+        if (defined.call(this, d = data[i], i)) {
+          points.push([ +fx.call(this, d, i), +fy.call(this, d, i) ]);
+        } else if (points.length) {
+          segment();
+          points = [];
+        }
+      }
+      if (points.length) segment();
+      return segments.length ? segments.join("") : null;
+    }
+    line.x = function(_) {
+      if (!arguments.length) return x;
+      x = _;
+      return line;
+    };
+    line.y = function(_) {
+      if (!arguments.length) return y;
+      y = _;
+      return line;
+    };
+    line.defined = function(_) {
+      if (!arguments.length) return defined;
+      defined = _;
+      return line;
+    };
+    line.interpolate = function(_) {
+      if (!arguments.length) return interpolateKey;
+      if (typeof _ === "function") interpolateKey = interpolate = _; else interpolateKey = (interpolate = d3_svg_lineInterpolators.get(_) || d3_svg_lineLinear).key;
+      return line;
+    };
+    line.tension = function(_) {
+      if (!arguments.length) return tension;
+      tension = _;
+      return line;
+    };
+    return line;
+  }
+  d3.svg.line = function() {
+    return d3_svg_line(d3_identity);
+  };
+  var d3_svg_lineInterpolators = d3.map({
+    linear: d3_svg_lineLinear,
+    "linear-closed": d3_svg_lineLinearClosed,
+    step: d3_svg_lineStep,
+    "step-before": d3_svg_lineStepBefore,
+    "step-after": d3_svg_lineStepAfter,
+    basis: d3_svg_lineBasis,
+    "basis-open": d3_svg_lineBasisOpen,
+    "basis-closed": d3_svg_lineBasisClosed,
+    bundle: d3_svg_lineBundle,
+    cardinal: d3_svg_lineCardinal,
+    "cardinal-open": d3_svg_lineCardinalOpen,
+    "cardinal-closed": d3_svg_lineCardinalClosed,
+    monotone: d3_svg_lineMonotone
+  });
+  d3_svg_lineInterpolators.forEach(function(key, value) {
+    value.key = key;
+    value.closed = /-closed$/.test(key);
+  });
+  function d3_svg_lineLinear(points) {
+    return points.join("L");
+  }
+  function d3_svg_lineLinearClosed(points) {
+    return d3_svg_lineLinear(points) + "Z";
+  }
+  function d3_svg_lineStep(points) {
+    var i = 0, n = points.length, p = points[0], path = [ p[0], ",", p[1] ];
+    while (++i < n) path.push("H", (p[0] + (p = points[i])[0]) / 2, "V", p[1]);
+    if (n > 1) path.push("H", p[0]);
+    return path.join("");
+  }
+  function d3_svg_lineStepBefore(points) {
+    var i = 0, n = points.length, p = points[0], path = [ p[0], ",", p[1] ];
+    while (++i < n) path.push("V", (p = points[i])[1], "H", p[0]);
+    return path.join("");
+  }
+  function d3_svg_lineStepAfter(points) {
+    var i = 0, n = points.length, p = points[0], path = [ p[0], ",", p[1] ];
+    while (++i < n) path.push("H", (p = points[i])[0], "V", p[1]);
+    return path.join("");
+  }
+  function d3_svg_lineCardinalOpen(points, tension) {
+    return points.length < 4 ? d3_svg_lineLinear(points) : points[1] + d3_svg_lineHermite(points.slice(1, -1), d3_svg_lineCardinalTangents(points, tension));
+  }
+  function d3_svg_lineCardinalClosed(points, tension) {
+    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite((points.push(points[0]), 
+    points), d3_svg_lineCardinalTangents([ points[points.length - 2] ].concat(points, [ points[1] ]), tension));
+  }
+  function d3_svg_lineCardinal(points, tension) {
+    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite(points, d3_svg_lineCardinalTangents(points, tension));
+  }
+  function d3_svg_lineHermite(points, tangents) {
+    if (tangents.length < 1 || points.length != tangents.length && points.length != tangents.length + 2) {
+      return d3_svg_lineLinear(points);
+    }
+    var quad = points.length != tangents.length, path = "", p0 = points[0], p = points[1], t0 = tangents[0], t = t0, pi = 1;
+    if (quad) {
+      path += "Q" + (p[0] - t0[0] * 2 / 3) + "," + (p[1] - t0[1] * 2 / 3) + "," + p[0] + "," + p[1];
+      p0 = points[1];
+      pi = 2;
+    }
+    if (tangents.length > 1) {
+      t = tangents[1];
+      p = points[pi];
+      pi++;
+      path += "C" + (p0[0] + t0[0]) + "," + (p0[1] + t0[1]) + "," + (p[0] - t[0]) + "," + (p[1] - t[1]) + "," + p[0] + "," + p[1];
+      for (var i = 2; i < tangents.length; i++, pi++) {
+        p = points[pi];
+        t = tangents[i];
+        path += "S" + (p[0] - t[0]) + "," + (p[1] - t[1]) + "," + p[0] + "," + p[1];
+      }
+    }
+    if (quad) {
+      var lp = points[pi];
+      path += "Q" + (p[0] + t[0] * 2 / 3) + "," + (p[1] + t[1] * 2 / 3) + "," + lp[0] + "," + lp[1];
+    }
+    return path;
+  }
+  function d3_svg_lineCardinalTangents(points, tension) {
+    var tangents = [], a = (1 - tension) / 2, p0, p1 = points[0], p2 = points[1], i = 1, n = points.length;
+    while (++i < n) {
+      p0 = p1;
+      p1 = p2;
+      p2 = points[i];
+      tangents.push([ a * (p2[0] - p0[0]), a * (p2[1] - p0[1]) ]);
+    }
+    return tangents;
+  }
+  function d3_svg_lineBasis(points) {
+    if (points.length < 3) return d3_svg_lineLinear(points);
+    var i = 1, n = points.length, pi = points[0], x0 = pi[0], y0 = pi[1], px = [ x0, x0, x0, (pi = points[1])[0] ], py = [ y0, y0, y0, pi[1] ], path = [ x0, ",", y0, "L", d3_svg_lineDot4(d3_svg_lineBasisBezier3, px), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier3, py) ];
+    points.push(points[n - 1]);
+    while (++i <= n) {
+      pi = points[i];
+      px.shift();
+      px.push(pi[0]);
+      py.shift();
+      py.push(pi[1]);
+      d3_svg_lineBasisBezier(path, px, py);
+    }
+    points.pop();
+    path.push("L", pi);
+    return path.join("");
+  }
+  function d3_svg_lineBasisOpen(points) {
+    if (points.length < 4) return d3_svg_lineLinear(points);
+    var path = [], i = -1, n = points.length, pi, px = [ 0 ], py = [ 0 ];
+    while (++i < 3) {
+      pi = points[i];
+      px.push(pi[0]);
+      py.push(pi[1]);
+    }
+    path.push(d3_svg_lineDot4(d3_svg_lineBasisBezier3, px) + "," + d3_svg_lineDot4(d3_svg_lineBasisBezier3, py));
+    --i;
+    while (++i < n) {
+      pi = points[i];
+      px.shift();
+      px.push(pi[0]);
+      py.shift();
+      py.push(pi[1]);
+      d3_svg_lineBasisBezier(path, px, py);
+    }
+    return path.join("");
+  }
+  function d3_svg_lineBasisClosed(points) {
+    var path, i = -1, n = points.length, m = n + 4, pi, px = [], py = [];
+    while (++i < 4) {
+      pi = points[i % n];
+      px.push(pi[0]);
+      py.push(pi[1]);
+    }
+    path = [ d3_svg_lineDot4(d3_svg_lineBasisBezier3, px), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier3, py) ];
+    --i;
+    while (++i < m) {
+      pi = points[i % n];
+      px.shift();
+      px.push(pi[0]);
+      py.shift();
+      py.push(pi[1]);
+      d3_svg_lineBasisBezier(path, px, py);
+    }
+    return path.join("");
+  }
+  function d3_svg_lineBundle(points, tension) {
+    var n = points.length - 1;
+    if (n) {
+      var x0 = points[0][0], y0 = points[0][1], dx = points[n][0] - x0, dy = points[n][1] - y0, i = -1, p, t;
+      while (++i <= n) {
+        p = points[i];
+        t = i / n;
+        p[0] = tension * p[0] + (1 - tension) * (x0 + t * dx);
+        p[1] = tension * p[1] + (1 - tension) * (y0 + t * dy);
+      }
+    }
+    return d3_svg_lineBasis(points);
+  }
+  function d3_svg_lineDot4(a, b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+  }
+  var d3_svg_lineBasisBezier1 = [ 0, 2 / 3, 1 / 3, 0 ], d3_svg_lineBasisBezier2 = [ 0, 1 / 3, 2 / 3, 0 ], d3_svg_lineBasisBezier3 = [ 0, 1 / 6, 2 / 3, 1 / 6 ];
+  function d3_svg_lineBasisBezier(path, x, y) {
+    path.push("C", d3_svg_lineDot4(d3_svg_lineBasisBezier1, x), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier1, y), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier2, x), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier2, y), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier3, x), ",", d3_svg_lineDot4(d3_svg_lineBasisBezier3, y));
+  }
+  function d3_svg_lineSlope(p0, p1) {
+    return (p1[1] - p0[1]) / (p1[0] - p0[0]);
+  }
+  function d3_svg_lineFiniteDifferences(points) {
+    var i = 0, j = points.length - 1, m = [], p0 = points[0], p1 = points[1], d = m[0] = d3_svg_lineSlope(p0, p1);
+    while (++i < j) {
+      m[i] = (d + (d = d3_svg_lineSlope(p0 = p1, p1 = points[i + 1]))) / 2;
+    }
+    m[i] = d;
+    return m;
+  }
+  function d3_svg_lineMonotoneTangents(points) {
+    var tangents = [], d, a, b, s, m = d3_svg_lineFiniteDifferences(points), i = -1, j = points.length - 1;
+    while (++i < j) {
+      d = d3_svg_lineSlope(points[i], points[i + 1]);
+      if (abs(d) < ε) {
+        m[i] = m[i + 1] = 0;
+      } else {
+        a = m[i] / d;
+        b = m[i + 1] / d;
+        s = a * a + b * b;
+        if (s > 9) {
+          s = d * 3 / Math.sqrt(s);
+          m[i] = s * a;
+          m[i + 1] = s * b;
+        }
+      }
+    }
+    i = -1;
+    while (++i <= j) {
+      s = (points[Math.min(j, i + 1)][0] - points[Math.max(0, i - 1)][0]) / (6 * (1 + m[i] * m[i]));
+      tangents.push([ s || 0, m[i] * s || 0 ]);
+    }
+    return tangents;
+  }
+  function d3_svg_lineMonotone(points) {
+    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite(points, d3_svg_lineMonotoneTangents(points));
+  }
+  d3.svg.line.radial = function() {
+    var line = d3_svg_line(d3_svg_lineRadial);
+    line.radius = line.x, delete line.x;
+    line.angle = line.y, delete line.y;
+    return line;
+  };
+  function d3_svg_lineRadial(points) {
+    var point, i = -1, n = points.length, r, a;
+    while (++i < n) {
+      point = points[i];
+      r = point[0];
+      a = point[1] - halfπ;
+      point[0] = r * Math.cos(a);
+      point[1] = r * Math.sin(a);
+    }
+    return points;
+  }
+  function d3_svg_area(projection) {
+    var x0 = d3_geom_pointX, x1 = d3_geom_pointX, y0 = 0, y1 = d3_geom_pointY, defined = d3_true, interpolate = d3_svg_lineLinear, interpolateKey = interpolate.key, interpolateReverse = interpolate, L = "L", tension = .7;
+    function area(data) {
+      var segments = [], points0 = [], points1 = [], i = -1, n = data.length, d, fx0 = d3_functor(x0), fy0 = d3_functor(y0), fx1 = x0 === x1 ? function() {
+        return x;
+      } : d3_functor(x1), fy1 = y0 === y1 ? function() {
+        return y;
+      } : d3_functor(y1), x, y;
+      function segment() {
+        segments.push("M", interpolate(projection(points1), tension), L, interpolateReverse(projection(points0.reverse()), tension), "Z");
+      }
+      while (++i < n) {
+        if (defined.call(this, d = data[i], i)) {
+          points0.push([ x = +fx0.call(this, d, i), y = +fy0.call(this, d, i) ]);
+          points1.push([ +fx1.call(this, d, i), +fy1.call(this, d, i) ]);
+        } else if (points0.length) {
+          segment();
+          points0 = [];
+          points1 = [];
+        }
+      }
+      if (points0.length) segment();
+      return segments.length ? segments.join("") : null;
+    }
+    area.x = function(_) {
+      if (!arguments.length) return x1;
+      x0 = x1 = _;
+      return area;
+    };
+    area.x0 = function(_) {
+      if (!arguments.length) return x0;
+      x0 = _;
+      return area;
+    };
+    area.x1 = function(_) {
+      if (!arguments.length) return x1;
+      x1 = _;
+      return area;
+    };
+    area.y = function(_) {
+      if (!arguments.length) return y1;
+      y0 = y1 = _;
+      return area;
+    };
+    area.y0 = function(_) {
+      if (!arguments.length) return y0;
+      y0 = _;
+      return area;
+    };
+    area.y1 = function(_) {
+      if (!arguments.length) return y1;
+      y1 = _;
+      return area;
+    };
+    area.defined = function(_) {
+      if (!arguments.length) return defined;
+      defined = _;
+      return area;
+    };
+    area.interpolate = function(_) {
+      if (!arguments.length) return interpolateKey;
+      if (typeof _ === "function") interpolateKey = interpolate = _; else interpolateKey = (interpolate = d3_svg_lineInterpolators.get(_) || d3_svg_lineLinear).key;
+      interpolateReverse = interpolate.reverse || interpolate;
+      L = interpolate.closed ? "M" : "L";
+      return area;
+    };
+    area.tension = function(_) {
+      if (!arguments.length) return tension;
+      tension = _;
+      return area;
+    };
+    return area;
+  }
+  d3_svg_lineStepBefore.reverse = d3_svg_lineStepAfter;
+  d3_svg_lineStepAfter.reverse = d3_svg_lineStepBefore;
+  d3.svg.area = function() {
+    return d3_svg_area(d3_identity);
+  };
+  d3.svg.area.radial = function() {
+    var area = d3_svg_area(d3_svg_lineRadial);
+    area.radius = area.x, delete area.x;
+    area.innerRadius = area.x0, delete area.x0;
+    area.outerRadius = area.x1, delete area.x1;
+    area.angle = area.y, delete area.y;
+    area.startAngle = area.y0, delete area.y0;
+    area.endAngle = area.y1, delete area.y1;
+    return area;
+  };
+  d3.svg.chord = function() {
+    var source = d3_source, target = d3_target, radius = d3_svg_chordRadius, startAngle = d3_svg_arcStartAngle, endAngle = d3_svg_arcEndAngle;
+    function chord(d, i) {
+      var s = subgroup(this, source, d, i), t = subgroup(this, target, d, i);
+      return "M" + s.p0 + arc(s.r, s.p1, s.a1 - s.a0) + (equals(s, t) ? curve(s.r, s.p1, s.r, s.p0) : curve(s.r, s.p1, t.r, t.p0) + arc(t.r, t.p1, t.a1 - t.a0) + curve(t.r, t.p1, s.r, s.p0)) + "Z";
+    }
+    function subgroup(self, f, d, i) {
+      var subgroup = f.call(self, d, i), r = radius.call(self, subgroup, i), a0 = startAngle.call(self, subgroup, i) - halfπ, a1 = endAngle.call(self, subgroup, i) - halfπ;
+      return {
+        r: r,
+        a0: a0,
+        a1: a1,
+        p0: [ r * Math.cos(a0), r * Math.sin(a0) ],
+        p1: [ r * Math.cos(a1), r * Math.sin(a1) ]
+      };
+    }
+    function equals(a, b) {
+      return a.a0 == b.a0 && a.a1 == b.a1;
+    }
+    function arc(r, p, a) {
+      return "A" + r + "," + r + " 0 " + +(a > π) + ",1 " + p;
+    }
+    function curve(r0, p0, r1, p1) {
+      return "Q 0,0 " + p1;
+    }
+    chord.radius = function(v) {
+      if (!arguments.length) return radius;
+      radius = d3_functor(v);
+      return chord;
+    };
+    chord.source = function(v) {
+      if (!arguments.length) return source;
+      source = d3_functor(v);
+      return chord;
+    };
+    chord.target = function(v) {
+      if (!arguments.length) return target;
+      target = d3_functor(v);
+      return chord;
+    };
+    chord.startAngle = function(v) {
+      if (!arguments.length) return startAngle;
+      startAngle = d3_functor(v);
+      return chord;
+    };
+    chord.endAngle = function(v) {
+      if (!arguments.length) return endAngle;
+      endAngle = d3_functor(v);
+      return chord;
+    };
+    return chord;
+  };
+  function d3_svg_chordRadius(d) {
+    return d.radius;
+  }
+  d3.svg.diagonal = function() {
+    var source = d3_source, target = d3_target, projection = d3_svg_diagonalProjection;
+    function diagonal(d, i) {
+      var p0 = source.call(this, d, i), p3 = target.call(this, d, i), m = (p0.y + p3.y) / 2, p = [ p0, {
+        x: p0.x,
+        y: m
+      }, {
+        x: p3.x,
+        y: m
+      }, p3 ];
+      p = p.map(projection);
+      return "M" + p[0] + "C" + p[1] + " " + p[2] + " " + p[3];
+    }
+    diagonal.source = function(x) {
+      if (!arguments.length) return source;
+      source = d3_functor(x);
+      return diagonal;
+    };
+    diagonal.target = function(x) {
+      if (!arguments.length) return target;
+      target = d3_functor(x);
+      return diagonal;
+    };
+    diagonal.projection = function(x) {
+      if (!arguments.length) return projection;
+      projection = x;
+      return diagonal;
+    };
+    return diagonal;
+  };
+  function d3_svg_diagonalProjection(d) {
+    return [ d.x, d.y ];
+  }
+  d3.svg.diagonal.radial = function() {
+    var diagonal = d3.svg.diagonal(), projection = d3_svg_diagonalProjection, projection_ = diagonal.projection;
+    diagonal.projection = function(x) {
+      return arguments.length ? projection_(d3_svg_diagonalRadialProjection(projection = x)) : projection;
+    };
+    return diagonal;
+  };
+  function d3_svg_diagonalRadialProjection(projection) {
+    return function() {
+      var d = projection.apply(this, arguments), r = d[0], a = d[1] - halfπ;
+      return [ r * Math.cos(a), r * Math.sin(a) ];
+    };
+  }
+  d3.svg.symbol = function() {
+    var type = d3_svg_symbolType, size = d3_svg_symbolSize;
+    function symbol(d, i) {
+      return (d3_svg_symbols.get(type.call(this, d, i)) || d3_svg_symbolCircle)(size.call(this, d, i));
+    }
+    symbol.type = function(x) {
+      if (!arguments.length) return type;
+      type = d3_functor(x);
+      return symbol;
+    };
+    symbol.size = function(x) {
+      if (!arguments.length) return size;
+      size = d3_functor(x);
+      return symbol;
+    };
+    return symbol;
+  };
+  function d3_svg_symbolSize() {
+    return 64;
+  }
+  function d3_svg_symbolType() {
+    return "circle";
+  }
+  function d3_svg_symbolCircle(size) {
+    var r = Math.sqrt(size / π);
+    return "M0," + r + "A" + r + "," + r + " 0 1,1 0," + -r + "A" + r + "," + r + " 0 1,1 0," + r + "Z";
+  }
+  var d3_svg_symbols = d3.map({
+    circle: d3_svg_symbolCircle,
+    cross: function(size) {
+      var r = Math.sqrt(size / 5) / 2;
+      return "M" + -3 * r + "," + -r + "H" + -r + "V" + -3 * r + "H" + r + "V" + -r + "H" + 3 * r + "V" + r + "H" + r + "V" + 3 * r + "H" + -r + "V" + r + "H" + -3 * r + "Z";
+    },
+    diamond: function(size) {
+      var ry = Math.sqrt(size / (2 * d3_svg_symbolTan30)), rx = ry * d3_svg_symbolTan30;
+      return "M0," + -ry + "L" + rx + ",0" + " 0," + ry + " " + -rx + ",0" + "Z";
+    },
+    square: function(size) {
+      var r = Math.sqrt(size) / 2;
+      return "M" + -r + "," + -r + "L" + r + "," + -r + " " + r + "," + r + " " + -r + "," + r + "Z";
+    },
+    "triangle-down": function(size) {
+      var rx = Math.sqrt(size / d3_svg_symbolSqrt3), ry = rx * d3_svg_symbolSqrt3 / 2;
+      return "M0," + ry + "L" + rx + "," + -ry + " " + -rx + "," + -ry + "Z";
+    },
+    "triangle-up": function(size) {
+      var rx = Math.sqrt(size / d3_svg_symbolSqrt3), ry = rx * d3_svg_symbolSqrt3 / 2;
+      return "M0," + -ry + "L" + rx + "," + ry + " " + -rx + "," + ry + "Z";
+    }
+  });
+  d3.svg.symbolTypes = d3_svg_symbols.keys();
+  var d3_svg_symbolSqrt3 = Math.sqrt(3), d3_svg_symbolTan30 = Math.tan(30 * d3_radians);
+  d3_selectionPrototype.transition = function(name) {
+    var id = d3_transitionInheritId || ++d3_transitionId, ns = d3_transitionNamespace(name), subgroups = [], subgroup, node, transition = d3_transitionInherit || {
+      time: Date.now(),
+      ease: d3_ease_cubicInOut,
+      delay: 0,
+      duration: 250
+    };
+    for (var j = -1, m = this.length; ++j < m; ) {
+      subgroups.push(subgroup = []);
+      for (var group = this[j], i = -1, n = group.length; ++i < n; ) {
+        if (node = group[i]) d3_transitionNode(node, i, ns, id, transition);
+        subgroup.push(node);
+      }
+    }
+    return d3_transition(subgroups, ns, id);
+  };
+  d3_selectionPrototype.interrupt = function(name) {
+    return this.each(name == null ? d3_selection_interrupt : d3_selection_interruptNS(d3_transitionNamespace(name)));
+  };
+  var d3_selection_interrupt = d3_selection_interruptNS(d3_transitionNamespace());
+  function d3_selection_interruptNS(ns) {
+    return function() {
+      var lock, active;
+      if ((lock = this[ns]) && (active = lock[lock.active])) {
+        if (--lock.count) delete lock[lock.active]; else delete this[ns];
+        lock.active += .5;
+        active.event && active.event.interrupt.call(this, this.__data__, active.index);
+      }
+    };
+  }
+  function d3_transition(groups, ns, id) {
+    d3_subclass(groups, d3_transitionPrototype);
+    groups.namespace = ns;
+    groups.id = id;
+    return groups;
+  }
+  var d3_transitionPrototype = [], d3_transitionId = 0, d3_transitionInheritId, d3_transitionInherit;
+  d3_transitionPrototype.call = d3_selectionPrototype.call;
+  d3_transitionPrototype.empty = d3_selectionPrototype.empty;
+  d3_transitionPrototype.node = d3_selectionPrototype.node;
+  d3_transitionPrototype.size = d3_selectionPrototype.size;
+  d3.transition = function(selection, name) {
+    return selection && selection.transition ? d3_transitionInheritId ? selection.transition(name) : selection : d3.selection().transition(selection);
+  };
+  d3.transition.prototype = d3_transitionPrototype;
+  d3_transitionPrototype.select = function(selector) {
+    var id = this.id, ns = this.namespace, subgroups = [], subgroup, subnode, node;
+    selector = d3_selection_selector(selector);
+    for (var j = -1, m = this.length; ++j < m; ) {
+      subgroups.push(subgroup = []);
+      for (var group = this[j], i = -1, n = group.length; ++i < n; ) {
+        if ((node = group[i]) && (subnode = selector.call(node, node.__data__, i, j))) {
+          if ("__data__" in node) subnode.__data__ = node.__data__;
+          d3_transitionNode(subnode, i, ns, id, node[ns][id]);
+          subgroup.push(subnode);
+        } else {
+          subgroup.push(null);
+        }
+      }
+    }
+    return d3_transition(subgroups, ns, id);
+  };
+  d3_transitionPrototype.selectAll = function(selector) {
+    var id = this.id, ns = this.namespace, subgroups = [], subgroup, subnodes, node, subnode, transition;
+    selector = d3_selection_selectorAll(selector);
+    for (var j = -1, m = this.length; ++j < m; ) {
+      for (var group = this[j], i = -1, n = group.length; ++i < n; ) {
+        if (node = group[i]) {
+          transition = node[ns][id];
+          subnodes = selector.call(node, node.__data__, i, j);
+          subgroups.push(subgroup = []);
+          for (var k = -1, o = subnodes.length; ++k < o; ) {
+            if (subnode = subnodes[k]) d3_transitionNode(subnode, k, ns, id, transition);
+            subgroup.push(subnode);
+          }
+        }
+      }
+    }
+    return d3_transition(subgroups, ns, id);
+  };
+  d3_transitionPrototype.filter = function(filter) {
+    var subgroups = [], subgroup, group, node;
+    if (typeof filter !== "function") filter = d3_selection_filter(filter);
+    for (var j = 0, m = this.length; j < m; j++) {
+      subgroups.push(subgroup = []);
+      for (var group = this[j], i = 0, n = group.length; i < n; i++) {
+        if ((node = group[i]) && filter.call(node, node.__data__, i, j)) {
+          subgroup.push(node);
+        }
+      }
+    }
+    return d3_transition(subgroups, this.namespace, this.id);
+  };
+  d3_transitionPrototype.tween = function(name, tween) {
+    var id = this.id, ns = this.namespace;
+    if (arguments.length < 2) return this.node()[ns][id].tween.get(name);
+    return d3_selection_each(this, tween == null ? function(node) {
+      node[ns][id].tween.remove(name);
+    } : function(node) {
+      node[ns][id].tween.set(name, tween);
+    });
+  };
+  function d3_transition_tween(groups, name, value, tween) {
+    var id = groups.id, ns = groups.namespace;
+    return d3_selection_each(groups, typeof value === "function" ? function(node, i, j) {
+      node[ns][id].tween.set(name, tween(value.call(node, node.__data__, i, j)));
+    } : (value = tween(value), function(node) {
+      node[ns][id].tween.set(name, value);
+    }));
+  }
+  d3_transitionPrototype.attr = function(nameNS, value) {
+    if (arguments.length < 2) {
+      for (value in nameNS) this.attr(value, nameNS[value]);
+      return this;
+    }
+    var interpolate = nameNS == "transform" ? d3_interpolateTransform : d3_interpolate, name = d3.ns.qualify(nameNS);
+    function attrNull() {
+      this.removeAttribute(name);
+    }
+    function attrNullNS() {
+      this.removeAttributeNS(name.space, name.local);
+    }
+    function attrTween(b) {
+      return b == null ? attrNull : (b += "", function() {
+        var a = this.getAttribute(name), i;
+        return a !== b && (i = interpolate(a, b), function(t) {
+          this.setAttribute(name, i(t));
+        });
+      });
+    }
+    function attrTweenNS(b) {
+      return b == null ? attrNullNS : (b += "", function() {
+        var a = this.getAttributeNS(name.space, name.local), i;
+        return a !== b && (i = interpolate(a, b), function(t) {
+          this.setAttributeNS(name.space, name.local, i(t));
+        });
+      });
+    }
+    return d3_transition_tween(this, "attr." + nameNS, value, name.local ? attrTweenNS : attrTween);
+  };
+  d3_transitionPrototype.attrTween = function(nameNS, tween) {
+    var name = d3.ns.qualify(nameNS);
+    function attrTween(d, i) {
+      var f = tween.call(this, d, i, this.getAttribute(name));
+      return f && function(t) {
+        this.setAttribute(name, f(t));
+      };
+    }
+    function attrTweenNS(d, i) {
+      var f = tween.call(this, d, i, this.getAttributeNS(name.space, name.local));
+      return f && function(t) {
+        this.setAttributeNS(name.space, name.local, f(t));
+      };
+    }
+    return this.tween("attr." + nameNS, name.local ? attrTweenNS : attrTween);
+  };
+  d3_transitionPrototype.style = function(name, value, priority) {
+    var n = arguments.length;
+    if (n < 3) {
+      if (typeof name !== "string") {
+        if (n < 2) value = "";
+        for (priority in name) this.style(priority, name[priority], value);
+        return this;
+      }
+      priority = "";
+    }
+    function styleNull() {
+      this.style.removeProperty(name);
+    }
+    function styleString(b) {
+      return b == null ? styleNull : (b += "", function() {
+        var a = d3_window(this).getComputedStyle(this, null).getPropertyValue(name), i;
+        return a !== b && (i = d3_interpolate(a, b), function(t) {
+          this.style.setProperty(name, i(t), priority);
+        });
+      });
+    }
+    return d3_transition_tween(this, "style." + name, value, styleString);
+  };
+  d3_transitionPrototype.styleTween = function(name, tween, priority) {
+    if (arguments.length < 3) priority = "";
+    function styleTween(d, i) {
+      var f = tween.call(this, d, i, d3_window(this).getComputedStyle(this, null).getPropertyValue(name));
+      return f && function(t) {
+        this.style.setProperty(name, f(t), priority);
+      };
+    }
+    return this.tween("style." + name, styleTween);
+  };
+  d3_transitionPrototype.text = function(value) {
+    return d3_transition_tween(this, "text", value, d3_transition_text);
+  };
+  function d3_transition_text(b) {
+    if (b == null) b = "";
+    return function() {
+      this.textContent = b;
+    };
+  }
+  d3_transitionPrototype.remove = function() {
+    var ns = this.namespace;
+    return this.each("end.transition", function() {
+      var p;
+      if (this[ns].count < 2 && (p = this.parentNode)) p.removeChild(this);
+    });
+  };
+  d3_transitionPrototype.ease = function(value) {
+    var id = this.id, ns = this.namespace;
+    if (arguments.length < 1) return this.node()[ns][id].ease;
+    if (typeof value !== "function") value = d3.ease.apply(d3, arguments);
+    return d3_selection_each(this, function(node) {
+      node[ns][id].ease = value;
+    });
+  };
+  d3_transitionPrototype.delay = function(value) {
+    var id = this.id, ns = this.namespace;
+    if (arguments.length < 1) return this.node()[ns][id].delay;
+    return d3_selection_each(this, typeof value === "function" ? function(node, i, j) {
+      node[ns][id].delay = +value.call(node, node.__data__, i, j);
+    } : (value = +value, function(node) {
+      node[ns][id].delay = value;
+    }));
+  };
+  d3_transitionPrototype.duration = function(value) {
+    var id = this.id, ns = this.namespace;
+    if (arguments.length < 1) return this.node()[ns][id].duration;
+    return d3_selection_each(this, typeof value === "function" ? function(node, i, j) {
+      node[ns][id].duration = Math.max(1, value.call(node, node.__data__, i, j));
+    } : (value = Math.max(1, value), function(node) {
+      node[ns][id].duration = value;
+    }));
+  };
+  d3_transitionPrototype.each = function(type, listener) {
+    var id = this.id, ns = this.namespace;
+    if (arguments.length < 2) {
+      var inherit = d3_transitionInherit, inheritId = d3_transitionInheritId;
+      try {
+        d3_transitionInheritId = id;
+        d3_selection_each(this, function(node, i, j) {
+          d3_transitionInherit = node[ns][id];
+          type.call(node, node.__data__, i, j);
+        });
+      } finally {
+        d3_transitionInherit = inherit;
+        d3_transitionInheritId = inheritId;
+      }
+    } else {
+      d3_selection_each(this, function(node) {
+        var transition = node[ns][id];
+        (transition.event || (transition.event = d3.dispatch("start", "end", "interrupt"))).on(type, listener);
+      });
+    }
+    return this;
+  };
+  d3_transitionPrototype.transition = function() {
+    var id0 = this.id, id1 = ++d3_transitionId, ns = this.namespace, subgroups = [], subgroup, group, node, transition;
+    for (var j = 0, m = this.length; j < m; j++) {
+      subgroups.push(subgroup = []);
+      for (var group = this[j], i = 0, n = group.length; i < n; i++) {
+        if (node = group[i]) {
+          transition = node[ns][id0];
+          d3_transitionNode(node, i, ns, id1, {
+            time: transition.time,
+            ease: transition.ease,
+            delay: transition.delay + transition.duration,
+            duration: transition.duration
+          });
+        }
+        subgroup.push(node);
+      }
+    }
+    return d3_transition(subgroups, ns, id1);
+  };
+  function d3_transitionNamespace(name) {
+    return name == null ? "__transition__" : "__transition_" + name + "__";
+  }
+  function d3_transitionNode(node, i, ns, id, inherit) {
+    var lock = node[ns] || (node[ns] = {
+      active: 0,
+      count: 0
+    }), transition = lock[id];
+    if (!transition) {
+      var time = inherit.time;
+      transition = lock[id] = {
+        tween: new d3_Map(),
+        time: time,
+        delay: inherit.delay,
+        duration: inherit.duration,
+        ease: inherit.ease,
+        index: i
+      };
+      inherit = null;
+      ++lock.count;
+      d3.timer(function(elapsed) {
+        var delay = transition.delay, duration, ease, timer = d3_timer_active, tweened = [];
+        timer.t = delay + time;
+        if (delay <= elapsed) return start(elapsed - delay);
+        timer.c = start;
+        function start(elapsed) {
+          if (lock.active > id) return stop();
+          var active = lock[lock.active];
+          if (active) {
+            --lock.count;
+            delete lock[lock.active];
+            active.event && active.event.interrupt.call(node, node.__data__, active.index);
+          }
+          lock.active = id;
+          transition.event && transition.event.start.call(node, node.__data__, i);
+          transition.tween.forEach(function(key, value) {
+            if (value = value.call(node, node.__data__, i)) {
+              tweened.push(value);
+            }
+          });
+          ease = transition.ease;
+          duration = transition.duration;
+          d3.timer(function() {
+            timer.c = tick(elapsed || 1) ? d3_true : tick;
+            return 1;
+          }, 0, time);
+        }
+        function tick(elapsed) {
+          if (lock.active !== id) return 1;
+          var t = elapsed / duration, e = ease(t), n = tweened.length;
+          while (n > 0) {
+            tweened[--n].call(node, e);
+          }
+          if (t >= 1) {
+            transition.event && transition.event.end.call(node, node.__data__, i);
+            return stop();
+          }
+        }
+        function stop() {
+          if (--lock.count) delete lock[id]; else delete node[ns];
+          return 1;
+        }
+      }, 0, time);
+    }
+  }
+  d3.svg.axis = function() {
+    var scale = d3.scale.linear(), orient = d3_svg_axisDefaultOrient, innerTickSize = 6, outerTickSize = 6, tickPadding = 3, tickArguments_ = [ 10 ], tickValues = null, tickFormat_;
+    function axis(g) {
+      g.each(function() {
+        var g = d3.select(this);
+        var scale0 = this.__chart__ || scale, scale1 = this.__chart__ = scale.copy();
+        var ticks = tickValues == null ? scale1.ticks ? scale1.ticks.apply(scale1, tickArguments_) : scale1.domain() : tickValues, tickFormat = tickFormat_ == null ? scale1.tickFormat ? scale1.tickFormat.apply(scale1, tickArguments_) : d3_identity : tickFormat_, tick = g.selectAll(".tick").data(ticks, scale1), tickEnter = tick.enter().insert("g", ".domain").attr("class", "tick").style("opacity", ε), tickExit = d3.transition(tick.exit()).style("opacity", ε).remove(), tickUpdate = d3.transition(tick.order()).style("opacity", 1), tickSpacing = Math.max(innerTickSize, 0) + tickPadding, tickTransform;
+        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"), 
+        d3.transition(path));
+        tickEnter.append("line");
+        tickEnter.append("text");
+        var lineEnter = tickEnter.select("line"), lineUpdate = tickUpdate.select("line"), text = tick.select("text").text(tickFormat), textEnter = tickEnter.select("text"), textUpdate = tickUpdate.select("text"), sign = orient === "top" || orient === "left" ? -1 : 1, x1, x2, y1, y2;
+        if (orient === "bottom" || orient === "top") {
+          tickTransform = d3_svg_axisX, x1 = "x", y1 = "y", x2 = "x2", y2 = "y2";
+          text.attr("dy", sign < 0 ? "0em" : ".71em").style("text-anchor", "middle");
+          pathUpdate.attr("d", "M" + range[0] + "," + sign * outerTickSize + "V0H" + range[1] + "V" + sign * outerTickSize);
+        } else {
+          tickTransform = d3_svg_axisY, x1 = "y", y1 = "x", x2 = "y2", y2 = "x2";
+          text.attr("dy", ".32em").style("text-anchor", sign < 0 ? "end" : "start");
+          pathUpdate.attr("d", "M" + sign * outerTickSize + "," + range[0] + "H0V" + range[1] + "H" + sign * outerTickSize);
+        }
+        lineEnter.attr(y2, sign * innerTickSize);
+        textEnter.attr(y1, sign * tickSpacing);
+        lineUpdate.attr(x2, 0).attr(y2, sign * innerTickSize);
+        textUpdate.attr(x1, 0).attr(y1, sign * tickSpacing);
+        if (scale1.rangeBand) {
+          var x = scale1, dx = x.rangeBand() / 2;
+          scale0 = scale1 = function(d) {
+            return x(d) + dx;
+          };
+        } else if (scale0.rangeBand) {
+          scale0 = scale1;
+        } else {
+          tickExit.call(tickTransform, scale1, scale0);
+        }
+        tickEnter.call(tickTransform, scale0, scale1);
+        tickUpdate.call(tickTransform, scale1, scale1);
+      });
+    }
+    axis.scale = function(x) {
+      if (!arguments.length) return scale;
+      scale = x;
+      return axis;
+    };
+    axis.orient = function(x) {
+      if (!arguments.length) return orient;
+      orient = x in d3_svg_axisOrients ? x + "" : d3_svg_axisDefaultOrient;
+      return axis;
+    };
+    axis.ticks = function() {
+      if (!arguments.length) return tickArguments_;
+      tickArguments_ = arguments;
+      return axis;
+    };
+    axis.tickValues = function(x) {
+      if (!arguments.length) return tickValues;
+      tickValues = x;
+      return axis;
+    };
+    axis.tickFormat = function(x) {
+      if (!arguments.length) return tickFormat_;
+      tickFormat_ = x;
+      return axis;
+    };
+    axis.tickSize = function(x) {
+      var n = arguments.length;
+      if (!n) return innerTickSize;
+      innerTickSize = +x;
+      outerTickSize = +arguments[n - 1];
+      return axis;
+    };
+    axis.innerTickSize = function(x) {
+      if (!arguments.length) return innerTickSize;
+      innerTickSize = +x;
+      return axis;
+    };
+    axis.outerTickSize = function(x) {
+      if (!arguments.length) return outerTickSize;
+      outerTickSize = +x;
+      return axis;
+    };
+    axis.tickPadding = function(x) {
+      if (!arguments.length) return tickPadding;
+      tickPadding = +x;
+      return axis;
+    };
+    axis.tickSubdivide = function() {
+      return arguments.length && axis;
+    };
+    return axis;
+  };
+  var d3_svg_axisDefaultOrient = "bottom", d3_svg_axisOrients = {
+    top: 1,
+    right: 1,
+    bottom: 1,
+    left: 1
+  };
+  function d3_svg_axisX(selection, x0, x1) {
+    selection.attr("transform", function(d) {
+      var v0 = x0(d);
+      return "translate(" + (isFinite(v0) ? v0 : x1(d)) + ",0)";
+    });
+  }
+  function d3_svg_axisY(selection, y0, y1) {
+    selection.attr("transform", function(d) {
+      var v0 = y0(d);
+      return "translate(0," + (isFinite(v0) ? v0 : y1(d)) + ")";
+    });
+  }
+  d3.svg.brush = function() {
+    var event = d3_eventDispatch(brush, "brushstart", "brush", "brushend"), x = null, y = null, xExtent = [ 0, 0 ], yExtent = [ 0, 0 ], xExtentDomain, yExtentDomain, xClamp = true, yClamp = true, resizes = d3_svg_brushResizes[0];
+    function brush(g) {
+      g.each(function() {
+        var g = d3.select(this).style("pointer-events", "all").style("-webkit-tap-highlight-color", "rgba(0,0,0,0)").on("mousedown.brush", brushstart).on("touchstart.brush", brushstart);
+        var background = g.selectAll(".background").data([ 0 ]);
+        background.enter().append("rect").attr("class", "background").style("visibility", "hidden").style("cursor", "crosshair");
+        g.selectAll(".extent").data([ 0 ]).enter().append("rect").attr("class", "extent").style("cursor", "move");
+        var resize = g.selectAll(".resize").data(resizes, d3_identity);
+        resize.exit().remove();
+        resize.enter().append("g").attr("class", function(d) {
+          return "resize " + d;
+        }).style("cursor", function(d) {
+          return d3_svg_brushCursor[d];
+        }).append("rect").attr("x", function(d) {
+          return /[ew]$/.test(d) ? -3 : null;
+        }).attr("y", function(d) {
+          return /^[ns]/.test(d) ? -3 : null;
+        }).attr("width", 6).attr("height", 6).style("visibility", "hidden");
+        resize.style("display", brush.empty() ? "none" : null);
+        var gUpdate = d3.transition(g), backgroundUpdate = d3.transition(background), range;
+        if (x) {
+          range = d3_scaleRange(x);
+          backgroundUpdate.attr("x", range[0]).attr("width", range[1] - range[0]);
+          redrawX(gUpdate);
+        }
+        if (y) {
+          range = d3_scaleRange(y);
+          backgroundUpdate.attr("y", range[0]).attr("height", range[1] - range[0]);
+          redrawY(gUpdate);
+        }
+        redraw(gUpdate);
+      });
+    }
+    brush.event = function(g) {
+      g.each(function() {
+        var event_ = event.of(this, arguments), extent1 = {
+          x: xExtent,
+          y: yExtent,
+          i: xExtentDomain,
+          j: yExtentDomain
+        }, extent0 = this.__chart__ || extent1;
+        this.__chart__ = extent1;
+        if (d3_transitionInheritId) {
+          d3.select(this).transition().each("start.brush", function() {
+            xExtentDomain = extent0.i;
+            yExtentDomain = extent0.j;
+            xExtent = extent0.x;
+            yExtent = extent0.y;
+            event_({
+              type: "brushstart"
+            });
+          }).tween("brush:brush", function() {
+            var xi = d3_interpolateArray(xExtent, extent1.x), yi = d3_interpolateArray(yExtent, extent1.y);
+            xExtentDomain = yExtentDomain = null;
+            return function(t) {
+              xExtent = extent1.x = xi(t);
+              yExtent = extent1.y = yi(t);
+              event_({
+                type: "brush",
+                mode: "resize"
+              });
+            };
+          }).each("end.brush", function() {
+            xExtentDomain = extent1.i;
+            yExtentDomain = extent1.j;
+            event_({
+              type: "brush",
+              mode: "resize"
+            });
+            event_({
+              type: "brushend"
+            });
+          });
+        } else {
+          event_({
+            type: "brushstart"
+          });
+          event_({
+            type: "brush",
+            mode: "resize"
+          });
+          event_({
+            type: "brushend"
+          });
+        }
+      });
+    };
+    function redraw(g) {
+      g.selectAll(".resize").attr("transform", function(d) {
+        return "translate(" + xExtent[+/e$/.test(d)] + "," + yExtent[+/^s/.test(d)] + ")";
+      });
+    }
+    function redrawX(g) {
+      g.select(".extent").attr("x", xExtent[0]);
+      g.selectAll(".extent,.n>rect,.s>rect").attr("width", xExtent[1] - xExtent[0]);
+    }
+    function redrawY(g) {
+      g.select(".extent").attr("y", yExtent[0]);
+      g.selectAll(".extent,.e>rect,.w>rect").attr("height", yExtent[1] - yExtent[0]);
+    }
+    function brushstart() {
+      var target = this, eventTarget = d3.select(d3.event.target), event_ = event.of(target, arguments), g = d3.select(target), resizing = eventTarget.datum(), resizingX = !/^(n|s)$/.test(resizing) && x, resizingY = !/^(e|w)$/.test(resizing) && y, dragging = eventTarget.classed("extent"), dragRestore = d3_event_dragSuppress(target), center, origin = d3.mouse(target), offset;
+      var w = d3.select(d3_window(target)).on("keydown.brush", keydown).on("keyup.brush", keyup);
+      if (d3.event.changedTouches) {
+        w.on("touchmove.brush", brushmove).on("touchend.brush", brushend);
+      } else {
+        w.on("mousemove.brush", brushmove).on("mouseup.brush", brushend);
+      }
+      g.interrupt().selectAll("*").interrupt();
+      if (dragging) {
+        origin[0] = xExtent[0] - origin[0];
+        origin[1] = yExtent[0] - origin[1];
+      } else if (resizing) {
+        var ex = +/w$/.test(resizing), ey = +/^n/.test(resizing);
+        offset = [ xExtent[1 - ex] - origin[0], yExtent[1 - ey] - origin[1] ];
+        origin[0] = xExtent[ex];
+        origin[1] = yExtent[ey];
+      } else if (d3.event.altKey) center = origin.slice();
+      g.style("pointer-events", "none").selectAll(".resize").style("display", null);
+      d3.select("body").style("cursor", eventTarget.style("cursor"));
+      event_({
+        type: "brushstart"
+      });
+      brushmove();
+      function keydown() {
+        if (d3.event.keyCode == 32) {
+          if (!dragging) {
+            center = null;
+            origin[0] -= xExtent[1];
+            origin[1] -= yExtent[1];
+            dragging = 2;
+          }
+          d3_eventPreventDefault();
+        }
+      }
+      function keyup() {
+        if (d3.event.keyCode == 32 && dragging == 2) {
+          origin[0] += xExtent[1];
+          origin[1] += yExtent[1];
+          dragging = 0;
+          d3_eventPreventDefault();
+        }
+      }
+      function brushmove() {
+        var point = d3.mouse(target), moved = false;
+        if (offset) {
+          point[0] += offset[0];
+          point[1] += offset[1];
+        }
+        if (!dragging) {
+          if (d3.event.altKey) {
+            if (!center) center = [ (xExtent[0] + xExtent[1]) / 2, (yExtent[0] + yExtent[1]) / 2 ];
+            origin[0] = xExtent[+(point[0] < center[0])];
+            origin[1] = yExtent[+(point[1] < center[1])];
+          } else center = null;
+        }
+        if (resizingX && move1(point, x, 0)) {
+          redrawX(g);
+          moved = true;
+        }
+        if (resizingY && move1(point, y, 1)) {
+          redrawY(g);
+          moved = true;
+        }
+        if (moved) {
+          redraw(g);
+          event_({
+            type: "brush",
+            mode: dragging ? "move" : "resize"
+          });
+        }
+      }
+      function move1(point, scale, i) {
+        var range = d3_scaleRange(scale), r0 = range[0], r1 = range[1], position = origin[i], extent = i ? yExtent : xExtent, size = extent[1] - extent[0], min, max;
+        if (dragging) {
+          r0 -= position;
+          r1 -= size + position;
+        }
+        min = (i ? yClamp : xClamp) ? Math.max(r0, Math.min(r1, point[i])) : point[i];
+        if (dragging) {
+          max = (min += position) + size;
+        } else {
+          if (center) position = Math.max(r0, Math.min(r1, 2 * center[i] - min));
+          if (position < min) {
+            max = min;
+            min = position;
+          } else {
+            max = position;
+          }
+        }
+        if (extent[0] != min || extent[1] != max) {
+          if (i) yExtentDomain = null; else xExtentDomain = null;
+          extent[0] = min;
+          extent[1] = max;
+          return true;
+        }
+      }
+      function brushend() {
+        brushmove();
+        g.style("pointer-events", "all").selectAll(".resize").style("display", brush.empty() ? "none" : null);
+        d3.select("body").style("cursor", null);
+        w.on("mousemove.brush", null).on("mouseup.brush", null).on("touchmove.brush", null).on("touchend.brush", null).on("keydown.brush", null).on("keyup.brush", null);
+        dragRestore();
+        event_({
+          type: "brushend"
+        });
+      }
+    }
+    brush.x = function(z) {
+      if (!arguments.length) return x;
+      x = z;
+      resizes = d3_svg_brushResizes[!x << 1 | !y];
+      return brush;
+    };
+    brush.y = function(z) {
+      if (!arguments.length) return y;
+      y = z;
+      resizes = d3_svg_brushResizes[!x << 1 | !y];
+      return brush;
+    };
+    brush.clamp = function(z) {
+      if (!arguments.length) return x && y ? [ xClamp, yClamp ] : x ? xClamp : y ? yClamp : null;
+      if (x && y) xClamp = !!z[0], yClamp = !!z[1]; else if (x) xClamp = !!z; else if (y) yClamp = !!z;
+      return brush;
+    };
+    brush.extent = function(z) {
+      var x0, x1, y0, y1, t;
+      if (!arguments.length) {
+        if (x) {
+          if (xExtentDomain) {
+            x0 = xExtentDomain[0], x1 = xExtentDomain[1];
+          } else {
+            x0 = xExtent[0], x1 = xExtent[1];
+            if (x.invert) x0 = x.invert(x0), x1 = x.invert(x1);
+            if (x1 < x0) t = x0, x0 = x1, x1 = t;
+          }
+        }
+        if (y) {
+          if (yExtentDomain) {
+            y0 = yExtentDomain[0], y1 = yExtentDomain[1];
+          } else {
+            y0 = yExtent[0], y1 = yExtent[1];
+            if (y.invert) y0 = y.invert(y0), y1 = y.invert(y1);
+            if (y1 < y0) t = y0, y0 = y1, y1 = t;
+          }
+        }
+        return x && y ? [ [ x0, y0 ], [ x1, y1 ] ] : x ? [ x0, x1 ] : y && [ y0, y1 ];
+      }
+      if (x) {
+        x0 = z[0], x1 = z[1];
+        if (y) x0 = x0[0], x1 = x1[0];
+        xExtentDomain = [ x0, x1 ];
+        if (x.invert) x0 = x(x0), x1 = x(x1);
+        if (x1 < x0) t = x0, x0 = x1, x1 = t;
+        if (x0 != xExtent[0] || x1 != xExtent[1]) xExtent = [ x0, x1 ];
+      }
+      if (y) {
+        y0 = z[0], y1 = z[1];
+        if (x) y0 = y0[1], y1 = y1[1];
+        yExtentDomain = [ y0, y1 ];
+        if (y.invert) y0 = y(y0), y1 = y(y1);
+        if (y1 < y0) t = y0, y0 = y1, y1 = t;
+        if (y0 != yExtent[0] || y1 != yExtent[1]) yExtent = [ y0, y1 ];
+      }
+      return brush;
+    };
+    brush.clear = function() {
+      if (!brush.empty()) {
+        xExtent = [ 0, 0 ], yExtent = [ 0, 0 ];
+        xExtentDomain = yExtentDomain = null;
+      }
+      return brush;
+    };
+    brush.empty = function() {
+      return !!x && xExtent[0] == xExtent[1] || !!y && yExtent[0] == yExtent[1];
+    };
+    return d3.rebind(brush, event, "on");
+  };
+  var d3_svg_brushCursor = {
+    n: "ns-resize",
+    e: "ew-resize",
+    s: "ns-resize",
+    w: "ew-resize",
+    nw: "nwse-resize",
+    ne: "nesw-resize",
+    se: "nwse-resize",
+    sw: "nesw-resize"
+  };
+  var d3_svg_brushResizes = [ [ "n", "e", "s", "w", "nw", "ne", "se", "sw" ], [ "e", "w" ], [ "n", "s" ], [] ];
+  var d3_time_format = d3_time.format = d3_locale_enUS.timeFormat;
+  var d3_time_formatUtc = d3_time_format.utc;
+  var d3_time_formatIso = d3_time_formatUtc("%Y-%m-%dT%H:%M:%S.%LZ");
+  d3_time_format.iso = Date.prototype.toISOString && +new Date("2000-01-01T00:00:00.000Z") ? d3_time_formatIsoNative : d3_time_formatIso;
+  function d3_time_formatIsoNative(date) {
+    return date.toISOString();
+  }
+  d3_time_formatIsoNative.parse = function(string) {
+    var date = new Date(string);
+    return isNaN(date) ? null : date;
+  };
+  d3_time_formatIsoNative.toString = d3_time_formatIso.toString;
+  d3_time.second = d3_time_interval(function(date) {
+    return new d3_date(Math.floor(date / 1e3) * 1e3);
+  }, function(date, offset) {
+    date.setTime(date.getTime() + Math.floor(offset) * 1e3);
+  }, function(date) {
+    return date.getSeconds();
+  });
+  d3_time.seconds = d3_time.second.range;
+  d3_time.seconds.utc = d3_time.second.utc.range;
+  d3_time.minute = d3_time_interval(function(date) {
+    return new d3_date(Math.floor(date / 6e4) * 6e4);
+  }, function(date, offset) {
+    date.setTime(date.getTime() + Math.floor(offset) * 6e4);
+  }, function(date) {
+    return date.getMinutes();
+  });
+  d3_time.minutes = d3_time.minute.range;
+  d3_time.minutes.utc = d3_time.minute.utc.range;
+  d3_time.hour = d3_time_interval(function(date) {
+    var timezone = date.getTimezoneOffset() / 60;
+    return new d3_date((Math.floor(date / 36e5 - timezone) + timezone) * 36e5);
+  }, function(date, offset) {
+    date.setTime(date.getTime() + Math.floor(offset) * 36e5);
+  }, function(date) {
+    return date.getHours();
+  });
+  d3_time.hours = d3_time.hour.range;
+  d3_time.hours.utc = d3_time.hour.utc.range;
+  d3_time.month = d3_time_interval(function(date) {
+    date = d3_time.day(date);
+    date.setDate(1);
+    return date;
+  }, function(date, offset) {
+    date.setMonth(date.getMonth() + offset);
+  }, function(date) {
+    return date.getMonth();
+  });
+  d3_time.months = d3_time.month.range;
+  d3_time.months.utc = d3_time.month.utc.range;
+  function d3_time_scale(linear, methods, format) {
+    function scale(x) {
+      return linear(x);
+    }
+    scale.invert = function(x) {
+      return d3_time_scaleDate(linear.invert(x));
+    };
+    scale.domain = function(x) {
+      if (!arguments.length) return linear.domain().map(d3_time_scaleDate);
+      linear.domain(x);
+      return scale;
+    };
+    function tickMethod(extent, count) {
+      var span = extent[1] - extent[0], target = span / count, i = d3.bisect(d3_time_scaleSteps, target);
+      return i == d3_time_scaleSteps.length ? [ methods.year, d3_scale_linearTickRange(extent.map(function(d) {
+        return d / 31536e6;
+      }), count)[2] ] : !i ? [ d3_time_scaleMilliseconds, d3_scale_linearTickRange(extent, count)[2] ] : methods[target / d3_time_scaleSteps[i - 1] < d3_time_scaleSteps[i] / target ? i - 1 : i];
+    }
+    scale.nice = function(interval, skip) {
+      var domain = scale.domain(), extent = d3_scaleExtent(domain), method = interval == null ? tickMethod(extent, 10) : typeof interval === "number" && tickMethod(extent, interval);
+      if (method) interval = method[0], skip = method[1];
+      function skipped(date) {
+        return !isNaN(date) && !interval.range(date, d3_time_scaleDate(+date + 1), skip).length;
+      }
+      return scale.domain(d3_scale_nice(domain, skip > 1 ? {
+        floor: function(date) {
+          while (skipped(date = interval.floor(date))) date = d3_time_scaleDate(date - 1);
+          return date;
+        },
+        ceil: function(date) {
+          while (skipped(date = interval.ceil(date))) date = d3_time_scaleDate(+date + 1);
+          return date;
+        }
+      } : interval));
+    };
+    scale.ticks = function(interval, skip) {
+      var extent = d3_scaleExtent(scale.domain()), method = interval == null ? tickMethod(extent, 10) : typeof interval === "number" ? tickMethod(extent, interval) : !interval.range && [ {
+        range: interval
+      }, skip ];
+      if (method) interval = method[0], skip = method[1];
+      return interval.range(extent[0], d3_time_scaleDate(+extent[1] + 1), skip < 1 ? 1 : skip);
+    };
+    scale.tickFormat = function() {
+      return format;
+    };
+    scale.copy = function() {
+      return d3_time_scale(linear.copy(), methods, format);
+    };
+    return d3_scale_linearRebind(scale, linear);
+  }
+  function d3_time_scaleDate(t) {
+    return new Date(t);
+  }
+  var d3_time_scaleSteps = [ 1e3, 5e3, 15e3, 3e4, 6e4, 3e5, 9e5, 18e5, 36e5, 108e5, 216e5, 432e5, 864e5, 1728e5, 6048e5, 2592e6, 7776e6, 31536e6 ];
+  var d3_time_scaleLocalMethods = [ [ d3_time.second, 1 ], [ d3_time.second, 5 ], [ d3_time.second, 15 ], [ d3_time.second, 30 ], [ d3_time.minute, 1 ], [ d3_time.minute, 5 ], [ d3_time.minute, 15 ], [ d3_time.minute, 30 ], [ d3_time.hour, 1 ], [ d3_time.hour, 3 ], [ d3_time.hour, 6 ], [ d3_time.hour, 12 ], [ d3_time.day, 1 ], [ d3_time.day, 2 ], [ d3_time.week, 1 ], [ d3_time.month, 1 ], [ d3_time.month, 3 ], [ d3_time.year, 1 ] ];
+  var d3_time_scaleLocalFormat = d3_time_format.multi([ [ ".%L", function(d) {
+    return d.getMilliseconds();
+  } ], [ ":%S", function(d) {
+    return d.getSeconds();
+  } ], [ "%I:%M", function(d) {
+    return d.getMinutes();
+  } ], [ "%I %p", function(d) {
+    return d.getHours();
+  } ], [ "%a %d", function(d) {
+    return d.getDay() && d.getDate() != 1;
+  } ], [ "%b %d", function(d) {
+    return d.getDate() != 1;
+  } ], [ "%B", function(d) {
+    return d.getMonth();
+  } ], [ "%Y", d3_true ] ]);
+  var d3_time_scaleMilliseconds = {
+    range: function(start, stop, step) {
+      return d3.range(Math.ceil(start / step) * step, +stop, step).map(d3_time_scaleDate);
+    },
+    floor: d3_identity,
+    ceil: d3_identity
+  };
+  d3_time_scaleLocalMethods.year = d3_time.year;
+  d3_time.scale = function() {
+    return d3_time_scale(d3.scale.linear(), d3_time_scaleLocalMethods, d3_time_scaleLocalFormat);
+  };
+  var d3_time_scaleUtcMethods = d3_time_scaleLocalMethods.map(function(m) {
+    return [ m[0].utc, m[1] ];
+  });
+  var d3_time_scaleUtcFormat = d3_time_formatUtc.multi([ [ ".%L", function(d) {
+    return d.getUTCMilliseconds();
+  } ], [ ":%S", function(d) {
+    return d.getUTCSeconds();
+  } ], [ "%I:%M", function(d) {
+    return d.getUTCMinutes();
+  } ], [ "%I %p", function(d) {
+    return d.getUTCHours();
+  } ], [ "%a %d", function(d) {
+    return d.getUTCDay() && d.getUTCDate() != 1;
+  } ], [ "%b %d", function(d) {
+    return d.getUTCDate() != 1;
+  } ], [ "%B", function(d) {
+    return d.getUTCMonth();
+  } ], [ "%Y", d3_true ] ]);
+  d3_time_scaleUtcMethods.year = d3_time.year.utc;
+  d3_time.scale.utc = function() {
+    return d3_time_scale(d3.scale.linear(), d3_time_scaleUtcMethods, d3_time_scaleUtcFormat);
+  };
+  d3.text = d3_xhrType(function(request) {
+    return request.responseText;
+  });
+  d3.json = function(url, callback) {
+    return d3_xhr(url, "application/json", d3_json, callback);
+  };
+  function d3_json(request) {
+    return JSON.parse(request.responseText);
+  }
+  d3.html = function(url, callback) {
+    return d3_xhr(url, "text/html", d3_html, callback);
+  };
+  function d3_html(request) {
+    var range = d3_document.createRange();
+    range.selectNode(d3_document.body);
+    return range.createContextualFragment(request.responseText);
+  }
+  d3.xml = d3_xhrType(function(request) {
+    return request.responseXML;
+  });
+  if (typeof define === "function" && define.amd) define('d3',d3); else if (typeof module === "object" && module.exports) module.exports = d3;
+  this.d3 = d3;
+}();
+
+define('tpl!core/directives/pacingChart.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/pacingChart.html', '<span ng-if="current && max">{{current|truncateNumber}} of {{max|truncateNumber}}</span>\n<svg ng-show="current && max" class=\'meter\' version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\n     enable-background="new 0 0 100% 100%">\n    <g class="fill">\n        <rect width="0%" height="100%"/>\n    </g>\n    <g class="stroke">\n        <rect width="100%" height="100%"/>\n    </g>\n    <g ng-if="target" class="target">\n        <rect x="0%" width="3" height="100%"/>\n    </g>\n</svg>\n<div ng-if="current && !max">\n    {{current|truncateNumber}}\n</div>\n'); });
+
+define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacingChart.html'],function (require) {
+	'use strict';
+
+	var app = require('./../module');
+	var d3 = require('d3');
+	require('tpl!./pacingChart.html');
+
+	app.directive('pacingChart', ['$timeout', function () {
+		return {
+			restrict: 'A',
+			templateUrl: 'core/directives/pacingChart.html',
+			link: function (scope, elem, attr) {
+                var key = attr.pacingChart;
+
+                scope.$watch(key, function (data) {
+                    if (data) {
+                        scope.max = data.max;
+                        scope.current = data.current;
+                        scope.target = data.target;
+
+
+                        if (data.current > data.max) {
+                            scope.target = 0;
+                        }
+
+                        if (data.max) {
+                            var fill = d3.select(elem.find('.fill > rect')[0]);
+                            fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
+                        }
+
+                        //var target = d3.select(elem.find('.target > rect')[0]);
+                        //target.attr('x', '80%');
+                    }
+                });
+			}
+		};
+	}]);
+
+});
+
+define('core/filters/safe',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('safe', ['$sce', function ($sce) {
+        return function (input) {
+            return $sce.trustAsHtml(input);
+        };
+    }]);
+});
+
+define('core/filters/interpolate',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('interpolate', ['$interpolate', function ($interpolate) {
+        return function (input, scope) {
+            if (input) {
+                return $interpolate(input)(scope);
+            }
+        };
+    }]);
+});
+
+define('core/filters/errorCount',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    var ng = require('angular');
+
+    app.filter('errorCount', [function () {
+        return function (input) {
+            var count = 0;
+            for (var k in input) {
+                if (input.hasOwnProperty(k)) {
+                    count += ng.isArray(input[k]) && input[k].length || 1;
+                }
+            }
+            return count;
+        };
+    }]);
+});
+
+var minute = 360000;
+var hour = minute * 60;
+var day = hour * 24;
+var month = day * 30;
+var year = month * 12;
+
+define('core/filters/date',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+
+    app.filter('dateFormatter', [function () {
+        return function (date) {
+            var then = new Date(date);
+            var now = new Date();
+            var timePassed = now - then;
+
+            if (timePassed < minute) {
+                return 'moments ago';
+            }
+            if (timePassed < hour) {
+                return Math.floor(timePassed / minute) + ' minutes';
+            }
+            if (timePassed < day) {
+                return Math.floor(timePassed / hour) + ' hours ago';
+            }
+            if (timePassed < month) {
+                return Math.floor(timePassed / day) + ' days ago';
+            }
+            if (timePassed < year) {
+                return Math.floor(timePassed / month) + ' months ago';
+            }
+            return Math.floor(timePassed / year) + ' years ago';
+        };
+    }]);
+});
+
+define('core/filters/truncateNumber',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('truncateNumber', [function () {
+        return function (input) {
+            if (input < 1000) {
+                return input;
+            }
+            if (input < 1000000) {
+                return Math.round(input / 100) / 10 + 'K';
+            }
+            if (input < 1000000000) {
+                return Math.round(input / 100000) / 10 + 'M';
+            }
+            if (input < 1000000000000) {
+                return Math.round(input / 100000000) / 10 + 'B';
+            }
+            return input;
+        };
+    }]);
+});
+
+define('core/services/channel',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    module.service('channelService', ['dataFactory', '$http', function (dataFactory) {
+        var data = dataFactory(function (data) {
+            data.sort(sortFn);
+            return data;
+        });
+
+        function transform(data) {
+            var channelSet = {};
+            var output = [];
+
+            data = data.clientSet;
+
+            for (var i = 0; i < data.length; i++) {
+                channelSet[data[i].channel] = true;
+            }
+
+            ng.forEach(channelSet, function (value, key) {
+                output.push(key);
+            });
+
+            return output;
+        }
+
+        function init() {
+            return data.init('/api/v3/clientSet?dimensions=channel', transform);
+        }
+
+        function sortFn(a, b) {
+            return b.localeCompare(a);
+        }
+
+        return {
+            init: init,
+            all: data.all,
+            observe: data.observe,
+            notifyObservers: data.notifyObservers,
+            addData: data.addData,
+            setData: data.setData
+        };
+    }]);
+});
+
+define('core/services/clientSet',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+    var baseUrl = '/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+
+    module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.clientSet;
+            }
+        });
+
+        function filter() {
+            var output = '';
+
+            if ($state.params.clientId) {
+                output = '&filters=id:eq:' + $state.params.clientId;
+            }
+
+            return output;
+        }
+
+        function url() {
+            return baseUrl + filter();
+        }
+
+        function all() {
+            var datum = cache.all(url());
+            var output = {
+                'count': 0,
+                'countCampaignsPreFlight': 0,
+                'countCampaignsInFlight': 0,
+                'countCampaigns': 0,
+                'countAccounts': 0,
+                'countCampaignsArchived': 0,
+                'countCampaignsCompleted': 0
+            };
+
+            if (datum.length) {
+                ng.forEach(datum[0].metrics, function (d, key){
+                    output[key] = d;
+                });
+                output.countCampaigns = output.countCampaignsPreFlight + output.countCampaignsInFlight;
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
+        }
+
+        return {
+            url: url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+define('core/services/divisionSet',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+
+    module.service('divisionSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.divisionSet;
+            }
+        });
+
+        function filter() {
+            var output = '';
+
+            if ($state.params.divisionId) {
+                output = '&filters=id:eq:' + $state.params.divisionId;
+            }
+
+            return output;
+        }
+
+        function url() {
+            return baseUrl + filter();
+        }
+
+        function all() {
+            var datum = cache.all(url());
+            var output = {
+                'count': 0,
+                'countCampaignsPreFlight': 0,
+                'countCampaignsInFlight': 0,
+                'countCampaigns': 0,
+                'countAccounts': 0,
+                'countCampaignsArchived': 0,
+                'countCampaignsCompleted': 0
+            };
+
+            if (datum.length) {
+                ng.forEach(datum[0].metrics, function (d, key){
+                    output[key] = d;
+                });
+                output.countCampaigns = output.countCampaignsPreFlight + output.countCampaignsInFlight;
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
+        }
+
+        return {
+            url: url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+define('core/constants/apiURI',['require','./../module'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    var apiURI = (window.apiURI && window.apiURI) || '';
+
+    module.constant('API_URI', apiURI);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./constants/apiURI'],function (require) {
+    'use strict';
+
+    require('./modal/index');
+    require('./datepicker/index');
+    require('./navbar/index');
+    require('./factories/data');
+    require('./factories/cache');
+    require('./factories/pagination');
+    require('./factories/domainInterceptor');
+    require('./directives/dropdown');
+    require('./directives/limit');
+    require('./directives/tooltip');
+    require('./directives/compile');
+    require('./directives/placeholder');
+    require('./directives/filePicker');
+    require('./directives/pacingChart');
+    require('./filters/safe');
+    require('./filters/interpolate');
+    require('./filters/errorCount');
+    require('./filters/date');
+    require('./filters/truncateNumber');
+    require('./services/channel');
+    require('./services/clientSet');
+    require('./services/divisionSet');
+    require('./constants/apiURI');
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('table/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.tables', []);
+});
+
+define('table/filters/format',['require','./../module'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.filter('format', ['$filter', function ($filter) {
+        function percent(input) {
+            return $filter('number')(input, 2) + '%';
+        }
+
+        function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
+            return $filter('date')(input, 'longDate');
+        }
+
+        return function (input, row, rules) {
+            var rule = rules[input];
+            var data = row[input];
+            switch (rule) {
+            case 'number':
+                return $filter('number')(data, 0);
+            case 'percent':
+                return percent(data);
+            case 'quartile':
+                return data.map(function (d) {
+                    return percent(d);
+                }).join(' ');
+            case 'date':
+                return date(data);
+            case 'bullet':
+                return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
+            case 'link':
+                return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+            default:
+                return data;
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-wrapper">\n                <div class="table-hover" basic-table="row.content"></div>\n            </div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+
+define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./accordionTable.html');
+
+    app.directive('accordionTable', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/accordionTable.html',
+            replace: true,
+            scope: {
+                table: '=accordionTable',
+                classes: '@class'
+            },
+            link: function (scope) {
+                var opened = false;
+
+                scope.init = init;
+
+                function init(length, s){
+                    if (length && !opened) {
+                        s.open = opened = true;
+                    }
+                }
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.name}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
+
+/**
+ * Created by alex on 4/23/15.
+ */
+define('table/directives/basicTable',['require','./../module','tpl!./basicTable.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./basicTable.html');
+
+    app.directive('basicTable', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/basicTable.html',
+            replace: true,
+            scope: {
+                table: '=basicTable',
+                footer: '=basicFooter',
+                classes: '@class'
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable'],function (require) {
+    'use strict';
+
+    require('./filters/format');
+    require('./directives/accordionTable');
+    require('./directives/basicTable');
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('chart/module',['require','angular'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+
+    return ng.module('app.charts', []);
+});
+
+define('chart/directives/comparisonChart',['require','./../module','d3'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    var d3 = require('d3');
+
+    app.directive('barChart', [function () {
+        return {
+            link: function (scope, elem, attr) {
+                var key = attr.barChart;
+
+                scope.$watch(key, function (raw) {
+                    if (raw) {
+                        var height = 12;
+                        var width = 40;
+
+                        var data = [raw.value];
+
+                        var x = d3.scale.linear()
+                            .domain([0, raw.max])
+                            .range([0, width]);
+
+                        d3.select(elem[0])
+                            .selectAll('div')
+                            .data(data)
+                            .enter().append('div')
+                            .style('width', function (d) { return x(d) + 'px'; })
+                            .style('height', height + 'px');
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+define('chart/directives/quartileBarGraph',['require','./../module','d3'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    var d3 = require('d3');
+
+    app.directive('quartileBarChart', [function () {
+        return {
+            link: function (scope, elem, attr) {
+                var key = attr.quartileBarChart;
+
+                scope.$watch(key, function (raw) {
+                    if (raw) {
+                        var height = 12;
+                        var width = 40;
+
+                        var data = [raw.value];
+
+                        var x = d3.scale.linear()
+                            .domain([0, raw.max])
+                            .range([0, width]);
+
+                        d3.select(elem[0])
+                            .selectAll('div')
+                            .data(data)
+                            .enter().append('div')
+                            .style('width', function (d) { return x(d) + 'px'; })
+                            .style('height', height + 'px');
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('chart/index',['require','./directives/comparisonChart','./directives/quartileBarGraph'],function (require) {
+    'use strict';
+
+    require('./directives/comparisonChart');
+    require('./directives/quartileBarGraph');
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('campaignManagement/module',['require','angular','ui-router','./../chart/index','./../table/index','./../core/index'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+    require('ui-router');
+    require('./../chart/index');
+    require('./../table/index');
+    require('./../core/index');
+
+    return ng.module('app.campaign-management', ['ui.router', 'app.tables', 'app.charts', 'app.core']);
+});
+
+
+define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div class="header-summary" ui-view="header">\n    <div ng-include="\'campaignManagement/clients/clients.summary.html\'"></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div class="table-wrapper">\n        <div basic-table="topClients" class="table table-hover"></div>\n    </div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/clients/clients.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/clients.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>All Clients Summary</div>\n    <div class="dropdown-menu">\n        <div active-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openModal(\'lg\')">New Client</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/clients/client.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{client.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">New Account</button>\n    <button class="btn btn-default solid">New Division</button>\n    <button class="btn btn-default solid">Edit Client</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/clients/new-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.channels.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="channels" class="single-select" chosen ng-options="item as item for item in channels track by item" disable-search-threshold="10" ng-model="client.channel" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div file-picker ng-model="client.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="client.requireRepEmail" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newClient.$error)">Add Client</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+
+define('campaignManagement/clients/routes',['require','./../module','tpl!./index.html','tpl!./clients.summary.html','tpl!./client.summary.html','tpl!./new-client.html'],function (require) {
+    'use strict';
+    var app = require('./../module');
+    require('tpl!./index.html');
+    require('tpl!./clients.summary.html');
+    require('tpl!./client.summary.html');
+    require('tpl!./new-client.html');
+
+    return app.config(['$stateProvider', function ($stateProvider) {
+        $stateProvider
+            .state({
+                name: 'cm.clients',
+                url: '/clients',
+                controller: 'clientsCtrl',
+                templateUrl: 'campaignManagement/clients/index.html'
+            });
+    }]);
+});
+
+
+define('tpl!campaignManagement/divisions/division.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/division.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{division.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">New Account</button>\n    <button class="btn btn-default solid">Edit Division</button>\n</div>\n'); });
+
+define('campaignManagement/divisions/routes',['require','tpl!./division.summary.html'],function (require) {
+    'use strict';
+    require('tpl!./division.summary.html');
+});
+
+
+define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/new-account.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Account</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newAccount">\n        <div ng-pluralize ng-show="newAccount.$invalid && submitted" class="alert alert-danger" count="(newAccount.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newAccount.accountName.$invalid && submitted}">\n            <label for="accountName" class="col-sm-3 form-label required"><span>Account Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.accountName" type="text" name="accountName" class="form-control" id="accountName" placeholder="Enter new account name" required />\n                <p ng-show="newAccount.accountName.$invalid && submitted" class="help-block">\n                    account name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="accountKeywords" class="col-sm-3 form-label"><span>Account Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.keywords" type="text" class="form-control" id="accountKeywords" placeholder="Enter account keywords" />\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newAccount.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Industry</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="industry" class="single-select" chosen ng-options="industry.id as industry.name for industry in industries" disable-search-threshold="10" ng-model="account.industry" required>\n                </select>\n                <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">\n                    industry is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="account.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.clickthroughURL" type="text" class="form-control" name="clickthroughURL" id="clickthroughURL" placeholder="Enter URL" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="leadCaptureEmail" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.leadCaptureEmail" name="email" type="email" class="form-control" name="leadCaptureEmail" id="leadCaptureEmail" placeholder="Enter email" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="account.enableSpanishPlayer" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Spanish Player</span>\n            </label>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok()">Create Account</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/accounts/summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div account-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openModal(\'lg\')">New Campaign</button>\n    <button class="btn btn-default solid">Edit Account</button>\n</div>\n'); });
+
+define('campaignManagement/accounts/routes',['require','tpl!./new-account.html','tpl!./summary.html'],function (require) {
+    'use strict';
+    require('tpl!./new-account.html');
+    require('tpl!./summary.html');
+});
+
+
+define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n</section>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div class="header-summary" ui-view="summary">\n</div>\n<div ui-view="content">\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>\n        <span ng-show="campaign">Summary for {{campaign.name}}</span>\n        <span ng-show="!campaign">Summary</span>\n    </div>\n    <div class="dropdown-menu">\n        <div campaign-details></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">Edit Campaign</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/placements/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".publisher">Publisher (4)</a>\n        <a ui-sref=".ad-unit">Ad unit (15)</a>\n        <a ui-sref=".ad-type">Ad type (3)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-lg-3 col-lg-offset-1" style="padding-bottom: 1rem;">\n                <label class="form-label">\n                    <div class="dropdown">\n                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                        <ul class="dropdown-menu" role="menu">\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                        </ul>\n                    </div>\n                </label>\n            </div>\n            <div class="col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/thumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/thumbnails.html', '<div class="thumbnail-view row ng-scope">\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot active"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <div>\n                <span>Placements:</span><span>13</span>\n            </div>\n            <div>\n                <span>Last Modified:</span><span>10/1/2014</span>\n            </div>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/180" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+
+/* jshint -W015 */
+
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/placements/header.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/creatives/thumbnails.html','tpl!./campaigns/creatives/header.html','tpl!./campaigns/new-campaign.html'],function (require) {
+    'use strict';
+    var app = require('./module');
+    require('./clients/routes');
+    require('./divisions/routes');
+    require('./accounts/routes');
+
+    require('tpl!./index.html');
+    require('tpl!./campaigns/index.html');
+    require('tpl!./campaigns/campaign.summary.html');
+    require('tpl!./campaigns/campaign.html');
+    require('tpl!./campaigns/placements/list.html');
+    require('tpl!./campaigns/placements/header.html');
+    require('tpl!./campaigns/creatives/list.html');
+    require('tpl!./campaigns/creatives/thumbnails.html');
+    require('tpl!./campaigns/creatives/header.html');
+    require('tpl!./campaigns/new-campaign.html');
+
+    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
+        //httpProvider settings
+        $httpProvider.defaults.withCredentials = true;
+        $httpProvider.defaults.useXDomain = true;
+        $httpProvider.interceptors.push('domainInterceptor');
+
+        //urlRouter Settings
+        $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+        $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/list');
+        $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
+        if (!window.disableRouter) {
+            $urlRouterProvider.when('/', '/analytics');
+        }
+
+        //Routes
+        $stateProvider
+            .state('analytics', {
+                url: '/analytics',
+                parent: 'index',
+                templateUrl: 'campaignManagement/index.html'
+            })
+            .state('index', {
+                template: '<ui-view />',
+                controller: 'indexCtrl'
+            })
+            .state('cm', {
+                url: '/campaign-management',
+                controller: 'campaignManagementCtrl',
+                templateUrl: 'campaignManagement/index.html',
+                parent: 'index'
+            })
+            .state({
+                name: 'cm.campaigns',
+                url: '?viewBy',
+                templateUrl: 'campaignManagement/campaigns/index.html'
+            })
+            .state({
+                name: 'cm.campaigns.client',
+                url: '/client/:clientId',
+                views: {
+                    'summary': {
+                        controller: 'clientCtrl',
+                        templateUrl: 'campaignManagement/clients/client.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.division',
+                url: '/division/:divisionId',
+                views: {
+                    'summary': {
+                        controller: 'divisionCtrl',
+                        templateUrl: 'campaignManagement/divisions/division.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.account',
+                url: '/account/:accountId',
+                views: {
+                    'summary': {
+                        controller: 'accountCtrl',
+                        templateUrl: 'campaignManagement/accounts/summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail',
+                url: '/campaign/:campaignId',
+                views: {
+                    'summary': {
+                        controller: 'campaignCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaign.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaign.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.placements',
+                url: '/placements',
+                views: {
+                    'tab-header': {
+                        templateUrl: 'campaignManagement/campaigns/placements/header.html'
+                    },
+                    'table': {
+                        controller: 'placementListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/placements/list.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives',
+                url: '/creatives'
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives.list',
+                url: '/list',
+                views: {
+                    'tab-header@cm.campaigns.detail': {
+                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                    },
+                    'table@cm.campaigns.detail': {
+                        controller: 'creativeListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/list.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives.thumbnails',
+                url: '/thumbnails',
+                views: {
+                    'tab-header@cm.campaigns.detail': {
+                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                    },
+                    'table@cm.campaigns.detail': {
+                        controller: 'creativeThumbnailsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/thumbnails.html'
+                    }
+                }
+            });
+
+        buildAnalyticsRoutes('analytics');
+        buildReportRoutes('reports');
+
+        function buildReportRoutes(base) {
+            $stateProvider
+                .state({
+                    name: base,
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.account',
+                    url: '/analytics/reports/account/:accountId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.detail',
+                    url: '/analytics/reports/campaign/:campaignId',
+                    template: '<ui-view />'
+                });
+        }
+
+        function buildAnalyticsRoutes(base) {
+            $stateProvider
+                .state({
+                    name: base + '.clients',
+                    url: '',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns',
+                    template: '<ui-view/>'
+                })
+                .state({
+                    name: base + '.campaigns.client',
+                    url: '/dashboard/client/:clientId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.division',
+                    url: '/dashboard/division/:divisionId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.account',
+                    url: '/dashboard/account/:accountId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.detail',
+                    url: '/campaign/:campaignId',
+                    template: '<ui-view />'
+                })
+                .state(base + '.catch', {
+                    url: '/*path',
+                    template: '<ui-view />'
+                });
+        }
+
+        $locationProvider.html5Mode({ enabled: !window.disableRouter });
+    }]);
+});
+
+define('campaignManagement/divisions/controllers/division',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('divisionCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateDivisionInfo() {
+            $scope.division = navbar.all().division;
+        }
+
+        navbar.observe(updateDivisionInfo, $scope);
+    }]);
+});
+
+
+define('tpl!campaignManagement/divisions/directives/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/directives/youWorkOn.html', '<div>\n    <h3 class="title">You Work On</h3>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>{{summary.countAccounts|truncateNumber}}</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>{{summary.countCampaigns|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>{{summary.countCampaignsPreFlight|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>in-flight</span>\n            <span>{{summary.countCampaignsInFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>{{summary.countCampaignsCompleted|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>{{summary.countCampaignsArchived|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('campaignManagement/divisions/directives/youWorkOn',['require','./../../module','tpl!./youWorkOn.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./youWorkOn.html');
+
+    app.directive('youWorkOn', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/divisions/directives/youWorkOn.html',
+            controller: ['$scope', '$state', 'clientSet', 'divisionSet', function ($scope, $state, clientSet, divisionSet) {
+                function updateSummaryClientSet() {
+                    $scope.summary = clientSet.all();
+                }
+
+                function updateSummaryDivisionSet() {
+                    $scope.summary = divisionSet.all();
+                }
+
+                if ($state.params.divisionId) {
+                    divisionSet.observe(updateSummaryDivisionSet, $scope);
+                } else {
+                    clientSet.observe(updateSummaryClientSet, $scope);
+                }
+            }]
+        };
+    }]);
+});
+
+define('campaignManagement/divisions/index',['require','./controllers/division','./directives/youWorkOn'],function (require) {
+    'use strict';
+
+    require('./controllers/division');
+    require('./directives/youWorkOn');
+});
+
+define('campaignManagement/campaigns/services/campaignCache',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var cache = {};
+
+    module.service('campaignCache', ['paginationFactory', function (paginationFactory) {
+        function createCache(url, transform) {
+            var paginate = paginationFactory();
+            paginate.init(url, transform);
+            return paginate;
+        }
+
+        function get(url, transform) {
+            if (!cache[url]) {
+                cache[url] = createCache(url, transform);
+            }
+
+            return cache[url];
+        }
+
+        return {
+            get: get
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<span>{{name}} </span><span class="muted normal">{{metrics.countCampaigns}} live campaigns | {{metrics.countCampaignsPreFlight}} work in progress | {{metrics.countCampaignsCompleted}} completed</span>\n'); });
+
+define('campaignManagement/campaigns/services/campaignsByAccount',['require','./../../module','angular','tpl!./campaignsByAccountHeader.html'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var ng = require('angular');
+    var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
+    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns' +
+        ',countCampaignsPreFlight,countCampaignsCompleted';
+    var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
+
+    var rules = {
+        'campaign': 'link',
+        'status': '',
+        'impressions': 'bullet',
+        'start': 'date',
+        'end': 'date',
+        'placements': 'number',
+        'creatives': 'number',
+        'edit': ''
+    };
+
+    var headers = [
+        {name: 'Campaign', id: 'campaign'},
+        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Start', id: 'start'},
+        {name: 'End', id: 'end'},
+        {name: 'Placements', id: 'placements'},
+        {name: 'Creatives', id: 'creatives'},
+        {name: '', id: 'edit'}
+    ];
+
+    var limits = {};
+
+    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', function (cache, filter, $interpolate) {
+        function accountUrl() {
+            return headerUrl + filter();
+        }
+
+        function url() {
+            var accountIds = getAccountIds();
+            var opt = '';
+
+            if (accountIds.length) {
+                opt = 'account.id:eq:' + accountIds.join(':eq:');
+            }
+
+            return baseUrl + filter(opt);
+        }
+
+        function headerTransform(data) {
+            return data.accounts || data;
+        }
+
+        function campaignTransform(data) {
+            return data.campaigns || data;
+        }
+
+        function getAccountIds() {
+            var campaignHeader = cache.get(accountUrl(), headerTransform);
+            var accounts = campaignHeader.all();
+            var ids = [];
+
+            for (var i = 0; i < accounts.length; i++){
+                ids.push(accounts[i].id);
+            }
+
+            return ids;
+        }
+
+        function groupByAccount() {
+            var campaignCache = cache.get(url(), campaignTransform);
+
+            var accounts = {};
+            var campaigns = campaignCache.all();
+
+            for (var i = 0; i < campaigns.length; i++) {
+                var campaign = campaigns[i];
+                var accountId = campaign.account.id;
+
+                if (!accounts[accountId]) {
+                    accounts[accountId] = [];
+                }
+
+                accounts[accountId].push(campaign);
+            }
+
+            return accounts;
+        }
+
+        function header(account) {
+            return $interpolate(headerTemplate)(account);
+        }
+
+        function transformRows(campaigns, accountId) {
+            if(campaigns) {
+                campaigns.sort(function(a, b){
+                    if (b.name && a.name) {
+                        return a.name.localeCompare(b.name);
+                    }
+                });
+
+                var output = [];
+                var campaign;
+                var limit = limits[accountId] || 10;
+
+                for (var i = 0; i < campaigns.length && i < limit; i++) {
+                    campaign = campaigns[i];
+
+                    output.push(ng.extend({
+                        campaign: {
+                            id: campaign.id,
+                            route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
+                            name: campaign.name
+                        },
+                        impressions: {
+                            max: campaign.metrics.bookedImpressions,
+                            current: campaign.metrics.impressions
+                        },
+                        start: campaign.startDate,
+                        end: campaign.endDate,
+                        creatives: campaign.metrics.countCreatives,
+                        placements: campaign.metrics.countPlacements
+                    }));
+                }
+
+                return output;
+            }
+        }
+
+        function showMore(accountId) {
+            return function () {
+                if (!limits[accountId]) {
+                    limits[accountId] = 10;
+                }
+
+                limits[accountId] += 10;
+
+                return limits[accountId];
+            };
+        }
+
+        function all() {
+            var accountInfo = cache.get(accountUrl(), headerTransform).all();
+            var accounts = groupByAccount();
+            var output = [];
+
+            for (var i = 0; i < accountInfo.length; i++) {
+                var account = accountInfo[i];
+                output.push({
+                    header: header(account),
+                    options: {
+                        more: showMore(account.id)
+                    },
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: transformRows(accounts[account.id], account.id)
+                    }
+                });
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            var campaignHeader = cache.get(accountUrl(), headerTransform);
+
+            campaignHeader.observe(callback, $scope, preventImmediate);
+            campaignHeader.observe(function() {
+                var campaignCache = cache.get(url(), campaignTransform);
+                campaignCache.observe(callback, $scope);
+            }, $scope, true);
+        }
+
+        return {
+            _getAccountIds: getAccountIds,
+            _groupByAccount: groupByAccount,
+            all: all,
+            observe: observe
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/services/campaignsByStatus',['require','./../../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var ng = require('angular');
+    var tableBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc';
+    var cache = {};
+
+    var statuses = {
+        'preFlight': 'Pre-Flight',
+        'inFlight': 'In-Flight',
+        'completed': 'Completed',
+        'archived': 'Archived'
+    };
+
+    module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', function (campaignsHeader, campaignAccordionTableFactory, filter) {
+        function tableUrl(status) {
+            return tableBaseUrl + filter('status:eq:' + status );
+        }
+
+        function init() {
+            var accordionTables = cache[filter()];
+
+            if (!accordionTables) {
+                accordionTables = cache[filter()] = {};
+
+                accordionTables.header = campaignsHeader.data(true);
+                accordionTables.rows = {};
+
+                ng.forEach(statuses, function(title, status) {
+                    var accordionTable = campaignAccordionTableFactory();
+
+                    accordionTable.init({
+                        header: accordionTables.header,
+                        title: title,
+                        status: status,
+                        rows: tableUrl(status)
+                    });
+
+                    accordionTables.rows[status] = accordionTable;
+                });
+            }
+        }
+
+        function all() {
+            init();
+
+            var output = [];
+
+            ng.forEach(cache[filter()].rows, function (table) {
+                output.push(table.all());
+            });
+
+            return output;
+        }
+
+        function observe(callback, $scope){
+            init();
+
+            ng.forEach(cache[filter()].rows, function (table) {
+                table.observe(callback, $scope);
+            });
+        }
+
+        return {
+            all: all,
+            observe: observe
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/services/campaignsFilter',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+
+    module.service('campaignsFilter', ['$state', function ($state) {
+        /**
+         * Constructs an idFilter string of the form &filters=filter1,filter2,filter3
+         * @param {string} opt - Optional string that contains additional filters
+         * @returns {string}
+         */
+        function idFilter(opt) {
+            var filters = [];
+            var params = $state.params;
+
+            if (params.accountId) {
+                filters.push('account.id:eq:' + params.accountId);
+            } else if (params.divisionId) {
+                filters.push('division.id:eq:' + params.divisionId);
+            } else if (params.clientId) {
+                filters.push('client.id:eq:' + params.clientId);
+            }
+
+            if (opt) {
+                filters.push(opt);
+            }
+
+            if (filters.length) {
+                return '&filters=' + filters.join(',');
+            }
+
+            return '';
+        }
+
+        return idFilter;
+    }]);
+});
+
+define('campaignManagement/campaigns/services/campaignsHeader',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var baseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
+
+    module.service('campaignsHeader', ['cacheFactory', 'campaignsFilter', function (cacheFactory, filter) {
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.campaignSet;
+            }
+        });
+
+        function url() {
+            return baseUrl + filter();
+        }
+
+        function all() {
+            var datum = cache.all(url());
+            var output = {
+                'preFlight': 0,
+                'inFlight': 0,
+                'completed': 0,
+                'archived': 0
+            };
+
+            for (var i = 0; i < datum.length; i++) {
+                var data = datum[i];
+                output[data.status] = data.metrics.count;
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
+        }
+
+        return {
+            url: url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})\n'); });
+
+define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',['require','./../../module','tpl!./../campaignsByStatusHeader.html'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
+
+    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
+        return function() {
+            var header;
+            var rows = paginationFactory(sortRows);
+            var status;
+            var title;
+            var options = {
+                more: rows.nextPage
+            };
+
+            function sortRows(transformedRows) {
+                var sortFn = function (a, b) {
+                    if (a.campaign.name && b.campaign.name) {
+                        return a.campaign.name.localeCompare(b.campaign.name);
+                    } else {
+                        return 0;
+                    }
+                };
+
+                transformedRows.sort(sortFn);
+                return transformedRows;
+            }
+
+            function init(data) {
+                status = data.status;
+                header = data.header;
+                title = data.title;
+                if (data.rows) {
+                    rows.init(data.rows, _transformRows);
+                }
+            }
+
+            function _transformRows(data) {
+                var rows = data.campaigns;
+                var newRows = [];
+                var row;
+
+                for(var i=0; i<rows.length; i++) {
+                    row = rows[i];
+                    newRows.push({
+                        id: row.id,
+                        account: {
+                            id: row.account.id,
+                            route: 'cm.campaigns.all({ accountId: row.account.id })',
+                            name: row.account.name
+                        },
+                        campaign: {
+                            route: 'cm.campaigns.detail({ campaignId: row.id })',
+                            name: row.name
+                        },
+                        impressions: {
+                            max: row.metrics.bookedImpressions,
+                            current: row.metrics.impressions
+                        },
+                        start: row.startDate,
+                        end: row.endDate,
+                        placements: row.metrics.countPlacements,
+                        creatives: row.metrics.countCreatives
+                    });
+                }
+
+                return newRows;
+            }
+
+            function getTable() {
+                var rules = {
+                    account: 'link',
+                    campaign: 'link',
+                    impressions: 'bullet',
+                    start: 'date',
+                    end: 'date',
+                    placements: 'number',
+                    creatives: 'number',
+                    edit: ''
+                };
+
+                var headers = [
+                    {name: 'Campaign', id: 'campaign'},
+                    {name: 'Account', id: 'account'},
+                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Start', id: 'start'},
+                    {name: 'End', id: 'end'},
+                    {name: 'Placements', id: 'placements'},
+                    {name: 'Creatives', id: 'creatives'},
+                    {name: '', id: 'edit'}
+                ];
+
+                if ($state.params.accountId) {
+                    delete rules.account;
+                    headers.splice(1, 1);
+                }
+
+                return {
+                    header: _getTableHeader(header.all()),
+                    options: options,
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: rows.all()
+                    }
+                };
+            }
+
+            function _getTableHeader(data) {
+                var template;
+
+                for (var i = 0; i < data.length; i++) {
+                    var header = data[i];
+                    if (header.status === status) {
+                        template = $interpolate(headerTemplate);
+                        return template({
+                            status: status,
+                            title: title,
+                            count: header.metrics.count,
+                            countPlacementsLive: header.metrics.countPlacementsLive
+                        });
+                    }
+                }
+
+                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
+                return template({
+                    title: title
+                });
+            }
+
+            function observe(callback, $scope) {
+                header.observe(callback, $scope);
+                rows.observe(callback, $scope);
+            }
+
+            return {
+                init: init,
+                observe: observe,
+                all: getTable,
+                _transformRows: _transformRows,
+                _getTableHeader: _getTableHeader
+            };
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/controllers/newCampaign',['require','./../../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var ng = require('angular');
+
+    app.controller('newCampaignCtrl', ['$scope', '$modalInstance', 'accountService', function ($scope, $modalInstance, accounts) {
+
+        //Datepicker functions
+        $scope.format = 'MM/dd/yyyy';
+        $scope.openPicker = openPicker;
+        $scope.datePickers = {};
+
+        //Modal functions
+        $scope.ok = ok;
+        $scope.cancel = cancel;
+
+        $scope.campaign =  {
+            startDate: new Date(),
+            endDate: new Date(),
+            objectives: []
+        };
+
+        $scope.dateOptions = {
+            formatYear: 'yy',
+            startingDay: 0,
+            maxMode: 'day'
+        };
+
+        accounts.observe(updateAccounts, $scope);
+
+        function updateAccounts() {
+            $scope.accounts = accounts.filtered();
+        }
+
+        $scope.select = [
+            {
+                name: 'Uno 1',
+                value: '1'
+            },
+            {
+                name: 'Second',
+                value: '2'
+            },
+            {
+                name: 'Choice #3',
+                value: '3'
+            },
+            {
+                name: 'Pick me, pick me, pick me!',
+                value: '4'
+            },
+            {
+                name: 'Sheeple',
+                value: '5'
+            }
+        ];
+
+        function openPicker($event, name) {
+            $event.preventDefault();
+            $event.stopPropagation();
+
+            ng.forEach($scope.datePickers, function (value, key) {
+                $scope.datePickers[key] = false;
+            });
+
+            $scope.datePickers[name] = true;
+        }
+
+        function cancel() {
+            $modalInstance.dismiss('cancel');
+        }
+
+        function ok(errors) {
+            console.log($scope.campaign);
+            $scope.errors = errors;
+            $scope.submitted = true;
+            console.log('do something');
+        }
+
+    }]);
+});
+
+// jshint ignore: start
+
+define('campaignManagement/campaigns/controllers/campaigns',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('campaignsCtrl', ['$scope', '$state', function ($scope, $state) {
+        //Needed for viewBy query Parameter
+        $scope.params = $state.params;
+    }]);
+});
+
+define('campaignManagement/campaigns/controllers/campaign',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('campaignCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateCampaignInfo() {
+            $scope.campaign = navbar.all().campaign;
+        }
+
+        navbar.observe(updateCampaignInfo, $scope);
+
+        $scope.placements = [
+            {
+                header: '<span class=\'icon-status success\'></span> Discovery (12)',
+                content: {
+                    'rules': {
+                        name: '',
+                        type: ''
+                    },
+                    headers: [
+                        {name: 'Placement Name', id: 'name'},
+                        {name: 'Placement Type', id: 'type'},
+                    ],
+                    data: [
+                        {
+                            name: 'Placement 1',
+                            type: 'IBV'
+                        },
+                        {
+                            name: 'Placement 2',
+                            type: 'IS'
+                        }
+                    ]
+                }
+            }
+        ];
+
+
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<div>\n    <ul class="list">\n        <li>\n            <span>status</span>\n            <span class="status"><i class="glyph-dot small" ng-class="{\'success\': isLive}"></i> {{campaignStatus}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>flight dates</span>\n            <span>{{details.startDate|date:\'MMM d, yy\'}} - {{details.endDate|date:\'MMM d, yy\'}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-if="showImpressions">\n            <span>total impressions</span>\n            <span>{{details.metrics.impressions|truncateNumber}}</span>\n        </li>\n        <li ng-if="showImpressions">\n            <span>booked impressions</span>\n            <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>publishers</span>\n            <span>{{details.distinctPublishers|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>creatives</span>\n            <span>{{details.countCreatives|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>placements</span>\n            <span>{{details.countPlacements|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('campaignManagement/campaigns/directives/campaignDetails',['require','./../../module','tpl!./campaignDetails.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./campaignDetails.html');
+
+    app.directive('campaignDetails', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/directives/campaignDetails.html',
+            controller: ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
+                var campaignID = $state.params.campaignId;
+
+                $scope.showCampaignDetails = showCampaignDetails;
+
+                $scope.details = {
+                    metrics: {
+                        impressions: 0,
+                        bookedImpressions: 0
+                    },
+                    distinctPublishers: 0,
+                    countCreatives: 0,
+                    countPlacements: 0
+                };
+
+                showCampaignDetails(campaignID);
+
+                function showCampaignDetails(campaignID) {
+                    $http.get('/api/v3/campaigns?dimensions=status,startDate,endDate,distinctPublishers,countPlacements,countCreatives&metrics=impressions,bookedImpressions&filters=id:' + campaignID)
+                        .then(function (res) {
+                            if (res.data.campaigns.length) {
+                                $timeout(function () {
+                                    $scope.details = res.data.campaigns[0];
+                                    $scope.showImpressions = false;
+                                    $scope.isLive = false;
+                                    switch ($scope.details.status) {
+                                        case 'preFlight':
+                                            $scope.campaignStatus = 'Pre-Flight';
+                                            break;
+                                        case 'inFlight':
+                                            $scope.campaignStatus = 'In-Flight';
+                                            $scope.showImpressions = true;
+                                            $scope.isLive = true;
+                                            break;
+                                        case 'live':
+                                            $scope.campaignStatus = 'Live';
+                                            $scope.showImpressions = true;
+                                            $scope.isLive = true;
+                                            break;
+                                        case 'completed':
+                                            $scope.campaignStatus = 'Completed';
+                                            $scope.showImpressions = true;
+                                            break;
+                                        case 'archived':
+                                            $scope.campaignStatus = 'Archived';
+                                            $scope.showImpressions = true;
+                                            break;
+                                        default:
+                                            $scope.campaignStatus = 'Unknown';
+                                    }
+                                    $scope.$apply();
+                                });
+                            }
+                        });
+                }
+
+
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/directives/campaignsByAccount.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByAccount.html', '<div accordion-table="byAccount" class="table table-hover"></div>\n'); });
+
+define('campaignManagement/campaigns/directives/campaignsByAccount',['require','./../../module','tpl!./campaignsByAccount.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./campaignsByAccount.html');
+
+    app.directive('campaignsByAccount', [function () {
+        return {
+            restrict: 'A',
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/directives/campaignsByAccount.html',
+            controller: ['$scope', 'campaignsByAccount', function ($scope, campaignsByAccount) {
+                function updateByAccount() {
+                    $scope.byAccount = campaignsByAccount.all();
+                }
+
+                campaignsByAccount.observe(updateByAccount, $scope);
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/directives/campaignsByStatus.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByStatus.html', '<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
+
+define('campaignManagement/campaigns/directives/campaignsByStatus',['require','./../../module','tpl!./campaignsByStatus.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./campaignsByStatus.html');
+
+    app.directive('campaignsByStatus', [function () {
+        return {
+            restrict: 'A',
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/directives/campaignsByStatus.html',
+            controller: ['$scope', 'campaignsByStatus', function ($scope, campaignsByStatus) {
+                function updateByStatus() {
+                    $scope.byStatus = campaignsByStatus.all();
+                }
+
+                campaignsByStatus.observe(updateByStatus, $scope);
+            }]
+        };
+    }]);
+});
+
+
+
+define('campaignManagement/campaigns/placements/controllers/list',['require','./../../../module'],function (require) {
+    var app = require('./../../../module');
+
+    app.controller('placementListCtrl', ['$scope', function ($scope) {
+        $scope.placementTypes = [
+            {
+                name: 'Add Manually',
+                value: '1'
+            },
+            {
+                name: 'Upload Media Plan',
+                value: '2'
+            }
+        ];
+
+
+        var options = '<span style="font-size: 2rem"><a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
+        $scope.placements = [
+            {
+                header: '<input type="checkbox"> <a>Brightroll</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            },
+            {
+                header: '<input type="checkbox"> <a>Google</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            },
+            {
+                header: '<input type="checkbox"> <a>NBCU</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            },
+            {
+                header: '<input type="checkbox"> <a>MSN</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
+                content: {
+                    rules: {
+                        checked: '',
+                        name: '',
+                        type: '',
+                        delivering: '',
+                        start: 'date',
+                        end: 'date',
+                        assignedCreatives: '',
+                        pacingAndImpressions: '',
+                        options: ''
+                    },
+                    headers: [
+                        {name: '', id: 'checked'},
+                        {name: 'PLACEMENT NAME', id: 'name'},
+                        {name: 'TYPE', id: 'type'},
+                        {name: 'DELIVERING', id: 'delivering'},
+                        {name: 'START', id: 'start'},
+                        {name: 'END', id: 'end'},
+                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
+                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
+                        {name: 'OPTIONS', id: 'options'}
+                    ],
+                    data: [
+                        {
+                            checked: '<input type="checkbox" checked>',
+                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'RM',
+                            delivering: '<span class="icon-status success"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        },
+                        {
+                            checked: '<input type="checkbox">',
+                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
+                            type: 'IS',
+                            delivering: '<span class="icon-status"></span>',
+                            start: '07/07/2014',
+                            end: '08/20/2014',
+                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
+                            pacingAndImpressions: '100,000 booked impressions',
+                            options: options
+                        }
+                    ]
+                }
+            }
+        ];
+    }]);
+});
+
+
+
+define('campaignManagement/campaigns/creatives/controllers/list',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('creativeListCtrl', [
+        '$scope', function($scope) {
+            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
+            $scope.creatives = {
+                rules: {
+                    checked: '',
+                    name: '',
+                    delivering: '',
+                    type: '',
+                    device: '',
+                    size: '',
+                    expandedSize: '',
+                    numPlacements: '',
+                    options: ''
+                },
+                headers: [
+                    {name: '', id: 'checked'},
+                    {name: 'CREATIVE NAME', id: 'name'},
+                    {name: 'DELIVERING', id: 'delivering'},
+                    {name: 'DEVICE', id: 'device'},
+                    {name: 'SIZE', id: 'size'},
+                    {name: 'EXPANDABLE', id: 'expandedSize'},
+                    {name: 'NO PLACEMENTS', id: 'numPlacements'},
+                    {name: 'OPTIONS', id: 'options'}
+                ],
+                data: [
+                    {
+                        checked: '<input type="checkbox" checked>',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status success"></span>',
+                        type: 'RM',
+                        device: 'Tablet',
+                        size: '300x600',
+                        expandedSize: '600x600',
+                        numPlacements: 15,
+                        options: options
+                    },
+                    {
+                        checked: '<input type="checkbox">',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status success"></span>',
+                        type: 'IBV',
+                        device: 'Desktop',
+                        size: '300x600',
+                        expandedSize: 'N/A',
+                        numPlacements: 13,
+                        options: options
+                    },
+                    {
+                        checked: '<input type="checkbox">',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status"></span>',
+                        type: 'IBV',
+                        device: 'Multidevice',
+                        size: '300x600',
+                        expandedSize: '600x600',
+                        numPlacements: 11,
+                        options: options
+                    },
+                    {
+                        checked: '<input type="checkbox">',
+                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
+                        delivering: '<span class="icon-status"></span>',
+                        type: 'IS',
+                        device: 'Mobile',
+                        size: '300x600',
+                        expandedSize: 'N/A',
+                        numPlacements: 10,
+                        options: options
+                    }
+                ]
+            };
+        }
+    ]);
+});
+
+
+
+define('campaignManagement/campaigns/creatives/controllers/thumbnails',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('creativeThumbnailsCtrl', [
+        '$scope', function() {
+
+        }
+    ]);
+});
+
+define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/list','./creatives/controllers/list','./creatives/controllers/thumbnails'],function (require) {
+    'use strict';
+
+    require('./services/campaignCache');
+    require('./services/campaignsByAccount');
+    require('./services/campaignsByStatus');
+    require('./services/campaignsFilter');
+    require('./services/campaignsHeader');
+    require('./factories/campaignsByStatusAccordionTable');
+    require('./controllers/newCampaign');
+    require('./controllers/campaigns');
+    require('./controllers/campaign');
+
+    require('./directives/campaignDetails');
+    require('./directives/campaignsByAccount');
+    require('./directives/campaignsByStatus');
+    require('./placements/controllers/list');
+    require('./creatives/controllers/list');
+    require('./creatives/controllers/thumbnails');
+});
+
+
+define('tpl!campaignManagement/clients/directives/activeSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/directives/activeSummary.html', '<div>\n    <h3 class="title">Active</h3>\n    <ul class="list">\n        <li>\n            <span>clients</span>\n            <span>{{active.count|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>accounts</span>\n            <span>{{active.countAccounts|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>campaigns</span>\n            <span>{{active.countCampaigns|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>pre-flight</span>\n            <span>{{active.countCampaignsPreFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>{{active.countCampaignsInFlight|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('campaignManagement/clients/directives/activeSummary',['require','./../../module','tpl!./activeSummary.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./activeSummary.html');
+
+    app.directive('activeSummary', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/clients/directives/activeSummary.html',
+            controller: ['$scope', 'clientSet', function ($scope, activeSummary) {
+                function updateSummary() {
+                    $scope.active = activeSummary.all();
+                }
+
+                activeSummary.observe(updateSummary, $scope);
+            }]
+        };
+    }]);
+});
+
+define('campaignManagement/clients/controllers/client',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('clientCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateClientName() {
+            $scope.client = navbar.all().client;
+        }
+
+        navbar.observe(updateClientName, $scope);
+    }]);
+});
+
+
+
+define('campaignManagement/clients/controllers/clients',['require','./../../module','tpl!./../new-client.html'],function (require) {
+    var app = require('./../../module');
+    require('tpl!./../new-client.html');
+
+    app.controller('clientsCtrl', ['$scope', 'topClientsService', '$modal', function ($scope, topClients, $modal) {
+
+        $scope.openModal = openModal;
+
+        topClients.init();
+
+        topClients.observe(updateTopClients, $scope);
+
+        function updateTopClients() {
+            $scope.topClients = topClients.all();
+        }
+
+        function openModal(size) {
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/clients/new-client.html',
+                controller: 'newClientCtrl',
+                size: size
+            });
+        }
+    }]);
+});
+
+define('campaignManagement/clients/controllers/newClient',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('newClientCtrl', ['$scope', '$modalInstance', 'channelService', function ($scope, $modalInstance, channels) {
+
+        channels.init();
+
+        channels.observe(updateChannels, $scope);
+
+        $scope.ok = function (errors) {
+            console.log($scope.client);
+            $scope.errors = errors;
+            $scope.submitted = true;
+        };
+
+        $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+        };
+
+        function updateChannels() {
+            $scope.channels = channels.all();
+        }
+    }]);
+});
+
+define('campaignManagement/clients/services/topClients',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+
+    module.service('topClientsService', ['$http', 'dataFactory', 'dateFormatterFilter', function ($http, dataFactory, dateFormatter) {
+        var topClients = dataFactory(sortClients);
+
+        function sortClients(data) {
+            data.sort(function (a, b) {
+                var ai = a.impressions;
+                var bi = b.impressions;
+
+                if (ai && bi) {
+                    return bi - ai;
+                }
+                return 0;
+            });
+
+            return data;
+        }
+
+        function init() {
+            var url = '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10';
+
+            return topClients.init(url, function (data) {
+                return topClientsTransform(data.clients);
+            });
+        }
+
+        function topClientsTransform(data) {
+            var lastLogin, clientName;
+            var output = [];
+
+            data.forEach(function (client) {
+                clientName = client.lastViewedUserName ? client.lastViewedUserName + ', ' : '';
+                lastLogin = clientName + dateFormatter(client.lastViewedUserDate);
+                output.push({
+                    'id': client.id,
+                    'channel': client.channel,
+                    'client': {route: 'cm.campaigns.client({ clientId: row.id })', name: client.name },
+                    'activeAccounts': client.metrics.countAccountsActive,
+                    'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
+                    'impressions': client.metrics.impressions,
+                    'lastLogin': lastLogin
+                });
+            });
+
+            return output;
+        }
+
+        function all() {
+            return {
+                'rules': {
+                    'channel': '',
+                    'client': 'link',
+                    'activeAccounts': 'number',
+                    'activeCampaigns': 'number',
+                    'impressions': 'number',
+                    'lastLogin': ''
+                },
+                'headers': [
+                    {name: 'Channel', id: 'channel'},
+                    {name: 'Client', id: 'client'},
+                    {name: '# Active Accounts', id: 'activeAccounts'},
+                    {name: '# Active Campaigns', id: 'activeCampaigns'},
+                    {name: 'Impressions', id: 'impressions'},
+                    {name: 'Last Client Login', id: 'lastLogin'}
+                ],
+                'data': topClients.all()
+            };
+        }
+
+        return {
+            init: init,
+            observe: topClients.observe,
+            transform: topClientsTransform,
+            sort: sortClients,
+            removeObserver: topClients.removeObserver,
+            data: topClients.all,
+            all: all
+        };
+    }]);
+});
+
+define('campaignManagement/clients/index',['require','./directives/activeSummary','./controllers/client','./controllers/clients','./controllers/newClient','./services/topClients'],function(require) {
+    'use strict';
+
+    require('./directives/activeSummary');
+    require('./controllers/client');
+    require('./controllers/clients');
+    require('./controllers/newClient');
+    require('./services/topClients');
+});
+
+/**
+ * Created by Alex on 3/2/2015.
+ */
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaignManagement/controllers/campaignManagement',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
+    }]);
+});
+
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaignManagement/controllers/index',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
+        clients.init('/api/v3/clients?dimensions=id,name,pinned');
+        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
+        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
+        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            if (window.Router) {
+                window.Router.handleURL($location.url());
+            }
+        });
+    }]);
+});
+
+define('campaignManagement/accounts/controllers/account',['require','./../../module','tpl!./../new-account.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./../new-account.html');
+
+    app.controller('accountCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateAccountInfo() {
+            $scope.account = navbar.all().account;
+        }
+
+        navbar.observe(updateAccountInfo, $scope);
+    }]);
+});
+
+define('campaignManagement/accounts/controllers/newAccount',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('newAccountCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+
+        //Modal functions
+        $scope.ok = ok;
+        $scope.cancel = cancel;
+
+        $scope.industries = [
+            {
+                id: 1,
+                name: 'Industry 1'
+            },
+            {
+                id: 2,
+                name: 'Industry 2'
+            },
+            {
+                id: 3,
+                name: 'Industry 3'
+            },
+            {
+                id: 4,
+                name: 'Industry 4'
+            },
+            {
+                id: 5,
+                name: 'Industry 5'
+            }
+        ];
+
+        function cancel() {
+            $modalInstance.dismiss('cancel');
+        }
+
+        function ok(errors) {
+            //console.log($scope.campaign);
+            $scope.errors = errors;
+            $scope.submitted = true;
+            console.log('do something');
+        }
+
+    }]);
+});
+
+
+define('tpl!campaignManagement/accounts/directives/accountSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/directives/accountSummary.html', '<div>\n    <h3 class="title">Campaigns</h3>\n    <ul class="list">\n        <li>\n            <span>Pre-Flight</span>\n            <span>{{summary.preFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>In-Flight</span>\n            <span>{{summary.inFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>Completed</span>\n            <span>{{summary.completed|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>Archived</span>\n            <span>{{summary.archived|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('campaignManagement/accounts/directives/accountSummary',['require','./../../module','tpl!./accountSummary.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./accountSummary.html');
+
+    app.directive('accountSummary', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/accounts/directives/accountSummary.html',
+            controller: ['$scope', 'campaignsHeader', function ($scope, campaignsHeader) {
+                function updateSummary() {
+                    $scope.summary = campaignsHeader.all();
+                }
+
+                campaignsHeader.observe(updateSummary, $scope);
+            }]
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('campaignManagement/accounts/index',['require','./controllers/account','./controllers/newAccount','./directives/accountSummary'],function (require) {
+    'use strict';
+
+    require('./controllers/account');
+    require('./controllers/newAccount');
+    require('./directives/accountSummary');
+});
+
+define('campaignManagement/index',['require','./routes','./divisions/index','./campaigns/index','./clients/index','./controllers/campaignManagement','./controllers/index','./accounts/index'],function (require) {
+    'use strict';
+
+    require('./routes');
+    require('./divisions/index');
+    require('./campaigns/index');
+    require('./clients/index');
+    require('./controllers/campaignManagement');
+    require('./controllers/index');
+    require('./accounts/index');
+});
+
+define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index'],function (require) {
+    'use strict';
+
+    var ng = require('angular');
+    require('ui-router');
+    require('angular-chosen');
+    require('ng-perfect-scrollbar');
+    require('ng-datepicker');
+    require('./core/index');
+    require('./table/index');
+    require('./chart/index');
+    require('./campaignManagement/index');
+
+    return ng.module('app', [
+        'ui.bootstrap.datepicker',
+        'perfect_scrollbar',
+        'app.campaign-management',
+        'localytics.directives',
+        'tpl',
+        'app.core',
+        'app.tables',
+        'app.charts',
+        'ui.router'
+    ]);
+});
+
+/**
  * @license RequireJS domReady 2.0.1 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
  * see: http://github.com/requirejs/domReady for details
@@ -38149,10 +62470,11 @@ define('domReady',[],function () {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('bootstrap-core',['require','angular'],function (require) {
+define('bootstrap-core',['require','angular','app-core'],function (require) {
     'use strict';
 
     var ng = require('angular');
+    require('app-core');
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);
