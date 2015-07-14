@@ -12,7 +12,7 @@ define(function (require) {
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementsHeader.html');
+    require('tpl!./campaigns/placements/placementTableHeader.html');
     require('tpl!./campaigns/creatives/creativesList.html');
     require('tpl!./campaigns/creatives/creativesThumbnails.html');
     require('tpl!./campaigns/creatives/creativesHeader.html');
@@ -116,7 +116,7 @@ define(function (require) {
                 url: '/placements',
                 views: {
                     'tab-header': {
-                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/placementTableHeader.html'
                     },
                     'table': {
                         controller: 'placementsListCtrl',

@@ -19,7 +19,8 @@ define(function (require) {
         {paramKey: 'metrics', template: 'metrics={{metrics}}&'},
         {paramKey: 'offset', template: 'offset={{offset}}&'},
         {paramKey: 'limit', template: 'limit={{limit}}&'},
-        {paramKey: 'order', template: 'order={{order}}&'}
+        {paramKey: 'order', template: 'order={{order}}&'},
+        {paramKey: 'filters', template: 'filters={{filters}}&'}
     ];
 
     var requiredParams = [
@@ -28,7 +29,7 @@ define(function (require) {
     ];
 
     // TODO: add the API_URI constant, replace domainInterceptor.js
-    module.service('apiUriGeneratorService', ['$interpolate', function ($interpolate) {
+    module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
         function getApiUri(params) {
             setupDefaultParams(params);
             if (validate(params)) {
@@ -40,8 +41,15 @@ define(function (require) {
 
         function setupDefaultParams(params) {
             ng.extend(params, defaultConfig);
-            params.dimensions = params.dimensions.join(',');
-            params.metrics = params.metrics.join(',');
+            if (params.dimensions) {
+                params.dimensions = params.dimensions.join(',');
+            }
+            if (params.metrics) {
+                params.metrics = params.metrics.join(',');
+            }
+            if (params.filters) {
+                params.filters = params.filters.join(',');
+            }
         }
 
         function validate(params) {

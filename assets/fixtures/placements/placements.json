@@ -1,0 +1,52 @@
+{
+    "placements": [
+        {
+            "id": "1",
+            "name": "Placement 1",
+            "live": true,
+            "startDate": "2015-07-14",
+            "endDate": "2015-08-15",
+            "adType": "In-Banner",
+            "bookedImpressions": 1234,
+            "budget": 10000,
+            "creatives": ["1", "2"],
+            "publisher": "Discovery",
+            "metrics": {
+                "impressions": 123,
+                "spend": 1000
+            }
+        },
+        {
+            "id": "2",
+            "name": "Placement 2",
+            "live": false,
+            "startDate": "2015-07-14",
+            "endDate": "2015-08-15",
+            "adType": "In-Banner",
+            "bookedImpressions": 1234,
+            "budget": 10000,
+            "creatives": ["1"],
+            "publisher": "Discovery",
+            "metrics": {
+                "impressions": 123,
+                "spend": 1000
+            }
+        },
+        {
+            "id": "3",
+            "name": "Placement 3",
+            "live": false,
+            "startDate": "2015-07-14",
+            "endDate": "2015-08-15",
+            "adType": "In-Stream",
+            "bookedImpressions": 1234,
+            "budget": 10000,
+            "creatives": ["2"],
+            "publisher": "Martha",
+            "metrics": {
+                "impressions": 123,
+                "spend": 1000
+            }
+        }
+    ]
+}
