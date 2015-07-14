@@ -21,6 +21,7 @@ define(function (require) {
             return utils.alphabetMap(filtered());
         }
 
+        //TODO: grab the current clientID from account or campaign
         function filtered() {
             var sorted = all();
             var output = [];
