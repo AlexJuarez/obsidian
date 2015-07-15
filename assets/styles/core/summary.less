@@ -96,8 +96,8 @@
             .btn {
                 display: block;
                 width: 100%;
-                margin: @mobile-gutter 0;
-                .font-size(2.5);
+                margin: 1rem 0;
+                .font-size(2);
                 + .btn {
                     margin-top: 0;
                 }
@@ -116,13 +116,13 @@
             box-sizing: border-box;
             border-bottom: 1px solid @light-gray;
             font-family: 'Oswald', sans-serif;
-            padding: 4px @mobile-gutter;
+            padding: 1rem @mobile-gutter;
             line-height: 1.47;
             letter-spacing: 1px;
-            .font-size(3);
+            .font-size(2);
             .clearfix();
             i {
-                margin: 12px 0 0 2rem;
+                margin: 10px 0 0 2rem;
                 line-height: 18px;
                 float: right;
             }
@@ -137,16 +137,21 @@
         }
 
         .list {
-            text-align: justify;
+            li {
+                + li {
+                    margin-left: 2rem;
+                }
+            }
+
             display: block;
             padding: 3px @mobile-gutter;
             box-sizing: border-box;
             li span {
                 &:first-child {
-                    .font-size(1.5);
+                    .font-size(1.2);
                 }
                 &:last-child {
-                    .font-size(4);
+                    .font-size(2);
                 }
             }
             + .list {
