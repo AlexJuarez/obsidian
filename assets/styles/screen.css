@@ -1,3 +1,31 @@
+/* these are the brand colors */
+/* primary colors */
+/* secondary colors */
+/* tertiary colors */
+.clearfix:after,
+.clearfix:before {
+  display: table;
+  content: " ";
+  clear: both;
+}
+.font-smoothing {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.is-link {
+  color: #0378bd;
+  text-decoration: none;
+  cursor: pointer;
+}
+.is-link:visited {
+  color: #0378bd;
+}
+.is-link:hover {
+  color: #9bd2f1;
+}
+.is-link:active {
+  color: #003c60;
+}
 .highlight {
   padding: 9px 14px;
   margin-top: 14px;
@@ -24,16 +52,27 @@
   font-size: inherit;
   color: #333;
 }
-.radio-button {
+@media (max-width: 1200px) {
+  .style-guide {
+    overflow: hidden;
+  }
+}
+.style-guide .radio-button {
   margin-bottom: .5rem;
 }
-.border-right {
+.style-guide .border-right {
   list-style: none;
-  margin: 0;
+  margin: 2rem 0;
   padding: 0;
-  display: inline-block;
+  display: block;
 }
-.border-right li {
+.style-guide .border-right:after,
+.style-guide .border-right:before {
+  display: table;
+  content: " ";
+  clear: both;
+}
+.style-guide .border-right li {
   border: 1px solid #E1E1E1;
   border-width: 0 1px 0 0;
   padding-right: 1rem;
@@ -41,19 +80,19 @@
   float: left;
   display: inline;
 }
-.border-right li:last-child {
+.style-guide .border-right li:last-child {
   border: none;
 }
-.dark-bg {
+.style-guide .dark-bg {
   background: #003c60;
 }
-.dark-bg li {
+.style-guide .dark-bg li {
   border: none;
   padding: 1rem;
   margin-right: 1rem;
   color: #fff;
 }
-.padded {
+.style-guide .padded {
   padding: 1rem;
 }
 .footer {

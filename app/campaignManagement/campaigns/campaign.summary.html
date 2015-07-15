@@ -1,2 +1,12 @@
-<button class="btn btn-default solid right">Edit Campaign</button>
-<div campaign-details />
+<div class="dropdown">
+    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>
+        <span ng-show="campaign">Summary for {{campaign.name}}</span>
+        <span ng-show="!campaign">Summary</span>
+    </div>
+    <div class="dropdown-menu">
+        <div campaign-details></div>
+    </div>
+</div>
+<div class="btn-group right">
+    <button class="btn btn-default solid">Edit Campaign</button>
+</div>

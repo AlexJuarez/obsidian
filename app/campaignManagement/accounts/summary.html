@@ -1,1 +1,10 @@
-<div you-work-on></div>
+<div class="dropdown">
+    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>
+    <div class="dropdown-menu">
+        <div account-summary></div>
+    </div>
+</div>
+<div class="btn-group right">
+    <button class="btn btn-default solid" ng-click="openModal('lg')">New Campaign</button>
+    <button class="btn btn-default solid">Edit Account</button>
+</div>

@@ -37,7 +37,7 @@
 <hr/>
 <form name="validationForm" class="form" novalidate>
     <div ng-show="validationForm.$invalid && validationForm.$pristine" class="alert alert-danger">
-        There were <strong>[[validationForm.$error|errorCount]]</strong> errors submitting this form
+        There were <strong>{{validationForm.$error|errorCount}}</strong> errors submitting this form
     </div>
     <div class="form-group" ng-class="{'has-error': validationForm.name.$invalid}">
         <label class="form-label required">

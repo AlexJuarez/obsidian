@@ -3,7 +3,13 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('campaignCtrl', ['$scope', function ($scope) {
+    app.controller('campaignCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateCampaignInfo() {
+            $scope.campaign = navbar.all().campaign;
+        }
+
+        navbar.observe(updateCampaignInfo, $scope);
+
         $scope.placements = [
             {
                 header: '<span class=\'icon-status success\'></span> Discovery (12)',

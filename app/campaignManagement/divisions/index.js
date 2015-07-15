@@ -1,6 +1,6 @@
 define(function (require) {
     'use strict';
 
-    require('./controllers/divisions');
+    require('./controllers/division');
     require('./directives/youWorkOn');
 });

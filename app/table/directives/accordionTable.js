@@ -12,6 +12,17 @@ define(function (require) {
             scope: {
                 table: '=accordionTable',
                 classes: '@class'
+            },
+            link: function (scope) {
+                var opened = false;
+
+                scope.init = init;
+
+                function init(length, s){
+                    if (length && !opened) {
+                        s.open = opened = true;
+                    }
+                }
             }
         };
     }]);
