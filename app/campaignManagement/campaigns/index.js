@@ -17,4 +17,5 @@ define(function (require) {
     require('./placements/controllers/list');
     require('./creatives/controllers/list');
     require('./creatives/controllers/thumbnails');
+    require('./creatives/directives/creativeThumbnails');
 });

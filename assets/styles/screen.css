@@ -12,20 +12,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-.is-link {
-  color: #0378bd;
-  text-decoration: none;
-  cursor: pointer;
-}
-.is-link:visited {
-  color: #0378bd;
-}
-.is-link:hover {
-  color: #9bd2f1;
-}
-.is-link:active {
-  color: #003c60;
-}
 .highlight {
   padding: 9px 14px;
   margin-top: 14px;

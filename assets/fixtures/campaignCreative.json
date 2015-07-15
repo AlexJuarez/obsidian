@@ -1,0 +1,84 @@
+{
+  "campaignCreatives":
+  [
+      {
+        "id": "b475dce5-0243-436c-84e0-ae1af5baa99b",
+        "checked": "<input type='checkbox' checked>",
+        "name": "RichMedia1024x90_Tablet",
+        "thumb": "http://www.placecage.com/460/340",
+        "live": true,
+        "type": "RM",
+        "device": "Tablet",
+        "size": "1024x90",
+        "expandedSize": "1024x768",
+        "numPlacements": 220,
+        "lastModified": "2015-12-05"
+      },
+      {
+        "id": "b475dce5-0243-436c-84e0-ae1af5baa99b",
+        "checked": "<input type='checkbox'>",
+        "name": "Creative 2",
+        "thumb": "http://www.placecage.com/600/225",
+        "live": true,
+        "type": "IBV",
+        "device": "Desktop",
+        "size": "300x250",
+        "expandedSize": "640x480",
+        "numPlacements": 20,
+        "lastModified": "2015-08-09"
+      },
+      {
+        "id": "b475dce5-0243-436c-84e0-ae1af5baa99b",
+        "checked": "<input type='checkbox'>",
+        "name": "Creative ",
+        "thumb": "http://www.placecage.com/300/250",
+        "live": false,
+        "type": "ISV",
+        "device": "Desktop",
+        "size": "640x360",
+        "expandedSize": null,
+        "numPlacements": 28,
+        "lastModified": "2014-02-22"
+      },
+      {
+        "id": "b475dce5-0243-436c-84e0-ae1af5baa99b",
+        "checked": "<input type='checkbox'>",
+        "name": "Creative ",
+        "thumb": "http://www.placecage.com/300/250",
+        "live": false,
+        "type": "ISV",
+        "device": "Desktop",
+        "size": "640x360",
+        "expandedSize": null,
+        "numPlacements": 28,
+        "lastModified": "2014-02-22"
+      },
+      {
+        "id": "b475dce5-0243-436c-84e0-ae1af5baa99b",
+        "checked": "<input type='checkbox'>",
+        "name": "Creative ",
+        "thumb": "http://www.placecage.com/400/450",
+        "live": false,
+        "type": "ISV",
+        "device": "Desktop",
+        "size": "640x360",
+        "expandedSize": null,
+        "numPlacements": 28,
+        "lastModified": "2014-02-22"
+      },
+      {
+        "id": "b475dce5-0243-436c-84e0-ae1af5baa99b",
+        "checked": "<input type='checkbox'>",
+        "name": "Creative ",
+        "thumb": "http://www.placecage.com/300/250",
+        "live": true,
+        "type": "ISV",
+        "device": "Desktop",
+        "size": "640x360",
+        "expandedSize": null,
+        "numPlacements": 28,
+        "lastModified": "2014-02-22"
+      }
+    
+  ]
+}
