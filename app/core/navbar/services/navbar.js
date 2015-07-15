@@ -4,6 +4,7 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
+    var ng = require('angular');
 
     module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', '$state', function (dataFactory, clients, divisions, accounts, campaigns, $rootScope, $state) {
         var navInfo = dataFactory();
@@ -15,6 +16,16 @@ define(function (require) {
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
             navInfo.setData(toParams);
+        });
+
+        var oldState = all();
+        navInfo.observe(function () {
+            var currentState = all();
+
+            if(!ng.equals(oldState, currentState)){
+                oldState = currentState;
+                $rootScope.$broadcast('navStateChange', currentState);
+            }
         });
 
         function getClient(id) {

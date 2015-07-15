@@ -1,0 +1,37 @@
+<div class="thumbnail-view row ng-scope">
+	
+	<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3" ng-repeat="creative in creatives track by $index">
+		<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">
+			<div class="ratio-box">
+				<div class="preview-overlay"><span><i class="glyph-view"></i>Preview Creative</span></div>
+				<img ng-src="{{creative.thumb}}" class="thumbnail" />
+			</div>
+		</div>
+		<div class="thumbnail-info">
+			<i class="glyph-dot" ng-class="{'success': creative.live}"></i>
+			<span class="right">{{creative.type}} | {{creative.size}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedSize}}</span></span>
+		</div>
+		<div class="creative-info">
+			<span class="title">{{creative.name}}</span>
+			<div class="data">
+				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>
+				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>
+			</div>
+			<div class="data">
+				<span>Ad Type:</span>
+				<span>{{creative.type}}</span>
+			</div>
+			<div class="data">
+				<span>Last Modified:</span>
+				<span>{{creative.lastModified|date:'M/d/yyyy'}}</span>
+			</div>
+			<div class="data">
+				<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>
+				<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>
+				<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>
+				<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>
+			</div>
+		</div>
+	</div>
+
+</div>
