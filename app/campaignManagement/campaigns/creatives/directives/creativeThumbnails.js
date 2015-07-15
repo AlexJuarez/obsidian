@@ -18,6 +18,7 @@ define(function (require) {
                 }
 
                 campaignCreative.observe(updateCreatives, $scope);
+                
             }]
         };
     }]);

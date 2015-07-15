@@ -32,7 +32,6 @@ define(function (require) {
 
             if (datum.length) {
                 ng.forEach(datum, function (d, key){
-                    console.log( d, key );
                     output[key] = d;
                 });
             }
