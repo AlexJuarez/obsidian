@@ -1,41 +1,42 @@
 <h1 id="creative-preview">Creative Preview</h1>
 <hr />
-
-<div >
-
 <div class="creative-preview tooltip tooltip-top-right">
 	<i class="glyph-close"></i>
 	<div ng-click="previewCreative()" class="thumbnail-wrapper">
 		<div class="ratio-box">
-			<div><span><i class="glyph-view"></i>Preview Creative</span></div>
-			<img src="http://www.placecage.com/640/360" class="preview-thumbnail"/>
+			<div class="preview-overlay"><span><i class="glyph-view"></i>Preview Creative</span></div>
+			<img src="http://www.placecage.com/540/360" class="preview-thumbnail"/>
 		</div>
 	</div>
 	<ul class="preview-info row">
-		<li class="col-sm-4">
+		<li class="col-xs-6 col-sm-4 col-md-4">
 			<span><strong>Ad Type</strong></span>
 			<span>In-Banner Video</span>
 		</li>
-		<li class="col-sm-4">
+		<li class="col-xs-6 col-sm-4 col-md-4">
 			<span><strong>Size</strong></span>
-			<span>1024x90<span>&nbsp;> 1024x768</span></span>
+			<span>1024x90<span>&nbsp;&gt; 1024x768</span></span>
 		</li>
-		<li class="col-sm-4">
-			<span><a ng-click="openPreview(creative.id)" title="Preview in Page">Preview in Page</a></span>
-			<span><a ng-click="openPreview(creative.id)" title="Edit in Studio">Edit in Studio</a></span>
+		<li class="col-xs-12 col-sm-4 col-md-4">
+			<ul class="row links">
+				<li class="col-xs-6 col-sm-12">
+					<span><a class="btn btn-lg" ng-click="openPreview(creative.id)" title="Preview in Page">Preview in Page</a></span>
+				</li>
+				<li class="col-xs-6 col-sm-12">
+					<span><a class="btn btn-lg" ng-click="openPreview(creative.id)" title="Edit in Studio">Edit in Studio</a></span>
+				</li>
+			</ul>
 		</li>
 	</ul>
 	<ul class="preview-info row">
-		<li class="col-sm-6">
+		<li class="col-xs-6 col-sm-6">
 			<span><strong>Creative ID</strong></span>
 			<span>KLSDI8_OI14S</span>
 		</li>
-		<li class="col-sm-6">
+		<li class="col-xs-6 col-sm-6">
 			<span><strong>GUID</strong></span>
 			<span>K83HG_LKW3_83H_19HR7G</span>
 		</li>
 	</ul>
-</div>
-
 </div>
 

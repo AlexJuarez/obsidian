@@ -4,16 +4,18 @@
     background: @dark-gray;
     border: 1px solid #fff;
     color: #fff;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+    // line-height: 1.2;
     padding: 2rem 2rem 0 2rem;
-    max-width: 400px;
+    max-width: 360px;
     border-radius: 0.5rem;
 
     .glyph-close {
         position: absolute;
-        top: 0;
-        right: 0.5rem;
-        font-size: 1.4rem;
+        top: .5rem;
+        right: .5rem;
+        font-size: 1.2rem;
+        line-height: 1;
         &:hover {
             cursor: pointer;
         }
@@ -31,10 +33,23 @@
         li {
             margin: 0 0 2rem 0;
             padding: 0;
+
+            ul, li, .btn {
+                list-style: inherit;
+                margin: 0;
+                padding: inherit;
+                line-height: inherit;
+                font-size: inherit;
+                vertical-align: baseline;
+
+            }
+            //display: inline-block;
             //width: 33.33%;
-            float: left;
+            //float: left;
             span {
                 display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
                 a {
                     display: inline-block;
                     color: @light-blue;
@@ -50,6 +65,11 @@
         li:last-child {
             text-align: right;
         }
+        @media (max-width: @screen-xs-max) {
+            li:last-child {
+                text-align: center;
+            }
+        }
     }
 
     // Bubble arrow
@@ -64,13 +84,49 @@
     }
     &:before {
         border-top-color: #fff;
-        border-width: 1rem;
+        border-width: 10px;
         left: 19px;
+        // border-width: 1rem;
+        // left: 1.9rem;
     }
     &:after {
         border-top-color: @tool-tip-dark-bg;
-        border-width: 0.8rem;
+        border-width: 8px;
         left: 21px;
+        // border-width: 0.8rem;
+        // left: 2.1rem;
     }
         
+}
+@media (max-width: @screen-xs-max) {
+    .creative-preview {
+        .font-size(1.6);
+        .preview-info {
+            & > li:nth-child(2) {
+                padding-left: 1rem;
+            }
+            li:last-child {
+                text-align: left;
+            }
+        }
+        .links {
+            li {
+                .btn {
+                    background: @gray;
+                    color: #fff;
+                    display: block;
+                    padding: 1rem;
+                    &:hover {
+                        background: @brand-color;
+                    }
+                }
+            }
+            li:first-child {
+                padding-right: 1rem;
+            }
+            li:last-child {
+                padding-left: 1rem;
+            }
+        }
+    }
 }
