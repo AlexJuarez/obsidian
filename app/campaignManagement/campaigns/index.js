@@ -12,10 +12,10 @@ define(function (require) {
     require('./controllers/campaign');
 
     require('./directives/campaignDetails');
-    require('./directives/creativeThumbnails');
     require('./directives/campaignsByAccount');
     require('./directives/campaignsByStatus');
     require('./placements/controllers/list');
     require('./creatives/controllers/list');
     require('./creatives/controllers/thumbnails');
+    require('./creatives/directives/creativeThumbnails');
 });

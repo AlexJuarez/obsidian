@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./../../module');
+    var app = require('./../../../module');
     
     require('tpl!./creativeThumbnails.html');
 
@@ -10,7 +10,7 @@ define(function (require) {
             restrict: 'A',
             replace: true,
             scope: true,
-            templateUrl: 'campaignManagement/campaigns/directives/creativeThumbnails.html',
+            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
             controller: ['$scope', 'campaignCreative', function ($scope, campaignCreative) {
                 
                 function updateCreatives() {
