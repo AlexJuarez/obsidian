@@ -11,13 +11,13 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/directives/creativeThumbnails.html',
-            controller: ['$scope', 'campaignCreatives', function ($scope, creativeThumbnails) {
+            controller: ['$scope', 'campaignCreative', function ($scope, campaignCreative) {
                 
                 function updateCreatives() {
-                    $scope.creatives = creativeThumbnails.all();
+                    $scope.creatives = campaignCreative.all();
                 }
 
-                creativeThumbnails.observe(updateCreatives, $scope);
+                campaignCreative.observe(updateCreatives, $scope);
             }]
         };
     }]);
