@@ -16,12 +16,22 @@ define(function (require) {
                 open: '='
             },
             link: function (scope) {
-                scope.analytics = analytics;
+                scope.transition = transition;
+                scope.$state = $state;
 
-                function analytics(){
+                function transition(area){
                     if ($state.params.clientId) {
-                        $state.go('analytics.campaigns.client')
+                        $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
+                    } else if ($state.params.divisionId) {
+                        $state.go(area + '.campaigns.division', {divisionId: $state.params.divisionId});
+                    } else if ($state.params.accountId) {
+                        $state.go(area + '.campaigns.account', {accountId: $state.params.accountId});
+                    } else if ($state.params.campaignId) {
+                        $state.go(area +'.campaigns.campaign', {campaignId: $state.params.campaignId});
+                    } else {
+                        $state.go(area);
                     }
+
                 }
 
                 $rootScope.$on('$stateChangeSuccess', function () {
