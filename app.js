@@ -39,6 +39,10 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(__dirname + '/components'));
 }
 
+app.get('/core', function(req, res) {
+    res.render('core');
+});
+
 app.get('/', function(req, res) {
     res.render('index',
         { production: (process.env.NODE_ENV === 'production') }

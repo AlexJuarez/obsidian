@@ -16,8 +16,8 @@ define(function (require) {
 
             function sortRows(transformedRows) {
                 var sortFn = function (a, b) {
-                    if (a.name && b.name) {
-                        return a.name.localeCompare(b.name);
+                    if (a.campaign.name && b.campaign.name) {
+                        return a.campaign.name.localeCompare(b.campaign.name);
                     } else {
                         return 0;
                     }
@@ -32,11 +32,11 @@ define(function (require) {
                 header = data.header;
                 title = data.title;
                 if (data.rows) {
-                    rows.init(data.rows, transformRows);
+                    rows.init(data.rows, _transformRows);
                 }
             }
 
-            function transformRows(data) {
+            function _transformRows(data) {
                 var rows = data.campaigns;
                 var newRows = [];
                 var row;
@@ -97,7 +97,7 @@ define(function (require) {
                 }
 
                 return {
-                    header: getTableHeader(header.all()),
+                    header: _getTableHeader(header.all()),
                     options: options,
                     content: {
                         rules: rules,
@@ -107,7 +107,7 @@ define(function (require) {
                 };
             }
 
-            function getTableHeader(data) {
+            function _getTableHeader(data) {
                 var template;
 
                 for (var i = 0; i < data.length; i++) {
@@ -123,7 +123,7 @@ define(function (require) {
                     }
                 }
 
-                template = $interpolate('<span class="icon-status"></span>[[title]] (0)');
+                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
                 return template({
                     title: title
                 });
@@ -137,7 +137,9 @@ define(function (require) {
             return {
                 init: init,
                 observe: observe,
-                all: getTable
+                all: getTable,
+                _transformRows: _transformRows,
+                _getTableHeader: _getTableHeader
             };
         };
     }]);

@@ -13,15 +13,21 @@ define(function (require) {
                 var key = attr.pacingChart;
 
                 scope.$watch(key, function (data) {
-                    console.log(key, data);
                     if (data) {
                         scope.max = data.max;
                         scope.current = data.current;
                         scope.target = data.target;
 
-                        var fill = d3.select(elem.find('.fill > rect')[0]);
 
-                        fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
+                        if (data.current > data.max) {
+                            scope.target = 0;
+                        }
+
+                        if (data.max) {
+                            var fill = d3.select(elem.find('.fill > rect')[0]);
+                            fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
+                        }
+
                         //var target = d3.select(elem.find('.target > rect')[0]);
                         //target.attr('x', '80%');
                     }

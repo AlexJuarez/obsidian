@@ -4,8 +4,16 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('divisionService', ['$http', 'dataFactory', '$state', function ($http, dataFactory, $state) {
+    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', function ($http, dataFactory, $state, $rootScope) {
         var divisions = dataFactory(utils.sortByName);
+        var client = {};
+
+        $rootScope.$on('navStateChange', function (event, state) {
+            if (state.client && state.client.id !== client.id) {
+                client = state.client;
+                divisions.notifyObservers();
+            }
+        });
 
         function init(url) {
             return divisions.init(url, function (data) {
@@ -14,18 +22,24 @@ define(function (require) {
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            return utils.search(filtered(), query);
         }
 
         function alphabetMap() {
             return utils.alphabetMap(filtered());
         }
 
+        //TODO: grab the current clientID from account or campaign
         function filtered() {
             var sorted = all();
             var output = [];
             var division = get($state.params.divisionId);
             var clientId = $state.params.clientId || division && division.client.id;
+
+            if(client && !clientId) {
+                clientId = client.id;
+            }
+
             var item;
 
             if (!clientId) {

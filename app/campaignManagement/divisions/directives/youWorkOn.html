@@ -1,26 +1,31 @@
-<ul class="list">
-    <li>
-        <span>accounts</span>
-        <span>[[summary.countAccounts|truncateNumber]]</span>
-    </li>
-    <li class='border-right'>
-        <span>campaigns</span>
-        <span>[[summary.countCampaigns|truncateNumber]]</span>
-    </li>
-    <li>
-        <span>pre-flight</span>
-        <span>[[summary.countCampaignsPreFlight|truncateNumber]]</span>
-    </li>
-    <li>
-        <span>in-flight</span>
-        <span>[[summary.countCampaignsInFlight|truncateNumber]]</span>
-    </li>
-    <li>
-        <span>complete</span>
-        <span>[[summary.countCampaignsCompleted|truncateNumber]]</span>
-    </li>
-    <li>
-        <span>archive</span>
-        <span>[[summary.countCampaignsArchived|truncateNumber]]</span>
-    </li>
-</ul>
+<div>
+    <h3 class="title">You Work On</h3>
+    <ul class="list">
+        <li>
+            <span>accounts</span>
+            <span>{{summary.countAccounts|truncateNumber}}</span>
+        </li>
+        <li class='border-right'>
+            <span>campaigns</span>
+            <span>{{summary.countCampaigns|truncateNumber}}</span>
+        </li>
+        <li>
+            <span>pre-flight</span>
+            <span>{{summary.countCampaignsPreFlight|truncateNumber}}</span>
+        </li>
+    </ul>
+    <ul class="list">
+        <li>
+            <span>in-flight</span>
+            <span>{{summary.countCampaignsInFlight|truncateNumber}}</span>
+        </li>
+        <li>
+            <span>complete</span>
+            <span>{{summary.countCampaignsCompleted|truncateNumber}}</span>
+        </li>
+        <li>
+            <span>archive</span>
+            <span>{{summary.countCampaignsArchived|truncateNumber}}</span>
+        </li>
+    </ul>
+</div>

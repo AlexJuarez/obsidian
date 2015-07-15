@@ -27,7 +27,7 @@
                     "account": "Account Name That runs too long",
                     "campaign": "Campaign Name that runs long",
                     "impressions": {
-                        "target": 1200,
+                        "current": 1200,
                         "max": 5500
                     },
                     "start": 1431024395268,
@@ -40,7 +40,7 @@
                     "account": "Account Name That runs too long",
                     "campaign": "Campaign Name that runs long",
                     "impressions": {
-                        "target": 1200,
+                        "current": 1200,
                         "max": 5500
                     },
                     "start": 1431024395268,
@@ -53,7 +53,7 @@
                     "account": "Account Name That runs too long",
                     "campaign": "Campaign Name that runs long",
                     "impressions": {
-                        "target": 1200,
+                        "current": 1200,
                         "max": 5500
                     },
                     "start": 1431024395268,

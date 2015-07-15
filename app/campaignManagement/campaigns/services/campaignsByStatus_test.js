@@ -5,7 +5,7 @@ define(function (require) {
 
     require('./campaignsByStatus');
     require('./campaignsHeader');
-    require('./../factories/campaignAccordionTable');
+    require('../factories/campaignsByStatusAccordionTable');
     require('angularMocks');
 
     var campaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json');

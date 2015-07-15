@@ -3,9 +3,9 @@ define(function (require) {
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/fixtures/campaignCreatives.json';
+    var baseUrl = '/fixtures/campaignCreative.json';
 
-    module.service('campaignCreatives', ['cacheFactory', '$state', function (cacheFactory, $state) {
+    module.service('campaignCreative', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
             transform: function (data) {
                 return data.campaignCreatives;

@@ -10,6 +10,8 @@ define(function (require) {
                 selected: '='
             },
             link: function (scope, element) {
+                var permOpen = element.parent().hasClass('open');
+
                 function documentClickHandler() {
                     if (!scope.clicked) {
                         scope.$apply(function () {
@@ -45,10 +47,12 @@ define(function (require) {
                 });
 
                 scope.$watch('selected', function (value) {
-                    if (value) {
-                        element.parent().addClass('open');
-                    } else {
-                        element.parent().removeClass('open');
+                    if (!permOpen){
+                        if (value) {
+                            element.parent().addClass('open');
+                        } else {
+                            element.parent().removeClass('open');
+                        }
                     }
                 });
             }

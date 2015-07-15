@@ -52,7 +52,7 @@
                             </div>
                             <div class="col-sm-8">
                                 <div class="input-group">
-                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
+                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
                                     <span class="input-group-btn">
                                         <button class="btn btn-inline" ng-click="openPicker($event, 'startDateOpened')"><i class="glyph-calendar"></i></button>
                                     </span>
@@ -67,7 +67,7 @@
                             </div>
                             <div class="col-sm-8">
                                 <div class="input-group">
-                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
+                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />
                                     <span class="input-group-btn">
                                         <button class="btn btn-inline" ng-click="openPicker($event, 'endDateOpened')"><i class="glyph-calendar"></i></button>
                                     </span>
