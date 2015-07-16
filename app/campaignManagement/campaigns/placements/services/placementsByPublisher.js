@@ -12,18 +12,76 @@ define(function (require) {
             var publisher;
 
 
+            // Throw placements into a hash map that's indexed by publisher
             for(var i=0; i<placements.length; i++) {
                 placement = placements[i];
                 publisher = placement.publisher;
 
-                if (!groups[publisher]) {
-                    groups[publisher] = [placement];
+                if (!groups[publisher.id]) {
+                    groups[publisher.id] = {
+                        publisher: publisher,
+                        placements: [placement]
+                    }
                 } else {
-                    groups[publisher].push(placement);
+                    groups[publisher.id].placements.push(placement);
                 }
             }
 
-            return groups;
+            // Get metadata about each group
+            var group;
+            for (var publisherId in groups) {
+                group = groups[publisherId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placements.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                }
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortGroups);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortGroups(a, b) {
+                if (a.group.publisher.name && b.group.publisher.name) {
+                    return a.group.publisher.name.localeCompare(b.group.publisher.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
         }
     }]);
 });

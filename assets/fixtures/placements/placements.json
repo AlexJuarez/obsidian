@@ -9,8 +9,14 @@
             "adType": "In-Banner",
             "bookedImpressions": 1234,
             "budget": 10000,
-            "creatives": ["1", "2"],
-            "publisher": "Discovery",
+            "creatives": [
+                {"id": "1", "name": "Creative 1"},
+                {"id": "2", "name": "Creative 2"}
+            ],
+            "publisher": {
+                "id": "discovery",
+                "name": "Discovery"
+            },
             "metrics": {
                 "impressions": 123,
                 "spend": 1000
@@ -25,8 +31,13 @@
             "adType": "In-Banner",
             "bookedImpressions": 1234,
             "budget": 10000,
-            "creatives": ["1"],
-            "publisher": "Discovery",
+            "creatives": [
+                {"id": "1", "name": "Creative 1"}
+            ],
+            "publisher": {
+                "id": "discovery",
+                "name": "Discovery"
+            },
             "metrics": {
                 "impressions": 123,
                 "spend": 1000
@@ -41,8 +52,13 @@
             "adType": "In-Stream",
             "bookedImpressions": 1234,
             "budget": 10000,
-            "creatives": ["2"],
-            "publisher": "Martha",
+            "creatives": [
+                {"id": "2", "name": "Creative 2"}
+            ],
+            "publisher": {
+                "id": "martha",
+                "name": "Martha"
+            },
             "metrics": {
                 "impressions": 123,
                 "spend": 1000
