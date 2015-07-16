@@ -13,7 +13,7 @@ define(function (require) {
                 delivering: '=delivering',
                 classes: '@class'
             },
-            link: function (scope) {
+            link: function () {
             }
         };
     }]);

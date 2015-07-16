@@ -13,7 +13,7 @@ define(function (require) {
                 creatives: '=creatives',
                 classes: '@class'
             },
-            link: function (scope) {
+            link: function () {
             }
         };
     }]);

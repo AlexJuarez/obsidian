@@ -9643,7 +9643,7 @@ return jQuery;
 }));
 
 /**
- * @license AngularJS v1.4.0-rc.1
+ * @license AngularJS v1.4.2
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -9701,7 +9701,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.0-rc.1/' +
+    message += '\nhttp://errors.angularjs.org/1.4.2/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -9749,6 +9749,7 @@ function minErr(module, ErrorConstructor) {
   isUndefined: true,
   isDefined: true,
   isObject: true,
+  isBlankObject: true,
   isString: true,
   isNumber: true,
   isDate: true,
@@ -9888,6 +9889,7 @@ var
     splice            = [].splice,
     push              = [].push,
     toString          = Object.prototype.toString,
+    getPrototypeOf    = Object.getPrototypeOf,
     ngMinErr          = minErr('ng'),
 
     /** @name angular */
@@ -9913,7 +9915,9 @@ function isArrayLike(obj) {
     return false;
   }
 
-  var length = obj.length;
+  // Support: iOS 8.2 (not reproducible in simulator)
+  // "length" in obj used to prevent JIT error (gh-11508)
+  var length = "length" in Object(obj) && obj.length;
 
   if (obj.nodeType === NODE_TYPE_ELEMENT && length) {
     return true;
@@ -9978,9 +9982,22 @@ function forEach(obj, iterator, context) {
       }
     } else if (obj.forEach && obj.forEach !== forEach) {
         obj.forEach(iterator, context, obj);
-    } else {
+    } else if (isBlankObject(obj)) {
+      // createMap() fast path --- Safe to avoid hasOwnProperty check because prototype chain is empty
+      for (key in obj) {
+        iterator.call(context, obj[key], key, obj);
+      }
+    } else if (typeof obj.hasOwnProperty === 'function') {
+      // Slow path for objects inheriting Object.prototype, hasOwnProperty check needed
       for (key in obj) {
         if (obj.hasOwnProperty(key)) {
+          iterator.call(context, obj[key], key, obj);
+        }
+      }
+    } else {
+      // Slow path for objects which do not have a method `hasOwnProperty`
+      for (key in obj) {
+        if (hasOwnProperty.call(obj, key)) {
           iterator.call(context, obj[key], key, obj);
         }
       }
@@ -10048,8 +10065,12 @@ function baseExtend(dst, objs, deep) {
       var src = obj[key];
 
       if (deep && isObject(src)) {
-        if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
-        baseExtend(dst[key], [src], true);
+        if (isDate(src)) {
+          dst[key] = new Date(src.valueOf());
+        } else {
+          if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
+          baseExtend(dst[key], [src], true);
+        }
       } else {
         dst[key] = src;
       }
@@ -10160,6 +10181,11 @@ identity.$inject = [];
 
 function valueFn(value) {return function() {return value;};}
 
+function hasCustomToString(obj) {
+  return isFunction(obj.toString) && obj.toString !== Object.prototype.toString;
+}
+
+
 /**
  * @ngdoc function
  * @name angular.isUndefined
@@ -10206,6 +10232,16 @@ function isDefined(value) {return typeof value !== 'undefined';}
 function isObject(value) {
   // http://jsperf.com/isobject4
   return value !== null && typeof value === 'object';
+}
+
+
+/**
+ * Determine if a value is an object with a null prototype
+ *
+ * @returns {boolean} True if `value` is an `Object` with a null prototype
+ */
+function isBlankObject(value) {
+  return value !== null && typeof value === 'object' && !getPrototypeOf(value);
 }
 
 
@@ -10481,9 +10517,18 @@ function copy(source, destination, stackSource, stackDest) {
 
   if (!destination) {
     destination = source;
-    if (source) {
+    if (isObject(source)) {
+      var index;
+      if (stackSource && (index = stackSource.indexOf(source)) !== -1) {
+        return stackDest[index];
+      }
+
+      // TypedArray, Date and RegExp have specific copy functionality and must be
+      // pushed onto the stack before returning.
+      // Array and other objects create the base object and recurse to copy child
+      // objects. The array/object will be pushed onto the stack when recursed.
       if (isArray(source)) {
-        destination = copy(source, [], stackSource, stackDest);
+        return copy(source, [], stackSource, stackDest);
       } else if (isTypedArray(source)) {
         destination = new source.constructor(source);
       } else if (isDate(source)) {
@@ -10491,9 +10536,14 @@ function copy(source, destination, stackSource, stackDest) {
       } else if (isRegExp(source)) {
         destination = new RegExp(source.source, source.toString().match(/[^\/]*$/)[0]);
         destination.lastIndex = source.lastIndex;
-      } else if (isObject(source)) {
-        var emptyObject = Object.create(Object.getPrototypeOf(source));
-        destination = copy(source, emptyObject, stackSource, stackDest);
+      } else {
+        var emptyObject = Object.create(getPrototypeOf(source));
+        return copy(source, emptyObject, stackSource, stackDest);
+      }
+
+      if (stackDest) {
+        stackSource.push(source);
+        stackDest.push(destination);
       }
     }
   } else {
@@ -10504,23 +10554,15 @@ function copy(source, destination, stackSource, stackDest) {
     stackDest = stackDest || [];
 
     if (isObject(source)) {
-      var index = stackSource.indexOf(source);
-      if (index !== -1) return stackDest[index];
-
       stackSource.push(source);
       stackDest.push(destination);
     }
 
-    var result;
+    var result, key;
     if (isArray(source)) {
       destination.length = 0;
       for (var i = 0; i < source.length; i++) {
-        result = copy(source[i], null, stackSource, stackDest);
-        if (isObject(source[i])) {
-          stackSource.push(source[i]);
-          stackDest.push(result);
-        }
-        destination.push(result);
+        destination.push(copy(source[i], null, stackSource, stackDest));
       }
     } else {
       var h = destination.$$hashKey;
@@ -10531,19 +10573,28 @@ function copy(source, destination, stackSource, stackDest) {
           delete destination[key];
         });
       }
-      for (var key in source) {
-        if (source.hasOwnProperty(key)) {
-          result = copy(source[key], null, stackSource, stackDest);
-          if (isObject(source[key])) {
-            stackSource.push(source[key]);
-            stackDest.push(result);
+      if (isBlankObject(source)) {
+        // createMap() fast path --- Safe to avoid hasOwnProperty check because prototype chain is empty
+        for (key in source) {
+          destination[key] = copy(source[key], null, stackSource, stackDest);
+        }
+      } else if (source && typeof source.hasOwnProperty === 'function') {
+        // Slow path, which must rely on hasOwnProperty
+        for (key in source) {
+          if (source.hasOwnProperty(key)) {
+            destination[key] = copy(source[key], null, stackSource, stackDest);
           }
-          destination[key] = result;
+        }
+      } else {
+        // Slowest path --- hasOwnProperty can't be called as a method
+        for (key in source) {
+          if (hasOwnProperty.call(source, key)) {
+            destination[key] = copy(source[key], null, stackSource, stackDest);
+          }
         }
       }
       setHashKey(destination,h);
     }
-
   }
   return destination;
 }
@@ -10626,14 +10677,14 @@ function equals(o1, o2) {
       } else {
         if (isScope(o1) || isScope(o2) || isWindow(o1) || isWindow(o2) ||
           isArray(o2) || isDate(o2) || isRegExp(o2)) return false;
-        keySet = {};
+        keySet = createMap();
         for (key in o1) {
           if (key.charAt(0) === '$' || isFunction(o1[key])) continue;
           if (!equals(o1[key], o2[key])) return false;
           keySet[key] = true;
         }
         for (key in o2) {
-          if (!keySet.hasOwnProperty(key) &&
+          if (!(key in keySet) &&
               key.charAt(0) !== '$' &&
               o2[key] !== undefined &&
               !isFunction(o2[key])) return false;
@@ -10670,17 +10721,17 @@ var csp = function() {
  * @name ngJq
  *
  * @element ANY
- * @param {string=} the name of the library available under `window`
+ * @param {string=} ngJq the name of the library available under `window`
  * to be used for angular.element
  * @description
  * Use this directive to force the angular.element library.  This should be
  * used to force either jqLite by leaving ng-jq blank or setting the name of
  * the jquery variable under window (eg. jQuery).
  *
- * Since this directive is global for the angular library, it is recommended
- * that it's added to the same element as ng-app or the HTML element, but it is not mandatory.
- * It needs to be noted that only the first instance of `ng-jq` will be used and all others
- * ignored.
+ * Since angular looks for this directive when it is loaded (doesn't wait for the
+ * DOMContentLoaded event), it must be placed on an element that comes before the script
+ * which loads angular. Also, only the first instance of `ng-jq` will be used and all
+ * others ignored.
  *
  * @example
  * This example shows how to force jqLite using the `ngJq` directive to the `html` tag.
@@ -11603,7 +11654,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#provider $provide.provider()}.
            */
-          provider: invokeLater('$provide', 'provider'),
+          provider: invokeLaterAndSetModuleName('$provide', 'provider'),
 
           /**
            * @ngdoc method
@@ -11614,7 +11665,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#factory $provide.factory()}.
            */
-          factory: invokeLater('$provide', 'factory'),
+          factory: invokeLaterAndSetModuleName('$provide', 'factory'),
 
           /**
            * @ngdoc method
@@ -11625,7 +11676,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#service $provide.service()}.
            */
-          service: invokeLater('$provide', 'service'),
+          service: invokeLaterAndSetModuleName('$provide', 'service'),
 
           /**
            * @ngdoc method
@@ -11660,7 +11711,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#decorator $provide.decorator()}.
            */
-          decorator: invokeLater('$provide', 'decorator'),
+          decorator: invokeLaterAndSetModuleName('$provide', 'decorator'),
 
           /**
            * @ngdoc method
@@ -11694,7 +11745,7 @@ function setupModuleLoader(window) {
            * See {@link ng.$animateProvider#register $animateProvider.register()} and
            * {@link ngAnimate ngAnimate module} for more information.
            */
-          animation: invokeLater('$animateProvider', 'register'),
+          animation: invokeLaterAndSetModuleName('$animateProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11712,7 +11763,7 @@ function setupModuleLoader(window) {
            * (`myapp_subsection_filterx`).
            * </div>
            */
-          filter: invokeLater('$filterProvider', 'register'),
+          filter: invokeLaterAndSetModuleName('$filterProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11724,7 +11775,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link ng.$controllerProvider#register $controllerProvider.register()}.
            */
-          controller: invokeLater('$controllerProvider', 'register'),
+          controller: invokeLaterAndSetModuleName('$controllerProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11737,7 +11788,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link ng.$compileProvider#directive $compileProvider.directive()}.
            */
-          directive: invokeLater('$compileProvider', 'directive'),
+          directive: invokeLaterAndSetModuleName('$compileProvider', 'directive'),
 
           /**
            * @ngdoc method
@@ -11784,6 +11835,19 @@ function setupModuleLoader(window) {
           if (!queue) queue = invokeQueue;
           return function() {
             queue[insertMethod || 'push']([provider, method, arguments]);
+            return moduleInstance;
+          };
+        }
+
+        /**
+         * @param {string} provider
+         * @param {string} method
+         * @returns {angular.Module}
+         */
+        function invokeLaterAndSetModuleName(provider, method) {
+          return function(recipeName, factoryFunction) {
+            if (factoryFunction && isFunction(factoryFunction)) factoryFunction.$$moduleName = name;
+            invokeQueue.push([provider, method, arguments]);
             return moduleInstance;
           };
         }
@@ -11930,11 +11994,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.0-rc.1',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.2',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 0,
-  codeName: 'sartorial-chronography'
+  dot: 2,
+  codeName: 'nebular-readjustment'
 };
 
 
@@ -12117,7 +12181,7 @@ function publishExternalAPI(angular) {
  * Angular to manipulate the DOM in a cross-browser compatible way. **jqLite** implements only the most
  * commonly needed functionality with the goal of having a very small footprint.</div>
  *
- * To use jQuery, simply load it before `DOMContentLoaded` event fired.
+ * To use `jQuery`, simply ensure it is loaded before the `angular.js` file.
  *
  * <div class="alert">**Note:** all element references in Angular are always wrapped with jQuery or
  * jqLite; they are never raw DOM references.</div>
@@ -12133,7 +12197,7 @@ function publishExternalAPI(angular) {
  * - [`children()`](http://api.jquery.com/children/) - Does not support selectors
  * - [`clone()`](http://api.jquery.com/clone/)
  * - [`contents()`](http://api.jquery.com/contents/)
- * - [`css()`](http://api.jquery.com/css/) - Only retrieves inline-styles, does not call `getComputedStyle()`
+ * - [`css()`](http://api.jquery.com/css/) - Only retrieves inline-styles, does not call `getComputedStyle()`. As a setter, does not convert numbers to strings or append 'px'.
  * - [`data()`](http://api.jquery.com/data/)
  * - [`detach()`](http://api.jquery.com/detach/)
  * - [`empty()`](http://api.jquery.com/empty/)
@@ -12258,6 +12322,13 @@ function jqLiteAcceptsData(node) {
   // Otherwise we are only interested in elements (1) and documents (9)
   var nodeType = node.nodeType;
   return nodeType === NODE_TYPE_ELEMENT || !nodeType || nodeType === NODE_TYPE_DOCUMENT;
+}
+
+function jqLiteHasData(node) {
+  for (var key in jqCache[node.ng339]) {
+    return true;
+  }
+  return false;
 }
 
 function jqLiteBuildFragment(html, context) {
@@ -12634,7 +12705,8 @@ function getAliasedAttrName(element, name) {
 
 forEach({
   data: jqLiteData,
-  removeData: jqLiteRemoveData
+  removeData: jqLiteRemoveData,
+  hasData: jqLiteHasData
 }, function(fn, name) {
   JQLite[name] = fn;
 });
@@ -13377,7 +13449,7 @@ function annotate(fn, strictDi, name) {
  * Return an instance of the service.
  *
  * @param {string} name The name of the instance to retrieve.
- * @param {string} caller An optional string to provide the origin of the function call for error messages.
+ * @param {string=} caller An optional string to provide the origin of the function call for error messages.
  * @return {*} The instance.
  */
 
@@ -13388,8 +13460,8 @@ function annotate(fn, strictDi, name) {
  * @description
  * Invoke the method and supply the method arguments from the `$injector`.
  *
- * @param {!Function} fn The function to invoke. Function parameters are injected according to the
- *   {@link guide/di $inject Annotation} rules.
+ * @param {Function|Array.<string|Function>} fn The injectable function to invoke. Function parameters are
+ *   injected according to the {@link guide/di $inject Annotation} rules.
  * @param {Object=} self The `this` for the invoked method.
  * @param {Object=} locals Optional object. If preset then any argument names are read from this
  *                         object first, before the `$injector` is consulted.
@@ -13656,8 +13728,8 @@ function annotate(fn, strictDi, name) {
  * configure your service in a provider.
  *
  * @param {string} name The name of the instance.
- * @param {function()} $getFn The $getFn for the instance creation. Internally this is a short hand
- *                            for `$provide.provider(name, {$get: $getFn})`.
+ * @param {Function|Array.<string|Function>} $getFn The injectable $getFn for the instance creation.
+ *                      Internally this is a short hand for `$provide.provider(name, {$get: $getFn})`.
  * @returns {Object} registered provider instance
  *
  * @example
@@ -13692,7 +13764,8 @@ function annotate(fn, strictDi, name) {
  * as a type/class.
  *
  * @param {string} name The name of the instance.
- * @param {Function} constructor A class (constructor function) that will be instantiated.
+ * @param {Function|Array.<string|Function>} constructor An injectable class (constructor function)
+ *     that will be instantiated.
  * @returns {Object} registered provider instance
  *
  * @example
@@ -13791,7 +13864,7 @@ function annotate(fn, strictDi, name) {
  * object which replaces or wraps and delegates to the original service.
  *
  * @param {string} name The name of the service to decorate.
- * @param {function()} decorator This function will be invoked when the service needs to be
+ * @param {Function|Array.<string|Function>} decorator This function will be invoked when the service needs to be
  *    instantiated and should return the decorated service instance. The function is called using
  *    the {@link auto.$injector#invoke injector.invoke} method and is therefore fully injectable.
  *    Local injection arguments:
@@ -13842,7 +13915,7 @@ function createInjector(modulesToLoad, strictDi) {
           }));
 
 
-  forEach(loadModules(modulesToLoad), function(fn) { instanceInjector.invoke(fn || noop); });
+  forEach(loadModules(modulesToLoad), function(fn) { if (fn) instanceInjector.invoke(fn); });
 
   return instanceInjector;
 
@@ -14320,6 +14393,7 @@ function $AnchorScrollProvider() {
 
 var $animateMinErr = minErr('$animate');
 var ELEMENT_NODE = 1;
+var NG_ANIMATE_CLASSNAME = 'ng-animate';
 
 function mergeClasses(a,b) {
   if (!a && !b) return '';
@@ -14344,7 +14418,9 @@ function splitClasses(classes) {
     classes = classes.split(' ');
   }
 
-  var obj = {};
+  // Use createMap() to prevent class assumptions involving property names in
+  // Object.prototype
+  var obj = createMap();
   forEach(classes, function(klass) {
     // sometimes the split leaves empty string values
     // incase extra spaces were applied to the options
@@ -14353,6 +14429,19 @@ function splitClasses(classes) {
     }
   });
   return obj;
+}
+
+// if any other type of options value besides an Object value is
+// passed into the $animate.method() animation then this helper code
+// will be run which will ignore it. While this patch is not the
+// greatest solution to this, a lot of existing plugins depend on
+// $animate to either call the callback (< 1.2) or return a promise
+// that can be changed. This helper function ensures that the options
+// are wiped clean incase a callback function is provided.
+function prepareAnimateOptions(options) {
+  return isObject(options)
+      ? options
+      : {};
 }
 
 var $$CoreAnimateRunnerProvider = function() {
@@ -14549,6 +14638,13 @@ var $AnimateProvider = ['$provide', function($provide) {
   this.classNameFilter = function(expression) {
     if (arguments.length === 1) {
       this.$$classNameFilter = (expression instanceof RegExp) ? expression : null;
+      if (this.$$classNameFilter) {
+        var reservedRegex = new RegExp("(\\s+|\\/)" + NG_ANIMATE_CLASSNAME + "(\\s+|\\/)");
+        if (reservedRegex.test(this.$$classNameFilter.toString())) {
+          throw $animateMinErr('nongcls','$animateProvider.classNameFilter(regex) prohibits accepting a regex value which matches/contains the "{0}" CSS class.', NG_ANIMATE_CLASSNAME);
+
+        }
+      }
     }
     return this.$$classNameFilter;
   };
@@ -14724,9 +14820,11 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       enter: function(element, parent, after, options) {
+        parent = parent && jqLite(parent);
+        after = after && jqLite(after);
         parent = parent || after.parent();
         domInsert(element, parent, after);
-        return $$animateQueue.push(element, 'enter', options);
+        return $$animateQueue.push(element, 'enter', prepareAnimateOptions(options));
       },
 
       /**
@@ -14748,9 +14846,11 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       move: function(element, parent, after, options) {
+        parent = parent && jqLite(parent);
+        after = after && jqLite(after);
         parent = parent || after.parent();
         domInsert(element, parent, after);
-        return $$animateQueue.push(element, 'move', options);
+        return $$animateQueue.push(element, 'move', prepareAnimateOptions(options));
       },
 
       /**
@@ -14767,7 +14867,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       leave: function(element, options) {
-        return $$animateQueue.push(element, 'leave', options, function() {
+        return $$animateQueue.push(element, 'leave', prepareAnimateOptions(options), function() {
           element.remove();
         });
       },
@@ -14791,7 +14891,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       addClass: function(element, className, options) {
-        options = options || {};
+        options = prepareAnimateOptions(options);
         options.addClass = mergeClasses(options.addclass, className);
         return $$animateQueue.push(element, 'addClass', options);
       },
@@ -14815,7 +14915,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       removeClass: function(element, className, options) {
-        options = options || {};
+        options = prepareAnimateOptions(options);
         options.removeClass = mergeClasses(options.removeClass, className);
         return $$animateQueue.push(element, 'removeClass', options);
       },
@@ -14840,7 +14940,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       setClass: function(element, add, remove, options) {
-        options = options || {};
+        options = prepareAnimateOptions(options);
         options.addClass = mergeClasses(options.addClass, add);
         options.removeClass = mergeClasses(options.removeClass, remove);
         return $$animateQueue.push(element, 'setClass', options);
@@ -14868,7 +14968,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       animate: function(element, from, to, className, options) {
-        options = options || {};
+        options = prepareAnimateOptions(options);
         options.from = options.from ? extend(options.from, from) : from;
         options.to   = options.to   ? extend(options.to, to)     : to;
 
@@ -14954,7 +15054,7 @@ function Browser(window, document, $log, $sniffer) {
 
   function getHash(url) {
     var index = url.indexOf('#');
-    return index === -1 ? '' : url.substr(index + 1);
+    return index === -1 ? '' : url.substr(index);
   }
 
   /**
@@ -15038,7 +15138,7 @@ function Browser(window, document, $log, $sniffer) {
         // Do the assignment again so that those two variables are referentially identical.
         lastHistoryState = cachedState;
       } else {
-        if (!sameBase) {
+        if (!sameBase || reloadLocation) {
           reloadLocation = url;
         }
         if (replace) {
@@ -16044,12 +16144,15 @@ function $TemplateCacheProvider() {
  *   * `controller` - the directive's required controller instance(s) - Instances are shared
  *     among all directives, which allows the directives to use the controllers as a communication
  *     channel. The exact value depends on the directive's `require` property:
+ *       * no controller(s) required: the directive's own controller, or `undefined` if it doesn't have one
  *       * `string`: the controller instance
  *       * `array`: array of controller instances
- *       * no controller(s) required: `undefined`
  *
  *     If a required controller cannot be found, and it is optional, the instance is `null`,
  *     otherwise the {@link error:$compile:ctreq Missing Required Controller} error is thrown.
+ *
+ *     Note that you can also require the directive's own controller - it will be made available like
+ *     like any other controller.
  *
  *   * `transcludeFn` - A transclude linking function pre-bound to the correct transclusion scope.
  *     This is the same as the `$transclude`
@@ -16447,6 +16550,11 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     if (!letter || letter !== lowercase(letter)) {
       throw $compileMinErr('baddir', "Directive name '{0}' is invalid. The first character must be a lowercase letter", name);
     }
+    if (name !== name.trim()) {
+      throw $compileMinErr('baddir',
+            "Directive name '{0}' is invalid. The name should not contain leading or trailing whitespaces",
+            name);
+    }
   }
 
   /**
@@ -16492,6 +16600,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
                 if (isObject(bindings.isolateScope)) {
                   directive.$$isolateBindings = bindings.isolateScope;
                 }
+                directive.$$moduleName = directiveFactory.$$moduleName;
                 directives.push(directive);
               } catch (e) {
                 $exceptionHandler(e);
@@ -17063,8 +17172,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
             if (nodeLinkFn.transcludeOnThisElement) {
               childBoundTranscludeFn = createBoundTranscludeFn(
-                  scope, nodeLinkFn.transclude, parentBoundTranscludeFn,
-                  nodeLinkFn.elementTranscludeOnThisElement);
+                  scope, nodeLinkFn.transclude, parentBoundTranscludeFn);
 
             } else if (!nodeLinkFn.templateOnThisElement && parentBoundTranscludeFn) {
               childBoundTranscludeFn = parentBoundTranscludeFn;
@@ -17086,7 +17194,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       }
     }
 
-    function createBoundTranscludeFn(scope, transcludeFn, previousBoundTranscludeFn, elementTransclusion) {
+    function createBoundTranscludeFn(scope, transcludeFn, previousBoundTranscludeFn) {
 
       var boundTranscludeFn = function(transcludedScope, cloneFn, controllers, futureParentElement, containingScope) {
 
@@ -17185,6 +17293,13 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           }
           break;
         case NODE_TYPE_TEXT: /* Text Node */
+          if (msie === 11) {
+            // Workaround for #11781
+            while (node.parentNode && node.nextSibling && node.nextSibling.nodeType === NODE_TYPE_TEXT) {
+              node.nodeValue = node.nodeValue + node.nextSibling.nodeValue;
+              node.parentNode.removeChild(node.nextSibling);
+            }
+          }
           addTextInterpolateDirective(directives, node.nodeValue);
           break;
         case NODE_TYPE_COMMENT: /* Comment */
@@ -17284,7 +17399,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       previousCompileContext = previousCompileContext || {};
 
       var terminalPriority = -Number.MAX_VALUE,
-          newScopeDirective,
+          newScopeDirective = previousCompileContext.newScopeDirective,
           controllerDirectives = previousCompileContext.controllerDirectives,
           newIsolateScopeDirective = previousCompileContext.newIsolateScopeDirective,
           templateDirective = previousCompileContext.templateDirective,
@@ -17450,6 +17565,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           nodeLinkFn = compileTemplateUrl(directives.splice(i, directives.length - i), $compileNode,
               templateAttrs, jqCollection, hasTranscludeDirective && childTranscludeFn, preLinkFns, postLinkFns, {
                 controllerDirectives: controllerDirectives,
+                newScopeDirective: (newScopeDirective !== directive) && newScopeDirective,
                 newIsolateScopeDirective: newIsolateScopeDirective,
                 templateDirective: templateDirective,
                 nonTlbTranscludeDirective: nonTlbTranscludeDirective
@@ -17477,7 +17593,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       nodeLinkFn.scope = newScopeDirective && newScopeDirective.scope === true;
       nodeLinkFn.transcludeOnThisElement = hasTranscludeDirective;
-      nodeLinkFn.elementTranscludeOnThisElement = hasElementTranscludeDirective;
       nodeLinkFn.templateOnThisElement = hasTemplate;
       nodeLinkFn.transclude = childTranscludeFn;
 
@@ -17638,9 +17753,12 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           for (i in elementControllers) {
             controller = elementControllers[i];
             var controllerResult = controller();
+
             if (controllerResult !== controller.instance) {
+              // If the controller constructor has a return value, overwrite the instance
+              // from setupControllers and update the element data
               controller.instance = controllerResult;
-              $element.data('$' + directive.name + 'Controller', controllerResult);
+              $element.data('$' + i + 'Controller', controllerResult);
               if (controller === controllerForBindings) {
                 // Remove and re-install bindToController bindings
                 thisLinkFn.$$destroyBindings();
@@ -17832,7 +17950,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       $compileNode.empty();
 
-      $templateRequest($sce.getTrustedResourceUrl(templateUrl))
+      $templateRequest(templateUrl)
         .then(function(content) {
           var compileNode, tempTemplateAttrs, $template, childBoundTranscludeFn;
 
@@ -17940,11 +18058,18 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       return a.index - b.index;
     }
 
-
     function assertNoDuplicate(what, previousDirective, directive, element) {
+
+      function wrapModuleNameIfDefined(moduleName) {
+        return moduleName ?
+          (' (module: ' + moduleName + ')') :
+          '';
+      }
+
       if (previousDirective) {
-        throw $compileMinErr('multidir', 'Multiple directives [{0}, {1}] asking for {2} on: {3}',
-            previousDirective.name, directive.name, what, startingTag(element));
+        throw $compileMinErr('multidir', 'Multiple directives [{0}{1}, {2}{3}] asking for {4} on: {5}',
+            previousDirective.name, wrapModuleNameIfDefined(previousDirective.$$moduleName),
+            directive.name, wrapModuleNameIfDefined(directive.$$moduleName), what, startingTag(element));
       }
     }
 
@@ -18125,26 +18250,28 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       var fragment = document.createDocumentFragment();
       fragment.appendChild(firstElementToRemove);
 
-      // Copy over user data (that includes Angular's $scope etc.). Don't copy private
-      // data here because there's no public interface in jQuery to do that and copying over
-      // event listeners (which is the main use of private data) wouldn't work anyway.
-      jqLite(newNode).data(jqLite(firstElementToRemove).data());
+      if (jqLite.hasData(firstElementToRemove)) {
+        // Copy over user data (that includes Angular's $scope etc.). Don't copy private
+        // data here because there's no public interface in jQuery to do that and copying over
+        // event listeners (which is the main use of private data) wouldn't work anyway.
+        jqLite(newNode).data(jqLite(firstElementToRemove).data());
 
-      // Remove data of the replaced element. We cannot just call .remove()
-      // on the element it since that would deallocate scope that is needed
-      // for the new node. Instead, remove the data "manually".
-      if (!jQuery) {
-        delete jqLite.cache[firstElementToRemove[jqLite.expando]];
-      } else {
-        // jQuery 2.x doesn't expose the data storage. Use jQuery.cleanData to clean up after
-        // the replaced element. The cleanData version monkey-patched by Angular would cause
-        // the scope to be trashed and we do need the very same scope to work with the new
-        // element. However, we cannot just cache the non-patched version and use it here as
-        // that would break if another library patches the method after Angular does (one
-        // example is jQuery UI). Instead, set a flag indicating scope destroying should be
-        // skipped this one time.
-        skipDestroyOnNextJQueryCleanData = true;
-        jQuery.cleanData([firstElementToRemove]);
+        // Remove data of the replaced element. We cannot just call .remove()
+        // on the element it since that would deallocate scope that is needed
+        // for the new node. Instead, remove the data "manually".
+        if (!jQuery) {
+          delete jqLite.cache[firstElementToRemove[jqLite.expando]];
+        } else {
+          // jQuery 2.x doesn't expose the data storage. Use jQuery.cleanData to clean up after
+          // the replaced element. The cleanData version monkey-patched by Angular would cause
+          // the scope to be trashed and we do need the very same scope to work with the new
+          // element. However, we cannot just cache the non-patched version and use it here as
+          // that would break if another library patches the method after Angular does (one
+          // example is jQuery UI). Instead, set a flag indicating scope destroying should be
+          // skipped this one time.
+          skipDestroyOnNextJQueryCleanData = true;
+          jQuery.cleanData([firstElementToRemove]);
+        }
       }
 
       for (var k = 1, kk = elementsToRemove.length; k < kk; k++) {
@@ -18185,9 +18312,19 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         lastValue,
         parentGet, parentSet, compare;
 
+        if (!hasOwnProperty.call(attrs, attrName)) {
+          // In the case of user defined a binding with the same name as a method in Object.prototype but didn't set
+          // the corresponding attribute. We need to make sure subsequent code won't access to the prototype function
+          attrs[attrName] = undefined;
+        }
+
         switch (mode) {
 
           case '@':
+            if (!attrs[attrName] && !optional) {
+              destination[scopeName] = undefined;
+            }
+
             attrs.$observe(attrName, function(value) {
               destination[scopeName] = value;
             });
@@ -18204,6 +18341,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
               return;
             }
             parentGet = $parse(attrs[attrName]);
+
             if (parentGet.literal) {
               compare = equals;
             } else {
@@ -18242,9 +18380,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
-            // Don't assign Object.prototype method to scope
-            if (!attrs.hasOwnProperty(attrName) && optional) break;
-
             parentGet = $parse(attrs[attrName]);
 
             // Don't assign noop to destination if expression is not valid
@@ -18631,33 +18766,13 @@ var JSON_ENDS = {
 };
 var JSON_PROTECTION_PREFIX = /^\)\]\}',?\n/;
 
-function paramSerializerFactory(jQueryMode) {
-
-  function serializeValue(v) {
-    if (isObject(v)) {
-      return isDate(v) ? v.toISOString() : toJson(v);
-    }
-    return v;
+function serializeValue(v) {
+  if (isObject(v)) {
+    return isDate(v) ? v.toISOString() : toJson(v);
   }
-
-  return function paramSerializer(params) {
-    if (!params) return '';
-    var parts = [];
-    forEachSorted(params, function(value, key) {
-      if (value === null || isUndefined(value)) return;
-      if (isArray(value) || isObject(value) && jQueryMode) {
-        forEach(value, function(v, k) {
-          var keySuffix = jQueryMode ? '[' + (!isArray(value) ? k : '') + ']' : '';
-          parts.push(encodeUriQuery(key + keySuffix)  + '=' + encodeUriQuery(serializeValue(v)));
-        });
-      } else {
-        parts.push(encodeUriQuery(key) + '=' + encodeUriQuery(serializeValue(value)));
-      }
-    });
-
-    return parts.length > 0 ? parts.join('&') : '';
-  };
+  return v;
 }
+
 
 function $HttpParamSerializerProvider() {
   /**
@@ -18665,15 +18780,34 @@ function $HttpParamSerializerProvider() {
    * @name $httpParamSerializer
    * @description
    *
-   * Default $http params serializer that converts objects to a part of a request URL
+   * Default {@link $http `$http`} params serializer that converts objects to strings
    * according to the following rules:
+   *
    * * `{'foo': 'bar'}` results in `foo=bar`
    * * `{'foo': Date.now()}` results in `foo=2015-04-01T09%3A50%3A49.262Z` (`toISOString()` and encoded representation of a Date object)
    * * `{'foo': ['bar', 'baz']}` results in `foo=bar&foo=baz` (repeated key for each array element)
    * * `{'foo': {'bar':'baz'}}` results in `foo=%7B%22bar%22%3A%22baz%22%7D"` (stringified and encoded representation of an object)
+   *
+   * Note that serializer will sort the request parameters alphabetically.
    * */
+
   this.$get = function() {
-    return paramSerializerFactory(false);
+    return function ngParamSerializer(params) {
+      if (!params) return '';
+      var parts = [];
+      forEachSorted(params, function(value, key) {
+        if (value === null || isUndefined(value)) return;
+        if (isArray(value)) {
+          forEach(value, function(v, k) {
+            parts.push(encodeUriQuery(key)  + '=' + encodeUriQuery(serializeValue(v)));
+          });
+        } else {
+          parts.push(encodeUriQuery(key) + '=' + encodeUriQuery(serializeValue(value)));
+        }
+      });
+
+      return parts.join('&');
+    };
   };
 }
 
@@ -18683,10 +18817,69 @@ function $HttpParamSerializerJQLikeProvider() {
    * @name $httpParamSerializerJQLike
    * @description
    *
-   * Alternative $http params serializer that follows jQuery's [`param()`](http://api.jquery.com/jquery.param/) method logic.
+   * Alternative {@link $http `$http`} params serializer that follows
+   * jQuery's [`param()`](http://api.jquery.com/jquery.param/) method logic.
+   * The serializer will also sort the params alphabetically.
+   *
+   * To use it for serializing `$http` request parameters, set it as the `paramSerializer` property:
+   *
+   * ```js
+   * $http({
+   *   url: myUrl,
+   *   method: 'GET',
+   *   params: myParams,
+   *   paramSerializer: '$httpParamSerializerJQLike'
+   * });
+   * ```
+   *
+   * It is also possible to set it as the default `paramSerializer` in the
+   * {@link $httpProvider#defaults `$httpProvider`}.
+   *
+   * Additionally, you can inject the serializer and use it explicitly, for example to serialize
+   * form data for submission:
+   *
+   * ```js
+   * .controller(function($http, $httpParamSerializerJQLike) {
+   *   //...
+   *
+   *   $http({
+   *     url: myUrl,
+   *     method: 'POST',
+   *     data: $httpParamSerializerJQLike(myData),
+   *     headers: {
+   *       'Content-Type': 'application/x-www-form-urlencoded'
+   *     }
+   *   });
+   *
+   * });
+   * ```
+   *
    * */
   this.$get = function() {
-    return paramSerializerFactory(true);
+    return function jQueryLikeParamSerializer(params) {
+      if (!params) return '';
+      var parts = [];
+      serialize(params, '', true);
+      return parts.join('&');
+
+      function serialize(toSerialize, prefix, topLevel) {
+        if (toSerialize === null || isUndefined(toSerialize)) return;
+        if (isArray(toSerialize)) {
+          forEach(toSerialize, function(value) {
+            serialize(value, prefix + '[]');
+          });
+        } else if (isObject(toSerialize) && !isDate(toSerialize)) {
+          forEachSorted(toSerialize, function(value, key) {
+            serialize(value, prefix +
+                (topLevel ? '' : '[') +
+                key +
+                (topLevel ? '' : ']'));
+          });
+        } else {
+          parts.push(encodeUriQuery(prefix) + '=' + encodeUriQuery(serializeValue(toSerialize)));
+        }
+      }
+    };
   };
 }
 
@@ -18817,7 +19010,7 @@ function $HttpProvider() {
    *
    * - **`defaults.cache`** - {Object} - an object built with {@link ng.$cacheFactory `$cacheFactory`}
    * that will provide the cache for all requests who set their `cache` property to `true`.
-   * If you set the `default.cache = false` then only requests that specify their own custom
+   * If you set the `defaults.cache = false` then only requests that specify their own custom
    * cache object will be cached. See {@link $http#caching $http Caching} for more information.
    *
    * - **`defaults.xsrfCookieName`** - {string} - Name of cookie containing the XSRF token.
@@ -18834,10 +19027,11 @@ function $HttpProvider() {
    *     - **`defaults.headers.put`**
    *     - **`defaults.headers.patch`**
    *
-   * - **`defaults.paramSerializer`** - {string|function(Object<string,string>):string} - A function used to prepare string representation
-   * of request parameters (specified as an object).
-   * If specified as string, it is interpreted as a function registered with the {@link auto.$injector $injector}.
-   * Defaults to {@link ng.$httpParamSerializer $httpParamSerializer}.
+   *
+   * - **`defaults.paramSerializer`** - `{string|function(Object<string,string>):string}` - A function
+   *  used to the prepare string representation of request parameters (specified as an object).
+   *  If specified as string, it is interpreted as a function registered with the {@link auto.$injector $injector}.
+   *  Defaults to {@link ng.$httpParamSerializer $httpParamSerializer}.
    *
    **/
   var defaults = this.defaults = {
@@ -19303,15 +19497,17 @@ function $HttpProvider() {
      * properties of either $httpProvider.defaults at config-time, $http.defaults at run-time,
      * or the per-request config object.
      *
+     * In order to prevent collisions in environments where multiple Angular apps share the
+     * same domain or subdomain, we recommend that each application uses unique cookie name.
+     *
      *
      * @param {object} config Object describing the request to be made and how it should be
      *    processed. The object has following properties:
      *
      *    - **method** – `{string}` – HTTP method (e.g. 'GET', 'POST', etc)
      *    - **url** – `{string}` – Absolute or relative URL of the resource that is being requested.
-     *    - **params** – `{Object.<string|Object>}` – Map of strings or objects which will be turned
-     *      to `?key1=value1&key2=value2` after the url. If the value is not a string, it will be
-     *      JSONified.
+     *    - **params** – `{Object.<string|Object>}` – Map of strings or objects which will be serialized
+     *      with the `paramSerializer` and appended as GET parameters.
      *    - **data** – `{string|Object}` – Data to be sent as the request message data.
      *    - **headers** – `{Object}` – Map of strings or functions which return strings representing
      *      HTTP headers to send to the server. If the return value of a function is null, the
@@ -19329,10 +19525,14 @@ function $HttpProvider() {
      *      transform function or an array of such functions. The transform function takes the http
      *      response body, headers and status and returns its transformed (typically deserialized) version.
      *      See {@link ng.$http#overriding-the-default-transformations-per-request
-     *      Overriding the Default Transformations}
-     *    - **paramSerializer** - {string|function(Object<string,string>):string} - A function used to prepare string representation
-     *      of request parameters (specified as an object).
-     *      Is specified as string, it is interpreted as function registered in with the {$injector}.
+     *      Overriding the Default TransformationjqLiks}
+     *    - **paramSerializer** - `{string|function(Object<string,string>):string}` - A function used to
+     *      prepare the string representation of request parameters (specified as an object).
+     *      If specified as string, it is interpreted as function registered with the
+     *      {@link $injector $injector}, which means you can create your own serializer
+     *      by registering it as a {@link auto.$provide#service service}.
+     *      The default serializer is the {@link $httpParamSerializer $httpParamSerializer};
+     *      alternatively, you can use the {@link $httpParamSerializerJQLike $httpParamSerializerJQLike}
      *    - **cache** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
      *      GET request, otherwise if a cache instance built with
      *      {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
@@ -19343,7 +19543,7 @@ function $HttpProvider() {
      *      XHR object. See [requests with credentials](https://developer.mozilla.org/docs/Web/HTTP/Access_control_CORS#Requests_with_credentials)
      *      for more information.
      *    - **responseType** - `{string}` - see
-     *      [requestType](https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#responseType).
+     *      [XMLHttpRequest.responseType](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#xmlhttprequest-responsetype).
      *
      * @returns {HttpPromise} Returns a {@link ng.$q promise} object with the
      *   standard `then` method and two http specific methods: `success` and `error`. The `then`
@@ -19698,7 +19898,7 @@ function $HttpProvider() {
     function createShortMethods(names) {
       forEach(arguments, function(name) {
         $http[name] = function(url, config) {
-          return $http(extend(config || {}, {
+          return $http(extend({}, config || {}, {
             method: name,
             url: url
           }));
@@ -19710,7 +19910,7 @@ function $HttpProvider() {
     function createShortMethodsWithData(name) {
       forEach(arguments, function(name) {
         $http[name] = function(url, data, config) {
-          return $http(extend(config || {}, {
+          return $http(extend({}, config || {}, {
             method: name,
             url: url,
             data: data
@@ -20826,7 +21026,7 @@ function LocationHashbangUrl(appBase, hashPrefix) {
     var withoutBaseUrl = beginsWith(appBase, url) || beginsWith(appBaseNoFile, url);
     var withoutHashUrl;
 
-    if (withoutBaseUrl.charAt(0) === '#') {
+    if (!isUndefined(withoutBaseUrl) && withoutBaseUrl.charAt(0) === '#') {
 
       // The rest of the url starts with a hash so we have
       // got either a hashbang path or a plain hash fragment
@@ -20840,7 +21040,15 @@ function LocationHashbangUrl(appBase, hashPrefix) {
       // There was no hashbang path nor hash fragment:
       // If we are in HTML5 mode we use what is left as the path;
       // Otherwise we ignore what is left
-      withoutHashUrl = this.$$html5 ? withoutBaseUrl : '';
+      if (this.$$html5) {
+        withoutHashUrl = withoutBaseUrl;
+      } else {
+        withoutHashUrl = '';
+        if (isUndefined(withoutBaseUrl)) {
+          appBase = url;
+          this.replace();
+        }
+      }
     }
 
     parseAppUrl(withoutHashUrl, this);
@@ -21055,11 +21263,19 @@ var locationPrototype = {
    *
    * Return host of current url.
    *
+   * Note: compared to the non-angular version `location.host` which returns `hostname:port`, this returns the `hostname` portion only.
+   *
    *
    * ```js
    * // given url http://example.com/#/some/path?foo=bar&baz=xoxo
    * var host = $location.host();
    * // => "example.com"
+   *
+   * // given url http://user:password@example.com:8080/#/some/path?foo=bar&baz=xoxo
+   * host = $location.host();
+   * // => "example.com"
+   * host = location.host;
+   * // => "example.com:8080"
    * ```
    *
    * @return {string} host of current url.
@@ -22752,8 +22968,10 @@ ASTCompiler.prototype = {
               nameId.name = ast.property.name;
             }
           }
-          recursionFn(intoId);
+        }, function() {
+          self.assign(intoId, 'undefined');
         });
+        recursionFn(intoId);
       }, !!create);
       break;
     case AST.CallExpression:
@@ -22791,8 +23009,10 @@ ASTCompiler.prototype = {
             }
             expression = self.ensureSafeObject(expression);
             self.assign(intoId, expression);
-            recursionFn(intoId);
+          }, function() {
+            self.assign(intoId, 'undefined');
           });
+          recursionFn(intoId);
         });
       }
       break;
@@ -23816,9 +24036,11 @@ function $ParseProvider() {
  *   provide a progress indication, before the promise is resolved or rejected.
  *
  *   This method *returns a new promise* which is resolved or rejected via the return value of the
- *   `successCallback`, `errorCallback`. It also notifies via the return value of the
- *   `notifyCallback` method. The promise cannot be resolved or rejected from the notifyCallback
- *   method.
+ *   `successCallback`, `errorCallback` (unless that value is a promise, in which case it is resolved
+ *   with the value which is resolved in that promise using
+ *   [promise chaining](http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promises-queues)).
+ *   It also notifies via the return value of the `notifyCallback` method. The promise cannot be
+ *   resolved or rejected from the notifyCallback method.
  *
  * - `catch(errorCallback)` – shorthand for `promise.then(null, errorCallback)`
  *
@@ -24173,6 +24395,19 @@ function qFactory(nextTick, exceptionHandler) {
 
   /**
    * @ngdoc method
+   * @name $q#resolve
+   * @kind function
+   *
+   * @description
+   * Alias of {@link ng.$q#when when} to maintain naming consistency with ES6.
+   *
+   * @param {*} value Value or a promise
+   * @returns {Promise} Returns a promise of the passed value or promise
+   */
+  var resolve = when;
+
+  /**
+   * @ngdoc method
    * @name $q#all
    * @kind function
    *
@@ -24239,6 +24474,7 @@ function qFactory(nextTick, exceptionHandler) {
   $Q.defer = defer;
   $Q.reject = reject;
   $Q.when = when;
+  $Q.resolve = resolve;
   $Q.all = all;
 
   return $Q;
@@ -24254,7 +24490,7 @@ function $$RAFProvider() { //rAF
                                $window.webkitCancelRequestAnimationFrame;
 
     var rafSupported = !!requestAnimationFrame;
-    var raf = rafSupported
+    var rafFn = rafSupported
       ? function(fn) {
           var id = requestAnimationFrame(fn);
           return function() {
@@ -24268,9 +24504,47 @@ function $$RAFProvider() { //rAF
           };
         };
 
-    raf.supported = rafSupported;
+    queueFn.supported = rafSupported;
 
-    return raf;
+    var cancelLastRAF;
+    var taskCount = 0;
+    var taskQueue = [];
+    return queueFn;
+
+    function flush() {
+      for (var i = 0; i < taskQueue.length; i++) {
+        var task = taskQueue[i];
+        if (task) {
+          taskQueue[i] = null;
+          task();
+        }
+      }
+      taskCount = taskQueue.length = 0;
+    }
+
+    function queueFn(asyncFn) {
+      var index = taskQueue.length;
+
+      taskCount++;
+      taskQueue.push(asyncFn);
+
+      if (index === 0) {
+        cancelLastRAF = rafFn(flush);
+      }
+
+      return function cancelQueueFn() {
+        if (index >= 0) {
+          taskQueue[index] = null;
+          index = null;
+
+          if (--taskCount === 0 && cancelLastRAF) {
+            cancelLastRAF();
+            cancelLastRAF = null;
+            taskQueue.length = 0;
+          }
+        }
+      };
+    }
   }];
 }
 
@@ -26845,12 +27119,14 @@ var $compileMinErr = minErr('$compile');
  * @name $templateRequest
  *
  * @description
- * The `$templateRequest` service downloads the provided template using `$http` and, upon success,
- * stores the contents inside of `$templateCache`. If the HTTP request fails or the response data
- * of the HTTP request is empty, a `$compile` error will be thrown (the exception can be thwarted
- * by setting the 2nd parameter of the function to true).
+ * The `$templateRequest` service runs security checks then downloads the provided template using
+ * `$http` and, upon success, stores the contents inside of `$templateCache`. If the HTTP request
+ * fails or the response data of the HTTP request is empty, a `$compile` error will be thrown (the
+ * exception can be thwarted by setting the 2nd parameter of the function to true). Note that the
+ * contents of `$templateCache` are trusted, so the call to `$sce.getTrustedUrl(tpl)` is omitted
+ * when `tpl` is of type string and `$templateCache` has the matching entry.
  *
- * @param {string} tpl The HTTP request template URL
+ * @param {string|TrustedResourceUrl} tpl The HTTP request template URL
  * @param {boolean=} ignoreRequestError Whether or not to ignore the exception when the request fails or the template is empty
  *
  * @return {Promise} a promise for the HTTP response data of the given URL.
@@ -26858,9 +27134,18 @@ var $compileMinErr = minErr('$compile');
  * @property {number} totalPendingRequests total amount of pending template requests being downloaded.
  */
 function $TemplateRequestProvider() {
-  this.$get = ['$templateCache', '$http', '$q', function($templateCache, $http, $q) {
+  this.$get = ['$templateCache', '$http', '$q', '$sce', function($templateCache, $http, $q, $sce) {
     function handleRequestFn(tpl, ignoreRequestError) {
       handleRequestFn.totalPendingRequests++;
+
+      // We consider the template cache holds only trusted templates, so
+      // there's no need to go through whitelisting again for keys that already
+      // are included in there. This also makes Angular accept any script
+      // directive, no matter its name. However, we still need to unwrap trusted
+      // types.
+      if (!isString(tpl) || !$templateCache.get(tpl)) {
+        tpl = $sce.getTrustedResourceUrl(tpl);
+      }
 
       var transformResponse = $http.defaults && $http.defaults.transformResponse;
 
@@ -27510,9 +27795,11 @@ function $FilterProvider($provide) {
  *     `{name: {first: 'John', last: 'Doe'}}` will **not** be matched by `{name: 'John'}`, but
  *     **will** be matched by `{$: 'John'}`.
  *
- *   - `function(value, index)`: A predicate function can be used to write arbitrary filters. The
- *     function is called for each element of `array`. The final result is an array of those
- *     elements that the predicate returned true for.
+ *   - `function(value, index, array)`: A predicate function can be used to write arbitrary filters.
+ *     The function is called for each element of the array, with the element, its index, and
+ *     the entire array itself as arguments.
+ *
+ *     The final result is an array of those elements that the predicate returned true for.
  *
  * @param {function(actual, expected)|true|undefined} comparator Comparator which is used in
  *     determining if the expected value (from the filter expression) and actual value (from
@@ -27603,7 +27890,7 @@ function $FilterProvider($provide) {
  */
 function filterFilter() {
   return function(array, expression, comparator) {
-    if (!isArray(array)) {
+    if (!isArrayLike(array)) {
       if (array == null) {
         return array;
       } else {
@@ -27633,12 +27920,8 @@ function filterFilter() {
         return array;
     }
 
-    return array.filter(predicateFn);
+    return Array.prototype.filter.call(array, predicateFn);
   };
-}
-
-function hasCustomToString(obj) {
-  return isFunction(obj.toString) && obj.toString !== Object.prototype.toString;
 }
 
 // Helper functions for `filterFilter`
@@ -27813,9 +28096,10 @@ function currencyFilter($locale) {
  * @description
  * Formats a number as text.
  *
+ * If the input is null or undefined, it will just be returned.
+ * If the input is infinite (Infinity/-Infinity) the Infinity symbol '∞' is returned.
  * If the input is not a number an empty string is returned.
  *
- * If the input is an infinite (Infinity/-Infinity) the Infinity symbol '∞' is returned.
  *
  * @param {number|string} number Number to format.
  * @param {(number|string)=} fractionSize Number of decimal places to round the number to.
@@ -28444,7 +28728,7 @@ function limitToFilter() {
  * @description
  * Orders a specified `array` by the `expression` predicate. It is ordered alphabetically
  * for strings and numerically for numbers. Note: if you notice numbers are not being sorted
- * correctly, make sure they are actually being saved as numbers and not strings.
+ * as expected, make sure they are actually being saved as numbers and not strings.
  *
  * @param {Array} array The array to sort.
  * @param {function(*)|string|Array.<(function(*)|string)>=} expression A predicate to be
@@ -28519,19 +28803,40 @@ function limitToFilter() {
                   {name:'Mike', phone:'555-4321', age:21},
                   {name:'Adam', phone:'555-5678', age:35},
                   {name:'Julie', phone:'555-8765', age:29}];
-             $scope.predicate = '-age';
+             $scope.predicate = 'age';
+             $scope.reverse = true;
+             $scope.order = function(predicate) {
+               $scope.reverse = ($scope.predicate === predicate) ? !$scope.reverse : false;
+               $scope.predicate = predicate;
+             };
            }]);
        </script>
+       <style type="text/css">
+         .sortorder:after {
+           content: '\25b2';
+         }
+         .sortorder.reverse:after {
+           content: '\25bc';
+         }
+       </style>
        <div ng-controller="ExampleController">
          <pre>Sorting predicate = {{predicate}}; reverse = {{reverse}}</pre>
          <hr/>
          [ <a href="" ng-click="predicate=''">unsorted</a> ]
          <table class="friend">
            <tr>
-             <th><a href="" ng-click="predicate = 'name'; reverse=false">Name</a>
-                 (<a href="" ng-click="predicate = '-name'; reverse=false">^</a>)</th>
-             <th><a href="" ng-click="predicate = 'phone'; reverse=!reverse">Phone Number</a></th>
-             <th><a href="" ng-click="predicate = 'age'; reverse=!reverse">Age</a></th>
+             <th>
+               <a href="" ng-click="order('name')">Name</a>
+               <span class="sortorder" ng-show="predicate === 'name'" ng-class="{reverse:reverse}"></span>
+             </th>
+             <th>
+               <a href="" ng-click="order('phone')">Phone Number</a>
+               <span class="sortorder" ng-show="predicate === 'phone'" ng-class="{reverse:reverse}"></span>
+             </th>
+             <th>
+               <a href="" ng-click="order('age')">Age</a>
+               <span class="sortorder" ng-show="predicate === 'age'" ng-class="{reverse:reverse}"></span>
+             </th>
            </tr>
            <tr ng-repeat="friend in friends | orderBy:predicate:reverse">
              <td>{{friend.name}}</td>
@@ -28591,90 +28896,116 @@ function limitToFilter() {
 orderByFilter.$inject = ['$parse'];
 function orderByFilter($parse) {
   return function(array, sortPredicate, reverseOrder) {
+
     if (!(isArrayLike(array))) return array;
-    sortPredicate = isArray(sortPredicate) ? sortPredicate : [sortPredicate];
+
+    if (!isArray(sortPredicate)) { sortPredicate = [sortPredicate]; }
     if (sortPredicate.length === 0) { sortPredicate = ['+']; }
-    sortPredicate = sortPredicate.map(function(predicate) {
-      var descending = false, get = predicate || identity;
-      if (isString(predicate)) {
-        if ((predicate.charAt(0) == '+' || predicate.charAt(0) == '-')) {
-          descending = predicate.charAt(0) == '-';
-          predicate = predicate.substring(1);
-        }
-        if (predicate === '') {
-          // Effectively no predicate was passed so we compare identity
-          return reverseComparator(compare, descending);
-        }
-        get = $parse(predicate);
-        if (get.constant) {
-          var key = get();
-          return reverseComparator(function(a, b) {
-            return compare(a[key], b[key]);
-          }, descending);
-        }
-      }
-      return reverseComparator(function(a, b) {
-        return compare(get(a),get(b));
-      }, descending);
-    });
-    return slice.call(array).sort(reverseComparator(comparator, reverseOrder));
 
-    function comparator(o1, o2) {
-      for (var i = 0; i < sortPredicate.length; i++) {
-        var comp = sortPredicate[i](o1, o2);
-        if (comp !== 0) return comp;
-      }
-      return 0;
-    }
-    function reverseComparator(comp, descending) {
-      return descending
-          ? function(a, b) {return comp(b,a);}
-          : comp;
+    var predicates = processPredicates(sortPredicate, reverseOrder);
+
+    // The next three lines are a version of a Swartzian Transform idiom from Perl
+    // (sometimes called the Decorate-Sort-Undecorate idiom)
+    // See https://en.wikipedia.org/wiki/Schwartzian_transform
+    var compareValues = Array.prototype.map.call(array, getComparisonObject);
+    compareValues.sort(doComparison);
+    array = compareValues.map(function(item) { return item.value; });
+
+    return array;
+
+    function getComparisonObject(value, index) {
+      return {
+        value: value,
+        predicateValues: predicates.map(function(predicate) {
+          return getPredicateValue(predicate.get(value), index);
+        })
+      };
     }
 
-    function isPrimitive(value) {
-      switch (typeof value) {
-        case 'number': /* falls through */
-        case 'boolean': /* falls through */
-        case 'string':
-          return true;
-        default:
-          return false;
+    function doComparison(v1, v2) {
+      var result = 0;
+      for (var index=0, length = predicates.length; index < length; ++index) {
+        result = compare(v1.predicateValues[index], v2.predicateValues[index]) * predicates[index].descending;
+        if (result) break;
       }
-    }
-
-    function objectToString(value) {
-      if (value === null) return 'null';
-      if (typeof value.valueOf === 'function') {
-        value = value.valueOf();
-        if (isPrimitive(value)) return value;
-      }
-      if (typeof value.toString === 'function') {
-        value = value.toString();
-        if (isPrimitive(value)) return value;
-      }
-      return '';
-    }
-
-    function compare(v1, v2) {
-      var t1 = typeof v1;
-      var t2 = typeof v2;
-      if (t1 === t2 && t1 === "object") {
-        v1 = objectToString(v1);
-        v2 = objectToString(v2);
-      }
-      if (t1 === t2) {
-        if (t1 === "string") {
-           v1 = v1.toLowerCase();
-           v2 = v2.toLowerCase();
-        }
-        if (v1 === v2) return 0;
-        return v1 < v2 ? -1 : 1;
-      } else {
-        return t1 < t2 ? -1 : 1;
-      }
+      return result;
     }
   };
+
+  function processPredicates(sortPredicate, reverseOrder) {
+    reverseOrder = reverseOrder ? -1 : 1;
+    return sortPredicate.map(function(predicate) {
+      var descending = 1, get = identity;
+
+      if (isFunction(predicate)) {
+        get = predicate;
+      } else if (isString(predicate)) {
+        if ((predicate.charAt(0) == '+' || predicate.charAt(0) == '-')) {
+          descending = predicate.charAt(0) == '-' ? -1 : 1;
+          predicate = predicate.substring(1);
+        }
+        if (predicate !== '') {
+          get = $parse(predicate);
+          if (get.constant) {
+            var key = get();
+            get = function(value) { return value[key]; };
+          }
+        }
+      }
+      return { get: get, descending: descending * reverseOrder };
+    });
+  }
+
+  function isPrimitive(value) {
+    switch (typeof value) {
+      case 'number': /* falls through */
+      case 'boolean': /* falls through */
+      case 'string':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  function objectValue(value, index) {
+    // If `valueOf` is a valid function use that
+    if (typeof value.valueOf === 'function') {
+      value = value.valueOf();
+      if (isPrimitive(value)) return value;
+    }
+    // If `toString` is a valid function and not the one from `Object.prototype` use that
+    if (hasCustomToString(value)) {
+      value = value.toString();
+      if (isPrimitive(value)) return value;
+    }
+    // We have a basic object so we use the position of the object in the collection
+    return index;
+  }
+
+  function getPredicateValue(value, index) {
+    var type = typeof value;
+    if (value === null) {
+      type = 'string';
+      value = 'null';
+    } else if (type === 'string') {
+      value = value.toLowerCase();
+    } else if (type === 'object') {
+      value = objectValue(value, index);
+    }
+    return { value: value, type: type };
+  }
+
+  function compare(v1, v2) {
+    var result = 0;
+    if (v1.type === v2.type) {
+      if (v1.value !== v2.value) {
+        result = v1.value < v2.value ? -1 : 1;
+      }
+    } else {
+      result = v1.type < v2.type ? -1 : 1;
+    }
+    return result;
+  }
 }
 
 function ngDirective(directive) {
@@ -28928,6 +29259,13 @@ var htmlAnchorDirective = valueFn({
  * @priority 100
  *
  * @description
+ * Sets the `checked` attribute on the element, if the expression inside `ngChecked` is truthy.
+ *
+ * Note that this directive should not be used together with {@link ngModel `ngModel`},
+ * as this can lead to unexpected behavior.
+ *
+ * ### Why do we need `ngChecked`?
+ *
  * The HTML specification does not require browsers to preserve the values of boolean attributes
  * such as checked. (Their presence means true and their absence means false.)
  * If we put an Angular interpolation expression into such an attribute then the
@@ -28952,7 +29290,7 @@ var htmlAnchorDirective = valueFn({
  *
  * @element INPUT
  * @param {expression} ngChecked If the {@link guide/expression expression} is truthy,
- *     then special attribute "checked" will be set on the element
+ *     then the `checked` attribute will be set on the element
  */
 
 
@@ -29576,11 +29914,11 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
        <form name="myForm" ng-controller="FormController" class="my-form">
          userType: <input name="input" ng-model="userType" required>
          <span class="error" ng-show="myForm.input.$error.required">Required!</span><br>
-         <tt>userType = {{userType}}</tt><br>
-         <tt>myForm.input.$valid = {{myForm.input.$valid}}</tt><br>
-         <tt>myForm.input.$error = {{myForm.input.$error}}</tt><br>
-         <tt>myForm.$valid = {{myForm.$valid}}</tt><br>
-         <tt>myForm.$error.required = {{!!myForm.$error.required}}</tt><br>
+         <code>userType = {{userType}}</code><br>
+         <code>myForm.input.$valid = {{myForm.input.$valid}}</code><br>
+         <code>myForm.input.$error = {{myForm.input.$error}}</code><br>
+         <code>myForm.$valid = {{myForm.$valid}}</code><br>
+         <code>myForm.$error.required = {{!!myForm.$error.required}}</code><br>
         </form>
       </file>
       <file name="protractor.js" type="protractor">
@@ -29694,7 +30032,7 @@ var ngFormDirective = formDirectiveFactory(true);
 var ISO_DATE_REGEXP = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/;
 var URL_REGEXP = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
 var EMAIL_REGEXP = /^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+@[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i;
-var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))\s*$/;
+var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))([eE][+-]?\d+)?\s*$/;
 var DATE_REGEXP = /^(\d{4})-(\d{2})-(\d{2})$/;
 var DATETIMELOCAL_REGEXP = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d)(\.\d{1,3})?)?$/;
 var WEEK_REGEXP = /^(\d{4})-W(\d\d)$/;
@@ -29727,9 +30065,13 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object then this is used directly.
-   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
-   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
+   *    If the expression evaluates to a RegExp object, then this is used directly.
+   *    If the expression evaluates to a string, then it will be converted to a RegExp
+   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
+   *    `new RegExp('^abc$')`.<br />
+   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
+   *    start at the index of the last search's match, thus not taking the whole input value into
+   *    account.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    * @param {boolean=} [ngTrim=true] If set to false Angular will not automatically trim the input.
@@ -30289,6 +30631,16 @@ var inputType = {
    * error docs for more information and an example of how to convert your model if necessary.
    * </div>
    *
+   * ## Issues with HTML5 constraint validation
+   *
+   * In browsers that follow the
+   * [HTML5 specification](https://html.spec.whatwg.org/multipage/forms.html#number-state-%28type=number%29),
+   * `input[number]` does not work as expected with {@link ngModelOptions `ngModelOptions.allowInvalid`}.
+   * If a non-number is entered in the input, the browser will report the value as an empty string,
+   * which means the view / model values in `ngModel` and subsequently the scope value
+   * will also be an empty string.
+   *
+   *
    * @param {string} ngModel Assignable angular expression to data-bind to.
    * @param {string=} name Property name of the form under which the control is published.
    * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`.
@@ -30307,9 +30659,13 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object then this is used directly.
-   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
-   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
+   *    If the expression evaluates to a RegExp object, then this is used directly.
+   *    If the expression evaluates to a string, then it will be converted to a RegExp
+   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
+   *    `new RegExp('^abc$')`.<br />
+   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
+   *    start at the index of the last search's match, thus not taking the whole input value into
+   *    account.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    *
@@ -30401,9 +30757,13 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object then this is used directly.
-   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
-   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
+   *    If the expression evaluates to a RegExp object, then this is used directly.
+   *    If the expression evaluates to a string, then it will be converted to a RegExp
+   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
+   *    `new RegExp('^abc$')`.<br />
+   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
+   *    start at the index of the last search's match, thus not taking the whole input value into
+   *    account.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    *
@@ -30496,9 +30856,13 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object then this is used directly.
-   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
-   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
+   *    If the expression evaluates to a RegExp object, then this is used directly.
+   *    If the expression evaluates to a string, then it will be converted to a RegExp
+   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
+   *    `new RegExp('^abc$')`.<br />
+   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
+   *    start at the index of the last search's match, thus not taking the whole input value into
+   *    account.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    *
@@ -30568,12 +30932,15 @@ var inputType = {
    * HTML radio button.
    *
    * @param {string} ngModel Assignable angular expression to data-bind to.
-   * @param {string} value The value to which the expression should be set when selected.
+   * @param {string} value The value to which the `ngModel` expression should be set when selected.
+   *    Note that `value` only supports `string` values, i.e. the scope model needs to be a string,
+   *    too. Use `ngValue` if you need complex models (`number`, `object`, ...).
    * @param {string=} name Property name of the form under which the control is published.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
-   * @param {string} ngValue Angular expression which sets the value to which the expression should
-   *    be set when selected.
+   * @param {string} ngValue Angular expression to which `ngModel` will be be set when the radio
+   *    is selected. Should be used instead of the `value` attribute if you need
+   *    a non-string `ngModel` (`boolean`, `array`, ...).
    *
    * @example
       <example name="radio-input-directive" module="radioExample">
@@ -31120,9 +31487,15 @@ function checkboxInputType(scope, element, attr, ctrl, $sniffer, $browser, $filt
  * @param {number=} ngMaxlength Sets `maxlength` validation error key if the value is longer than
  *    maxlength. Setting the attribute to a negative or non-numeric value, allows view values of any
  *    length.
- * @param {string=} ngPattern Sets `pattern` validation error key if the value does not match the
- *    RegExp pattern expression. Expected value is `/regexp/` for inline patterns or `regexp` for
- *    patterns defined as scope expressions.
+ * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
+ *    a RegExp found by evaluating the Angular expression given in the attribute value.
+ *    If the expression evaluates to a RegExp object, then this is used directly.
+ *    If the expression evaluates to a string, then it will be converted to a RegExp
+ *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
+ *    `new RegExp('^abc$')`.<br />
+ *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
+ *    start at the index of the last search's match, thus not taking the whole input value into
+ *    account.
  * @param {string=} ngChange Angular expression to be executed when input changes due to user
  *    interaction with the input element.
  * @param {boolean=} [ngTrim=true] If set to false Angular will not automatically trim the input.
@@ -31153,9 +31526,15 @@ function checkboxInputType(scope, element, attr, ctrl, $sniffer, $browser, $filt
  * @param {number=} ngMaxlength Sets `maxlength` validation error key if the value is longer than
  *    maxlength. Setting the attribute to a negative or non-numeric value, allows view values of any
  *    length.
- * @param {string=} ngPattern Sets `pattern` validation error key if the value does not match the
- *    RegExp pattern expression. Expected value is `/regexp/` for inline patterns or `regexp` for
- *    patterns defined as scope expressions.
+ * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
+ *    a RegExp found by evaluating the Angular expression given in the attribute value.
+ *    If the expression evaluates to a RegExp object, then this is used directly.
+ *    If the expression evaluates to a string, then it will be converted to a RegExp
+ *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
+ *    `new RegExp('^abc$')`.<br />
+ *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
+ *    start at the index of the last search's match, thus not taking the whole input value into
+ *    account.
  * @param {string=} ngChange Angular expression to be executed when input changes due to user
  *    interaction with the input element.
  * @param {boolean=} [ngTrim=true] If set to false Angular will not automatically trim the input.
@@ -31678,7 +32057,9 @@ function classDirective(name, selector) {
         }
 
         function digestClassCounts(classes, count) {
-          var classCounts = element.data('$classCounts') || {};
+          // Use createMap() to prevent class assumptions involving property
+          // names in Object.prototype
+          var classCounts = element.data('$classCounts') || createMap();
           var classesToUpdate = [];
           forEach(classes, function(className) {
             if (count > 0 || classCounts[className]) {
@@ -31799,7 +32180,7 @@ function classDirective(name, selector) {
  * @example Example that demonstrates basic bindings via ngClass directive.
    <example>
      <file name="index.html">
-       <p ng-class="{strike: deleted, bold: important, red: error}">Map Syntax Example</p>
+       <p ng-class="{strike: deleted, bold: important, 'has-error': error}">Map Syntax Example</p>
        <label>
           <input type="checkbox" ng-model="deleted">
           deleted (apply "strike" class)
@@ -31810,7 +32191,7 @@ function classDirective(name, selector) {
        </label><br>
        <label>
           <input type="checkbox" ng-model="error">
-          error (apply "red" class)
+          error (apply "has-error" class)
        </label>
        <hr>
        <p ng-class="style">Using String Syntax</p>
@@ -31839,6 +32220,10 @@ function classDirective(name, selector) {
        .red {
            color: red;
        }
+       .has-error {
+           color: red;
+           background-color: yellow;
+       }
        .orange {
            color: orange;
        }
@@ -31849,13 +32234,13 @@ function classDirective(name, selector) {
        it('should let you toggle the class', function() {
 
          expect(ps.first().getAttribute('class')).not.toMatch(/bold/);
-         expect(ps.first().getAttribute('class')).not.toMatch(/red/);
+         expect(ps.first().getAttribute('class')).not.toMatch(/has-error/);
 
          element(by.model('important')).click();
          expect(ps.first().getAttribute('class')).toMatch(/bold/);
 
          element(by.model('error')).click();
-         expect(ps.first().getAttribute('class')).toMatch(/red/);
+         expect(ps.first().getAttribute('class')).toMatch(/has-error/);
        });
 
        it('should let you toggle string example', function() {
@@ -32061,17 +32446,13 @@ var ngClassEvenDirective = classDirective('Even', 1);
  * document; alternatively, the css rule above must be included in the external stylesheet of the
  * application.
  *
- * Legacy browsers, like IE7, do not provide attribute selector support (added in CSS 2.1) so they
- * cannot match the `[ng\:cloak]` selector. To work around this limitation, you must add the css
- * class `ng-cloak` in addition to the `ngCloak` directive as shown in the example below.
- *
  * @element ANY
  *
  * @example
    <example>
      <file name="index.html">
         <div id="template1" ng-cloak>{{ 'hello' }}</div>
-        <div id="template2" ng-cloak class="ng-cloak">{{ 'hello IE7' }}</div>
+        <div id="template2" class="ng-cloak">{{ 'world' }}</div>
      </file>
      <file name="protractor.js" type="protractor">
        it('should remove the template directive and css class', function() {
@@ -32987,6 +33368,7 @@ forEach(
  * @ngdoc directive
  * @name ngIf
  * @restrict A
+ * @multiElement
  *
  * @description
  * The `ngIf` directive removes or recreates a portion of the DOM tree based on an
@@ -33285,8 +33667,8 @@ var ngIfDirective = ['$animate', function($animate) {
  * @param {Object} angularEvent Synthetic event object.
  * @param {String} src URL of content to load.
  */
-var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate', '$sce',
-                  function($templateRequest,   $anchorScroll,   $animate,   $sce) {
+var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate',
+                  function($templateRequest,   $anchorScroll,   $animate) {
   return {
     restrict: 'ECA',
     priority: 400,
@@ -33322,7 +33704,7 @@ var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate', '$sce
           }
         };
 
-        scope.$watch($sce.parseAsResourceUrl(srcExp), function ngIncludeWatchAction(src) {
+        scope.$watch(srcExp, function ngIncludeWatchAction(src) {
           var afterAnimation = function() {
             if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
               $anchorScroll();
@@ -34100,7 +34482,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    * If the validity changes to invalid, the model will be set to `undefined`,
    * unless {@link ngModelOptions `ngModelOptions.allowInvalid`} is `true`.
    * If the validity changes to valid, it will set the model to the last available valid
-   * modelValue, i.e. either the last parsed value or the last value set from the scope.
+   * `$modelValue`, i.e. either the last parsed value or the last value set from the scope.
    */
   this.$validate = function() {
     // ignore $validate before model is initialized
@@ -34592,10 +34974,11 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
            var _name = 'Brian';
            $scope.user = {
              name: function(newName) {
-               if (angular.isDefined(newName)) {
-                 _name = newName;
-               }
-               return _name;
+              // Note that newName can be undefined for two reasons:
+              // 1. Because it is called as a getter and thus called with no arguments
+              // 2. Because the property should actually be set to undefined. This happens e.g. if the
+              //    input is invalid
+              return arguments.length ? (_name = newName) : _name;
              }
            };
          }]);
@@ -34692,7 +35075,7 @@ var DEFAULT_REGEXP = /(\s+|^)default(\s+|$)/;
  *   - `debounce`: integer value which contains the debounce model update value in milliseconds. A
  *     value of 0 triggers an immediate update. If an object is supplied instead, you can specify a
  *     custom value for each event. For example:
- *     `ng-model-options="{ updateOn: 'default blur', debounce: {'default': 500, 'blur': 0} }"`
+ *     `ng-model-options="{ updateOn: 'default blur', debounce: { 'default': 500, 'blur': 0 } }"`
  *   - `allowInvalid`: boolean value which indicates that the model can be set with values that did
  *     not validate correctly instead of the default behavior of setting the model to undefined.
  *   - `getterSetter`: boolean value which determines whether or not to treat functions bound to
@@ -34809,7 +35192,11 @@ var DEFAULT_REGEXP = /(\s+|^)default(\s+|$)/;
           var _name = 'Brian';
           $scope.user = {
             name: function(newName) {
-              return angular.isDefined(newName) ? (_name = newName) : _name;
+              // Note that newName can be undefined for two reasons:
+              // 1. Because it is called as a getter and thus called with no arguments
+              // 2. Because the property should actually be set to undefined. This happens e.g. if the
+              //    input is invalid
+              return arguments.length ? (_name = newName) : _name;
             }
           };
         }]);
@@ -34938,7 +35325,9 @@ function addSetValidityMethod(context) {
 function isObjectEmpty(obj) {
   if (obj) {
     for (var prop in obj) {
-      return false;
+      if (obj.hasOwnProperty(prop)) {
+        return false;
+      }
     }
   }
   return true;
@@ -35009,11 +35398,21 @@ var ngOptionsMinErr = minErr('ngOptions');
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
- * <div class="alert alert-warning">
- * **Note:** By default, `ngModel` compares by reference, not value. This is important when binding to an
- * array of objects. See an example [in this jsfiddle](http://jsfiddle.net/qWzTb/). When using `track by`
- * in an `ngOptions` expression, however, deep equality checks will be performed.
- * </div>
+ * ## Complex Models (objects or collections)
+ *
+ * **Note:** By default, `ngModel` watches the model by reference, not value. This is important when
+ * binding any input directive to a model that is an object or a collection.
+ *
+ * Since this is a common situation for `ngOptions` the directive additionally watches the model using
+ * `$watchCollection` when the select has the `multiple` attribute or when there is a `track by` clause in
+ * the options expression. This allows ngOptions to trigger a re-rendering of the options even if the actual
+ * object/collection has not changed identity but only a property on the object or an item in the collection
+ * changes.
+ *
+ * Note that `$watchCollection` does a shallow comparison of the properties of the object (or the items in the collection
+ * if the model is an array). This means that changing a property deeper inside the object/collection that the
+ * first level will not trigger a re-rendering.
+ *
  *
  * ## `select` **`as`**
  *
@@ -35229,9 +35628,13 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
     // Get the value by which we are going to track the option
     // if we have a trackFn then use that (passing scope and locals)
     // otherwise just hash the given viewValue
-    var getTrackByValue = trackBy ?
-                              function(viewValue, locals) { return trackByFn(scope, locals); } :
-                              function getHashOfValue(viewValue) { return hashKey(viewValue); };
+    var getTrackByValueFn = trackBy ?
+                              function(value, locals) { return trackByFn(scope, locals); } :
+                              function getHashOfValue(value) { return hashKey(value); };
+    var getTrackByValue = function(value, key) {
+      return getTrackByValueFn(value, getLocals(value, key));
+    };
+
     var displayFn = $parse(match[2] || match[1]);
     var groupByFn = $parse(match[3] || '');
     var disableWhenFn = $parse(match[4] || '');
@@ -35256,22 +35659,45 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       this.disabled = disabled;
     }
 
+    function getOptionValuesKeys(optionValues) {
+      var optionValuesKeys;
+
+      if (!keyName && isArrayLike(optionValues)) {
+        optionValuesKeys = optionValues;
+      } else {
+        // if object, extract keys, in enumeration order, unsorted
+        optionValuesKeys = [];
+        for (var itemKey in optionValues) {
+          if (optionValues.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
+            optionValuesKeys.push(itemKey);
+          }
+        }
+      }
+      return optionValuesKeys;
+    }
+
     return {
       trackBy: trackBy,
-      getWatchables: $parse(valuesFn, function(values) {
+      getTrackByValue: getTrackByValue,
+      getWatchables: $parse(valuesFn, function(optionValues) {
         // Create a collection of things that we would like to watch (watchedArray)
         // so that they can all be watched using a single $watchCollection
         // that only runs the handler once if anything changes
         var watchedArray = [];
-        values = values || [];
+        optionValues = optionValues || [];
 
-        Object.keys(values).forEach(function getWatchable(key) {
-          var locals = getLocals(values[key], key);
-          var selectValue = getTrackByValue(values[key], locals);
+        var optionValuesKeys = getOptionValuesKeys(optionValues);
+        var optionValuesLength = optionValuesKeys.length;
+        for (var index = 0; index < optionValuesLength; index++) {
+          var key = (optionValues === optionValuesKeys) ? index : optionValuesKeys[index];
+          var value = optionValues[key];
+
+          var locals = getLocals(optionValues[key], key);
+          var selectValue = getTrackByValueFn(optionValues[key], locals);
           watchedArray.push(selectValue);
 
           // Only need to watch the displayFn if there is a specific label expression
-          if (match[2]) {
+          if (match[2] || match[1]) {
             var label = displayFn(scope, locals);
             watchedArray.push(label);
           }
@@ -35281,7 +35707,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
             var disableWhen = disableWhenFn(scope, locals);
             watchedArray.push(disableWhen);
           }
-        });
+        }
         return watchedArray;
       }),
 
@@ -35293,17 +35719,15 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // The option values were already computed in the `getWatchables` fn,
         // which must have been called to trigger `getOptions`
         var optionValues = valuesFn(scope) || [];
+        var optionValuesKeys = getOptionValuesKeys(optionValues);
+        var optionValuesLength = optionValuesKeys.length;
 
-        var keys = Object.keys(optionValues);
-        keys.forEach(function getOption(key) {
-
-          // Ignore "angular" properties that start with $ or $$
-          if (key.charAt(0) === '$') return;
-
+        for (var index = 0; index < optionValuesLength; index++) {
+          var key = (optionValues === optionValuesKeys) ? index : optionValuesKeys[index];
           var value = optionValues[key];
           var locals = getLocals(value, key);
           var viewValue = viewValueFn(scope, locals);
-          var selectValue = getTrackByValue(viewValue, locals);
+          var selectValue = getTrackByValueFn(viewValue, locals);
           var label = displayFn(scope, locals);
           var group = groupByFn(scope, locals);
           var disabled = disableWhenFn(scope, locals);
@@ -35311,13 +35735,13 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
           optionItems.push(optionItem);
           selectValueMap[selectValue] = optionItem;
-        });
+        }
 
         return {
           items: optionItems,
           selectValueMap: selectValueMap,
           getOptionFromViewValue: function(value) {
-            return selectValueMap[getTrackByValue(value, getLocals(value))];
+            return selectValueMap[getTrackByValue(value)];
           },
           getViewValueFromOption: function(option) {
             // If the viewValue could be an object that may be mutated by the application,
@@ -35395,44 +35819,54 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       };
 
 
-      selectCtrl.writeValue = function writeNgOptionsValue(value) {
-        var option = options.getOptionFromViewValue(value);
-
-        if (option && !option.disabled) {
-          if (selectElement[0].value !== option.selectValue) {
-            removeUnknownOption();
-            removeEmptyOption();
-
-            selectElement[0].value = option.selectValue;
-            option.element.selected = true;
-            option.element.setAttribute('selected', 'selected');
-          }
-        } else {
-          if (value === null || providedEmptyOption) {
-            removeUnknownOption();
-            renderEmptyOption();
-          } else {
-            removeEmptyOption();
-            renderUnknownOption();
-          }
-        }
-      };
-
-      selectCtrl.readValue = function readNgOptionsValue() {
-
-        var selectedOption = options.selectValueMap[selectElement.val()];
-
-        if (selectedOption && !selectedOption.disabled) {
-          removeEmptyOption();
-          removeUnknownOption();
-          return options.getViewValueFromOption(selectedOption);
-        }
-        return null;
-      };
-
-
       // Update the controller methods for multiple selectable options
-      if (multiple) {
+      if (!multiple) {
+
+        selectCtrl.writeValue = function writeNgOptionsValue(value) {
+          var option = options.getOptionFromViewValue(value);
+
+          if (option && !option.disabled) {
+            if (selectElement[0].value !== option.selectValue) {
+              removeUnknownOption();
+              removeEmptyOption();
+
+              selectElement[0].value = option.selectValue;
+              option.element.selected = true;
+              option.element.setAttribute('selected', 'selected');
+            }
+          } else {
+            if (value === null || providedEmptyOption) {
+              removeUnknownOption();
+              renderEmptyOption();
+            } else {
+              removeEmptyOption();
+              renderUnknownOption();
+            }
+          }
+        };
+
+        selectCtrl.readValue = function readNgOptionsValue() {
+
+          var selectedOption = options.selectValueMap[selectElement.val()];
+
+          if (selectedOption && !selectedOption.disabled) {
+            removeEmptyOption();
+            removeUnknownOption();
+            return options.getViewValueFromOption(selectedOption);
+          }
+          return null;
+        };
+
+        // If we are using `track by` then we must watch the tracked value on the model
+        // since ngModel only watches for object identity change
+        if (ngOptions.trackBy) {
+          scope.$watch(
+            function() { return ngOptions.getTrackByValue(ngModelCtrl.$viewValue); },
+            function() { ngModelCtrl.$render(); }
+          );
+        }
+
+      } else {
 
         ngModelCtrl.$isEmpty = function(value) {
           return !value || value.length === 0;
@@ -35464,6 +35898,22 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
           return selections;
         };
+
+        // If we are using `track by` then we must watch these tracked values on the model
+        // since ngModel only watches for object identity change
+        if (ngOptions.trackBy) {
+
+          scope.$watchCollection(function() {
+            if (isArray(ngModelCtrl.$viewValue)) {
+              return ngModelCtrl.$viewValue.map(function(value) {
+                return ngOptions.getTrackByValue(value);
+              });
+            }
+          }, function() {
+            ngModelCtrl.$render();
+          });
+
+        }
       }
 
 
@@ -35490,11 +35940,6 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       // We will re-render the option elements if the option values or labels change
       scope.$watchCollection(ngOptions.getWatchables, updateOptions);
 
-      // We also need to watch to see if the internals of the model changes, since
-      // ngModel only watches for object identity change
-      if (ngOptions.trackBy) {
-        scope.$watch(attr.ngModel, function() { ngModelCtrl.$render(); }, true);
-      }
       // ------------------------------------------------------------------ //
 
 
@@ -35636,8 +36081,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // Check to see if the value has changed due to the update to the options
         if (!ngModelCtrl.$isEmpty(previousValue)) {
           var nextValue = selectCtrl.readValue();
-          if (ngOptions.trackBy && !equals(previousValue, nextValue) ||
-                previousValue !== nextValue) {
+          if (ngOptions.trackBy ? !equals(previousValue, nextValue) : previousValue !== nextValue) {
             ngModelCtrl.$setViewValue(nextValue);
             ngModelCtrl.$render();
           }
@@ -35891,6 +36335,7 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
 /**
  * @ngdoc directive
  * @name ngRepeat
+ * @multiElement
  *
  * @description
  * The `ngRepeat` directive instantiates a template once per item from a collection. Each template
@@ -35985,6 +36430,15 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *    </div>
  * ```
  *
+ * <div class="alert alert-warning">
+ * **Note:** `track by` must always be the last expression:
+ * </div>
+ * ```
+ * <div ng-repeat="model in collection | orderBy: 'id' as filtered_result track by model.id">
+ *     {{model.name}}
+ * </div>
+ * ```
+ *
  * # Special repeat start and end points
  * To repeat a series of elements instead of just one parent element, ngRepeat (as well as other ng directives) supports extending
  * the range of the repeater by defining explicit start and end points by using **ng-repeat-start** and **ng-repeat-end** respectively.
@@ -36056,8 +36510,9 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *     which can be used to associate the objects in the collection with the DOM elements. If no tracking expression
  *     is specified, ng-repeat associates elements by identity. It is an error to have
  *     more than one tracking expression value resolve to the same key. (This would mean that two distinct objects are
- *     mapped to the same DOM element, which is not possible.)  If filters are used in the expression, they should be
- *     applied before the tracking expression.
+ *     mapped to the same DOM element, which is not possible.)
+ *
+ *     Note that the tracking expression must come last, after any filters, and the alias expression.
  *
  *     For example: `item in items` is equivalent to `item in items track by $id(item)`. This implies that the DOM elements
  *     will be associated by item identity in the array.
@@ -36410,6 +36865,7 @@ var NG_HIDE_IN_PROGRESS_CLASS = 'ng-hide-animate';
 /**
  * @ngdoc directive
  * @name ngShow
+ * @multiElement
  *
  * @description
  * The `ngShow` directive shows or hides the given HTML element based on the expression
@@ -36585,6 +37041,7 @@ var ngShowDirective = ['$animate', function($animate) {
 /**
  * @ngdoc directive
  * @name ngHide
+ * @multiElement
  *
  * @description
  * The `ngHide` directive shows or hides the given HTML element based on the expression
@@ -36838,7 +37295,7 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
  *
  * @scope
  * @priority 1200
- * @param {*} ngSwitch|on expression to match against <tt>ng-switch-when</tt>.
+ * @param {*} ngSwitch|on expression to match against <code>ng-switch-when</code>.
  * On child elements add:
  *
  * * `ngSwitchWhen`: the case statement to match against. If match then this
@@ -36855,7 +37312,7 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
       <div ng-controller="ExampleController">
         <select ng-model="selection" ng-options="item for item in items">
         </select>
-        <tt>selection={{selection}}</tt>
+        <code>selection={{selection}}</code>
         <hr/>
         <div class="animate-switch-container"
           ng-switch on="selection">
@@ -37178,7 +37635,7 @@ var SelectController =
       $element.val(value);
       if (value === '') self.emptyOption.prop('selected', true); // to make IE9 happy
     } else {
-      if (isUndefined(value) && self.emptyOption) {
+      if (value == null && self.emptyOption) {
         self.removeUnknownOption();
         $element.val('');
       } else {
@@ -37231,9 +37688,7 @@ var SelectController =
  * ngOptions} to achieve a similar result. However, `ngOptions` provides some benefits such as reducing
  * memory and increasing speed by not creating a new scope for each repeated instance, as well as providing
  * more flexibility in how the `<select>`'s model is assigned via the `select` **`as`** part of the
- * comprehension expression. `ngOptions` should be used when the `<select>` model needs to be bound
- * to a non-string value. This is because an option element can only be bound to string values at
- * present.
+ * comprehension expression.
  *
  * When an item in the `<select>` menu is selected, the array element or object property
  * represented by the selected option will be bound to the model identified by the `ngModel`
@@ -37246,11 +37701,50 @@ var SelectController =
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
- * <div class="alert alert-warning">
- * **Note:** By default, `ngModel` compares by reference, not value. This is important when binding to an
- * array of objects. See an example [in this jsfiddle](http://jsfiddle.net/qWzTb/). When using `track by`
- * in an `ngOptions` expression, however, deep equality checks will be performed.
+ * <div class="alert alert-info">
+ * The value of a `select` directive used without `ngOptions` is always a string.
+ * When the model needs to be bound to a non-string value, you must either explictly convert it
+ * using a directive (see example below) or use `ngOptions` to specify the set of options.
+ * This is because an option element can only be bound to string values at present.
  * </div>
+ *
+ * ### Example (binding `select` to a non-string value)
+ *
+ * <example name="select-with-non-string-options" module="nonStringSelect">
+ *   <file name="index.html">
+ *     <select ng-model="model.id" convert-to-number>
+ *       <option value="0">Zero</option>
+ *       <option value="1">One</option>
+ *       <option value="2">Two</option>
+ *     </select>
+ *     {{ model }}
+ *   </file>
+ *   <file name="app.js">
+ *     angular.module('nonStringSelect', [])
+ *       .run(function($rootScope) {
+ *         $rootScope.model = { id: 2 };
+ *       })
+ *       .directive('convertToNumber', function() {
+ *         return {
+ *           require: 'ngModel',
+ *           link: function(scope, element, attrs, ngModel) {
+ *             ngModel.$parsers.push(function(val) {
+ *               return parseInt(val, 10);
+ *             });
+ *             ngModel.$formatters.push(function(val) {
+ *               return '' + val;
+ *             });
+ *           }
+ *         };
+ *       });
+ *   </file>
+ *   <file name="protractor.js" type="protractor">
+ *     it('should initialize to model', function() {
+ *       var select = element(by.css('select'));
+ *       expect(element(by.model('model.id')).$('option:checked').getText()).toEqual('Two');
+ *     });
+ *   </file>
+ * </example>
  *
  */
 var selectDirective = function() {
@@ -37513,7 +38007,7 @@ var minlengthDirective = function() {
 
 })(window, document);
 
-!window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-animate-anchor{position:absolute;}</style>');
+!window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
 define("angular", ["jquery"], (function (global) {
     return function () {
         var ret, fn;
@@ -43164,7 +43658,9 @@ define("chosen", ["jquery"], function(){});
               return element.trigger('chosen:updated');
             } else {
               chosen = element.chosen(options).data('chosen');
-              return defaultText = chosen.default_text;
+              if (angular.isObject(chosen)) {
+                return defaultText = chosen.default_text;
+              }
             }
           };
           removeEmptyMessage = function() {
@@ -46334,7 +46830,9 @@ define('core/navbar/navbar',['require','./../module','tpl!./navbar.html'],functi
                 scope.$state = $state;
 
                 function transition(area){
-                    if ($state.params.clientId) {
+                    if ($state.includes(area)){
+                        $state.go(area);
+                    } else if ($state.params.clientId) {
                         $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
                     } else if ($state.params.divisionId) {
                         $state.go(area + '.campaigns.division', {divisionId: $state.params.divisionId});
@@ -47794,7 +48292,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
 
     app.directive('placeholder', ['$interpolate', function ($interpolate) {
         return {
-            restrict: 'E',
+            restrict: 'C',
             templateUrl: 'core/directives/placeholder.html',
             scope: {},
             link: function ($scope, elem, attr) {
@@ -47815,7 +48313,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
 
 /**
  * Simple Ajax Uploader
- * Version 2.0.1
+ * Version 2.1
  * https://github.com/LPology/Simple-Ajax-Uploader
  *
  * Copyright 2012-2015 LPology, LLC
@@ -48312,6 +48810,7 @@ ss.SimpleUpload = function( options ) {
         focusClass: '',
         disabledClass: '',
         customHeaders: {},
+        encodeCustomHeaders: false,
         onAbort: function( filename, uploadBtn ) {},
         onChange: function( filename, extension, uploadBtn, size ) {},
         onSubmit: function( filename, extension, uploadBtn, size ) {},
@@ -48387,7 +48886,13 @@ ss.SimpleUpload = function( options ) {
     }
 
     if ( XhrOk && this._opts.dropzone !== '' ) {
-        this.addDropZone( this._opts.dropzone );
+        this._dzone = ss.verifyElem( this._opts.dropzone );
+
+        if ( !this._dzone ) {
+            this.log( 'Invalid or nonexistent element passed for drop zone' );
+        } else {
+            this.addDropZone( this._dzone );
+        }
     }
 
     this._createInput();
@@ -48614,6 +49119,18 @@ ss.SimpleUpload.prototype = {
         while ( i-- ) {
             ss.removeClass( this._btns[i], this._opts.disabledClass );
             this._btns[i].disabled = false;
+        }
+    },
+
+    /**
+     * Updates invisible button position
+     */
+    updatePosition: function() {
+        "use strict";
+
+        if ( this._btns[0] && this._input && this._input.parentNode ) {
+            this._overBtn = this._btns[0];
+            ss.copyLayout( this._btns[0], this._input.parentNode );
         }
     }
 
@@ -49236,7 +49753,11 @@ ss.XhrUpload = {
 
         for ( var i in headers ) {
             if ( headers.hasOwnProperty( i ) ) {
-                xhr.setRequestHeader( i, encodeURIComponent(headers[ i ]) + '' );
+                if ( opts.encodeCustomHeaders && opts.customHeaders.hasOwnProperty( i ) ) {
+                    xhr.setRequestHeader( i, encodeURIComponent( headers[ i ] ) + '' );
+                } else {
+                    xhr.setRequestHeader( i, headers[ i ] + '' );
+                }
             }
         }
 
@@ -49357,7 +49878,7 @@ ss.XhrUpload = {
                 'padding' : 0,
                 'opacity' : 0,
                 'direction' : 'ltr',
-                'zIndex': 2147483583
+                'zIndex': 2147483582
             });
 
             ss.addStyles( this._input, {
@@ -49624,12 +50145,9 @@ ss.extendObj(ss.SimpleUpload.prototype, {
     addDropZone: function( elem ) {
         var self = this;
 
-        elem = ss.verifyElem( elem );
-
-        if ( !elem ) {
-            self.log( 'Invalid or nonexistent element passed for drop zone' );
-            return false;
-        }
+        ss.addStyles( elem, {
+            'zIndex': 2147483583
+        });
 
         elem.ondragenter = function( e ) {
             if ( !self._dragFileCheck( e ) ) {
@@ -49656,14 +50174,14 @@ ss.extendObj(ss.SimpleUpload.prototype, {
         elem.ondrop = function( e ) {
             e.preventDefault();
 
-            ss.removeClass( this, self._opts.dragClass );            
-            
+            ss.removeClass( this, self._opts.dragClass );
+
             if ( !self._dragFileCheck( e ) ) {
                 return false;
             }
 
             self._addFiles( e.dataTransfer.files );
-            self._cycleQueue();            
+            self._cycleQueue();
         };
     }
 });
@@ -49800,7 +50318,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
 
 !function() {
   var d3 = {
-    version: "3.5.5"
+    version: "3.5.6"
   };
   var d3_arraySlice = [].slice, d3_array = function(list) {
     return d3_arraySlice.call(list);
@@ -51263,8 +51781,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     function zoomended(dispatch) {
       if (!--zooming) dispatch({
         type: "zoomend"
-      });
-      center0 = null;
+      }), center0 = null;
     }
     function mousedowned() {
       var that = this, target = d3.event.target, dispatch = event.of(that, arguments), dragged = 0, subject = d3.select(d3_window(that)).on(mousemove, moved).on(mouseup, ended), location0 = location(d3.mouse(that)), dragRestore = d3_event_dragSuppress(that);
@@ -51353,8 +51870,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     }
     function mousewheeled() {
       var dispatch = event.of(this, arguments);
-      if (mousewheelTimer) clearTimeout(mousewheelTimer); else translate0 = location(center0 = center || d3.mouse(this)), 
-      d3_selection_interrupt.call(this), zoomstarted(dispatch);
+      if (mousewheelTimer) clearTimeout(mousewheelTimer); else d3_selection_interrupt.call(this), 
+      translate0 = location(center0 = center || d3.mouse(this)), zoomstarted(dispatch);
       mousewheelTimer = setTimeout(function() {
         mousewheelTimer = null;
         zoomended(dispatch);
@@ -51499,8 +52016,9 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     return v < 16 ? "0" + Math.max(0, v).toString(16) : Math.min(255, v).toString(16);
   }
   function d3_rgb_parse(format, rgb, hsl) {
+    format = format.toLowerCase();
     var r = 0, g = 0, b = 0, m1, m2, color;
-    m1 = /([a-z]+)\((.*)\)/i.exec(format);
+    m1 = /([a-z]+)\((.*)\)/.exec(format);
     if (m1) {
       m2 = m1[2].split(",");
       switch (m1[1]) {
@@ -51515,7 +52033,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
         }
       }
     }
-    if (color = d3_rgb_names.get(format.toLowerCase())) {
+    if (color = d3_rgb_names.get(format)) {
       return rgb(color.r, color.g, color.b);
     }
     if (format != null && format.charAt(0) === "#" && !isNaN(color = parseInt(format.slice(1), 16))) {
@@ -55585,7 +56103,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
   }
   d3.interpolators = [ function(a, b) {
     var t = typeof b;
-    return (t === "string" ? d3_rgb_names.has(b) || /^(#|rgb\(|hsl\()/.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
+    return (t === "string" ? d3_rgb_names.has(b.toLowerCase()) || /^(#|rgb\(|hsl\()/i.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
   } ];
   d3.interpolateArray = d3_interpolateArray;
   function d3_interpolateArray(a, b) {
@@ -59320,6 +59838,8 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
                 var key = attr.pacingChart;
 
                 scope.$watch(key, function (data) {
+                    var fill;
+
                     if (data) {
                         scope.max = data.max;
                         scope.current = data.current;
@@ -59327,11 +59847,14 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
 
 
                         if (data.current > data.max) {
-                            scope.target = 0;
+                            var target = Math.round(data.max/data.current*100);
+                            scope.target = true;
+                            fill = d3.select(elem.find('.target > rect')[0]);
+                            fill.attr('x', target + '%');
                         }
 
                         if (data.max) {
-                            var fill = d3.select(elem.find('.fill > rect')[0]);
+                            fill = d3.select(elem.find('.fill > rect')[0]);
                             fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
                         }
 
@@ -59646,6 +60169,151 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
     }]);
 });
 
+define('core/services/campaignCreative',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+    var baseUrl = '/fixtures/campaignCreative.json';
+
+    module.service('campaignCreative', ['cacheFactory', '$state', function (cacheFactory, $state) {
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.campaignCreatives;
+            }
+        });
+
+        function filter() {
+            var output = '';
+
+            if ($state.params.clientId) {
+                output = '&filters=id:eq:' + $state.params.clientId;
+            }
+
+            return output;
+        }
+
+        function url() {
+            return baseUrl + filter();
+        }
+
+        function all() {
+            var datum = cache.all(url());
+            var output = [];
+
+            if (datum.length) {
+                ng.forEach(datum, function (d, key){
+                    output[key] = d;
+                });
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
+        }
+
+        return {
+            url: url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+/**
+ * Generate an API URI based on a parameters object. Possible parameters are:
+ */
+define('core/services/apiURIGenerator',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    var defaultConfig = {
+        version: 3
+    };
+
+    // Note: These are concatenated in order
+    var uriTemplates = [
+        {paramKey: 'version', template: '/api/v{{version}}/'},
+        {paramKey: 'endpoint', template: '{{endpoint}}?'},
+        {paramKey: 'dimensions', template: 'dimensions={{dimensions}}&'},
+        {paramKey: 'metrics', template: 'metrics={{metrics}}&'},
+        {paramKey: 'offset', template: 'offset={{offset}}&'},
+        {paramKey: 'limit', template: 'limit={{limit}}&'},
+        {paramKey: 'order', template: 'order={{order}}&'},
+        {paramKey: 'filters', template: 'filters={{filters}}&'}
+    ];
+
+    var requiredParams = [
+        'endpoint',
+        'dimensions'
+    ];
+
+    // TODO: add the API_URI constant, replace domainInterceptor.js
+    module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
+        function getApiUri(params) {
+            setupDefaultParams(params);
+            if (validate(params)) {
+                return createApiUri(params);
+            } else {
+                return false;
+            }
+        }
+
+        function setupDefaultParams(params) {
+            ng.extend(params, defaultConfig);
+            if (params.dimensions) {
+                params.dimensions = params.dimensions.join(',');
+            }
+            if (params.metrics) {
+                params.metrics = params.metrics.join(',');
+            }
+            if (params.filters) {
+                params.filters = params.filters.join(',');
+            }
+        }
+
+        function validate(params) {
+            var valid = true;
+            requiredParams.forEach(function(requiredParam) {
+                if (typeof params[requiredParam] === 'undefined') {
+                    valid = false;
+                }
+            });
+
+            return valid;
+        }
+
+        function createApiUri(params) {
+            var uri = '';
+            uriTemplates.forEach(function(uriTemplate) {
+                var paramKey = uriTemplate.paramKey;
+                if (typeof params[paramKey] !== 'undefined') {
+                    var template = $interpolate(uriTemplate.template);
+                    uri = uri + template(params);
+                }
+            });
+
+            return uri;
+        }
+
+        return getApiUri;
+    }]);
+});
+
 define('core/constants/apiURI',['require','./../module'],function (require) {
     'use strict';
 
@@ -59659,7 +60327,7 @@ define('core/constants/apiURI',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./constants/apiURI'],function (require) {
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./services/campaignCreative','./services/apiURIGenerator','./constants/apiURI'],function (require) {
     'use strict';
 
     require('./modal/index');
@@ -59684,6 +60352,8 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./services/channel');
     require('./services/clientSet');
     require('./services/divisionSet');
+    require('./services/campaignCreative');
+    require('./services/apiURIGenerator');
     require('./constants/apiURI');
 });
 
@@ -59731,6 +60401,10 @@ define('table/filters/format',['require','./../module'],function (require) {
                 return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+            case 'creatives':
+                return '<div table-creatives creatives="row.' + input + '"></div>';
+            case 'delivering':
+                return '<span table-delivering delivering="row.' + input + '"></div>';
             default:
                 return data;
             }
@@ -59772,7 +60446,7 @@ define('table/directives/accordionTable',['require','./../module','tpl!./accordi
 });
 
 
-define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.name}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.name}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td data-header="{{header.name && header.name + \':\'}}" ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n        <td class="table-number">row: {{$index + 1}}/{{table.data.length}}</td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
 
 /**
  * Created by alex on 4/23/15.
@@ -59797,15 +60471,65 @@ define('table/directives/basicTable',['require','./../module','tpl!./basicTable.
     }]);
 });
 
+
+define('tpl!table/directives/tableCreatives.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableCreatives.html', '<div ng-repeat="creative in creatives">\n    {{creative.name}}\n</div>\n'); });
+
+define('table/directives/tableCreatives',['require','./../module','tpl!./tableCreatives.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./tableCreatives.html');
+
+    app.directive('tableCreatives', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/tableCreatives.html',
+            replace: true,
+            scope: {
+                creatives: '=creatives',
+                classes: '@class'
+            },
+            link: function () {
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/tableDelivering.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableDelivering.html', '<span class="icon-status" ng-class="{\'success\':delivering}"></span>\n'); });
+
+define('table/directives/tableDelivering',['require','./../module','tpl!./tableDelivering.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./tableDelivering.html');
+
+    app.directive('tableDelivering', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/tableDelivering.html',
+            replace: true,
+            scope: {
+                delivering: '=delivering',
+                classes: '@class'
+            },
+            link: function () {
+            }
+        };
+    }]);
+});
+
 /**
  * Created by Alex on 3/1/2015.
  */
-define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable'],function (require) {
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable','./directives/tableCreatives','./directives/tableDelivering'],function (require) {
     'use strict';
 
     require('./filters/format');
     require('./directives/accordionTable');
     require('./directives/basicTable');
+    require('./directives/tableCreatives');
+    require('./directives/tableDelivering');
 });
 
 /**
@@ -59975,29 +60699,32 @@ define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], functi
 define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>\n        <span ng-show="campaign">Summary for {{campaign.name}}</span>\n        <span ng-show="!campaign">Summary</span>\n    </div>\n    <div class="dropdown-menu">\n        <div campaign-details></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">Edit Campaign</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="placeholder" image="images/placeholders/campaign-detail-graph.jpg"></div>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".publisher">Publisher (4)</a>\n        <a ui-sref=".ad-unit">Ad unit (15)</a>\n        <a ui-sref=".ad-type">Ad type (3)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-lg-3 col-lg-offset-1" style="padding-bottom: 1rem;">\n                <label class="form-label">\n                    <div class="dropdown">\n                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                        <ul class="dropdown-menu" role="menu">\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                        </ul>\n                    </div>\n                </label>\n            </div>\n            <div class="col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher (4)</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative (15)</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type (3)</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                    <ul class="dropdown-menu" role="menu">\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                    </ul>\n                </div>\n            </div>\n            <div class="col-sm-8 btn-group text-right-sm col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesList.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/thumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/thumbnails.html', '<div class="thumbnail-view row ng-scope">\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot active"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <div>\n                <span>Placements:</span><span>13</span>\n            </div>\n            <div>\n                <span>Last Modified:</span><span>10/1/2014</span>\n            </div>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/180" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesThumbnails.html', '<div creative-thumbnails />\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span> <span class="muted normal">{{group.meta.count}} placements, {{group.meta.numDelivering}} delivering, {{group.meta.impressions}} of {{group.meta.bookedImpressions}} impressions</span>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/placements/header.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/creatives/thumbnails.html','tpl!./campaigns/creatives/header.html','tpl!./campaigns/new-campaign.html'],function (require) {
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('./clients/routes');
@@ -60008,11 +60735,12 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
-    require('tpl!./campaigns/placements/list.html');
-    require('tpl!./campaigns/placements/header.html');
-    require('tpl!./campaigns/creatives/list.html');
-    require('tpl!./campaigns/creatives/thumbnails.html');
-    require('tpl!./campaigns/creatives/header.html');
+    require('tpl!./campaigns/placements/placementsList.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
+    require('tpl!./campaigns/creatives/creativesList.html');
+    require('tpl!./campaigns/creatives/creativesThumbnails.html');
+    require('tpl!./campaigns/creatives/creativesHeader.html');
+    require('tpl!./campaigns/placements/services/placementTableHeader.html');
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -60032,7 +60760,6 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
         //Routes
         $stateProvider
             .state('analytics', {
-                abstract: true,
                 url: '/analytics',
                 parent: 'index',
                 templateUrl: 'campaignManagement/index.html'
@@ -60113,11 +60840,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/placements',
                 views: {
                     'tab-header': {
-                        templateUrl: 'campaignManagement/campaigns/placements/header.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
-                        controller: 'placementListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/placements/list.html'
+                        controller: 'placementsListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
                     }
                 }
             })
@@ -60130,11 +60857,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativeListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/list.html'
+                        controller: 'creativesListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
                     }
                 }
             })
@@ -60143,11 +60870,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativeThumbnailsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/thumbnails.html'
+                        controller: 'creativesThumbnailsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
                     }
                 }
             });
@@ -61068,10 +61795,12 @@ define('campaignManagement/campaigns/directives/campaignsByStatus',['require','.
 
 
 
-define('campaignManagement/campaigns/placements/controllers/list',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/placements/controllers/placementsList',['require','./../../../module'],function (require) {
     var app = require('./../../../module');
 
-    app.controller('placementListCtrl', ['$scope', function ($scope) {
+    app.controller('placementsListCtrl', ['$scope', '$state', 'placements', function ($scope, $state, placements) {
+        $scope.placements = [];
+        $scope.params = $state.params;
         $scope.placementTypes = [
             {
                 name: 'Add Manually',
@@ -61083,311 +61812,437 @@ define('campaignManagement/campaigns/placements/controllers/list',['require','./
             }
         ];
 
+        placements.observe(updatePlacements, $scope);
+        function updatePlacements() {
+            $scope.placements = placements.all();
+        }
+    }]);
+});
 
-        var options = '<span style="font-size: 2rem"><a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
-        $scope.placements = [
-            {
-                header: '<input type="checkbox"> <a>Brightroll</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
+define('campaignManagement/campaigns/placements/services/placements.js',['require','./../../../module','tpl!./placementTableHeader.html'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+    var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
+
+    //var baseApiEndpoint = {
+    //    version: 3,
+    //    endpoint: 'placements',
+    //    dimensions: ['id', 'name', 'live', 'startDate', 'endDate', 'bookedImpressions', 'creatives', 'publisher.id', 'publisher.name', 'adType', 'budget'],
+    //    metrics: ['impressions', 'spend']
+    //};
+
+    var apiURI = '/fixtures/placements/placements.json';
+
+    var rules = {
+        checked: '',
+        placementName: '',
+        delivering: 'delivering',
+        startDate: 'date',
+        endDate: 'date',
+        type: '',
+        pacing: 'bullet',
+        spend: 'bullet',
+        creatives: 'creatives',
+        options: ''
+    };
+
+    var headers = [
+        {name: '', id: 'checked'},
+        {name: 'Placement Name', id: 'placementName'},
+        {name: 'Delivering', id: 'delivering'},
+        {name: 'Start Date', id: 'startDate'},
+        {name: 'End Date', id: 'endDate'},
+        {name: 'Type', id: 'type'},
+        {name: 'Impressions & Pacing', id: 'pacing'},
+        {name: 'Spend & Budget', id: 'spend'},
+        {name: 'Creatives', id: 'creatives'},
+        {name: '', id: 'options'}
+    ];
+
+    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
+                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+        var placementCache = cache();
+
+        function sortPlacements(a, b) {
+            return a.name.localeCompare(b.name);
+        }
+
+        function transformPlacements(data) {
+            if (data && data.placements) {
+                var groups = getPlacementGroups(data.placements.sort(sortPlacements));
+                return transformPlacementGroups(groups);
+            } else {
+                return [];
+            }
+        }
+
+        function transformPlacementGroups(groups) {
+            var transformedGroups = [];
+            var groupData;
+            var transformedGroup;
+            var placement;
+
+            for(var i=0; i<groups.length; i++) {
+                groupData = groups[i];
+                transformedGroup = {
+                    header: $interpolate(tableHeaderTemplate)(groupData),
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: []
+                    }
+                };
+
+                for(var k=0; k<groupData.group.placements.length; k++) {
+                    placement = groupData.group.placements[k];
+                    transformedGroup.content.data.push({
+                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        placementName: placement.name,
+                        delivering: placement.live,
+                        startDate: placement.startDate,
+                        endDate: placement.endDate,
+                        type: placement.adType,
+                        pacing: {
+                            current: placement.metrics.impressions,
+                            max: placement.bookedImpressions
+                        },
+                        spend: {
+                            current: placement.metrics.spend,
+                            max: placement.budget
+                        },
+                        creatives: placement.creatives,
                         options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
+                    });
                 }
-            },
-            {
-                header: '<input type="checkbox"> <a>Google</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
-                        options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input type="checkbox" checked>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
-                }
-            },
-            {
-                header: '<input type="checkbox"> <a>NBCU</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
-                        options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input type="checkbox" checked>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
-                }
-            },
-            {
-                header: '<input type="checkbox"> <a>MSN</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
-                        options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input type="checkbox" checked>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
+
+                transformedGroups.push(transformedGroup);
+            }
+
+            return transformedGroups;
+        }
+
+        function getPlacementGroups(placements) {
+            var viewBy = $state.params.viewBy;
+            if (viewBy === 'creative') {
+                return placementsByCreative(placements);
+            } else if(viewBy === 'ad-type') {
+                return placementsByAdType(placements);
+            } else {
+                return placementsByPublisher(placements);
+            }
+        }
+
+        function getPlacementsUrl() {
+            return apiURI; // Until API is built
+
+            //var apiParams = ng.extend({
+            //    filters: ['campaign.id:eq:' + $state.params.campaignId]
+            //}, baseApiEndpoint);
+
+            //return apiUriGenerator(apiParams);
+        }
+
+        var initializeCache = true;
+        function all() {
+
+            // We can do this because someone using this service will be observing it
+            // before they call all()
+            var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
+            initializeCache = false;
+
+            var placements = transformPlacements(data);
+            return placements;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+
+            updateCache();
+
+            function updateCache() {
+                placementCache.get(getPlacementsUrl(), initializeCache);
+                initializeCache = false;
+
+                placementCache.observe(getPlacementsUrl(), callback, $scope, preventImmediate);
+            }
+        }
+
+        return {
+            all: all,
+            observe: observe
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByPublisher.js',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByPublisher', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var publisher;
+
+
+            // Throw placements into a hash map that's indexed by publisher
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                publisher = placement.publisher;
+
+                if (!groups[publisher.id]) {
+                    groups[publisher.id] = {
+                        name: publisher.name,
+                        placements: [placement]
+                    };
+                } else {
+                    groups[publisher.id].placements.push(placement);
                 }
             }
-        ];
+
+            // Get metadata about each group
+            var group;
+            for (var publisherId in groups) {
+                group = groups[publisherId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortGroups);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortGroups(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByCreative.js',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByCreative', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var creatives;
+            var creativeId;
+
+            // Throw placements into a hash map that's indexed by creative id
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                creatives = placement.creatives;
+
+                for(var k= 0; k<creatives.length; k++) {
+                    creativeId = creatives[k].id;
+                    if (!groups[creativeId]) {
+                        groups[creativeId] = {
+                            name: creatives[k].name,
+                            placements: [placement]
+                        };
+                    } else {
+                        groups[creativeId].placements.push(placement);
+                    }
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (creativeId in groups) {
+                group = groups[creativeId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortFn);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortFn(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByAdType.js',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByAdType', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var adType;
+
+            // Throw placements into a hash map that's indexed by publisher
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                adType = placement.adType;
+
+                if (!groups[adType]) {
+                    groups[adType] = {
+                        name: adType,
+                        placements: [placement]
+                    };
+                } else {
+                    groups[adType].placements.push(placement);
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (adType in groups) {
+                group = groups[adType];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortFn);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortFn(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
     }]);
 });
 
 
 
-define('campaignManagement/campaigns/creatives/controllers/list',['require','./../../../module'],function(require) {
+define('campaignManagement/campaigns/creatives/controllers/creativesList',['require','./../../../module'],function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeListCtrl', [
+    app.controller('creativesListCtrl', [
         '$scope', function($scope) {
             var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
             $scope.creatives = {
@@ -61465,17 +62320,70 @@ define('campaignManagement/campaigns/creatives/controllers/list',['require','./.
 
 
 
-define('campaignManagement/campaigns/creatives/controllers/thumbnails',['require','./../../../module'],function(require) {
+define('campaignManagement/campaigns/creatives/controllers/creativesThumbnails',['require','./../../../module'],function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeThumbnailsCtrl', [
-        '$scope', function() {
+    app.controller('creativesThumbnailsCtrl', ['$scope', '$window',
+        function($scope, $window) {
+
+            $scope.openStudio = function(id) {
+                $window.open('https://staging-studio.mixpo.com/studio?sdf=open&guid=' + id, '_blank');
+            };
+
+            $scope.openSettings = function(id) {
+                console.log( 'thumbnail controller: open settings ' + id );
+            };
+
+            $scope.openPlacements = function(id) {
+                console.log( 'thumbnail controller: open placements ' + id );
+            };
+
+            $scope.copyCreative = function(id) {
+                console.log( 'thumbnail controller: copy creative ' + id );
+            };
+
+            $scope.deleteCreative = function(id) {
+                console.log( 'thumbnail controller: delete creative ' + id );
+            };
+
+            $scope.previewCreative = function(id) {
+                console.log( 'thumbnail controller: preview creative ' + id );
+            };
 
         }
     ]);
 });
 
-define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/list','./creatives/controllers/list','./creatives/controllers/thumbnails'],function (require) {
+
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay"><span><i class="glyph-view"></i>Preview Creative</span></div>\n\t\t\t\t<img ng-src="{{creative.thumb}}" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.live}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.size}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedSize}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.name}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>'); });
+
+define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['require','./../../../module','tpl!./creativeThumbnails.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+
+    require('tpl!./creativeThumbnails.html');
+
+    app.directive('creativeThumbnails', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
+            controller: ['$scope', 'campaignCreative', function ($scope, campaignCreative) {
+
+                function updateCreatives() {
+                    $scope.creatives = campaignCreative.all();
+                }
+
+                campaignCreative.observe(updateCreatives, $scope);
+
+            }]
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/services/placements.js','./placements/services/placementsByPublisher.js','./placements/services/placementsByCreative.js','./placements/services/placementsByAdType.js','./creatives/controllers/creativesList','./creatives/controllers/creativesThumbnails','./creatives/directives/creativeThumbnails'],function (require) {
     'use strict';
 
     require('./services/campaignCache');
@@ -61491,9 +62399,16 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
     require('./directives/campaignDetails');
     require('./directives/campaignsByAccount');
     require('./directives/campaignsByStatus');
-    require('./placements/controllers/list');
-    require('./creatives/controllers/list');
-    require('./creatives/controllers/thumbnails');
+
+    require('./placements/controllers/placementsList');
+    require('./placements/services/placements.js');
+    require('./placements/services/placementsByPublisher.js');
+    require('./placements/services/placementsByCreative.js');
+    require('./placements/services/placementsByAdType.js');
+
+    require('./creatives/controllers/creativesList');
+    require('./creatives/controllers/creativesThumbnails');
+    require('./creatives/directives/creativeThumbnails');
 });
 
 
