@@ -16,10 +16,10 @@ define(function (require) {
     require('./directives/campaignsByStatus');
 
     require('./placements/controllers/placementsList');
-    require('./placements/directives/placementsByPublisher');
-    require('./placements/directives/placementsByCreative');
-    require('./placements/directives/placementsByAdType');
     require('./placements/services/placements.js');
+    require('./placements/services/placementsByPublisher.js');
+    require('./placements/services/placementsByCreative.js');
+    require('./placements/services/placementsByAdType.js');
 
     require('./creatives/controllers/creativesList');
     require('./creatives/controllers/creativesThumbnails');

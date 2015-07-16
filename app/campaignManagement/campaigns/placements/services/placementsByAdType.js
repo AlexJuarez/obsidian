@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../../module');
-    var ng = require('angular');
 
     module.service('placementsByAdType', [function () {
         return function(placements) {
@@ -20,7 +19,7 @@ define(function (require) {
                     groups[adType] = {
                         adType: adType,
                         placements: [placement]
-                    }
+                    };
                 } else {
                     groups[adType].placements.push(placement);
                 }
@@ -28,7 +27,7 @@ define(function (require) {
 
             // Get metadata about each group
             var group;
-            for (var adType in groups) {
+            for (adType in groups) {
                 group = groups[adType];
                 group.meta = getMeta(group.placements);
             }
@@ -45,7 +44,7 @@ define(function (require) {
                         numDelivering++;
                     }
                     bookedImpressions += placement.bookedImpressions;
-                    impressions += placements.metrics.impressions;
+                    impressions += placement.metrics.impressions;
                 }
 
                 return {
@@ -53,7 +52,7 @@ define(function (require) {
                     numDelivering: numDelivering,
                     bookedImpressions: bookedImpressions,
                     impressions: impressions
-                }
+                };
             }
 
             // Throw groups into an array and sort by creative name
@@ -79,6 +78,6 @@ define(function (require) {
                     return 0;
                 }
             }
-        }
+        };
     }]);
 });

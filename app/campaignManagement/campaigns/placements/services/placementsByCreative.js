@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../../module');
-    var ng = require('angular');
 
     module.service('placementsByCreative', [function () {
         return function(placements) {
@@ -32,7 +31,7 @@ define(function (require) {
 
             // Get metadata about each group
             var group;
-            for (var creativeId in groups) {
+            for (creativeId in groups) {
                 group = groups[creativeId];
                 group.meta = getMeta(group.placements);
             }
@@ -49,7 +48,7 @@ define(function (require) {
                         numDelivering++;
                     }
                     bookedImpressions += placement.bookedImpressions;
-                    impressions += placements.metrics.impressions;
+                    impressions += placement.metrics.impressions;
                 }
 
                 return {
@@ -57,7 +56,7 @@ define(function (require) {
                     numDelivering: numDelivering,
                     bookedImpressions: bookedImpressions,
                     impressions: impressions
-                }
+                };
             }
 
             // Throw groups into an array and sort by creative name
@@ -85,6 +84,6 @@ define(function (require) {
             }
 
             return groupArray;
-        }
+        };
     }]);
 });

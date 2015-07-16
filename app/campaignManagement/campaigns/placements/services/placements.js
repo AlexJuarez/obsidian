@@ -2,16 +2,15 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../../module');
-    var ng = require('angular');
     var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
     var creativesTemplate = require('tpl!./creatives.html');
 
-    var baseApiEndpoint = {
-        version: 3,
-        endpoint: 'placements',
-        dimensions: ['id', 'name', 'live', 'startDate', 'endDate', 'bookedImpressions', 'creatives', 'publisher.id', 'publisher.name', 'adType', 'budget'],
-        metrics: ['impressions', 'spend']
-    };
+    //var baseApiEndpoint = {
+    //    version: 3,
+    //    endpoint: 'placements',
+    //    dimensions: ['id', 'name', 'live', 'startDate', 'endDate', 'bookedImpressions', 'creatives', 'publisher.id', 'publisher.name', 'adType', 'budget'],
+    //    metrics: ['impressions', 'spend']
+    //};
 
     var apiURI = '/fixtures/placements/placements.json';
 
@@ -41,7 +40,7 @@ define(function (require) {
         {name: '', id: 'options'}
     ];
 
-    module.service('placements', ['$state', '$interpolate', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher', function ($state, $interpolate, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+    module.service('placements', ['$state', '$interpolate', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher', function ($state, $interpolate, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
         var placementCache = cache();
 
         function sortPlacements(a, b) {
@@ -49,21 +48,24 @@ define(function (require) {
         }
 
         function transformPlacements(data) {
-            var groups = getPlacementGroups(data.placements.sort(sortPlacements));
-            return transformPlacementGroups(groups);
+            if (data && data.placements) {
+                var groups = getPlacementGroups(data.placements.sort(sortPlacements));
+                return transformPlacementGroups(groups);
+            } else {
+                return [];
+            }
         }
 
         function transformPlacementGroups(groups) {
             var transformedGroups = [];
-            var group;
+            var groupData;
             var transformedGroup;
             var placement;
-            var creativesString;
 
             for(var i=0; i<groups.length; i++) {
-                group = groups[i];
+                groupData = groups[i];
                 transformedGroup = {
-                    header: $interpolate(tableHeaderTemplate)(group),
+                    header: $interpolate(tableHeaderTemplate)(groupData),
                     content: {
                         rules: rules,
                         headers: headers,
@@ -71,10 +73,9 @@ define(function (require) {
                     }
                 };
 
-                for(var k=0; k<group.placements.length; k++) {
-                    placement = group.placements[k];
-                    creativesString = getCreativesString(placement);
-                    transformedGroup.data.push({
+                for(var k=0; k<groupData.group.placements.length; k++) {
+                    placement = groupData.group.placements[k];
+                    transformedGroup.content.data.push({
                         checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
                         placementName: placement.name,
                         delivering: placement.live,
@@ -96,6 +97,8 @@ define(function (require) {
 
                 transformedGroups.push(transformedGroup);
             }
+
+            return transformedGroups;
         }
 
         function getPlacementGroups(placements) {
@@ -132,10 +135,15 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            var data = placementCache.get(getPlacementsUrl(), initializeCache);
-            initializeCache = false;
 
-            placementCache.observe(callback, $scope, preventImmediate);
+            updateCache();
+
+            function updateCache() {
+                placementCache.get(getPlacementsUrl(), initializeCache);
+                initializeCache = false;
+
+                placementCache.observe(getPlacementsUrl(), callback, $scope, preventImmediate);
+            }
         }
 
         return {

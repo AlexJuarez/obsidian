@@ -12,13 +12,12 @@ define(function (require) {
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementTableHeader.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
     require('tpl!./campaigns/creatives/creativesList.html');
     require('tpl!./campaigns/creatives/creativesThumbnails.html');
     require('tpl!./campaigns/creatives/creativesHeader.html');
-    require('tpl!./campaigns/placements/directives/placementsByPublisher.html');
-    require('tpl!./campaigns/placements/directives/placementsByCreative.html');
-    require('tpl!./campaigns/placements/directives/placementsByAdType.html');
+    require('tpl!./campaigns/placements/services/placementTableHeader.html');
+    require('tpl!./campaigns/placements/services/creatives.html');
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -116,7 +115,7 @@ define(function (require) {
                 url: '/placements',
                 views: {
                     'tab-header': {
-                        templateUrl: 'campaignManagement/campaigns/placements/placementTableHeader.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
                         controller: 'placementsListCtrl',

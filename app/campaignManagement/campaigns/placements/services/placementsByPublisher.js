@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../../module');
-    var ng = require('angular');
 
     module.service('placementsByPublisher', [function () {
         return function(placements) {
@@ -21,7 +20,7 @@ define(function (require) {
                     groups[publisher.id] = {
                         publisher: publisher,
                         placements: [placement]
-                    }
+                    };
                 } else {
                     groups[publisher.id].placements.push(placement);
                 }
@@ -46,7 +45,7 @@ define(function (require) {
                         numDelivering++;
                     }
                     bookedImpressions += placement.bookedImpressions;
-                    impressions += placements.metrics.impressions;
+                    impressions += placement.metrics.impressions;
                 }
 
                 return {
@@ -54,7 +53,7 @@ define(function (require) {
                     numDelivering: numDelivering,
                     bookedImpressions: bookedImpressions,
                     impressions: impressions
-                }
+                };
             }
 
             // Throw groups into an array and sort by creative name
@@ -82,6 +81,6 @@ define(function (require) {
             }
 
             return groupArray;
-        }
+        };
     }]);
 });
