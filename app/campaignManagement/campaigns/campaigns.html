@@ -1,7 +1,6 @@
 <p>
     View By: <a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></span>
 </p>
-<br />
 <div ui-view="tab-content">
     <div ng-if="params.viewBy !== 'account'">
         <div campaigns-by-status></div>

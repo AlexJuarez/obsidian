@@ -8,8 +8,9 @@
     </thead>
     <tbody>
     <tr ng-repeat="row in table.data track by $index">
-        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">
+        <td data-header="{{header.name && header.name + ':'}}" ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">
         </td>
+        <td class="table-number">row: {{$index + 1}}/{{table.data.length}}</td>
     </tr>
     </tbody>
 </table>
