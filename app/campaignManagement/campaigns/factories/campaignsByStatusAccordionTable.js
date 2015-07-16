@@ -61,7 +61,8 @@ define(function (require) {
                         start: row.startDate,
                         end: row.endDate,
                         placements: row.metrics.countPlacements,
-                        creatives: row.metrics.countCreatives
+                        creatives: row.metrics.countCreatives,
+                        edit: ['campaign.preview', 'campaign.settings']
                     });
                 }
 
@@ -77,7 +78,7 @@ define(function (require) {
                     end: 'date',
                     placements: 'number',
                     creatives: 'number',
-                    edit: ''
+                    edit: 'icons'
                 };
 
                 var headers = [
