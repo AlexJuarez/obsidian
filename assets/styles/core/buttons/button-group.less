@@ -1,0 +1,21 @@
+@import "../variables";
+
+@media (max-width: @screen-xs-max) {
+    .btn-group {
+        width: 100%;
+        box-sizing: border-box;
+        .btn {
+            display: block;
+            width: 100%;
+            margin: 1rem 0;
+            .font-size(2);
+            + .btn {
+                margin-top: 0;
+            }
+            &.right {
+                margin-right: 0;
+                //Clear margin added for btns in row
+            }
+        }
+    }
+}

@@ -35,7 +35,6 @@ define(function (require) {
         //Routes
         $stateProvider
             .state('analytics', {
-                abstract: true,
                 url: '/analytics',
                 parent: 'index',
                 templateUrl: 'campaignManagement/index.html'

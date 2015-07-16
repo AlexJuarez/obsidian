@@ -89,27 +89,12 @@
     .header-summary {
         margin: 0 -@mobile-gutter;
 
-        .btn-group {
-            width: 100%;
-            padding: 0 @mobile-gutter;
-            box-sizing: border-box;
-            .btn {
-                display: block;
-                width: 100%;
-                margin: 1rem 0;
-                .font-size(2);
-                + .btn {
-                    margin-top: 0;
-                }
-                &.right {
-                    margin-right: 0;
-                    //Clear margin added for btns in row
-                }
-            }
-        }
-
         .dropdown-menu {
             .clearfix();
+        }
+
+        .btn-group {
+            padding: 0 @mobile-gutter;
         }
 
         .dropdown-toggle {

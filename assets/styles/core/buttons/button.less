@@ -1,0 +1,72 @@
+@import "../variables";
+@import "button-skins";
+@import "button-group";
+
+.btn, button, input[type="submit"], input[type="reset"], input[type="button"] {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: normal;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    padding: 0.6rem 1.2rem;
+    .font-size(1.6);
+    line-height: 1.42857;
+    box-sizing: border-box;
+    user-select: none;
+    outline: none;
+
+    &:disabled, &.disabled {
+        cursor: not-allowed;
+    }
+}
+
+.btn.right + .btn.right {
+    margin-right: 1rem;
+}
+
+.btn {
+    border: none;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    font-family: 'Lato', sans-serif;
+    font-weight: bold;
+    [class*="glyph"] {
+        .font-size(1.1);
+    }
+}
+
+.btn-inline {
+    padding: 0;
+    background: inherit;
+    [class*="glyph"] {
+        margin-top: -2px;
+        .font-size(1.8);
+    }
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-lg {
+    padding: @padding-large-vertical @padding-large-horizontal;
+    .font-size(1.8);
+    line-height: 1.33;
+}
+
+.btn-sm {
+    padding: @padding-small-vertical @padding-small-horizontal;
+    .font-size(1.2);
+    line-height: 1.5;
+}
+
+.btn-xs {
+    padding: .1rem .5rem;
+    .font-size(1.2);
+    line-height: 1.5;
+}
