@@ -1,7 +1,14 @@
-<p>
-    View By: <a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></span>
-</p>
-<div ui-view="tab-content">
+<div class="form-inline">
+    <div class="form-group">
+        View By: <a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></span>
+    </div>
+    <div class="form-group">
+        <label class="form-label search">
+            <input class="input" placeholder="Search" type="search"/>
+        </label>
+    </div>
+</div>
+<div class="tab-content" ui-view="tab-content">
     <div ng-if="params.viewBy !== 'account'">
         <div campaigns-by-status></div>
     </div>
