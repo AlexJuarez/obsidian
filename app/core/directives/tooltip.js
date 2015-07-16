@@ -23,6 +23,7 @@ define(function (require) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
+                scope.onHandleClick = onHandleClick;
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
@@ -34,10 +35,16 @@ define(function (require) {
                     if (!template) {
                         scope.content = newValue;
                     } else {
-                        scope.content = $compile(template)(scope);
+                        scope.content = template;
+                        //console.log( elem.find('.main'), scope.main );
+                        //elem[0].firstChild.setAttribute('ngClick', 'onHandleClick()');
                     }
                     elem.html($compile(baseTemplate)(scope));
                 });
+
+                function onHandleClick() {
+                    console.log( 'clicked' );
+                }
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
@@ -76,7 +83,9 @@ define(function (require) {
                 }
 
                 function updatePosition() {
+                    console.log( 'updatePosition' );
                     if (overflow) {
+                        console.log( 'overflow' );
                         var element = elem.find('.main')[0];
                         if (element.offsetWidth >= element.scrollWidth) {
                             elem.find('.wrapper').addClass('ng-hide');
@@ -86,6 +95,7 @@ define(function (require) {
                     }
 
                     var dims = calculateDims();
+                    console.log( 'dimensions: ', dims );
                     elem.addClass(calculateClass(dims));
                 }
             }

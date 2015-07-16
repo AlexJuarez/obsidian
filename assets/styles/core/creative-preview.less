@@ -1,14 +1,15 @@
 .creative-preview {
-    // position: absolute;
+    // position: relative;
     // z-index: 50;
-    background: @dark-gray;
-    border: 1px solid #fff;
+    // background: @dark-gray;
+    // border: 1px solid #fff;
     color: #fff;
     font-size: 1.2rem;
-    // line-height: 1.2;
-    padding: 2rem 2rem 0 2rem;
-    max-width: 360px;
-    border-radius: 0.5rem;
+    text-align: left;
+    padding: 1.2rem 0.5rem 0 0.5rem;
+    //padding: 0.8rem 1.5rem 1rem 1.5rem;
+    width: 360px;
+    // border-radius: 0.5rem;
 
     .preview-overlay {
         .font-size(1.6);
@@ -21,7 +22,6 @@
         z-index: 999;
         color: @light-blue;
         .font-size(1.2);
-        //font-size: 1.2rem;
         line-height: 1;
         &:hover {
             cursor: pointer;
@@ -39,7 +39,7 @@
         margin: 0;
         padding: 0;
         li {
-            margin: 0 0 2rem 0;
+            margin: 0 0 1rem 0;
             padding: 0;
 
             ul, li, .btn {
@@ -55,9 +55,6 @@
                     margin-right: 0.5rem;
                 }
             }
-            //display: inline-block;
-            //width: 33.33%;
-            //float: left;
             span {
                 display: block;
                 overflow: hidden;
@@ -86,29 +83,25 @@
     }
 
     // Bubble arrow
-    &:before, &:after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        width: 0;
-        height: 0;
-        pointer-events: none;
-        border: solid transparent;
-    }
-    &:before {
-        border-top-color: #fff;
-        border-width: 10px;
-        left: 19px;
-        // border-width: 1rem;
-        // left: 1.9rem;
-    }
-    &:after {
-        border-top-color: @tool-tip-dark-bg;
-        border-width: 8px;
-        left: 21px;
-        // border-width: 0.8rem;
-        // left: 2.1rem;
-    }
+    // &:before, &:after {
+    //     content: '';
+    //     position: absolute;
+    //     top: 100%;
+    //     width: 0;
+    //     height: 0;
+    //     pointer-events: none;
+    //     border: solid transparent;
+    // }
+    // &:before {
+    //     border-top-color: #fff;
+    //     border-width: 10px;
+    //     left: 19px;
+    // }
+    // &:after {
+    //     border-top-color: @tool-tip-dark-bg;
+    //     border-width: 8px;
+    //     left: 21px;
+    // }
         
 }
 @media (max-width: 767px) {

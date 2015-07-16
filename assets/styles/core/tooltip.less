@@ -1,5 +1,22 @@
 @tool-tip-light-bg: #fff;
 @tool-tip-dark-bg: #3F403F;
+.tooltip-basic, .tooltip-advanced {
+    display: inline-block;
+}
+.tooltip-advanced {
+    &:before {
+        .glyph-view();
+    }
+    .main {
+        display: inline-block;
+    }
+    .main:hover {
+        cursor: pointer;
+    }
+    // i {
+    //     margin-right: 0.5rem;
+    // }
+}
 .tooltip .wrapper {
     position: absolute;
     z-index: 50;
