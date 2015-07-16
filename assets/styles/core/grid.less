@@ -1,6 +1,6 @@
 @import "grid/framework";
 @import "grid/grid";
-
+@import "variables";
 //
 // Grid system
 // --------------------------------------------------
@@ -32,6 +32,9 @@
 
 .container-fluid {
     .container-fixed(8rem);
+    @media (max-width: @screen-sm-min) {
+        .container-fixed(@mobile-gutter*2);
+    }
 }
 
 

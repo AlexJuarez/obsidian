@@ -23,4 +23,5 @@ define(function (require) {
 
     require('./creatives/controllers/creativesList');
     require('./creatives/controllers/creativesThumbnails');
+    require('./creatives/directives/creativeThumbnails');
 });

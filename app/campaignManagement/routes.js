@@ -17,7 +17,6 @@ define(function (require) {
     require('tpl!./campaigns/creatives/creativesThumbnails.html');
     require('tpl!./campaigns/creatives/creativesHeader.html');
     require('tpl!./campaigns/placements/services/placementTableHeader.html');
-    require('tpl!./campaigns/placements/services/creatives.html');
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -61,6 +60,7 @@ define(function (require) {
                 url: '/client/:clientId',
                 views: {
                     'summary': {
+                        controller: 'clientCtrl',
                         templateUrl: 'campaignManagement/clients/client.summary.html'
                     },
                     'content': {
@@ -74,6 +74,7 @@ define(function (require) {
                 url: '/division/:divisionId',
                 views: {
                     'summary': {
+                        controller: 'divisionCtrl',
                         templateUrl: 'campaignManagement/divisions/division.summary.html'
                     },
                     'content': {
@@ -87,8 +88,8 @@ define(function (require) {
                 url: '/account/:accountId',
                 views: {
                     'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
+                        controller: 'accountCtrl',
+                        templateUrl: 'campaignManagement/accounts/summary.html'
                     },
                     'content': {
                         controller: 'campaignsCtrl',

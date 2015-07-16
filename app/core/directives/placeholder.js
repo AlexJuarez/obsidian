@@ -7,7 +7,7 @@ define(function (require) {
 
     app.directive('placeholder', ['$interpolate', function ($interpolate) {
         return {
-            restrict: 'E',
+            restrict: 'C',
             templateUrl: 'core/directives/placeholder.html',
             scope: {},
             link: function ($scope, elem, attr) {

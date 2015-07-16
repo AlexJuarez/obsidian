@@ -20,7 +20,7 @@ define(function (require) {
                     creativeId = creatives[k].id;
                     if (!groups[creativeId]) {
                         groups[creativeId] = {
-                            creative: creatives[k],
+                            name: creatives[k].name,
                             placements: [placement]
                         };
                     } else {
@@ -76,8 +76,8 @@ define(function (require) {
             }
 
             function sortFn(a, b) {
-                if (a.group.creative.name && b.group.creative.name) {
-                    return a.group.creative.name.localeCompare(b.group.creative.name);
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
                 } else {
                     return 0;
                 }

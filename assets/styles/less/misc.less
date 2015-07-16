@@ -1,3 +1,4 @@
+@import "./../core/mixins";
 // .font-smoothing {
 //     // This is to get the font weight closer to what the designs show
 //     -webkit-font-smoothing: antialiased;
@@ -33,38 +34,46 @@
     color: #333;
 }
 
-// Layout styles just for pattern library display purposes
-.radio-button {
-    margin-bottom: .5rem;
-}
-.border-right {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: inline-block;
-    li {
-        border: 1px solid #E1E1E1;
-        border-width: 0 1px 0 0;
-        padding-right: 1rem;
-        margin-right: 1rem;
-        float: left;
-        display: inline;
+.style-guide {
+    // Layout styles just for pattern library display purpose
+
+    @media(max-width: @screen-md-max){
+        overflow: hidden;
     }
-    li:last-child {
-        border: none;
+
+    .radio-button {
+        margin-bottom: .5rem;
     }
-}
-.dark-bg {
-    background: #003c60;
-    li {
-        border: none;
+    .border-right {
+        .clearfix();
+        list-style: none;
+        margin: 2rem 0;
+        padding: 0;
+        display: block;
+        li {
+            border: 1px solid #E1E1E1;
+            border-width: 0 1px 0 0;
+            padding-right: 1rem;
+            margin-right: 1rem;
+            float: left;
+            display: inline;
+        }
+        li:last-child {
+            border: none;
+        }
+    }
+    .dark-bg {
+        background: #003c60;
+        li {
+            border: none;
+            padding: 1rem;
+            margin-right: 1rem;
+            color: #fff;
+        }
+    }
+    .padded {
         padding: 1rem;
-        margin-right: 1rem;
-        color: #fff;
     }
-}
-.padded {
-    padding: 1rem;
 }
 
 .footer {
@@ -76,4 +85,3 @@
     right: 0;
     padding: 0 .5rem;
 }
-// ----------------

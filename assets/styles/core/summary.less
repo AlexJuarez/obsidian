@@ -1,3 +1,5 @@
+@import "variables";
+
 .header-summary {
     margin: 2rem 0 1rem 0;
     .clearfix();
@@ -6,6 +8,34 @@
         padding: 0;
         margin: 0;
         display: inline-block;
+    }
+
+    .dropdown-toggle {
+        .font-size(2);
+    }
+
+    @media(min-width: @screen-xs-max) {
+        .dropdown-toggle {
+            display: none;
+        }
+
+        .dropdown {
+            float: left;
+        }
+        .dropdown-menu {
+            display: block;
+        }
+        .list  + .list {
+            margin-left: 3.5rem;
+        }
+    }
+
+    .dropdown-menu {
+        position: static;
+        top: inherit;
+        left: inherit;
+        float: none;
+        background: white;
     }
 
     .title {
@@ -35,6 +65,85 @@
                     .font-size(3);
                     color: @brand-color;
                 }
+            }
+        }
+    }
+}
+
+@media(max-width: 1250px
+) and (min-width: @screen-xs-max) {
+    .header-summary {
+        .btn-group {
+            width: 150px;
+            .btn {
+                width: 100%;
+                + .btn {
+                    margin-top: .5rem;
+                }
+            }
+        }
+    }
+}
+
+@media(max-width: @screen-xs-max) {
+    .header-summary {
+        margin: 0 -@mobile-gutter;
+
+        .dropdown-menu {
+            .clearfix();
+        }
+
+        .btn-group {
+            padding: 0 @mobile-gutter;
+        }
+
+        .dropdown-toggle {
+            box-sizing: border-box;
+            border-bottom: 1px solid @light-gray;
+            font-family: 'Oswald', sans-serif;
+            padding: 1rem @mobile-gutter;
+            line-height: 1.47;
+            letter-spacing: 1px;
+            .font-size(2);
+            .clearfix();
+            i {
+                margin: 10px 0 0 2rem;
+                line-height: 18px;
+                float: right;
+            }
+        }
+
+        .dropdown {
+            display: block;
+        }
+
+        .title {
+            display: none;
+        }
+
+        .list {
+            li {
+                + li {
+                    margin-left: 2rem;
+                }
+            }
+
+            display: block;
+            padding: 3px @mobile-gutter;
+            box-sizing: border-box;
+            li span {
+                &:first-child {
+                    .font-size(1.2);
+                }
+                &:last-child {
+                    .font-size(2);
+                }
+            }
+            + .list {
+                border-top: 1px solid @light-gray;
+            }
+            &:last-child {
+                border-bottom: 1px solid @light-gray;
             }
         }
     }

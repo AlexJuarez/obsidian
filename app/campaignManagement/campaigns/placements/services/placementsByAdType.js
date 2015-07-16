@@ -17,7 +17,7 @@ define(function (require) {
 
                 if (!groups[adType]) {
                     groups[adType] = {
-                        adType: adType,
+                        name: adType,
                         placements: [placement]
                     };
                 } else {
@@ -72,12 +72,14 @@ define(function (require) {
             }
 
             function sortFn(a, b) {
-                if (a.group.adType && b.group.adType) {
-                    return a.group.adType.localeCompare(b.group.adType);
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
                 } else {
                     return 0;
                 }
             }
+
+            return groupArray;
         };
     }]);
 });

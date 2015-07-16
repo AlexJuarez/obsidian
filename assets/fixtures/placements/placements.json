@@ -6,12 +6,12 @@
             "live": true,
             "startDate": "2015-07-14",
             "endDate": "2015-08-15",
-            "adType": "In-Banner",
+            "adType": "IBV",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
-                {"id": "1", "name": "Creative 1"},
-                {"id": "2", "name": "Creative 2"}
+                {"id": "1", "name": "Shark Week Terror"},
+                {"id": "2", "name": "Blastoise Rocks"}
             ],
             "publisher": {
                 "id": "discovery",
@@ -28,11 +28,11 @@
             "live": false,
             "startDate": "2015-07-14",
             "endDate": "2015-08-15",
-            "adType": "In-Banner",
+            "adType": "RM",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
-                {"id": "1", "name": "Creative 1"}
+                {"id": "1", "name": "Shark Week Terror"}
             ],
             "publisher": {
                 "id": "discovery",
@@ -49,11 +49,11 @@
             "live": false,
             "startDate": "2015-07-14",
             "endDate": "2015-08-15",
-            "adType": "In-Stream",
+            "adType": "RM",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
-                {"id": "2", "name": "Creative 2"}
+                {"id": "2", "name": "Blastoise Rocks"}
             ],
             "publisher": {
                 "id": "martha",

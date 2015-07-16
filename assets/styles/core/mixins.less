@@ -1,3 +1,6 @@
+@import "./variables";
+@import "./brand";
+
 .clearfix {
     &:after, &:before {
         display: table;
@@ -19,20 +22,4 @@
 .border-left-radius(@radius) {
     border-bottom-left-radius: @radius;
     border-top-left-radius: @radius;
-}
-
-.is-link {
-    color: @brand-color;
-    text-decoration: none;
-    cursor: pointer;
-
-    &:visited {
-        color: @brand-color
-    }
-    &:hover {
-        color: @light-blue;
-    }
-    &:active {
-        color: @dark-blue;
-    }
 }

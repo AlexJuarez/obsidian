@@ -19,7 +19,6 @@ define(function (require) {
 
         placements.observe(updatePlacements, $scope);
         function updatePlacements() {
-            console.log('updating placements');
             $scope.placements = placements.all();
         }
     }]);

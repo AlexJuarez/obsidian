@@ -12,60 +12,62 @@
         <input ng-model="query" class="input" placeholder="Search" type="search" />
         <i class="glyph-close" ng-click="query = ''"></i>
     </label>
-    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">
-        <li ng-if="!state.accountId"><a>All {{section}}</a></li>
-        <li ng-if="state.accountId"><a ui-sref=".campaigns.account(state)">All {{section}}</a></li>
-        <li ng-if="pinned.length">Pinned
-            <ul class="pinned">
-                <li ng-repeat="campaign in pinned track by campaign.id">
+    <div class="row">
+        <ul class="list col-sm-12 col-md-6" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">
+            <li ng-if="!state.accountId"><a>All {{section}}</a></li>
+            <li ng-if="state.accountId"><a ui-sref=".account(state)">All {{section}}</a></li>
+            <li ng-if="pinned.length">Pinned
+                <ul class="pinned">
+                    <li ng-repeat="campaign in pinned track by campaign.id">
                     <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>
-                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
-                </li>
-            </ul>
-        </li>
-        <li ng-show="preFlight.length">preFlight
-            <ul>
-                <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">
+                        <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                    </li>
+                </ul>
+            </li>
+            <li ng-show="preFlight.length">preFlight
+                <ul>
+                    <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">
                     <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>
-                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
-                </li>
-            </ul>
-        </li>
-        <li ng-show="inFlight.length">inFlight
-            <ul>
-                <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">
+                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                    </li>
+                </ul>
+            </li>
+            <li ng-show="inFlight.length">inFlight
+                <ul>
+                    <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">
                     <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>
-                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
-                </li>
-            </ul>
-        </li>
-        <li ng-show="completed.length">completed
-            <ul>
-                <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">
+                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                    </li>
+                </ul>
+            </li>
+            <li ng-show="completed.length">completed
+                <ul>
+                    <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">
                     <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>
-                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
-                </li>
-            </ul>
-        </li>
-    </ul>
-    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">
-        <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">
-            {{item.key}}
-            <ul limit="5">
-                <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">
+                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list col-sm-12 col-md-6">
+            <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">
+                {{item.key}}
+                <ul limit="5">
+                    <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">
                     <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>
-                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
-            </ul>
-        </li>
-    </ul>
-    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">
-        <li>Results for "{{query}}"
-            <ul>
-                <li ng-repeat="campaign in results track by campaign.id">
+                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
+                </ul>
+            </li>
+        </ul>
+        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">
+            <li>Results for "{{query}}"
+                <ul>
+                    <li ng-repeat="campaign in results track by campaign.id">
                     <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>
-                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
-            </ul>
-        </li>
-    </ul>
+                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
 </div>

@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./../new-client.html');
 
-    app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'topClientsService', '$modal', function ($scope, $http, $timeout, topClients, $modal) {
+    app.controller('clientsCtrl', ['$scope', 'topClientsService', '$modal', function ($scope, topClients, $modal) {
 
         $scope.openModal = openModal;
 

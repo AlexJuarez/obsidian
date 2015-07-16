@@ -18,7 +18,7 @@ define(function (require) {
 
                 if (!groups[publisher.id]) {
                     groups[publisher.id] = {
-                        publisher: publisher,
+                        name: publisher.name,
                         placements: [placement]
                     };
                 } else {
@@ -73,8 +73,8 @@ define(function (require) {
             }
 
             function sortGroups(a, b) {
-                if (a.group.publisher.name && b.group.publisher.name) {
-                    return a.group.publisher.name.localeCompare(b.group.publisher.name);
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
                 } else {
                     return 0;
                 }

@@ -3,7 +3,6 @@ define(function (require) {
 
     var module = require('./../../../module');
     var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
-    var creativesTemplate = require('tpl!./creatives.html');
 
     //var baseApiEndpoint = {
     //    version: 3,
@@ -17,13 +16,13 @@ define(function (require) {
     var rules = {
         checked: '',
         placementName: '',
-        delivering: '',
+        delivering: 'delivering',
         startDate: 'date',
         endDate: 'date',
         type: '',
         pacing: 'bullet',
         spend: 'bullet',
-        creatives: '',
+        creatives: 'creatives',
         options: ''
     };
 
@@ -40,7 +39,8 @@ define(function (require) {
         {name: '', id: 'options'}
     ];
 
-    module.service('placements', ['$state', '$interpolate', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher', function ($state, $interpolate, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
+                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
         var placementCache = cache();
 
         function sortPlacements(a, b) {
@@ -76,7 +76,7 @@ define(function (require) {
                 for(var k=0; k<groupData.group.placements.length; k++) {
                     placement = groupData.group.placements[k];
                     transformedGroup.content.data.push({
-                        checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
+                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                         placementName: placement.name,
                         delivering: placement.live,
                         startDate: placement.startDate,
@@ -84,13 +84,13 @@ define(function (require) {
                         type: placement.adType,
                         pacing: {
                             current: placement.metrics.impressions,
-                            target: placement.bookedImpressions
+                            max: placement.bookedImpressions
                         },
                         spend: {
                             current: placement.metrics.spend,
-                            target: placement.budget
+                            max: placement.budget
                         },
-                        creatives: $interpolate(creativesTemplate)(placement.creatives),
+                        creatives: placement.creatives,
                         options: ''
                     });
                 }
@@ -105,7 +105,7 @@ define(function (require) {
             var viewBy = $state.params.viewBy;
             if (viewBy === 'creative') {
                 return placementsByCreative(placements);
-            } else if(viewBy === 'adType') {
+            } else if(viewBy === 'ad-type') {
                 return placementsByAdType(placements);
             } else {
                 return placementsByPublisher(placements);

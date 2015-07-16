@@ -9643,7 +9643,7 @@ return jQuery;
 }));
 
 /**
- * @license AngularJS v1.4.1
+ * @license AngularJS v1.4.0-rc.1
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -9701,7 +9701,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.1/' +
+    message += '\nhttp://errors.angularjs.org/1.4.0-rc.1/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -9749,7 +9749,6 @@ function minErr(module, ErrorConstructor) {
   isUndefined: true,
   isDefined: true,
   isObject: true,
-  isBlankObject: true,
   isString: true,
   isNumber: true,
   isDate: true,
@@ -9889,7 +9888,6 @@ var
     splice            = [].splice,
     push              = [].push,
     toString          = Object.prototype.toString,
-    getPrototypeOf    = Object.getPrototypeOf,
     ngMinErr          = minErr('ng'),
 
     /** @name angular */
@@ -9915,9 +9913,7 @@ function isArrayLike(obj) {
     return false;
   }
 
-  // Support: iOS 8.2 (not reproducible in simulator)
-  // "length" in obj used to prevent JIT error (gh-11508)
-  var length = "length" in Object(obj) && obj.length;
+  var length = obj.length;
 
   if (obj.nodeType === NODE_TYPE_ELEMENT && length) {
     return true;
@@ -9982,22 +9978,9 @@ function forEach(obj, iterator, context) {
       }
     } else if (obj.forEach && obj.forEach !== forEach) {
         obj.forEach(iterator, context, obj);
-    } else if (isBlankObject(obj)) {
-      // createMap() fast path --- Safe to avoid hasOwnProperty check because prototype chain is empty
-      for (key in obj) {
-        iterator.call(context, obj[key], key, obj);
-      }
-    } else if (typeof obj.hasOwnProperty === 'function') {
-      // Slow path for objects inheriting Object.prototype, hasOwnProperty check needed
+    } else {
       for (key in obj) {
         if (obj.hasOwnProperty(key)) {
-          iterator.call(context, obj[key], key, obj);
-        }
-      }
-    } else {
-      // Slow path for objects which do not have a method `hasOwnProperty`
-      for (key in obj) {
-        if (hasOwnProperty.call(obj, key)) {
           iterator.call(context, obj[key], key, obj);
         }
       }
@@ -10223,16 +10206,6 @@ function isDefined(value) {return typeof value !== 'undefined';}
 function isObject(value) {
   // http://jsperf.com/isobject4
   return value !== null && typeof value === 'object';
-}
-
-
-/**
- * Determine if a value is an object with a null prototype
- *
- * @returns {boolean} True if `value` is an `Object` with a null prototype
- */
-function isBlankObject(value) {
-  return value !== null && typeof value === 'object' && !getPrototypeOf(value);
 }
 
 
@@ -10508,18 +10481,9 @@ function copy(source, destination, stackSource, stackDest) {
 
   if (!destination) {
     destination = source;
-    if (isObject(source)) {
-      var index;
-      if (stackSource && (index = stackSource.indexOf(source)) !== -1) {
-        return stackDest[index];
-      }
-
-      // TypedArray, Date and RegExp have specific copy functionality and must be
-      // pushed onto the stack before returning.
-      // Array and other objects create the base object and recurse to copy child
-      // objects. The array/object will be pushed onto the stack when recursed.
+    if (source) {
       if (isArray(source)) {
-        return copy(source, [], stackSource, stackDest);
+        destination = copy(source, [], stackSource, stackDest);
       } else if (isTypedArray(source)) {
         destination = new source.constructor(source);
       } else if (isDate(source)) {
@@ -10527,14 +10491,9 @@ function copy(source, destination, stackSource, stackDest) {
       } else if (isRegExp(source)) {
         destination = new RegExp(source.source, source.toString().match(/[^\/]*$/)[0]);
         destination.lastIndex = source.lastIndex;
-      } else {
-        var emptyObject = Object.create(getPrototypeOf(source));
-        return copy(source, emptyObject, stackSource, stackDest);
-      }
-
-      if (stackDest) {
-        stackSource.push(source);
-        stackDest.push(destination);
+      } else if (isObject(source)) {
+        var emptyObject = Object.create(Object.getPrototypeOf(source));
+        destination = copy(source, emptyObject, stackSource, stackDest);
       }
     }
   } else {
@@ -10545,15 +10504,23 @@ function copy(source, destination, stackSource, stackDest) {
     stackDest = stackDest || [];
 
     if (isObject(source)) {
+      var index = stackSource.indexOf(source);
+      if (index !== -1) return stackDest[index];
+
       stackSource.push(source);
       stackDest.push(destination);
     }
 
-    var result, key;
+    var result;
     if (isArray(source)) {
       destination.length = 0;
       for (var i = 0; i < source.length; i++) {
-        destination.push(copy(source[i], null, stackSource, stackDest));
+        result = copy(source[i], null, stackSource, stackDest);
+        if (isObject(source[i])) {
+          stackSource.push(source[i]);
+          stackDest.push(result);
+        }
+        destination.push(result);
       }
     } else {
       var h = destination.$$hashKey;
@@ -10564,28 +10531,19 @@ function copy(source, destination, stackSource, stackDest) {
           delete destination[key];
         });
       }
-      if (isBlankObject(source)) {
-        // createMap() fast path --- Safe to avoid hasOwnProperty check because prototype chain is empty
-        for (key in source) {
-          destination[key] = copy(source[key], null, stackSource, stackDest);
-        }
-      } else if (source && typeof source.hasOwnProperty === 'function') {
-        // Slow path, which must rely on hasOwnProperty
-        for (key in source) {
-          if (source.hasOwnProperty(key)) {
-            destination[key] = copy(source[key], null, stackSource, stackDest);
+      for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+          result = copy(source[key], null, stackSource, stackDest);
+          if (isObject(source[key])) {
+            stackSource.push(source[key]);
+            stackDest.push(result);
           }
-        }
-      } else {
-        // Slowest path --- hasOwnProperty can't be called as a method
-        for (key in source) {
-          if (hasOwnProperty.call(source, key)) {
-            destination[key] = copy(source[key], null, stackSource, stackDest);
-          }
+          destination[key] = result;
         }
       }
       setHashKey(destination,h);
     }
+
   }
   return destination;
 }
@@ -10668,14 +10626,14 @@ function equals(o1, o2) {
       } else {
         if (isScope(o1) || isScope(o2) || isWindow(o1) || isWindow(o2) ||
           isArray(o2) || isDate(o2) || isRegExp(o2)) return false;
-        keySet = createMap();
+        keySet = {};
         for (key in o1) {
           if (key.charAt(0) === '$' || isFunction(o1[key])) continue;
           if (!equals(o1[key], o2[key])) return false;
           keySet[key] = true;
         }
         for (key in o2) {
-          if (!(key in keySet) &&
+          if (!keySet.hasOwnProperty(key) &&
               key.charAt(0) !== '$' &&
               o2[key] !== undefined &&
               !isFunction(o2[key])) return false;
@@ -10712,17 +10670,17 @@ var csp = function() {
  * @name ngJq
  *
  * @element ANY
- * @param {string=} ngJq the name of the library available under `window`
+ * @param {string=} the name of the library available under `window`
  * to be used for angular.element
  * @description
  * Use this directive to force the angular.element library.  This should be
  * used to force either jqLite by leaving ng-jq blank or setting the name of
  * the jquery variable under window (eg. jQuery).
  *
- * Since angular looks for this directive when it is loaded (doesn't wait for the
- * DOMContentLoaded event), it must be placed on an element that comes before the script
- * which loads angular. Also, only the first instance of `ng-jq` will be used and all
- * others ignored.
+ * Since this directive is global for the angular library, it is recommended
+ * that it's added to the same element as ng-app or the HTML element, but it is not mandatory.
+ * It needs to be noted that only the first instance of `ng-jq` will be used and all others
+ * ignored.
  *
  * @example
  * This example shows how to force jqLite using the `ngJq` directive to the `html` tag.
@@ -11645,7 +11603,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#provider $provide.provider()}.
            */
-          provider: invokeLaterAndSetModuleName('$provide', 'provider'),
+          provider: invokeLater('$provide', 'provider'),
 
           /**
            * @ngdoc method
@@ -11656,7 +11614,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#factory $provide.factory()}.
            */
-          factory: invokeLaterAndSetModuleName('$provide', 'factory'),
+          factory: invokeLater('$provide', 'factory'),
 
           /**
            * @ngdoc method
@@ -11667,7 +11625,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#service $provide.service()}.
            */
-          service: invokeLaterAndSetModuleName('$provide', 'service'),
+          service: invokeLater('$provide', 'service'),
 
           /**
            * @ngdoc method
@@ -11702,7 +11660,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link auto.$provide#decorator $provide.decorator()}.
            */
-          decorator: invokeLaterAndSetModuleName('$provide', 'decorator'),
+          decorator: invokeLater('$provide', 'decorator'),
 
           /**
            * @ngdoc method
@@ -11736,7 +11694,7 @@ function setupModuleLoader(window) {
            * See {@link ng.$animateProvider#register $animateProvider.register()} and
            * {@link ngAnimate ngAnimate module} for more information.
            */
-          animation: invokeLaterAndSetModuleName('$animateProvider', 'register'),
+          animation: invokeLater('$animateProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11754,7 +11712,7 @@ function setupModuleLoader(window) {
            * (`myapp_subsection_filterx`).
            * </div>
            */
-          filter: invokeLaterAndSetModuleName('$filterProvider', 'register'),
+          filter: invokeLater('$filterProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11766,7 +11724,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link ng.$controllerProvider#register $controllerProvider.register()}.
            */
-          controller: invokeLaterAndSetModuleName('$controllerProvider', 'register'),
+          controller: invokeLater('$controllerProvider', 'register'),
 
           /**
            * @ngdoc method
@@ -11779,7 +11737,7 @@ function setupModuleLoader(window) {
            * @description
            * See {@link ng.$compileProvider#directive $compileProvider.directive()}.
            */
-          directive: invokeLaterAndSetModuleName('$compileProvider', 'directive'),
+          directive: invokeLater('$compileProvider', 'directive'),
 
           /**
            * @ngdoc method
@@ -11826,19 +11784,6 @@ function setupModuleLoader(window) {
           if (!queue) queue = invokeQueue;
           return function() {
             queue[insertMethod || 'push']([provider, method, arguments]);
-            return moduleInstance;
-          };
-        }
-
-        /**
-         * @param {string} provider
-         * @param {string} method
-         * @returns {angular.Module}
-         */
-        function invokeLaterAndSetModuleName(provider, method) {
-          return function(recipeName, factoryFunction) {
-            if (factoryFunction && isFunction(factoryFunction)) factoryFunction.$$moduleName = name;
-            invokeQueue.push([provider, method, arguments]);
             return moduleInstance;
           };
         }
@@ -11985,11 +11930,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.1',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.0-rc.1',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 1,
-  codeName: 'hyperionic-illumination'
+  dot: 0,
+  codeName: 'sartorial-chronography'
 };
 
 
@@ -12172,7 +12117,7 @@ function publishExternalAPI(angular) {
  * Angular to manipulate the DOM in a cross-browser compatible way. **jqLite** implements only the most
  * commonly needed functionality with the goal of having a very small footprint.</div>
  *
- * To use `jQuery`, simply ensure it is loaded before the `angular.js` file.
+ * To use jQuery, simply load it before `DOMContentLoaded` event fired.
  *
  * <div class="alert">**Note:** all element references in Angular are always wrapped with jQuery or
  * jqLite; they are never raw DOM references.</div>
@@ -12188,7 +12133,7 @@ function publishExternalAPI(angular) {
  * - [`children()`](http://api.jquery.com/children/) - Does not support selectors
  * - [`clone()`](http://api.jquery.com/clone/)
  * - [`contents()`](http://api.jquery.com/contents/)
- * - [`css()`](http://api.jquery.com/css/) - Only retrieves inline-styles, does not call `getComputedStyle()`. As a setter, does not convert numbers to strings or append 'px'.
+ * - [`css()`](http://api.jquery.com/css/) - Only retrieves inline-styles, does not call `getComputedStyle()`
  * - [`data()`](http://api.jquery.com/data/)
  * - [`detach()`](http://api.jquery.com/detach/)
  * - [`empty()`](http://api.jquery.com/empty/)
@@ -12313,13 +12258,6 @@ function jqLiteAcceptsData(node) {
   // Otherwise we are only interested in elements (1) and documents (9)
   var nodeType = node.nodeType;
   return nodeType === NODE_TYPE_ELEMENT || !nodeType || nodeType === NODE_TYPE_DOCUMENT;
-}
-
-function jqLiteHasData(node) {
-  for (var key in jqCache[node.ng339]) {
-    return true;
-  }
-  return false;
 }
 
 function jqLiteBuildFragment(html, context) {
@@ -12696,8 +12634,7 @@ function getAliasedAttrName(element, name) {
 
 forEach({
   data: jqLiteData,
-  removeData: jqLiteRemoveData,
-  hasData: jqLiteHasData
+  removeData: jqLiteRemoveData
 }, function(fn, name) {
   JQLite[name] = fn;
 });
@@ -13440,7 +13377,7 @@ function annotate(fn, strictDi, name) {
  * Return an instance of the service.
  *
  * @param {string} name The name of the instance to retrieve.
- * @param {string=} caller An optional string to provide the origin of the function call for error messages.
+ * @param {string} caller An optional string to provide the origin of the function call for error messages.
  * @return {*} The instance.
  */
 
@@ -13451,8 +13388,8 @@ function annotate(fn, strictDi, name) {
  * @description
  * Invoke the method and supply the method arguments from the `$injector`.
  *
- * @param {Function|Array.<string|Function>} fn The injectable function to invoke. Function parameters are
- *   injected according to the {@link guide/di $inject Annotation} rules.
+ * @param {!Function} fn The function to invoke. Function parameters are injected according to the
+ *   {@link guide/di $inject Annotation} rules.
  * @param {Object=} self The `this` for the invoked method.
  * @param {Object=} locals Optional object. If preset then any argument names are read from this
  *                         object first, before the `$injector` is consulted.
@@ -13719,8 +13656,8 @@ function annotate(fn, strictDi, name) {
  * configure your service in a provider.
  *
  * @param {string} name The name of the instance.
- * @param {Function|Array.<string|Function>} $getFn The injectable $getFn for the instance creation.
- *                      Internally this is a short hand for `$provide.provider(name, {$get: $getFn})`.
+ * @param {function()} $getFn The $getFn for the instance creation. Internally this is a short hand
+ *                            for `$provide.provider(name, {$get: $getFn})`.
  * @returns {Object} registered provider instance
  *
  * @example
@@ -13755,8 +13692,7 @@ function annotate(fn, strictDi, name) {
  * as a type/class.
  *
  * @param {string} name The name of the instance.
- * @param {Function|Array.<string|Function>} constructor An injectable class (constructor function)
- *     that will be instantiated.
+ * @param {Function} constructor A class (constructor function) that will be instantiated.
  * @returns {Object} registered provider instance
  *
  * @example
@@ -13855,7 +13791,7 @@ function annotate(fn, strictDi, name) {
  * object which replaces or wraps and delegates to the original service.
  *
  * @param {string} name The name of the service to decorate.
- * @param {Function|Array.<string|Function>} decorator This function will be invoked when the service needs to be
+ * @param {function()} decorator This function will be invoked when the service needs to be
  *    instantiated and should return the decorated service instance. The function is called using
  *    the {@link auto.$injector#invoke injector.invoke} method and is therefore fully injectable.
  *    Local injection arguments:
@@ -13906,7 +13842,7 @@ function createInjector(modulesToLoad, strictDi) {
           }));
 
 
-  forEach(loadModules(modulesToLoad), function(fn) { if (fn) instanceInjector.invoke(fn); });
+  forEach(loadModules(modulesToLoad), function(fn) { instanceInjector.invoke(fn || noop); });
 
   return instanceInjector;
 
@@ -14384,7 +14320,6 @@ function $AnchorScrollProvider() {
 
 var $animateMinErr = minErr('$animate');
 var ELEMENT_NODE = 1;
-var NG_ANIMATE_CLASSNAME = 'ng-animate';
 
 function mergeClasses(a,b) {
   if (!a && !b) return '';
@@ -14409,9 +14344,7 @@ function splitClasses(classes) {
     classes = classes.split(' ');
   }
 
-  // Use createMap() to prevent class assumptions involving property names in
-  // Object.prototype
-  var obj = createMap();
+  var obj = {};
   forEach(classes, function(klass) {
     // sometimes the split leaves empty string values
     // incase extra spaces were applied to the options
@@ -14420,19 +14353,6 @@ function splitClasses(classes) {
     }
   });
   return obj;
-}
-
-// if any other type of options value besides an Object value is
-// passed into the $animate.method() animation then this helper code
-// will be run which will ignore it. While this patch is not the
-// greatest solution to this, a lot of existing plugins depend on
-// $animate to either call the callback (< 1.2) or return a promise
-// that can be changed. This helper function ensures that the options
-// are wiped clean incase a callback function is provided.
-function prepareAnimateOptions(options) {
-  return isObject(options)
-      ? options
-      : {};
 }
 
 var $$CoreAnimateRunnerProvider = function() {
@@ -14629,13 +14549,6 @@ var $AnimateProvider = ['$provide', function($provide) {
   this.classNameFilter = function(expression) {
     if (arguments.length === 1) {
       this.$$classNameFilter = (expression instanceof RegExp) ? expression : null;
-      if (this.$$classNameFilter) {
-        var reservedRegex = new RegExp("(\\s+|\\/)" + NG_ANIMATE_CLASSNAME + "(\\s+|\\/)");
-        if (reservedRegex.test(this.$$classNameFilter.toString())) {
-          throw $animateMinErr('nongcls','$animateProvider.classNameFilter(regex) prohibits accepting a regex value which matches/contains the "{0}" CSS class.', NG_ANIMATE_CLASSNAME);
-
-        }
-      }
     }
     return this.$$classNameFilter;
   };
@@ -14811,11 +14724,9 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       enter: function(element, parent, after, options) {
-        parent = parent && jqLite(parent);
-        after = after && jqLite(after);
         parent = parent || after.parent();
         domInsert(element, parent, after);
-        return $$animateQueue.push(element, 'enter', prepareAnimateOptions(options));
+        return $$animateQueue.push(element, 'enter', options);
       },
 
       /**
@@ -14837,11 +14748,9 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       move: function(element, parent, after, options) {
-        parent = parent && jqLite(parent);
-        after = after && jqLite(after);
         parent = parent || after.parent();
         domInsert(element, parent, after);
-        return $$animateQueue.push(element, 'move', prepareAnimateOptions(options));
+        return $$animateQueue.push(element, 'move', options);
       },
 
       /**
@@ -14858,7 +14767,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       leave: function(element, options) {
-        return $$animateQueue.push(element, 'leave', prepareAnimateOptions(options), function() {
+        return $$animateQueue.push(element, 'leave', options, function() {
           element.remove();
         });
       },
@@ -14882,7 +14791,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       addClass: function(element, className, options) {
-        options = prepareAnimateOptions(options);
+        options = options || {};
         options.addClass = mergeClasses(options.addclass, className);
         return $$animateQueue.push(element, 'addClass', options);
       },
@@ -14906,7 +14815,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       removeClass: function(element, className, options) {
-        options = prepareAnimateOptions(options);
+        options = options || {};
         options.removeClass = mergeClasses(options.removeClass, className);
         return $$animateQueue.push(element, 'removeClass', options);
       },
@@ -14931,7 +14840,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       setClass: function(element, add, remove, options) {
-        options = prepareAnimateOptions(options);
+        options = options || {};
         options.addClass = mergeClasses(options.addClass, add);
         options.removeClass = mergeClasses(options.removeClass, remove);
         return $$animateQueue.push(element, 'setClass', options);
@@ -14959,7 +14868,7 @@ var $AnimateProvider = ['$provide', function($provide) {
        * @return {Promise} the animation callback promise
        */
       animate: function(element, from, to, className, options) {
-        options = prepareAnimateOptions(options);
+        options = options || {};
         options.from = options.from ? extend(options.from, from) : from;
         options.to   = options.to   ? extend(options.to, to)     : to;
 
@@ -15129,7 +15038,7 @@ function Browser(window, document, $log, $sniffer) {
         // Do the assignment again so that those two variables are referentially identical.
         lastHistoryState = cachedState;
       } else {
-        if (!sameBase || reloadLocation) {
+        if (!sameBase) {
           reloadLocation = url;
         }
         if (replace) {
@@ -16135,15 +16044,12 @@ function $TemplateCacheProvider() {
  *   * `controller` - the directive's required controller instance(s) - Instances are shared
  *     among all directives, which allows the directives to use the controllers as a communication
  *     channel. The exact value depends on the directive's `require` property:
- *       * no controller(s) required: the directive's own controller, or `undefined` if it doesn't have one
  *       * `string`: the controller instance
  *       * `array`: array of controller instances
+ *       * no controller(s) required: `undefined`
  *
  *     If a required controller cannot be found, and it is optional, the instance is `null`,
  *     otherwise the {@link error:$compile:ctreq Missing Required Controller} error is thrown.
- *
- *     Note that you can also require the directive's own controller - it will be made available like
- *     like any other controller.
  *
  *   * `transcludeFn` - A transclude linking function pre-bound to the correct transclusion scope.
  *     This is the same as the `$transclude`
@@ -16541,11 +16447,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     if (!letter || letter !== lowercase(letter)) {
       throw $compileMinErr('baddir', "Directive name '{0}' is invalid. The first character must be a lowercase letter", name);
     }
-    if (name !== name.trim()) {
-      throw $compileMinErr('baddir',
-            "Directive name '{0}' is invalid. The name should not contain leading or trailing whitespaces",
-            name);
-    }
   }
 
   /**
@@ -16591,7 +16492,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
                 if (isObject(bindings.isolateScope)) {
                   directive.$$isolateBindings = bindings.isolateScope;
                 }
-                directive.$$moduleName = directiveFactory.$$moduleName;
                 directives.push(directive);
               } catch (e) {
                 $exceptionHandler(e);
@@ -17163,7 +17063,8 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
             if (nodeLinkFn.transcludeOnThisElement) {
               childBoundTranscludeFn = createBoundTranscludeFn(
-                  scope, nodeLinkFn.transclude, parentBoundTranscludeFn);
+                  scope, nodeLinkFn.transclude, parentBoundTranscludeFn,
+                  nodeLinkFn.elementTranscludeOnThisElement);
 
             } else if (!nodeLinkFn.templateOnThisElement && parentBoundTranscludeFn) {
               childBoundTranscludeFn = parentBoundTranscludeFn;
@@ -17185,7 +17086,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       }
     }
 
-    function createBoundTranscludeFn(scope, transcludeFn, previousBoundTranscludeFn) {
+    function createBoundTranscludeFn(scope, transcludeFn, previousBoundTranscludeFn, elementTransclusion) {
 
       var boundTranscludeFn = function(transcludedScope, cloneFn, controllers, futureParentElement, containingScope) {
 
@@ -17284,13 +17185,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           }
           break;
         case NODE_TYPE_TEXT: /* Text Node */
-          if (msie === 11) {
-            // Workaround for #11781
-            while (node.parentNode && node.nextSibling && node.nextSibling.nodeType === NODE_TYPE_TEXT) {
-              node.nodeValue = node.nodeValue + node.nextSibling.nodeValue;
-              node.parentNode.removeChild(node.nextSibling);
-            }
-          }
           addTextInterpolateDirective(directives, node.nodeValue);
           break;
         case NODE_TYPE_COMMENT: /* Comment */
@@ -17583,6 +17477,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       nodeLinkFn.scope = newScopeDirective && newScopeDirective.scope === true;
       nodeLinkFn.transcludeOnThisElement = hasTranscludeDirective;
+      nodeLinkFn.elementTranscludeOnThisElement = hasElementTranscludeDirective;
       nodeLinkFn.templateOnThisElement = hasTemplate;
       nodeLinkFn.transclude = childTranscludeFn;
 
@@ -17743,12 +17638,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           for (i in elementControllers) {
             controller = elementControllers[i];
             var controllerResult = controller();
-
             if (controllerResult !== controller.instance) {
-              // If the controller constructor has a return value, overwrite the instance
-              // from setupControllers and update the element data
               controller.instance = controllerResult;
-              $element.data('$' + i + 'Controller', controllerResult);
+              $element.data('$' + directive.name + 'Controller', controllerResult);
               if (controller === controllerForBindings) {
                 // Remove and re-install bindToController bindings
                 thisLinkFn.$$destroyBindings();
@@ -18048,18 +17940,11 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       return a.index - b.index;
     }
 
+
     function assertNoDuplicate(what, previousDirective, directive, element) {
-
-      function wrapModuleNameIfDefined(moduleName) {
-        return moduleName ?
-          (' (module: ' + moduleName + ')') :
-          '';
-      }
-
       if (previousDirective) {
-        throw $compileMinErr('multidir', 'Multiple directives [{0}{1}, {2}{3}] asking for {4} on: {5}',
-            previousDirective.name, wrapModuleNameIfDefined(previousDirective.$$moduleName),
-            directive.name, wrapModuleNameIfDefined(directive.$$moduleName), what, startingTag(element));
+        throw $compileMinErr('multidir', 'Multiple directives [{0}, {1}] asking for {2} on: {3}',
+            previousDirective.name, directive.name, what, startingTag(element));
       }
     }
 
@@ -18240,28 +18125,26 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       var fragment = document.createDocumentFragment();
       fragment.appendChild(firstElementToRemove);
 
-      if (jqLite.hasData(firstElementToRemove)) {
-        // Copy over user data (that includes Angular's $scope etc.). Don't copy private
-        // data here because there's no public interface in jQuery to do that and copying over
-        // event listeners (which is the main use of private data) wouldn't work anyway.
-        jqLite(newNode).data(jqLite(firstElementToRemove).data());
+      // Copy over user data (that includes Angular's $scope etc.). Don't copy private
+      // data here because there's no public interface in jQuery to do that and copying over
+      // event listeners (which is the main use of private data) wouldn't work anyway.
+      jqLite(newNode).data(jqLite(firstElementToRemove).data());
 
-        // Remove data of the replaced element. We cannot just call .remove()
-        // on the element it since that would deallocate scope that is needed
-        // for the new node. Instead, remove the data "manually".
-        if (!jQuery) {
-          delete jqLite.cache[firstElementToRemove[jqLite.expando]];
-        } else {
-          // jQuery 2.x doesn't expose the data storage. Use jQuery.cleanData to clean up after
-          // the replaced element. The cleanData version monkey-patched by Angular would cause
-          // the scope to be trashed and we do need the very same scope to work with the new
-          // element. However, we cannot just cache the non-patched version and use it here as
-          // that would break if another library patches the method after Angular does (one
-          // example is jQuery UI). Instead, set a flag indicating scope destroying should be
-          // skipped this one time.
-          skipDestroyOnNextJQueryCleanData = true;
-          jQuery.cleanData([firstElementToRemove]);
-        }
+      // Remove data of the replaced element. We cannot just call .remove()
+      // on the element it since that would deallocate scope that is needed
+      // for the new node. Instead, remove the data "manually".
+      if (!jQuery) {
+        delete jqLite.cache[firstElementToRemove[jqLite.expando]];
+      } else {
+        // jQuery 2.x doesn't expose the data storage. Use jQuery.cleanData to clean up after
+        // the replaced element. The cleanData version monkey-patched by Angular would cause
+        // the scope to be trashed and we do need the very same scope to work with the new
+        // element. However, we cannot just cache the non-patched version and use it here as
+        // that would break if another library patches the method after Angular does (one
+        // example is jQuery UI). Instead, set a flag indicating scope destroying should be
+        // skipped this one time.
+        skipDestroyOnNextJQueryCleanData = true;
+        jQuery.cleanData([firstElementToRemove]);
       }
 
       for (var k = 1, kk = elementsToRemove.length; k < kk; k++) {
@@ -18302,19 +18185,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         lastValue,
         parentGet, parentSet, compare;
 
-        if (!hasOwnProperty.call(attrs, attrName)) {
-          // In the case of user defined a binding with the same name as a method in Object.prototype but didn't set
-          // the corresponding attribute. We need to make sure subsequent code won't access to the prototype function
-          attrs[attrName] = undefined;
-        }
-
         switch (mode) {
 
           case '@':
-            if (!attrs[attrName] && !optional) {
-              destination[scopeName] = undefined;
-            }
-
             attrs.$observe(attrName, function(value) {
               destination[scopeName] = value;
             });
@@ -18331,7 +18204,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
               return;
             }
             parentGet = $parse(attrs[attrName]);
-
             if (parentGet.literal) {
               compare = equals;
             } else {
@@ -18370,6 +18242,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
+            // Don't assign Object.prototype method to scope
+            if (!attrs.hasOwnProperty(attrName) && optional) break;
+
             parentGet = $parse(attrs[attrName]);
 
             // Don't assign noop to destination if expression is not valid
@@ -18756,13 +18631,33 @@ var JSON_ENDS = {
 };
 var JSON_PROTECTION_PREFIX = /^\)\]\}',?\n/;
 
-function serializeValue(v) {
-  if (isObject(v)) {
-    return isDate(v) ? v.toISOString() : toJson(v);
-  }
-  return v;
-}
+function paramSerializerFactory(jQueryMode) {
 
+  function serializeValue(v) {
+    if (isObject(v)) {
+      return isDate(v) ? v.toISOString() : toJson(v);
+    }
+    return v;
+  }
+
+  return function paramSerializer(params) {
+    if (!params) return '';
+    var parts = [];
+    forEachSorted(params, function(value, key) {
+      if (value === null || isUndefined(value)) return;
+      if (isArray(value) || isObject(value) && jQueryMode) {
+        forEach(value, function(v, k) {
+          var keySuffix = jQueryMode ? '[' + (!isArray(value) ? k : '') + ']' : '';
+          parts.push(encodeUriQuery(key + keySuffix)  + '=' + encodeUriQuery(serializeValue(v)));
+        });
+      } else {
+        parts.push(encodeUriQuery(key) + '=' + encodeUriQuery(serializeValue(value)));
+      }
+    });
+
+    return parts.length > 0 ? parts.join('&') : '';
+  };
+}
 
 function $HttpParamSerializerProvider() {
   /**
@@ -18770,34 +18665,15 @@ function $HttpParamSerializerProvider() {
    * @name $httpParamSerializer
    * @description
    *
-   * Default {@link $http `$http`} params serializer that converts objects to strings
+   * Default $http params serializer that converts objects to a part of a request URL
    * according to the following rules:
-   *
    * * `{'foo': 'bar'}` results in `foo=bar`
    * * `{'foo': Date.now()}` results in `foo=2015-04-01T09%3A50%3A49.262Z` (`toISOString()` and encoded representation of a Date object)
    * * `{'foo': ['bar', 'baz']}` results in `foo=bar&foo=baz` (repeated key for each array element)
    * * `{'foo': {'bar':'baz'}}` results in `foo=%7B%22bar%22%3A%22baz%22%7D"` (stringified and encoded representation of an object)
-   *
-   * Note that serializer will sort the request parameters alphabetically.
    * */
-
   this.$get = function() {
-    return function ngParamSerializer(params) {
-      if (!params) return '';
-      var parts = [];
-      forEachSorted(params, function(value, key) {
-        if (value === null || isUndefined(value)) return;
-        if (isArray(value)) {
-          forEach(value, function(v, k) {
-            parts.push(encodeUriQuery(key)  + '=' + encodeUriQuery(serializeValue(v)));
-          });
-        } else {
-          parts.push(encodeUriQuery(key) + '=' + encodeUriQuery(serializeValue(value)));
-        }
-      });
-
-      return parts.join('&');
-    };
+    return paramSerializerFactory(false);
   };
 }
 
@@ -18807,69 +18683,10 @@ function $HttpParamSerializerJQLikeProvider() {
    * @name $httpParamSerializerJQLike
    * @description
    *
-   * Alternative {@link $http `$http`} params serializer that follows
-   * jQuery's [`param()`](http://api.jquery.com/jquery.param/) method logic.
-   * The serializer will also sort the params alphabetically.
-   *
-   * To use it for serializing `$http` request parameters, set it as the `paramSerializer` property:
-   *
-   * ```js
-   * $http({
-   *   url: myUrl,
-   *   method: 'GET',
-   *   params: myParams,
-   *   paramSerializer: '$httpParamSerializerJQLike'
-   * });
-   * ```
-   *
-   * It is also possible to set it as the default `paramSerializer` in the
-   * {@link $httpProvider#defaults `$httpProvider`}.
-   *
-   * Additionally, you can inject the serializer and use it explicitly, for example to serialize
-   * form data for submission:
-   *
-   * ```js
-   * .controller(function($http, $httpParamSerializerJQLike) {
-   *   //...
-   *
-   *   $http({
-   *     url: myUrl,
-   *     method: 'POST',
-   *     data: $httpParamSerializerJQLike(myData),
-   *     headers: {
-   *       'Content-Type': 'application/x-www-form-urlencoded'
-   *     }
-   *   });
-   *
-   * });
-   * ```
-   *
+   * Alternative $http params serializer that follows jQuery's [`param()`](http://api.jquery.com/jquery.param/) method logic.
    * */
   this.$get = function() {
-    return function jQueryLikeParamSerializer(params) {
-      if (!params) return '';
-      var parts = [];
-      serialize(params, '', true);
-      return parts.join('&');
-
-      function serialize(toSerialize, prefix, topLevel) {
-        if (toSerialize === null || isUndefined(toSerialize)) return;
-        if (isArray(toSerialize)) {
-          forEach(toSerialize, function(value) {
-            serialize(value, prefix + '[]');
-          });
-        } else if (isObject(toSerialize) && !isDate(toSerialize)) {
-          forEachSorted(toSerialize, function(value, key) {
-            serialize(value, prefix +
-                (topLevel ? '' : '[') +
-                key +
-                (topLevel ? '' : ']'));
-          });
-        } else {
-          parts.push(encodeUriQuery(prefix) + '=' + encodeUriQuery(serializeValue(toSerialize)));
-        }
-      }
-    };
+    return paramSerializerFactory(true);
   };
 }
 
@@ -19017,11 +18834,10 @@ function $HttpProvider() {
    *     - **`defaults.headers.put`**
    *     - **`defaults.headers.patch`**
    *
-   *
-   * - **`defaults.paramSerializer`** - `{string|function(Object<string,string>):string}` - A function
-   *  used to the prepare string representation of request parameters (specified as an object).
-   *  If specified as string, it is interpreted as a function registered with the {@link auto.$injector $injector}.
-   *  Defaults to {@link ng.$httpParamSerializer $httpParamSerializer}.
+   * - **`defaults.paramSerializer`** - {string|function(Object<string,string>):string} - A function used to prepare string representation
+   * of request parameters (specified as an object).
+   * If specified as string, it is interpreted as a function registered with the {@link auto.$injector $injector}.
+   * Defaults to {@link ng.$httpParamSerializer $httpParamSerializer}.
    *
    **/
   var defaults = this.defaults = {
@@ -19487,17 +19303,15 @@ function $HttpProvider() {
      * properties of either $httpProvider.defaults at config-time, $http.defaults at run-time,
      * or the per-request config object.
      *
-     * In order to prevent collisions in environments where multiple Angular apps share the
-     * same domain or subdomain, we recommend that each application uses unique cookie name.
-     *
      *
      * @param {object} config Object describing the request to be made and how it should be
      *    processed. The object has following properties:
      *
      *    - **method** – `{string}` – HTTP method (e.g. 'GET', 'POST', etc)
      *    - **url** – `{string}` – Absolute or relative URL of the resource that is being requested.
-     *    - **params** – `{Object.<string|Object>}` – Map of strings or objects which will be serialized
-     *      with the `paramSerializer` and appended as GET parameters.
+     *    - **params** – `{Object.<string|Object>}` – Map of strings or objects which will be turned
+     *      to `?key1=value1&key2=value2` after the url. If the value is not a string, it will be
+     *      JSONified.
      *    - **data** – `{string|Object}` – Data to be sent as the request message data.
      *    - **headers** – `{Object}` – Map of strings or functions which return strings representing
      *      HTTP headers to send to the server. If the return value of a function is null, the
@@ -19515,14 +19329,10 @@ function $HttpProvider() {
      *      transform function or an array of such functions. The transform function takes the http
      *      response body, headers and status and returns its transformed (typically deserialized) version.
      *      See {@link ng.$http#overriding-the-default-transformations-per-request
-     *      Overriding the Default TransformationjqLiks}
-     *    - **paramSerializer** - `{string|function(Object<string,string>):string}` - A function used to
-     *      prepare the string representation of request parameters (specified as an object).
-     *      If specified as string, it is interpreted as function registered with the
-     *      {@link $injector $injector}, which means you can create your own serializer
-     *      by registering it as a {@link auto.$provide#service service}.
-     *      The default serializer is the {@link $httpParamSerializer $httpParamSerializer};
-     *      alternatively, you can use the {@link $httpParamSerializerJQLike $httpParamSerializerJQLike}
+     *      Overriding the Default Transformations}
+     *    - **paramSerializer** - {string|function(Object<string,string>):string} - A function used to prepare string representation
+     *      of request parameters (specified as an object).
+     *      Is specified as string, it is interpreted as function registered in with the {$injector}.
      *    - **cache** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
      *      GET request, otherwise if a cache instance built with
      *      {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
@@ -19888,7 +19698,7 @@ function $HttpProvider() {
     function createShortMethods(names) {
       forEach(arguments, function(name) {
         $http[name] = function(url, config) {
-          return $http(extend({}, config || {}, {
+          return $http(extend(config || {}, {
             method: name,
             url: url
           }));
@@ -19900,7 +19710,7 @@ function $HttpProvider() {
     function createShortMethodsWithData(name) {
       forEach(arguments, function(name) {
         $http[name] = function(url, data, config) {
-          return $http(extend({}, config || {}, {
+          return $http(extend(config || {}, {
             method: name,
             url: url,
             data: data
@@ -21245,19 +21055,11 @@ var locationPrototype = {
    *
    * Return host of current url.
    *
-   * Note: compared to the non-angular version `location.host` which returns `hostname:port`, this returns the `hostname` portion only.
-   *
    *
    * ```js
    * // given url http://example.com/#/some/path?foo=bar&baz=xoxo
    * var host = $location.host();
    * // => "example.com"
-   *
-   * // given url http://user:password@example.com:8080/#/some/path?foo=bar&baz=xoxo
-   * host = $location.host();
-   * // => "example.com"
-   * host = location.host;
-   * // => "example.com:8080"
    * ```
    *
    * @return {string} host of current url.
@@ -22950,10 +22752,8 @@ ASTCompiler.prototype = {
               nameId.name = ast.property.name;
             }
           }
-        }, function() {
-          self.assign(intoId, 'undefined');
+          recursionFn(intoId);
         });
-        recursionFn(intoId);
       }, !!create);
       break;
     case AST.CallExpression:
@@ -22991,10 +22791,8 @@ ASTCompiler.prototype = {
             }
             expression = self.ensureSafeObject(expression);
             self.assign(intoId, expression);
-          }, function() {
-            self.assign(intoId, 'undefined');
+            recursionFn(intoId);
           });
-          recursionFn(intoId);
         });
       }
       break;
@@ -24018,11 +23816,9 @@ function $ParseProvider() {
  *   provide a progress indication, before the promise is resolved or rejected.
  *
  *   This method *returns a new promise* which is resolved or rejected via the return value of the
- *   `successCallback`, `errorCallback` (unless that value is a promise, in which case it is resolved
- *   with the value which is resolved in that promise using
- *   [promise chaining](http://www.html5rocks.com/en/tutorials/es6/promises/#toc-promises-queues)).
- *   It also notifies via the return value of the `notifyCallback` method. The promise cannot be
- *   resolved or rejected from the notifyCallback method.
+ *   `successCallback`, `errorCallback`. It also notifies via the return value of the
+ *   `notifyCallback` method. The promise cannot be resolved or rejected from the notifyCallback
+ *   method.
  *
  * - `catch(errorCallback)` – shorthand for `promise.then(null, errorCallback)`
  *
@@ -24377,19 +24173,6 @@ function qFactory(nextTick, exceptionHandler) {
 
   /**
    * @ngdoc method
-   * @name $q#resolve
-   * @kind function
-   *
-   * @description
-   * Alias of {@link ng.$q#when when} to maintain naming consistency with ES6.
-   *
-   * @param {*} value Value or a promise
-   * @returns {Promise} Returns a promise of the passed value or promise
-   */
-  var resolve = when;
-
-  /**
-   * @ngdoc method
    * @name $q#all
    * @kind function
    *
@@ -24456,7 +24239,6 @@ function qFactory(nextTick, exceptionHandler) {
   $Q.defer = defer;
   $Q.reject = reject;
   $Q.when = when;
-  $Q.resolve = resolve;
   $Q.all = all;
 
   return $Q;
@@ -24472,7 +24254,7 @@ function $$RAFProvider() { //rAF
                                $window.webkitCancelRequestAnimationFrame;
 
     var rafSupported = !!requestAnimationFrame;
-    var rafFn = rafSupported
+    var raf = rafSupported
       ? function(fn) {
           var id = requestAnimationFrame(fn);
           return function() {
@@ -24486,47 +24268,9 @@ function $$RAFProvider() { //rAF
           };
         };
 
-    queueFn.supported = rafSupported;
+    raf.supported = rafSupported;
 
-    var cancelLastRAF;
-    var taskCount = 0;
-    var taskQueue = [];
-    return queueFn;
-
-    function flush() {
-      for (var i = 0; i < taskQueue.length; i++) {
-        var task = taskQueue[i];
-        if (task) {
-          taskQueue[i] = null;
-          task();
-        }
-      }
-      taskCount = taskQueue.length = 0;
-    }
-
-    function queueFn(asyncFn) {
-      var index = taskQueue.length;
-
-      taskCount++;
-      taskQueue.push(asyncFn);
-
-      if (index === 0) {
-        cancelLastRAF = rafFn(flush);
-      }
-
-      return function cancelQueueFn() {
-        if (index >= 0) {
-          taskQueue[index] = null;
-          index = null;
-
-          if (--taskCount === 0 && cancelLastRAF) {
-            cancelLastRAF();
-            cancelLastRAF = null;
-            taskQueue.length = 0;
-          }
-        }
-      };
-    }
+    return raf;
   }];
 }
 
@@ -27766,11 +27510,9 @@ function $FilterProvider($provide) {
  *     `{name: {first: 'John', last: 'Doe'}}` will **not** be matched by `{name: 'John'}`, but
  *     **will** be matched by `{$: 'John'}`.
  *
- *   - `function(value, index, array)`: A predicate function can be used to write arbitrary filters.
- *     The function is called for each element of the array, with the element, its index, and
- *     the entire array itself as arguments.
- *
- *     The final result is an array of those elements that the predicate returned true for.
+ *   - `function(value, index)`: A predicate function can be used to write arbitrary filters. The
+ *     function is called for each element of `array`. The final result is an array of those
+ *     elements that the predicate returned true for.
  *
  * @param {function(actual, expected)|true|undefined} comparator Comparator which is used in
  *     determining if the expected value (from the filter expression) and actual value (from
@@ -27861,7 +27603,7 @@ function $FilterProvider($provide) {
  */
 function filterFilter() {
   return function(array, expression, comparator) {
-    if (!isArrayLike(array)) {
+    if (!isArray(array)) {
       if (array == null) {
         return array;
       } else {
@@ -27891,7 +27633,7 @@ function filterFilter() {
         return array;
     }
 
-    return Array.prototype.filter.call(array, predicateFn);
+    return array.filter(predicateFn);
   };
 }
 
@@ -28071,10 +27813,9 @@ function currencyFilter($locale) {
  * @description
  * Formats a number as text.
  *
- * If the input is null or undefined, it will just be returned.
- * If the input is infinite (Infinity/-Infinity) the Infinity symbol '∞' is returned.
  * If the input is not a number an empty string is returned.
  *
+ * If the input is an infinite (Infinity/-Infinity) the Infinity symbol '∞' is returned.
  *
  * @param {number|string} number Number to format.
  * @param {(number|string)=} fractionSize Number of decimal places to round the number to.
@@ -28703,7 +28444,7 @@ function limitToFilter() {
  * @description
  * Orders a specified `array` by the `expression` predicate. It is ordered alphabetically
  * for strings and numerically for numbers. Note: if you notice numbers are not being sorted
- * as expected, make sure they are actually being saved as numbers and not strings.
+ * correctly, make sure they are actually being saved as numbers and not strings.
  *
  * @param {Array} array The array to sort.
  * @param {function(*)|string|Array.<(function(*)|string)>=} expression A predicate to be
@@ -28778,40 +28519,19 @@ function limitToFilter() {
                   {name:'Mike', phone:'555-4321', age:21},
                   {name:'Adam', phone:'555-5678', age:35},
                   {name:'Julie', phone:'555-8765', age:29}];
-             $scope.predicate = 'age';
-             $scope.reverse = true;
-             $scope.order = function(predicate) {
-               $scope.reverse = ($scope.predicate === predicate) ? !$scope.reverse : false;
-               $scope.predicate = predicate;
-             };
+             $scope.predicate = '-age';
            }]);
        </script>
-       <style type="text/css">
-         .sortorder:after {
-           content: '\25b2';
-         }
-         .sortorder.reverse:after {
-           content: '\25bc';
-         }
-       </style>
        <div ng-controller="ExampleController">
          <pre>Sorting predicate = {{predicate}}; reverse = {{reverse}}</pre>
          <hr/>
          [ <a href="" ng-click="predicate=''">unsorted</a> ]
          <table class="friend">
            <tr>
-             <th>
-               <a href="" ng-click="order('name')">Name</a>
-               <span class="sortorder" ng-show="predicate === 'name'" ng-class="{reverse:reverse}"></span>
-             </th>
-             <th>
-               <a href="" ng-click="order('phone')">Phone Number</a>
-               <span class="sortorder" ng-show="predicate === 'phone'" ng-class="{reverse:reverse}"></span>
-             </th>
-             <th>
-               <a href="" ng-click="order('age')">Age</a>
-               <span class="sortorder" ng-show="predicate === 'age'" ng-class="{reverse:reverse}"></span>
-             </th>
+             <th><a href="" ng-click="predicate = 'name'; reverse=false">Name</a>
+                 (<a href="" ng-click="predicate = '-name'; reverse=false">^</a>)</th>
+             <th><a href="" ng-click="predicate = 'phone'; reverse=!reverse">Phone Number</a></th>
+             <th><a href="" ng-click="predicate = 'age'; reverse=!reverse">Age</a></th>
            </tr>
            <tr ng-repeat="friend in friends | orderBy:predicate:reverse">
              <td>{{friend.name}}</td>
@@ -29856,11 +29576,11 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
        <form name="myForm" ng-controller="FormController" class="my-form">
          userType: <input name="input" ng-model="userType" required>
          <span class="error" ng-show="myForm.input.$error.required">Required!</span><br>
-         <code>userType = {{userType}}</code><br>
-         <code>myForm.input.$valid = {{myForm.input.$valid}}</code><br>
-         <code>myForm.input.$error = {{myForm.input.$error}}</code><br>
-         <code>myForm.$valid = {{myForm.$valid}}</code><br>
-         <code>myForm.$error.required = {{!!myForm.$error.required}}</code><br>
+         <tt>userType = {{userType}}</tt><br>
+         <tt>myForm.input.$valid = {{myForm.input.$valid}}</tt><br>
+         <tt>myForm.input.$error = {{myForm.input.$error}}</tt><br>
+         <tt>myForm.$valid = {{myForm.$valid}}</tt><br>
+         <tt>myForm.$error.required = {{!!myForm.$error.required}}</tt><br>
         </form>
       </file>
       <file name="protractor.js" type="protractor">
@@ -29974,7 +29694,7 @@ var ngFormDirective = formDirectiveFactory(true);
 var ISO_DATE_REGEXP = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/;
 var URL_REGEXP = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
 var EMAIL_REGEXP = /^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+@[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i;
-var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))([eE][+-]?\d+)?\s*$/;
+var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))\s*$/;
 var DATE_REGEXP = /^(\d{4})-(\d{2})-(\d{2})$/;
 var DATETIMELOCAL_REGEXP = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d)(\.\d{1,3})?)?$/;
 var WEEK_REGEXP = /^(\d{4})-W(\d\d)$/;
@@ -30007,13 +29727,9 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object, then this is used directly.
-   *    If the expression evaluates to a string, then it will be converted to a RegExp
-   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
-   *    `new RegExp('^abc$')`.<br />
-   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
-   *    start at the index of the last search's match, thus not taking the whole input value into
-   *    account.
+   *    If the expression evaluates to a RegExp object then this is used directly.
+   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
+   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    * @param {boolean=} [ngTrim=true] If set to false Angular will not automatically trim the input.
@@ -30573,16 +30289,6 @@ var inputType = {
    * error docs for more information and an example of how to convert your model if necessary.
    * </div>
    *
-   * ## Issues with HTML5 constraint validation
-   *
-   * In browsers that follow the
-   * [HTML5 specification](https://html.spec.whatwg.org/multipage/forms.html#number-state-%28type=number%29),
-   * `input[number]` does not work as expected with {@link ngModelOptions `ngModelOptions.allowInvalid`}.
-   * If a non-number is entered in the input, the browser will report the value as an empty string,
-   * which means the view / model values in `ngModel` and subsequently the scope value
-   * will also be an empty string.
-   *
-   *
    * @param {string} ngModel Assignable angular expression to data-bind to.
    * @param {string=} name Property name of the form under which the control is published.
    * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`.
@@ -30601,13 +30307,9 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object, then this is used directly.
-   *    If the expression evaluates to a string, then it will be converted to a RegExp
-   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
-   *    `new RegExp('^abc$')`.<br />
-   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
-   *    start at the index of the last search's match, thus not taking the whole input value into
-   *    account.
+   *    If the expression evaluates to a RegExp object then this is used directly.
+   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
+   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    *
@@ -30699,13 +30401,9 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object, then this is used directly.
-   *    If the expression evaluates to a string, then it will be converted to a RegExp
-   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
-   *    `new RegExp('^abc$')`.<br />
-   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
-   *    start at the index of the last search's match, thus not taking the whole input value into
-   *    account.
+   *    If the expression evaluates to a RegExp object then this is used directly.
+   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
+   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    *
@@ -30798,13 +30496,9 @@ var inputType = {
    *    as in the ngPattern directive.
    * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
    *    a RegExp found by evaluating the Angular expression given in the attribute value.
-   *    If the expression evaluates to a RegExp object, then this is used directly.
-   *    If the expression evaluates to a string, then it will be converted to a RegExp
-   *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
-   *    `new RegExp('^abc$')`.<br />
-   *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
-   *    start at the index of the last search's match, thus not taking the whole input value into
-   *    account.
+   *    If the expression evaluates to a RegExp object then this is used directly.
+   *    If the expression is a string then it will be converted to a RegExp after wrapping it in `^` and `$`
+   *    characters. For instance, `"abc"` will be converted to `new RegExp('^abc$')`.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
    *
@@ -31426,15 +31120,9 @@ function checkboxInputType(scope, element, attr, ctrl, $sniffer, $browser, $filt
  * @param {number=} ngMaxlength Sets `maxlength` validation error key if the value is longer than
  *    maxlength. Setting the attribute to a negative or non-numeric value, allows view values of any
  *    length.
- * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
- *    a RegExp found by evaluating the Angular expression given in the attribute value.
- *    If the expression evaluates to a RegExp object, then this is used directly.
- *    If the expression evaluates to a string, then it will be converted to a RegExp
- *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
- *    `new RegExp('^abc$')`.<br />
- *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
- *    start at the index of the last search's match, thus not taking the whole input value into
- *    account.
+ * @param {string=} ngPattern Sets `pattern` validation error key if the value does not match the
+ *    RegExp pattern expression. Expected value is `/regexp/` for inline patterns or `regexp` for
+ *    patterns defined as scope expressions.
  * @param {string=} ngChange Angular expression to be executed when input changes due to user
  *    interaction with the input element.
  * @param {boolean=} [ngTrim=true] If set to false Angular will not automatically trim the input.
@@ -31465,15 +31153,9 @@ function checkboxInputType(scope, element, attr, ctrl, $sniffer, $browser, $filt
  * @param {number=} ngMaxlength Sets `maxlength` validation error key if the value is longer than
  *    maxlength. Setting the attribute to a negative or non-numeric value, allows view values of any
  *    length.
- * @param {string=} ngPattern Sets `pattern` validation error key if the ngModel value does not match
- *    a RegExp found by evaluating the Angular expression given in the attribute value.
- *    If the expression evaluates to a RegExp object, then this is used directly.
- *    If the expression evaluates to a string, then it will be converted to a RegExp
- *    after wrapping it in `^` and `$` characters. For instance, `"abc"` will be converted to
- *    `new RegExp('^abc$')`.<br />
- *    **Note:** Avoid using the `g` flag on the RegExp, as it will cause each successive search to
- *    start at the index of the last search's match, thus not taking the whole input value into
- *    account.
+ * @param {string=} ngPattern Sets `pattern` validation error key if the value does not match the
+ *    RegExp pattern expression. Expected value is `/regexp/` for inline patterns or `regexp` for
+ *    patterns defined as scope expressions.
  * @param {string=} ngChange Angular expression to be executed when input changes due to user
  *    interaction with the input element.
  * @param {boolean=} [ngTrim=true] If set to false Angular will not automatically trim the input.
@@ -31996,9 +31678,7 @@ function classDirective(name, selector) {
         }
 
         function digestClassCounts(classes, count) {
-          // Use createMap() to prevent class assumptions involving property
-          // names in Object.prototype
-          var classCounts = element.data('$classCounts') || createMap();
+          var classCounts = element.data('$classCounts') || {};
           var classesToUpdate = [];
           forEach(classes, function(className) {
             if (count > 0 || classCounts[className]) {
@@ -32119,7 +31799,7 @@ function classDirective(name, selector) {
  * @example Example that demonstrates basic bindings via ngClass directive.
    <example>
      <file name="index.html">
-       <p ng-class="{strike: deleted, bold: important, 'has-error': error}">Map Syntax Example</p>
+       <p ng-class="{strike: deleted, bold: important, red: error}">Map Syntax Example</p>
        <label>
           <input type="checkbox" ng-model="deleted">
           deleted (apply "strike" class)
@@ -32130,7 +31810,7 @@ function classDirective(name, selector) {
        </label><br>
        <label>
           <input type="checkbox" ng-model="error">
-          error (apply "has-error" class)
+          error (apply "red" class)
        </label>
        <hr>
        <p ng-class="style">Using String Syntax</p>
@@ -32159,10 +31839,6 @@ function classDirective(name, selector) {
        .red {
            color: red;
        }
-       .has-error {
-           color: red;
-           background-color: yellow;
-       }
        .orange {
            color: orange;
        }
@@ -32173,13 +31849,13 @@ function classDirective(name, selector) {
        it('should let you toggle the class', function() {
 
          expect(ps.first().getAttribute('class')).not.toMatch(/bold/);
-         expect(ps.first().getAttribute('class')).not.toMatch(/has-error/);
+         expect(ps.first().getAttribute('class')).not.toMatch(/red/);
 
          element(by.model('important')).click();
          expect(ps.first().getAttribute('class')).toMatch(/bold/);
 
          element(by.model('error')).click();
-         expect(ps.first().getAttribute('class')).toMatch(/has-error/);
+         expect(ps.first().getAttribute('class')).toMatch(/red/);
        });
 
        it('should let you toggle string example', function() {
@@ -32385,13 +32061,17 @@ var ngClassEvenDirective = classDirective('Even', 1);
  * document; alternatively, the css rule above must be included in the external stylesheet of the
  * application.
  *
+ * Legacy browsers, like IE7, do not provide attribute selector support (added in CSS 2.1) so they
+ * cannot match the `[ng\:cloak]` selector. To work around this limitation, you must add the css
+ * class `ng-cloak` in addition to the `ngCloak` directive as shown in the example below.
+ *
  * @element ANY
  *
  * @example
    <example>
      <file name="index.html">
         <div id="template1" ng-cloak>{{ 'hello' }}</div>
-        <div id="template2" class="ng-cloak">{{ 'world' }}</div>
+        <div id="template2" ng-cloak class="ng-cloak">{{ 'hello IE7' }}</div>
      </file>
      <file name="protractor.js" type="protractor">
        it('should remove the template directive and css class', function() {
@@ -34420,7 +34100,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    * If the validity changes to invalid, the model will be set to `undefined`,
    * unless {@link ngModelOptions `ngModelOptions.allowInvalid`} is `true`.
    * If the validity changes to valid, it will set the model to the last available valid
-   * `$modelValue`, i.e. either the last parsed value or the last value set from the scope.
+   * modelValue, i.e. either the last parsed value or the last value set from the scope.
    */
   this.$validate = function() {
     // ignore $validate before model is initialized
@@ -34912,11 +34592,10 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
            var _name = 'Brian';
            $scope.user = {
              name: function(newName) {
-              // Note that newName can be undefined for two reasons:
-              // 1. Because it is called as a getter and thus called with no arguments
-              // 2. Because the property should actually be set to undefined. This happens e.g. if the
-              //    input is invalid
-              return arguments.length ? (_name = newName) : _name;
+               if (angular.isDefined(newName)) {
+                 _name = newName;
+               }
+               return _name;
              }
            };
          }]);
@@ -35013,7 +34692,7 @@ var DEFAULT_REGEXP = /(\s+|^)default(\s+|$)/;
  *   - `debounce`: integer value which contains the debounce model update value in milliseconds. A
  *     value of 0 triggers an immediate update. If an object is supplied instead, you can specify a
  *     custom value for each event. For example:
- *     `ng-model-options="{ updateOn: 'default blur', debounce: { 'default': 500, 'blur': 0 } }"`
+ *     `ng-model-options="{ updateOn: 'default blur', debounce: {'default': 500, 'blur': 0} }"`
  *   - `allowInvalid`: boolean value which indicates that the model can be set with values that did
  *     not validate correctly instead of the default behavior of setting the model to undefined.
  *   - `getterSetter`: boolean value which determines whether or not to treat functions bound to
@@ -35130,11 +34809,7 @@ var DEFAULT_REGEXP = /(\s+|^)default(\s+|$)/;
           var _name = 'Brian';
           $scope.user = {
             name: function(newName) {
-              // Note that newName can be undefined for two reasons:
-              // 1. Because it is called as a getter and thus called with no arguments
-              // 2. Because the property should actually be set to undefined. This happens e.g. if the
-              //    input is invalid
-              return arguments.length ? (_name = newName) : _name;
+              return angular.isDefined(newName) ? (_name = newName) : _name;
             }
           };
         }]);
@@ -35263,9 +34938,7 @@ function addSetValidityMethod(context) {
 function isObjectEmpty(obj) {
   if (obj) {
     for (var prop in obj) {
-      if (obj.hasOwnProperty(prop)) {
-        return false;
-      }
+      return false;
     }
   }
   return true;
@@ -35336,21 +35009,11 @@ var ngOptionsMinErr = minErr('ngOptions');
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
- * ## Complex Models (objects or collections)
- *
- * **Note:** By default, `ngModel` watches the model by reference, not value. This is important when
- * binding any input directive to a model that is an object or a collection.
- *
- * Since this is a common situation for `ngOptions` the directive additionally watches the model using
- * `$watchCollection` when the select has the `multiple` attribute or when there is a `track by` clause in
- * the options expression. This allows ngOptions to trigger a re-rendering of the options even if the actual
- * object/collection has not changed identity but only a property on the object or an item in the collection
- * changes.
- *
- * Note that `$watchCollection` does a shallow comparison of the properties of the object (or the items in the collection
- * if the model is an array). This means that changing a property deeper inside the object/collection that the
- * first level will not trigger a re-rendering.
- *
+ * <div class="alert alert-warning">
+ * **Note:** By default, `ngModel` compares by reference, not value. This is important when binding to an
+ * array of objects. See an example [in this jsfiddle](http://jsfiddle.net/qWzTb/). When using `track by`
+ * in an `ngOptions` expression, however, deep equality checks will be performed.
+ * </div>
  *
  * ## `select` **`as`**
  *
@@ -35566,13 +35229,9 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
     // Get the value by which we are going to track the option
     // if we have a trackFn then use that (passing scope and locals)
     // otherwise just hash the given viewValue
-    var getTrackByValueFn = trackBy ?
-                              function(value, locals) { return trackByFn(scope, locals); } :
-                              function getHashOfValue(value) { return hashKey(value); };
-    var getTrackByValue = function(value, key) {
-      return getTrackByValueFn(value, getLocals(value, key));
-    };
-
+    var getTrackByValue = trackBy ?
+                              function(viewValue, locals) { return trackByFn(scope, locals); } :
+                              function getHashOfValue(viewValue) { return hashKey(viewValue); };
     var displayFn = $parse(match[2] || match[1]);
     var groupByFn = $parse(match[3] || '');
     var disableWhenFn = $parse(match[4] || '');
@@ -35599,7 +35258,6 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
     return {
       trackBy: trackBy,
-      getTrackByValue: getTrackByValue,
       getWatchables: $parse(valuesFn, function(values) {
         // Create a collection of things that we would like to watch (watchedArray)
         // so that they can all be watched using a single $watchCollection
@@ -35608,13 +35266,12 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         values = values || [];
 
         Object.keys(values).forEach(function getWatchable(key) {
-          if (key.charAt(0) === '$') return;
           var locals = getLocals(values[key], key);
-          var selectValue = getTrackByValueFn(values[key], locals);
+          var selectValue = getTrackByValue(values[key], locals);
           watchedArray.push(selectValue);
 
           // Only need to watch the displayFn if there is a specific label expression
-          if (match[2] || match[1]) {
+          if (match[2]) {
             var label = displayFn(scope, locals);
             watchedArray.push(label);
           }
@@ -35636,29 +35293,17 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // The option values were already computed in the `getWatchables` fn,
         // which must have been called to trigger `getOptions`
         var optionValues = valuesFn(scope) || [];
-        var optionValuesKeys;
 
+        var keys = Object.keys(optionValues);
+        keys.forEach(function getOption(key) {
 
-        if (!keyName && isArrayLike(optionValues)) {
-          optionValuesKeys = optionValues;
-        } else {
-          // if object, extract keys, in enumeration order, unsorted
-          optionValuesKeys = [];
-          for (var itemKey in optionValues) {
-            if (optionValues.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
-              optionValuesKeys.push(itemKey);
-            }
-          }
-        }
+          // Ignore "angular" properties that start with $ or $$
+          if (key.charAt(0) === '$') return;
 
-        var optionValuesLength = optionValuesKeys.length;
-
-        for (var index = 0; index < optionValuesLength; index++) {
-          var key = (optionValues === optionValuesKeys) ? index : optionValuesKeys[index];
           var value = optionValues[key];
           var locals = getLocals(value, key);
           var viewValue = viewValueFn(scope, locals);
-          var selectValue = getTrackByValueFn(viewValue, locals);
+          var selectValue = getTrackByValue(viewValue, locals);
           var label = displayFn(scope, locals);
           var group = groupByFn(scope, locals);
           var disabled = disableWhenFn(scope, locals);
@@ -35666,13 +35311,13 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
           optionItems.push(optionItem);
           selectValueMap[selectValue] = optionItem;
-        }
+        });
 
         return {
           items: optionItems,
           selectValueMap: selectValueMap,
           getOptionFromViewValue: function(value) {
-            return selectValueMap[getTrackByValue(value)];
+            return selectValueMap[getTrackByValue(value, getLocals(value))];
           },
           getViewValueFromOption: function(option) {
             // If the viewValue could be an object that may be mutated by the application,
@@ -35750,54 +35395,44 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       };
 
 
-      // Update the controller methods for multiple selectable options
-      if (!multiple) {
+      selectCtrl.writeValue = function writeNgOptionsValue(value) {
+        var option = options.getOptionFromViewValue(value);
 
-        selectCtrl.writeValue = function writeNgOptionsValue(value) {
-          var option = options.getOptionFromViewValue(value);
-
-          if (option && !option.disabled) {
-            if (selectElement[0].value !== option.selectValue) {
-              removeUnknownOption();
-              removeEmptyOption();
-
-              selectElement[0].value = option.selectValue;
-              option.element.selected = true;
-              option.element.setAttribute('selected', 'selected');
-            }
-          } else {
-            if (value === null || providedEmptyOption) {
-              removeUnknownOption();
-              renderEmptyOption();
-            } else {
-              removeEmptyOption();
-              renderUnknownOption();
-            }
-          }
-        };
-
-        selectCtrl.readValue = function readNgOptionsValue() {
-
-          var selectedOption = options.selectValueMap[selectElement.val()];
-
-          if (selectedOption && !selectedOption.disabled) {
-            removeEmptyOption();
+        if (option && !option.disabled) {
+          if (selectElement[0].value !== option.selectValue) {
             removeUnknownOption();
-            return options.getViewValueFromOption(selectedOption);
+            removeEmptyOption();
+
+            selectElement[0].value = option.selectValue;
+            option.element.selected = true;
+            option.element.setAttribute('selected', 'selected');
           }
-          return null;
-        };
-
-        // If we are using `track by` then we must watch the tracked value on the model
-        // since ngModel only watches for object identity change
-        if (ngOptions.trackBy) {
-          scope.$watch(
-            function() { return ngOptions.getTrackByValue(ngModelCtrl.$viewValue); },
-            function() { ngModelCtrl.$render(); }
-          );
+        } else {
+          if (value === null || providedEmptyOption) {
+            removeUnknownOption();
+            renderEmptyOption();
+          } else {
+            removeEmptyOption();
+            renderUnknownOption();
+          }
         }
+      };
 
-      } else {
+      selectCtrl.readValue = function readNgOptionsValue() {
+
+        var selectedOption = options.selectValueMap[selectElement.val()];
+
+        if (selectedOption && !selectedOption.disabled) {
+          removeEmptyOption();
+          removeUnknownOption();
+          return options.getViewValueFromOption(selectedOption);
+        }
+        return null;
+      };
+
+
+      // Update the controller methods for multiple selectable options
+      if (multiple) {
 
         ngModelCtrl.$isEmpty = function(value) {
           return !value || value.length === 0;
@@ -35829,22 +35464,6 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
           return selections;
         };
-
-        // If we are using `track by` then we must watch these tracked values on the model
-        // since ngModel only watches for object identity change
-        if (ngOptions.trackBy) {
-
-          scope.$watchCollection(function() {
-            if (isArray(ngModelCtrl.$viewValue)) {
-              return ngModelCtrl.$viewValue.map(function(value) {
-                return ngOptions.getTrackByValue(value);
-              });
-            }
-          }, function() {
-            ngModelCtrl.$render();
-          });
-
-        }
       }
 
 
@@ -35871,6 +35490,11 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       // We will re-render the option elements if the option values or labels change
       scope.$watchCollection(ngOptions.getWatchables, updateOptions);
 
+      // We also need to watch to see if the internals of the model changes, since
+      // ngModel only watches for object identity change
+      if (ngOptions.trackBy) {
+        scope.$watch(attr.ngModel, function() { ngModelCtrl.$render(); }, true);
+      }
       // ------------------------------------------------------------------ //
 
 
@@ -36012,7 +35636,8 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // Check to see if the value has changed due to the update to the options
         if (!ngModelCtrl.$isEmpty(previousValue)) {
           var nextValue = selectCtrl.readValue();
-          if (ngOptions.trackBy ? !equals(previousValue, nextValue) : previousValue !== nextValue) {
+          if (ngOptions.trackBy && !equals(previousValue, nextValue) ||
+                previousValue !== nextValue) {
             ngModelCtrl.$setViewValue(nextValue);
             ngModelCtrl.$render();
           }
@@ -36360,15 +35985,6 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *    </div>
  * ```
  *
- * <div class="alert alert-warning">
- * **Note:** `track by` must always be the last expression:
- * </div>
- * ```
- * <div ng-repeat="model in collection | orderBy: 'id' as filtered_result track by model.id">
- *     {{model.name}}
- * </div>
- * ```
- *
  * # Special repeat start and end points
  * To repeat a series of elements instead of just one parent element, ngRepeat (as well as other ng directives) supports extending
  * the range of the repeater by defining explicit start and end points by using **ng-repeat-start** and **ng-repeat-end** respectively.
@@ -36440,9 +36056,8 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  *     which can be used to associate the objects in the collection with the DOM elements. If no tracking expression
  *     is specified, ng-repeat associates elements by identity. It is an error to have
  *     more than one tracking expression value resolve to the same key. (This would mean that two distinct objects are
- *     mapped to the same DOM element, which is not possible.)
- *
- *     Note that the tracking expression must come last, after any filters, and the alias expression.
+ *     mapped to the same DOM element, which is not possible.)  If filters are used in the expression, they should be
+ *     applied before the tracking expression.
  *
  *     For example: `item in items` is equivalent to `item in items track by $id(item)`. This implies that the DOM elements
  *     will be associated by item identity in the array.
@@ -37223,7 +36838,7 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
  *
  * @scope
  * @priority 1200
- * @param {*} ngSwitch|on expression to match against <code>ng-switch-when</code>.
+ * @param {*} ngSwitch|on expression to match against <tt>ng-switch-when</tt>.
  * On child elements add:
  *
  * * `ngSwitchWhen`: the case statement to match against. If match then this
@@ -37240,7 +36855,7 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
       <div ng-controller="ExampleController">
         <select ng-model="selection" ng-options="item for item in items">
         </select>
-        <code>selection={{selection}}</code>
+        <tt>selection={{selection}}</tt>
         <hr/>
         <div class="animate-switch-container"
           ng-switch on="selection">
@@ -37563,7 +37178,7 @@ var SelectController =
       $element.val(value);
       if (value === '') self.emptyOption.prop('selected', true); // to make IE9 happy
     } else {
-      if (value == null && self.emptyOption) {
+      if (isUndefined(value) && self.emptyOption) {
         self.removeUnknownOption();
         $element.val('');
       } else {
@@ -37616,7 +37231,9 @@ var SelectController =
  * ngOptions} to achieve a similar result. However, `ngOptions` provides some benefits such as reducing
  * memory and increasing speed by not creating a new scope for each repeated instance, as well as providing
  * more flexibility in how the `<select>`'s model is assigned via the `select` **`as`** part of the
- * comprehension expression.
+ * comprehension expression. `ngOptions` should be used when the `<select>` model needs to be bound
+ * to a non-string value. This is because an option element can only be bound to string values at
+ * present.
  *
  * When an item in the `<select>` menu is selected, the array element or object property
  * represented by the selected option will be bound to the model identified by the `ngModel`
@@ -37629,50 +37246,11 @@ var SelectController =
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
- * <div class="alert alert-info">
- * The value of a `select` directive used without `ngOptions` is always a string.
- * When the model needs to be bound to a non-string value, you must either explictly convert it
- * using a directive (see example below) or use `ngOptions` to specify the set of options.
- * This is because an option element can only be bound to string values at present.
+ * <div class="alert alert-warning">
+ * **Note:** By default, `ngModel` compares by reference, not value. This is important when binding to an
+ * array of objects. See an example [in this jsfiddle](http://jsfiddle.net/qWzTb/). When using `track by`
+ * in an `ngOptions` expression, however, deep equality checks will be performed.
  * </div>
- *
- * ### Example (binding `select` to a non-string value)
- *
- * <example name="select-with-non-string-options" module="nonStringSelect">
- *   <file name="index.html">
- *     <select ng-model="model.id" convert-to-number>
- *       <option value="0">Zero</option>
- *       <option value="1">One</option>
- *       <option value="2">Two</option>
- *     </select>
- *     {{ model }}
- *   </file>
- *   <file name="app.js">
- *     angular.module('nonStringSelect', [])
- *       .run(function($rootScope) {
- *         $rootScope.model = { id: 2 };
- *       })
- *       .directive('convertToNumber', function() {
- *         return {
- *           require: 'ngModel',
- *           link: function(scope, element, attrs, ngModel) {
- *             ngModel.$parsers.push(function(val) {
- *               return parseInt(val, 10);
- *             });
- *             ngModel.$formatters.push(function(val) {
- *               return '' + val;
- *             });
- *           }
- *         };
- *       });
- *   </file>
- *   <file name="protractor.js" type="protractor">
- *     it('should initialize to model', function() {
- *       var select = element(by.css('select'));
- *       expect(element(by.model('model.id')).$('option:checked').getText()).toEqual('Two');
- *     });
- *   </file>
- * </example>
  *
  */
 var selectDirective = function() {
@@ -37935,7 +37513,7 @@ var minlengthDirective = function() {
 
 })(window, document);
 
-!window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
+!window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-animate-anchor{position:absolute;}</style>');
 define("angular", ["jquery"], (function (global) {
     return function () {
         var ret, fn;
@@ -38182,7 +37760,7 @@ angular.module('ui.router.util', ['ng']);
 /**
  * @ngdoc overview
  * @name ui.router.router
- *
+ * 
  * @requires ui.router.util
  *
  * @description
@@ -38196,7 +37774,7 @@ angular.module('ui.router.router', ['ui.router.util']);
 /**
  * @ngdoc overview
  * @name ui.router.state
- *
+ * 
  * @requires ui.router.router
  * @requires ui.router.util
  *
@@ -38205,7 +37783,7 @@ angular.module('ui.router.router', ['ui.router.util']);
  *
  * This module is a dependency of the main ui.router module. Do not include this module as a dependency
  * in your angular app (use {@link ui.router} module instead).
- *
+ * 
  */
 angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
 
@@ -38217,17 +37795,17 @@ angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
  *
  * @description
  * # ui.router
- *
- * ## The main module for ui.router
+ * 
+ * ## The main module for ui.router 
  * There are several sub-modules included with the ui.router module, however only this module is needed
- * as a dependency within your angular app. The other modules are for organization purposes.
+ * as a dependency within your angular app. The other modules are for organization purposes. 
  *
  * The modules are:
  * * ui.router - the main "umbrella" module
- * * ui.router.router -
- *
+ * * ui.router.router - 
+ * 
  * *You'll need to include **only** this module as the dependency within your angular app.*
- *
+ * 
  * <pre>
  * <!doctype html>
  * <html ng-app="myApp">
@@ -38261,14 +37839,14 @@ angular.module('ui.router.compat', ['ui.router']);
  */
 $Resolve.$inject = ['$q', '$injector'];
 function $Resolve(  $q,    $injector) {
-
+  
   var VISIT_IN_PROGRESS = 1,
       VISIT_DONE = 2,
       NOTHING = {},
       NO_DEPENDENCIES = [],
       NO_LOCALS = NOTHING,
       NO_PARENT = extend($q.when(NOTHING), { $$promises: NOTHING, $$values: NOTHING });
-
+  
 
   /**
    * @ngdoc function
@@ -38284,7 +37862,7 @@ function $Resolve(  $q,    $injector) {
    * <pre>
    * $resolve.resolve(invocables, locals, parent, self)
    * </pre>
-   * but the former is more efficient (in fact `resolve` just calls `study`
+   * but the former is more efficient (in fact `resolve` just calls `study` 
    * internally).
    *
    * @param {object} invocables Invocable objects
@@ -38293,19 +37871,19 @@ function $Resolve(  $q,    $injector) {
   this.study = function (invocables) {
     if (!isObject(invocables)) throw new Error("'invocables' must be an object");
     var invocableKeys = objectKeys(invocables || {});
-
+    
     // Perform a topological sort of invocables to build an ordered plan
     var plan = [], cycle = [], visited = {};
     function visit(value, key) {
       if (visited[key] === VISIT_DONE) return;
-
+      
       cycle.push(key);
       if (visited[key] === VISIT_IN_PROGRESS) {
         cycle.splice(0, indexOf(cycle, key));
         throw new Error("Cyclic dependency: " + cycle.join(" -> "));
       }
       visited[key] = VISIT_IN_PROGRESS;
-
+      
       if (isString(value)) {
         plan.push(key, [ function() { return $injector.get(value); }], NO_DEPENDENCIES);
       } else {
@@ -38315,17 +37893,17 @@ function $Resolve(  $q,    $injector) {
         });
         plan.push(key, value, params);
       }
-
+      
       cycle.pop();
       visited[key] = VISIT_DONE;
     }
     forEach(invocables, visit);
     invocables = cycle = visited = null; // plan is all that's required
-
+    
     function isResolve(value) {
       return isObject(value) && value.then && value.$$promises;
     }
-
+    
     return function (locals, parent, self) {
       if (isResolve(locals) && self === undefined) {
         self = parent; parent = locals; locals = null;
@@ -38333,12 +37911,12 @@ function $Resolve(  $q,    $injector) {
       if (!locals) locals = NO_LOCALS;
       else if (!isObject(locals)) {
         throw new Error("'locals' must be an object");
-      }
+      }       
       if (!parent) parent = NO_PARENT;
       else if (!isResolve(parent)) {
         throw new Error("'parent' must be a promise returned by $resolve.resolve()");
       }
-
+      
       // To complete the overall resolution, we have to wait for the parent
       // promise and for the promise for each invokable in our plan.
       var resolution = $q.defer(),
@@ -38347,18 +37925,18 @@ function $Resolve(  $q,    $injector) {
           values = extend({}, locals),
           wait = 1 + plan.length/3,
           merged = false;
-
+          
       function done() {
         // Merge parent values we haven't got yet and publish our own $$values
         if (!--wait) {
-          if (!merged) merge(values, parent.$$values);
+          if (!merged) merge(values, parent.$$values); 
           result.$$values = values;
           result.$$promises = result.$$promises || true; // keep for isResolve()
           delete result.$$inheritedValues;
           resolution.resolve(values);
         }
       }
-
+      
       function fail(reason) {
         result.$$failure = reason;
         resolution.reject(reason);
@@ -38369,7 +37947,7 @@ function $Resolve(  $q,    $injector) {
         fail(parent.$$failure);
         return result;
       }
-
+      
       if (parent.$$inheritedValues) {
         merge(values, omit(parent.$$inheritedValues, invocableKeys));
       }
@@ -38384,16 +37962,16 @@ function $Resolve(  $q,    $injector) {
       } else {
         if (parent.$$inheritedValues) {
           result.$$inheritedValues = omit(parent.$$inheritedValues, invocableKeys);
-        }
+        }        
         parent.then(done, fail);
       }
-
+      
       // Process each invocable in the plan, but ignore any where a local of the same name exists.
       for (var i=0, ii=plan.length; i<ii; i+=3) {
         if (locals.hasOwnProperty(plan[i])) done();
         else invoke(plan[i], plan[i+1], plan[i+2]);
       }
-
+      
       function invoke(key, invocable, params) {
         // Create a deferred for this invocation. Failures will propagate to the resolution as well.
         var invocation = $q.defer(), waitParams = 0;
@@ -38428,65 +38006,65 @@ function $Resolve(  $q,    $injector) {
         // Publish promise synchronously; invocations further down in the plan may depend on it.
         promises[key] = invocation.promise;
       }
-
+      
       return result;
     };
   };
-
+  
   /**
    * @ngdoc function
    * @name ui.router.util.$resolve#resolve
    * @methodOf ui.router.util.$resolve
    *
    * @description
-   * Resolves a set of invocables. An invocable is a function to be invoked via
-   * `$injector.invoke()`, and can have an arbitrary number of dependencies.
+   * Resolves a set of invocables. An invocable is a function to be invoked via 
+   * `$injector.invoke()`, and can have an arbitrary number of dependencies. 
    * An invocable can either return a value directly,
-   * or a `$q` promise. If a promise is returned it will be resolved and the
-   * resulting value will be used instead. Dependencies of invocables are resolved
+   * or a `$q` promise. If a promise is returned it will be resolved and the 
+   * resulting value will be used instead. Dependencies of invocables are resolved 
    * (in this order of precedence)
    *
    * - from the specified `locals`
    * - from another invocable that is part of this `$resolve` call
-   * - from an invocable that is inherited from a `parent` call to `$resolve`
+   * - from an invocable that is inherited from a `parent` call to `$resolve` 
    *   (or recursively
    * - from any ancestor `$resolve` of that parent).
    *
-   * The return value of `$resolve` is a promise for an object that contains
+   * The return value of `$resolve` is a promise for an object that contains 
    * (in this order of precedence)
    *
    * - any `locals` (if specified)
    * - the resolved return values of all injectables
    * - any values inherited from a `parent` call to `$resolve` (if specified)
    *
-   * The promise will resolve after the `parent` promise (if any) and all promises
-   * returned by injectables have been resolved. If any invocable
-   * (or `$injector.invoke`) throws an exception, or if a promise returned by an
-   * invocable is rejected, the `$resolve` promise is immediately rejected with the
-   * same error. A rejection of a `parent` promise (if specified) will likewise be
-   * propagated immediately. Once the `$resolve` promise has been rejected, no
+   * The promise will resolve after the `parent` promise (if any) and all promises 
+   * returned by injectables have been resolved. If any invocable 
+   * (or `$injector.invoke`) throws an exception, or if a promise returned by an 
+   * invocable is rejected, the `$resolve` promise is immediately rejected with the 
+   * same error. A rejection of a `parent` promise (if specified) will likewise be 
+   * propagated immediately. Once the `$resolve` promise has been rejected, no 
    * further invocables will be called.
-   *
+   * 
    * Cyclic dependencies between invocables are not permitted and will caues `$resolve`
-   * to throw an error. As a special case, an injectable can depend on a parameter
-   * with the same name as the injectable, which will be fulfilled from the `parent`
-   * injectable of the same name. This allows inherited values to be decorated.
+   * to throw an error. As a special case, an injectable can depend on a parameter 
+   * with the same name as the injectable, which will be fulfilled from the `parent` 
+   * injectable of the same name. This allows inherited values to be decorated. 
    * Note that in this case any other injectable in the same `$resolve` with the same
    * dependency would see the decorated value, not the inherited value.
    *
-   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an
-   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous)
+   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an 
+   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous) 
    * exception.
    *
-   * Invocables are invoked eagerly as soon as all dependencies are available.
+   * Invocables are invoked eagerly as soon as all dependencies are available. 
    * This is true even for dependencies inherited from a `parent` call to `$resolve`.
    *
-   * As a special case, an invocable can be a string, in which case it is taken to
-   * be a service name to be passed to `$injector.get()`. This is supported primarily
-   * for backwards-compatibility with the `resolve` property of `$routeProvider`
+   * As a special case, an invocable can be a string, in which case it is taken to 
+   * be a service name to be passed to `$injector.get()`. This is supported primarily 
+   * for backwards-compatibility with the `resolve` property of `$routeProvider` 
    * routes.
    *
-   * @param {object} invocables functions to invoke or
+   * @param {object} invocables functions to invoke or 
    * `$injector` services to fetch.
    * @param {object} locals  values to make available to the injectables
    * @param {object} parent  a promise returned by another call to `$resolve`.
@@ -38522,23 +38100,23 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @methodOf ui.router.util.$templateFactory
    *
    * @description
-   * Creates a template from a configuration object.
+   * Creates a template from a configuration object. 
    *
-   * @param {object} config Configuration object for which to load a template.
-   * The following properties are search in the specified order, and the first one
+   * @param {object} config Configuration object for which to load a template. 
+   * The following properties are search in the specified order, and the first one 
    * that is defined is used to create the template:
    *
-   * @param {string|object} config.template html string template or function to
+   * @param {string|object} config.template html string template or function to 
    * load via {@link ui.router.util.$templateFactory#fromString fromString}.
-   * @param {string|object} config.templateUrl url to load or a function returning
+   * @param {string|object} config.templateUrl url to load or a function returning 
    * the url to load via {@link ui.router.util.$templateFactory#fromUrl fromUrl}.
-   * @param {Function} config.templateProvider function to invoke via
+   * @param {Function} config.templateProvider function to invoke via 
    * {@link ui.router.util.$templateFactory#fromProvider fromProvider}.
    * @param {object} params  Parameters to pass to the template function.
-   * @param {object} locals Locals to pass to `invoke` if the template is loaded
+   * @param {object} locals Locals to pass to `invoke` if the template is loaded 
    * via a `templateProvider`. Defaults to `{ params: params }`.
    *
-   * @return {string|object}  The template html as a string, or a promise for
+   * @return {string|object}  The template html as a string, or a promise for 
    * that string,or `null` if no template is configured.
    */
   this.fromConfig = function (config, params, locals) {
@@ -38558,11 +38136,11 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @description
    * Creates a template from a string or a function returning a string.
    *
-   * @param {string|object} template html template as a string or function that
+   * @param {string|object} template html template as a string or function that 
    * returns an html template as a string.
    * @param {object} params Parameters to pass to the template function.
    *
-   * @return {string|object} The template html as a string, or a promise for that
+   * @return {string|object} The template html as a string, or a promise for that 
    * string.
    */
   this.fromString = function (template, params) {
@@ -38573,14 +38151,14 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @ngdoc function
    * @name ui.router.util.$templateFactory#fromUrl
    * @methodOf ui.router.util.$templateFactory
-   *
+   * 
    * @description
    * Loads a template from the a URL via `$http` and `$templateCache`.
    *
-   * @param {string|Function} url url of the template to load, or a function
+   * @param {string|Function} url url of the template to load, or a function 
    * that returns a url.
    * @param {Object} params Parameters to pass to the url function.
-   * @return {string|Promise.<string>} The template html as a string, or a promise
+   * @return {string|Promise.<string>} The template html as a string, or a promise 
    * for that string.
    */
   this.fromUrl = function (url, params) {
@@ -38601,9 +38179,9 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    *
    * @param {Function} provider Function to invoke via `$injector.invoke`
    * @param {Object} params Parameters for the template.
-   * @param {Object} locals Locals to pass to `invoke`. Defaults to
+   * @param {Object} locals Locals to pass to `invoke`. Defaults to 
    * `{ params: params }`.
-   * @return {string|Promise.<string>} The template html as a string, or a promise
+   * @return {string|Promise.<string>} The template html as a string, or a promise 
    * for that string.
    */
   this.fromProvider = function (provider, params, locals) {
@@ -39672,9 +39250,9 @@ angular.module('ui.router.util').run(['$urlMatcherFactory', function($urlMatcher
  * @requires $locationProvider
  *
  * @description
- * `$urlRouterProvider` has the responsibility of watching `$location`.
- * When `$location` changes it runs through a list of rules one by one until a
- * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify
+ * `$urlRouterProvider` has the responsibility of watching `$location`. 
+ * When `$location` changes it runs through a list of rules one by one until a 
+ * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify 
  * a url in a state configuration. All urls are compiled into a UrlMatcher object.
  *
  * There are several methods on `$urlRouterProvider` that make it useful to use directly
@@ -39759,8 +39337,8 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
    * });
    * </pre>
    *
-   * @param {string|object} rule The url path you want to redirect to or a function
-   * rule that returns the url path. The function version is passed two params:
+   * @param {string|object} rule The url path you want to redirect to or a function 
+   * rule that returns the url path. The function version is passed two params: 
    * `$injector` and `$location` services, and must return a url string.
    *
    * @return {object} `$urlRouterProvider` - `$urlRouterProvider` instance
@@ -40062,7 +39640,7 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
         if (angular.isObject(isHtml5)) {
           isHtml5 = isHtml5.enabled;
         }
-
+        
         var url = urlMatcher.format(params);
         options = options || {};
 
@@ -40216,7 +39794,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
     if (path) {
       if (!base) throw new Error("No reference point given for path '"  + name + "'");
       base = findState(base);
-
+      
       var rel = name.split("."), i = 0, pathLength = rel.length, current = base;
 
       for (; i < pathLength; i++) {
@@ -40351,9 +39929,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @methodOf ui.router.state.$stateProvider
    *
    * @description
-   * Allows you to extend (carefully) or override (at your own peril) the
-   * `stateBuilder` object used internally by `$stateProvider`. This can be used
-   * to add custom functionality to ui-router, for example inferring templateUrl
+   * Allows you to extend (carefully) or override (at your own peril) the 
+   * `stateBuilder` object used internally by `$stateProvider`. This can be used 
+   * to add custom functionality to ui-router, for example inferring templateUrl 
    * based on the state name.
    *
    * When passing only a name, it returns the current (original or decorated) builder
@@ -40362,14 +39940,14 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * The builder functions that can be decorated are listed below. Though not all
    * necessarily have a good use case for decoration, that is up to you to decide.
    *
-   * In addition, users can attach custom decorators, which will generate new
-   * properties within the state's internal definition. There is currently no clear
-   * use-case for this beyond accessing internal states (i.e. $state.$current),
-   * however, expect this to become increasingly relevant as we introduce additional
+   * In addition, users can attach custom decorators, which will generate new 
+   * properties within the state's internal definition. There is currently no clear 
+   * use-case for this beyond accessing internal states (i.e. $state.$current), 
+   * however, expect this to become increasingly relevant as we introduce additional 
    * meta-programming features.
    *
-   * **Warning**: Decorators should not be interdependent because the order of
-   * execution of the builder functions in non-deterministic. Builder functions
+   * **Warning**: Decorators should not be interdependent because the order of 
+   * execution of the builder functions in non-deterministic. Builder functions 
    * should only be dependent on the state definition object and super function.
    *
    *
@@ -40380,21 +39958,21 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *   overridden by own values (if any).
    * - **url** `{object}` - returns a {@link ui.router.util.type:UrlMatcher UrlMatcher}
    *   or `null`.
-   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is
+   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is 
    *   navigable).
-   * - **params** `{object}` - returns an array of state params that are ensured to
+   * - **params** `{object}` - returns an array of state params that are ensured to 
    *   be a super-set of parent's params.
-   * - **views** `{object}` - returns a views object where each key is an absolute view
-   *   name (i.e. "viewName@stateName") and each value is the config object
-   *   (template, controller) for the view. Even when you don't use the views object
+   * - **views** `{object}` - returns a views object where each key is an absolute view 
+   *   name (i.e. "viewName@stateName") and each value is the config object 
+   *   (template, controller) for the view. Even when you don't use the views object 
    *   explicitly on a state config, one is still created for you internally.
-   *   So by decorating this builder function you have access to decorating template
+   *   So by decorating this builder function you have access to decorating template 
    *   and controller properties.
-   * - **ownParams** `{object}` - returns an array of params that belong to the state,
+   * - **ownParams** `{object}` - returns an array of params that belong to the state, 
    *   not including any params defined by ancestor states.
-   * - **path** `{string}` - returns the full path from the root down to this state.
+   * - **path** `{string}` - returns the full path from the root down to this state. 
    *   Needed for state activation.
-   * - **includes** `{object}` - returns an object that includes every state that
+   * - **includes** `{object}` - returns an object that includes every state that 
    *   would pass a `$state.includes()` test.
    *
    * @example
@@ -40423,12 +40001,12 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * // ...
    *
    * $state.go('home');
-   * // Auto-populates list and item views with /partials/home/contact/placementsList.html,
+   * // Auto-populates list and item views with /partials/home/contact/list.html,
    * // and /partials/home/contact/item.html, respectively.
    * </pre>
    *
-   * @param {string} name The name of the builder function to decorate.
-   * @param {object} func A function that is responsible for decorating the original
+   * @param {string} name The name of the builder function to decorate. 
+   * @param {object} func A function that is responsible for decorating the original 
    * builder function. The function receives two parameters:
    *
    *   - `{object}` - state - The state config object.
@@ -40467,9 +40045,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @param {string|function=} stateConfig.template
    * <a id='template'></a>
    *   html template as a string or a function that returns
-   *   an html template as a string which should be used by the uiView directives. This property
+   *   an html template as a string which should be used by the uiView directives. This property 
    *   takes precedence over templateUrl.
-   *
+   *   
    *   If `template` is a function, it will be called with the following parameters:
    *
    *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
@@ -40487,10 +40065,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *
    *   path or function that returns a path to an html
    *   template that should be used by uiView.
-   *
+   *   
    *   If `templateUrl` is a function, it will be called with the following parameters:
    *
-   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
+   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by 
    *     applying the current state
    *
    * <pre>templateUrl: "home.html"</pre>
@@ -40534,7 +40112,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *
    * @param {string=} stateConfig.controllerAs
    * <a id='controllerAs'></a>
-   *
+   * 
    * A controller alias name. If present the controller will be
    *   published to scope under the controllerAs name.
    * <pre>controllerAs: "myCtrl"</pre>
@@ -40550,17 +40128,17 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='resolve'></a>
    *
    * An optional map&lt;string, function&gt; of dependencies which
-   *   should be injected into the controller. If any of these dependencies are promises,
+   *   should be injected into the controller. If any of these dependencies are promises, 
    *   the router will wait for them all to be resolved before the controller is instantiated.
    *   If all the promises are resolved successfully, the $stateChangeSuccess event is fired
    *   and the values of the resolved promises are injected into any controllers that reference them.
    *   If any  of the promises are rejected the $stateChangeError event is fired.
    *
    *   The map object is:
-   *
+   *   
    *   - key - {string}: name of dependency to be injected into controller
-   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function,
-   *     it is injected and return value it treated as dependency. If result is a promise, it is
+   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function, 
+   *     it is injected and return value it treated as dependency. If result is a promise, it is 
    *     resolved before its value is injected into controller.
    *
    * <pre>resolve: {
@@ -40574,7 +40152,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='url'></a>
    *
    *   A url fragment with optional parameters. When a state is navigated or
-   *   transitioned to, the `$stateParams` service will be populated with any
+   *   transitioned to, the `$stateParams` service will be populated with any 
    *   parameters that were passed.
    *
    *   (See {@link ui.router.util.type:UrlMatcher UrlMatcher} `UrlMatcher`} for
@@ -40602,7 +40180,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <pre>views: {
    *     header: {
    *       controller: "headerCtrl",
-   *       templateUrl: "placementTableHeader.html"
+   *       templateUrl: "header.html"
    *     }, body: {
    *       controller: "bodyCtrl",
    *       templateUrl: "body.html"
@@ -40657,7 +40235,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='reloadOnSearch'></a>
    *
    * If `false`, will not retrigger the same state
-   *   just because a search/query parameter has changed (via $location.search() or $location.hash()).
+   *   just because a search/query parameter has changed (via $location.search() or $location.hash()). 
    *   Useful for when you'd like to modify $location.search() without triggering a reload.
    * <pre>reloadOnSearch: false</pre>
    *
@@ -40792,11 +40370,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @requires ui.router.state.$stateParams
    * @requires ui.router.router.$urlRouter
    *
-   * @property {object} params A param object, e.g. {sectionId: section.id)}, that
+   * @property {object} params A param object, e.g. {sectionId: section.id)}, that 
    * you'd like to test against the current active state.
-   * @property {object} current A reference to the state's config object. However
+   * @property {object} current A reference to the state's config object. However 
    * you passed it in. Useful for accessing custom data.
-   * @property {object} transition Currently pending transition. A promise that'll
+   * @property {object} transition Currently pending transition. A promise that'll 
    * resolve or reject.
    *
    * @description
@@ -40909,7 +40487,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *
      * `reload()` is just an alias for:
      * <pre>
-     * $state.transitionTo($state.current, $stateParams, {
+     * $state.transitionTo($state.current, $stateParams, { 
      *   reload: true, inherit: false, notify: true
      * });
      * </pre>
@@ -40917,7 +40495,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @param {string=|object=} state - A state name or a state object, which is the root of the resolves to be re-resolved.
      * @example
      * <pre>
-     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item'
+     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item' 
      * //and current state is 'contacts.detail.item'
      * var app angular.module('app', ['ui.router']);
      *
@@ -40931,7 +40509,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *
      * `reload()` is just an alias for:
      * <pre>
-     * $state.transitionTo($state.current, $stateParams, {
+     * $state.transitionTo($state.current, $stateParams, { 
      *   reload: true, inherit: false, notify: true
      * });
      * </pre>
@@ -40949,11 +40527,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @methodOf ui.router.state.$state
      *
      * @description
-     * Convenience method for transitioning to a new state. `$state.go` calls
-     * `$state.transitionTo` internally but automatically sets options to
-     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`.
-     * This allows you to easily use an absolute or relative to path and specify
-     * only the parameters you'd like to update (while letting unspecified parameters
+     * Convenience method for transitioning to a new state. `$state.go` calls 
+     * `$state.transitionTo` internally but automatically sets options to 
+     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`. 
+     * This allows you to easily use an absolute or relative to path and specify 
+     * only the parameters you'd like to update (while letting unspecified parameters 
      * inherit from the currently active ancestor states).
      *
      * @example
@@ -40975,8 +40553,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - `$state.go('^.sibling')` - will go to a sibling state
      * - `$state.go('.child.grandchild')` - will go to grandchild state
      *
-     * @param {object=} params A map of the parameters that will be sent to the state,
-     * will populate $stateParams. Any parameters that are not specified will be inherited from currently
+     * @param {object=} params A map of the parameters that will be sent to the state, 
+     * will populate $stateParams. Any parameters that are not specified will be inherited from currently 
      * defined parameters. This allows, for example, going to a sibling state that shares parameters
      * specified in a parent state. Parameter inheritance only works between common ancestor states, I.e.
      * transitioning to a sibling will get you the parameters for all parents, transitioning to a child
@@ -40986,10 +40564,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
      *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
      * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'),
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params
+     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params 
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
      *
@@ -41041,10 +40619,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
      *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
      * - **`inherit`** - {boolean=false}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'),
+     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'), 
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params
+     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params 
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
      *    if String, then will reload the state with the name given in reload, and any children.
@@ -41107,7 +40685,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
         if (isObject(options.reload) && !options.reload.name) {
           throw new Error('Invalid reload state object');
         }
-
+        
         var reloadState = options.reload === true ? fromPath[0] : findState(options.reload);
         if (options.reload && !reloadState) {
           throw new Error("No such reload state '" + (isString(options.reload) ? options.reload : options.reload.name) + "'");
@@ -41423,10 +41001,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *    first parameter, then the constructed href url will be built from the first navigable ancestor (aka
      *    ancestor with a valid url).
      * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'),
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
      *    defines which state to be relative from.
      * - **`absolute`** - {boolean=false},  If true will generate an absolute url, e.g. "http://www.example.com/fullurl".
-     *
+     * 
      * @returns {string} compiled state url
      */
     $state.href = function href(stateOrName, params, options) {
@@ -41441,7 +41019,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
 
       if (!isDefined(state)) return null;
       if (options.inherit) params = inheritParams($stateParams, params || {}, $state.$current, state);
-
+      
       var nav = (state && options.lossy) ? state.navigable : state;
 
       if (!nav || nav.url === undefined || nav.url === null) {
@@ -41711,26 +41289,26 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  * functionality, call `$uiViewScrollProvider.useAnchorScroll()`.*
  *
  * @param {string=} onload Expression to evaluate whenever the view updates.
- *
+ * 
  * @example
- * A view can be unnamed or named.
+ * A view can be unnamed or named. 
  * <pre>
  * <!-- Unnamed -->
- * <div ui-view></div>
- *
+ * <div ui-view></div> 
+ * 
  * <!-- Named -->
  * <div ui-view="viewName"></div>
  * </pre>
  *
- * You can only have one unnamed view within any template (or root html). If you are only using a
+ * You can only have one unnamed view within any template (or root html). If you are only using a 
  * single view and it is unnamed then you can populate it like so:
  * <pre>
- * <div ui-view></div>
+ * <div ui-view></div> 
  * $stateProvider.state("home", {
  *   template: "<h1>HELLO!</h1>"
  * })
  * </pre>
- *
+ * 
  * The above is a convenient shortcut equivalent to specifying your view explicitly with the {@link ui.router.state.$stateProvider#views `views`}
  * config property, by name, in this case an empty name:
  * <pre>
@@ -41739,33 +41317,33 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  *     "": {
  *       template: "<h1>HELLO!</h1>"
  *     }
- *   }
+ *   }    
  * })
  * </pre>
- *
- * But typically you'll only use the views property if you name your view or have more than one view
- * in the same template. There's not really a compelling reason to name a view if its the only one,
+ * 
+ * But typically you'll only use the views property if you name your view or have more than one view 
+ * in the same template. There's not really a compelling reason to name a view if its the only one, 
  * but you could if you wanted, like so:
  * <pre>
  * <div ui-view="main"></div>
- * </pre>
+ * </pre> 
  * <pre>
  * $stateProvider.state("home", {
  *   views: {
  *     "main": {
  *       template: "<h1>HELLO!</h1>"
  *     }
- *   }
+ *   }    
  * })
  * </pre>
- *
+ * 
  * Really though, you'll use views to set up multiple views:
  * <pre>
  * <div ui-view></div>
- * <div ui-view="chart"></div>
- * <div ui-view="data"></div>
+ * <div ui-view="chart"></div> 
+ * <div ui-view="data"></div> 
  * </pre>
- *
+ * 
  * <pre>
  * $stateProvider.state("home", {
  *   views: {
@@ -41778,7 +41356,7 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  *     "data": {
  *       template: "<data_thing/>"
  *     }
- *   }
+ *   }    
  * })
  * </pre>
  *
@@ -42013,17 +41591,17 @@ function stateContext(el) {
  * @restrict A
  *
  * @description
- * A directive that binds a link (`<a>` tag) to a state. If the state has an associated
- * URL, the directive will automatically generate & update the `href` attribute via
- * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking
- * the link will trigger a state transition with optional parameters.
+ * A directive that binds a link (`<a>` tag) to a state. If the state has an associated 
+ * URL, the directive will automatically generate & update the `href` attribute via 
+ * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking 
+ * the link will trigger a state transition with optional parameters. 
  *
- * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be
+ * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be 
  * handled natively by the browser.
  *
- * You can also use relative state paths within ui-sref, just like the relative
+ * You can also use relative state paths within ui-sref, just like the relative 
  * paths passed to `$state.go()`. You just need to be aware that the path is relative
- * to the state that the link lives in, in other words the state that loaded the
+ * to the state that the link lives in, in other words the state that loaded the 
  * template containing the link.
  *
  * You can specify options to pass to {@link ui.router.state.$state#go $state.go()}
@@ -42031,22 +41609,22 @@ function stateContext(el) {
  * and `reload`.
  *
  * @example
- * Here's an example of how you'd use ui-sref and how it would compile. If you have the
+ * Here's an example of how you'd use ui-sref and how it would compile. If you have the 
  * following template:
  * <pre>
  * <a ui-sref="home">Home</a> | <a ui-sref="about">About</a> | <a ui-sref="{page: 2}">Next page</a>
- *
+ * 
  * <ul>
  *     <li ng-repeat="contact in contacts">
  *         <a ui-sref="contacts.detail({ id: contact.id })">{{ contact.name }}</a>
  *     </li>
  * </ul>
  * </pre>
- *
+ * 
  * Then the compiled html would be (assuming Html5Mode is off and current state is contacts):
  * <pre>
  * <a href="#/home" ui-sref="home">Home</a> | <a href="#/about" ui-sref="about">About</a> | <a href="#/contacts?page=2" ui-sref="{page: 2}">Next page</a>
- *
+ * 
  * <ul>
  *     <li ng-repeat="contact in contacts">
  *         <a href="#/contacts/1" ui-sref="contacts.detail({ id: contact.id })">Joe</a>
@@ -46098,18 +45676,18 @@ define('text',['module'], function (module) {
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
- *     1. Redistributions of source code must retain the above copyright notice,
+ * 
+ *     1. Redistributions of source code must retain the above copyright notice, 
  *        this list of conditions and the following disclaimer.
- *
- *     2. Redistributions in binary form must reproduce the above copyright
+ *     
+ *     2. Redistributions in binary form must reproduce the above copyright 
  *        notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
- *
+ * 
  *     3. Neither the name of David Hall nor the names of its contributors may be
  *        used to endorse or promote products derived from this software without
  *        specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46131,7 +45709,7 @@ define('tpl',[
     "use strict";
 
     var tplModule = null;
-
+    
     var buildMap = {};
 
     var tpl = {
@@ -46710,16 +46288,16 @@ define('core/modal/index',['require','./directives/modalWindow','./directives/mo
 define('tpl!core/datepicker/datepicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/datepicker.html', '<div ng-switch="datepickerMode" role="application" ng-keydown="keydown($event)">\n    <daypicker ng-switch-when="day" tabindex="0"></daypicker>\n    <monthpicker ng-switch-when="month" tabindex="0"></monthpicker>\n    <yearpicker ng-switch-when="year" tabindex="0"></yearpicker>\n</div>\n'); });
 
 
-define('tpl!core/datepicker/day.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/day.html', '<table role="grid" aria-labelledby="[[::uniqueId]]-title" aria-activedescendant="[[activeDateId]]">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm solid pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th colspan="[[::5 + showWeeks]]"><button id="[[::uniqueId]]-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm solid" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>[[title]]</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm solid pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    <tr>\n        <th ng-if="showWeeks" class="text-center"></th>\n        <th ng-repeat="label in ::labels track by $index" class="text-center"><small aria-label="[[::label.full]]">[[::label.abbr]]</small></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-if="showWeeks" class="text-center h6"><em>[[ weekNumbers[$index] ]]</em></td>\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="[[::dt.uid]]" ng-class="::dt.customClass">\n            <button type="button" style="width:100%;" class="btn btn-default btn-sm" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-muted\': dt.secondary, \'text-info\': dt.current}">[[::dt.label]]</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!core/datepicker/day.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/day.html', '<table role="grid" aria-labelledby="{{::uniqueId}}-title" aria-activedescendant="{{activeDateId}}">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm solid pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th colspan="{{::5 + showWeeks}}"><button id="{{::uniqueId}}-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm solid" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>{{title}}</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm solid pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    <tr>\n        <th ng-if="showWeeks" class="text-center"></th>\n        <th ng-repeat="label in ::labels track by $index" class="text-center"><small aria-label="{{::label.full}}">{{::label.abbr}}</small></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-if="showWeeks" class="text-center h6"><em>{{ weekNumbers[$index] }}</em></td>\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="{{::dt.uid}}" ng-class="::dt.customClass">\n            <button type="button" style="width:100%;" class="btn btn-default btn-sm" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-muted\': dt.secondary, \'text-info\': dt.current}">{{::dt.label}}</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 
-define('tpl!core/datepicker/month.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/month.html', '<table role="grid" aria-labelledby="[[::uniqueId]]-title" aria-activedescendant="[[activeDateId]]">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th><button id="[[::uniqueId]]-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>[[title]]</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="[[::dt.uid]]">\n            <button type="button" style="width:100%;" class="btn btn-default" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-info\': dt.current}">[[::dt.label]]</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!core/datepicker/month.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/month.html', '<table role="grid" aria-labelledby="{{::uniqueId}}-title" aria-activedescendant="{{activeDateId}}">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th><button id="{{::uniqueId}}-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>{{title}}</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="{{::dt.uid}}">\n            <button type="button" style="width:100%;" class="btn btn-default" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-info\': dt.current}">{{::dt.label}}</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 
-define('tpl!core/datepicker/popup.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/popup.html', '<ul class="dropdown-menu datepicker" ng-style="{display: (isOpen && \'block\') || \'none\', top: position.top+\'px\', left: position.left+\'px\'}" ng-keydown="keydown($event)">\n    <li ng-transclude></li>\n    <li ng-if="showButtonBar" class="button-bar">\n\t\t<span class="btn-group pull-left">\n\t\t\t<button type="button" class="btn btn-sm btn-default solid" ng-click="select(\'today\')">[[ getText(\'current\') ]]</button>\n\t\t\t<button type="button" class="btn btn-sm btn-default solid" ng-click="select(null)">[[ getText(\'clear\') ]]</button>\n\t\t</span>\n        <button type="button" class="btn btn-sm btn-default pull-right" ng-click="close()">[[ getText(\'close\') ]]</button>\n    </li>\n</ul>\n'); });
+define('tpl!core/datepicker/popup.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/popup.html', '<ul class="dropdown-menu datepicker" ng-style="{display: (isOpen && \'block\') || \'none\', top: position.top+\'px\', left: position.left+\'px\'}" ng-keydown="keydown($event)">\n    <li ng-transclude></li>\n    <li ng-if="showButtonBar" class="button-bar">\n\t\t<span class="btn-group pull-left">\n\t\t\t<button type="button" class="btn btn-sm btn-default solid" ng-click="select(\'today\')">{{ getText(\'current\') }}</button>\n\t\t\t<button type="button" class="btn btn-sm btn-default solid" ng-click="select(null)">{{ getText(\'clear\') }}</button>\n\t\t</span>\n        <button type="button" class="btn btn-sm btn-default pull-right" ng-click="close()">{{ getText(\'close\') }}</button>\n    </li>\n</ul>\n'); });
 
 
-define('tpl!core/datepicker/year.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/year.html', '<table role="grid" aria-labelledby="[[::uniqueId]]-title" aria-activedescendant="[[activeDateId]]">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th colspan="3"><button id="[[::uniqueId]]-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>[[title]]</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="[[::dt.uid]]">\n            <button type="button" style="width:100%;" class="btn btn-default" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-info\': dt.current}">[[::dt.label]]</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
+define('tpl!core/datepicker/year.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/datepicker/year.html', '<table role="grid" aria-labelledby="{{::uniqueId}}-title" aria-activedescendant="{{activeDateId}}">\n    <thead>\n    <tr>\n        <th><button type="button" class="btn btn-default btn-sm pull-left" ng-click="move(-1)" tabindex="-1"><i class="glyph-chevron-left"></i></button></th>\n        <th colspan="3"><button id="{{::uniqueId}}-title" role="heading" aria-live="assertive" aria-atomic="true" type="button" class="btn btn-default btn-sm" ng-click="toggleMode()" ng-disabled="datepickerMode === maxMode" tabindex="-1" style="width:100%;"><strong>{{title}}</strong></button></th>\n        <th><button type="button" class="btn btn-default btn-sm pull-right" ng-click="move(1)" tabindex="-1"><i class="glyph-chevron-right"></i></button></th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in rows track by $index">\n        <td ng-repeat="dt in row track by dt.date" class="text-center" role="gridcell" id="{{::dt.uid}}">\n            <button type="button" style="width:100%;" class="btn btn-default" ng-class="{\'btn-info\': dt.selected, active: isActive(dt)}" ng-click="select(dt.date)" ng-disabled="dt.disabled" tabindex="-1"><span ng-class="::{\'text-info\': dt.current}">{{::dt.label}}</span></button>\n        </td>\n    </tr>\n    </tbody>\n</table>\n'); });
 
 define('core/datepicker/index',['require','tpl!./datepicker.html','tpl!./day.html','tpl!./month.html','tpl!./popup.html','tpl!./year.html'],function (require) {
     'use strict';
@@ -46732,7 +46310,7 @@ define('core/datepicker/index',['require','tpl!./datepicker.html','tpl!./day.htm
 });
 
 
-define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ui-sref="cm" ui-sref-active="active">Campaign Management</a></li>\n            <li><a class="primary" ui-sref="analytics"  ui-sref-active="active">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n            </li>\n            <li class="dropdown" division-dropdown>\n            </li>\n            <li class="dropdown" account-dropdown>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
+define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ng-click="transition(\'cm\', $event)" ng-class="{\'active\': $state.includes(\'cm\')}">Campaign Management</a></li>\n            <li><a class="primary" ng-click="transition(\'analytics\', $event)" ng-class="{\'active\': $state.includes(\'analytics\')}">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n            </li>\n            <li class="dropdown" division-dropdown>\n            </li>\n            <li class="dropdown" account-dropdown>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
 
 /**
  * Created by alex on 4/15/15.
@@ -46743,13 +46321,36 @@ define('core/navbar/navbar',['require','./../module','tpl!./navbar.html'],functi
     var app = require('./../module');
     require('tpl!./navbar.html');
 
-    app.directive('navbar', [function () {
+    app.directive('navbar', ['$rootScope', '$state', function ($rootScope, $state) {
         return {
             restrict: 'A',
             templateUrl: 'core/navbar/navbar.html',
             replace: true,
             scope: {
                 open: '='
+            },
+            link: function (scope) {
+                scope.transition = transition;
+                scope.$state = $state;
+
+                function transition(area){
+                    if ($state.params.clientId) {
+                        $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
+                    } else if ($state.params.divisionId) {
+                        $state.go(area + '.campaigns.division', {divisionId: $state.params.divisionId});
+                    } else if ($state.params.accountId) {
+                        $state.go(area + '.campaigns.account', {accountId: $state.params.accountId});
+                    } else if ($state.params.campaignId) {
+                        $state.go(area +'.campaigns.campaign', {campaignId: $state.params.campaignId});
+                    } else {
+                        $state.go(area);
+                    }
+
+                }
+
+                $rootScope.$on('$stateChangeSuccess', function () {
+                    scope.open = false;
+                });
             }
         };
     }]);
@@ -46891,8 +46492,16 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('divisionService', ['$http', 'dataFactory', '$state', function ($http, dataFactory, $state) {
+    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', function ($http, dataFactory, $state, $rootScope) {
         var divisions = dataFactory(utils.sortByName);
+        var client = {};
+
+        $rootScope.$on('navStateChange', function (event, state) {
+            if (state.client && state.client.id !== client.id) {
+                client = state.client;
+                divisions.notifyObservers();
+            }
+        });
 
         function init(url) {
             return divisions.init(url, function (data) {
@@ -46901,18 +46510,24 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            return utils.search(filtered(), query);
         }
 
         function alphabetMap() {
             return utils.alphabetMap(filtered());
         }
 
+        //TODO: grab the current clientID from account or campaign
         function filtered() {
             var sorted = all();
             var output = [];
             var division = get($state.params.divisionId);
             var clientId = $state.params.clientId || division && division.client.id;
+
+            if(client && !clientId) {
+                clientId = client.id;
+            }
+
             var item;
 
             if (!clientId) {
@@ -46984,7 +46599,7 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            return utils.search(filtered(), query);
         }
 
         function sortByStartDate(data) {
@@ -47262,13 +46877,14 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
         }
 
         function search(query) {
-            return utils.search(all(), query);
+            return utils.search(filtered(), query);
         }
 
         function alphabetMap() {
             return utils.alphabetMap(filtered());
         }
 
+        //TODO: grab the current divisionId from campaign
         function filtered() {
             var sorted = all();
             var list = divisions.filtered();
@@ -47345,10 +46961,11 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
 
 /* jshint -W101 */
 
-define('core/navbar/services/navbar',['require','./../../module'],function (require) {
+define('core/navbar/services/navbar',['require','./../../module','angular'],function (require) {
     'use strict';
 
     var module = require('./../../module');
+    var ng = require('angular');
 
     module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', '$state', function (dataFactory, clients, divisions, accounts, campaigns, $rootScope, $state) {
         var navInfo = dataFactory();
@@ -47360,6 +46977,16 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
             navInfo.setData(toParams);
+        });
+
+        var oldState = all();
+        navInfo.observe(function () {
+            var currentState = all();
+
+            if(!ng.equals(oldState, currentState)){
+                oldState = currentState;
+                $rootScope.$broadcast('navStateChange', currentState);
+            }
         });
 
         function getClient(id) {
@@ -47463,7 +47090,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 });
 
 
-define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by client.id">\n                    <a ui-sref=".campaigns.client({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="item in clientsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a ui-sref=".campaigns.client({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="client in results track by client.id">\n                    <a ui-sref=".campaigns.client({ clientId: client.id })">[[client.name]]</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li><a ui-sref=".clients">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul  class="pinned">\n                    <li ng-repeat="client in pinned track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                        <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul >\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in clientsMap track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                        <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="client in results track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                        <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
@@ -47507,7 +47134,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".campaigns.divisions(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by division.id">\n                    <a ui-sref=".campaigns.division({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="item in divisionsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                    <a ui-sref=".campaigns.division({divisionId: division.id})">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="division in results track by division.id">\n                    <a ui-sref=".campaigns.division({ divisionId: division.id })">[[division.name]]</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-if="!state.clientId"><a>All {{section}}</a></li>\n            <li ng-if="state.clientId"><a ui-sref=".campaigns.client(state)">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul class="pinned">\n                    <li ng-repeat="division in pinned track by division.id">\n                        <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                        <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in divisionsMap track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                        <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                        <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="division in results track by division.id">\n                        <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>\n                        <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -47525,7 +47152,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
                 $scope.unpin = divisions.unpin;
                 $scope.section = 'Divisions';
                 $scope.current = 'All Divisions';
-                $scope.state = navbar.params();
+                $scope.state = {};
 
                 divisions.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
@@ -47541,7 +47168,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
                     if (info.division && info.client && info.client.id) {
                         $scope.state = { clientId: info.client.id };
                     } else {
-                        $scope.state = navbar.params();
+                        $scope.state = {};
                     }
                 }
 
@@ -47576,7 +47203,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
 });
 
 
-define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".campaigns.accounts(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by account.id">\n                    <a ui-sref=".campaigns.account({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="item in accountsMap track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="account in (item.value | limitTo: limit) track by account.id">\n                    <a ui-sref=".campaigns.account({accountId: account.id})">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="account in results track by account.id">\n                    <a ui-sref=".campaigns.account({ accountId: account.id })">[[account.name]]</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="tooltip dropdown-toggle-title hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-if="!state.divisionId"><a>All {{section}}</a></li>\n        <li ng-if="state.divisionId"><a ui-sref=".campaigns.division(state)">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul class="pinned">\n                    <li ng-repeat="account in pinned track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                        <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in accountsMap track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="account in (item.value | limitTo: limit) track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                        <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="account in results track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({ accountId: account.id })">{{account.name}}</a>\n                        <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
     'use strict';
@@ -47594,7 +47221,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
                 $scope.unpin = accounts.unpin;
                 $scope.section = 'Accounts';
                 $scope.current = 'All Accounts';
-                $scope.state = navbar.params();
+                $scope.state = {};
 
                 accounts.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
@@ -47610,7 +47237,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
                     if (info.account && info.division && info.division.id) {
                         $scope.state = { divisionId: info.division.id };
                     } else {
-                        $scope.state = navbar.params();
+                        $scope.state = {};
                     }
                 }
 
@@ -47628,7 +47255,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
 });
 
 
-define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        [[section]]\n    </div>\n    <div class="dropdown-toggle-title">\n        <i class="glyph-chevron-down"></i>\n        [[current]]\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">\n        <li><a ui-sref=".campaigns.all(state)">All [[section]]</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by campaign.id">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">\n            [[item.key]]\n            <ul limit="5">\n                <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "[[query]]"\n            <ul>\n                <li ng-repeat="campaign in results track by campaign.id">\n                    <a ui-sref=".campaigns.detail({ campaignId: campaign.id })">[[campaign.name]]</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul class="list col-sm-12 col-md-6" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">\n            <li ng-if="!state.accountId"><a>All {{section}}</a></li>\n            <li ng-if="state.accountId"><a ui-sref=".account(state)">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul class="pinned">\n                    <li ng-repeat="campaign in pinned track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n            <li ng-show="preFlight.length">preFlight\n                <ul>\n                    <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n            <li ng-show="inFlight.length">inFlight\n                <ul>\n                    <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n            <li ng-show="completed.length">completed\n                <ul>\n                    <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="campaign in results track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/campaignDropdown',['require','./../../module','tpl!./campaign.html'],function (require) {
     'use strict';
@@ -47646,7 +47273,7 @@ define('core/navbar/directives/campaignDropdown',['require','./../../module','tp
                 $scope.unpin = campaigns.unpin;
                 $scope.section = 'Campaigns';
                 $scope.current = 'All Campaigns';
-                $scope.state = navbar.params();
+                $scope.state = {};
                 $scope.quarterLimit = 5;
                 $scope.preFlightLimit = 10;
                 $scope.inFlightLimit = 10;
@@ -47667,7 +47294,7 @@ define('core/navbar/directives/campaignDropdown',['require','./../../module','tp
                     if (info.campaign && info.account && info.account.id) {
                         $scope.state = { accountId: info.account.id };
                     } else {
-                        $scope.state = navbar.params();
+                        $scope.state = {};
                     }
                 }
 
@@ -47960,6 +47587,8 @@ define('core/directives/dropdown',['require','./../module'],function (require) {
                 selected: '='
             },
             link: function (scope, element) {
+                var permOpen = element.parent().hasClass('open');
+
                 function documentClickHandler() {
                     if (!scope.clicked) {
                         scope.$apply(function () {
@@ -47995,10 +47624,12 @@ define('core/directives/dropdown',['require','./../module'],function (require) {
                 });
 
                 scope.$watch('selected', function (value) {
-                    if (value) {
-                        element.parent().addClass('open');
-                    } else {
-                        element.parent().removeClass('open');
+                    if (!permOpen){
+                        if (value) {
+                            element.parent().addClass('open');
+                        } else {
+                            element.parent().removeClass('open');
+                        }
                     }
                 });
             }
@@ -48031,7 +47662,7 @@ define('core/directives/limit',['require','./../module'],function (require) {
 });
 
 
-define('tpl!core/directives/tooltip.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/tooltip.html', '<div ng-mouseover="updatePosition()" ng-bind-html="main|interpolate:this.$parent|safe"></div>\n<div class="wrapper">\n    <div class="content" ng-bind-html="content|interpolate:this.$parent|safe">\n    </div>\n</div>\n'); });
+define('tpl!core/directives/tooltip.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/tooltip.html', '<div class="main" ng-mouseover="updatePosition()" ng-bind-html="main|interpolate:this|safe"></div>\n<div class="wrapper">\n    <div class="content" ng-bind-html="content|interpolate:this|safe">\n    </div>\n</div>\n'); });
 
 define('core/directives/tooltip',['require','./../module','angular','tpl!./tooltip.html'],function (require) {
     'use strict';
@@ -48060,6 +47691,7 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                 scope.calculateDims = calculateDims;
 
                 var tooltip = attr.tooltip;
+                var overflow = attr.tooltipOverflow;
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
@@ -48110,6 +47742,15 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                 }
 
                 function updatePosition() {
+                    if (overflow) {
+                        var element = elem.find('.main')[0];
+                        if (element.offsetWidth >= element.scrollWidth) {
+                            elem.find('.wrapper').addClass('ng-hide');
+                        } else {
+                            elem.find('.wrapper').removeClass('ng-hide');
+                        }
+                    }
+
                     var dims = calculateDims();
                     elem.addClass(calculateClass(dims));
                 }
@@ -48142,7 +47783,7 @@ define('core/directives/compile',['require','./../module'],function (require) {
 });
 
 
-define('tpl!core/directives/placeholder.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/placeholder.html', '<img style="[[style]]" ng-src="[[image]]" alt="Placeholder">\n'); });
+define('tpl!core/directives/placeholder.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/placeholder.html', '<img style="{{style}}" ng-src="{{image}}" alt="Placeholder">\n'); });
 
 define('core/directives/placeholder',['require','./../module','tpl!./placeholder.html'],function (require) {
     'use strict';
@@ -48160,7 +47801,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
                 if (attr.image) {
                     $scope.image = attr.image;
                 } else if (attr.height && attr.width) {
-                    var placeCageTemplate = $interpolate('http://www.placecage.com/[[width]]/[[height]]');
+                    var placeCageTemplate = $interpolate('http://www.placecage.com/{{width}}/{{height}}');
                     $scope.image = placeCageTemplate({
                         width: attr.width,
                         height: attr.height
@@ -50015,14 +49656,14 @@ ss.extendObj(ss.SimpleUpload.prototype, {
         elem.ondrop = function( e ) {
             e.preventDefault();
 
-            ss.removeClass( this, self._opts.dragClass );
-
+            ss.removeClass( this, self._opts.dragClass );            
+            
             if ( !self._dragFileCheck( e ) ) {
                 return false;
             }
 
             self._addFiles( e.dataTransfer.files );
-            self._cycleQueue();
+            self._cycleQueue();            
         };
     }
 });
@@ -50040,7 +49681,7 @@ define("simpleUpload", ["jquery"], (function (global) {
 }(this)));
 
 
-define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-class="fileSelected ? \'preview show\' : \'preview\'">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">[[btnLabel]]</button>\n\n\t    </div>\n    </div>\n    <div ng-class="fileSelected ? \'file-name-wrapper show\' : \'file-name-wrapper\'">\n    \t<span class="file-name"></span>\n    \t<a class="glyph-icon glyph-close" ng-click="removeFile()" href=\'\'/>\n    </div>\n</div>\n'); });
+define('tpl!core/directives/filePicker.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/filePicker.html', '<div class="file-picker">\n    <div class="input-wrapper">\n    \t<div ng-class="fileSelected ? \'preview show\' : \'preview\'">\n    \t\t\t<img class="image-preview" />\n    \t</div>\n\t    <div class="droparea">\n\t        <i class="glyph-icon glyph-upload"></i>Drop file here <i>or</i> <button class="btn">{{btnLabel}}</button>\n\n\t    </div>\n    </div>\n    <div ng-class="fileSelected ? \'file-name-wrapper show\' : \'file-name-wrapper\'">\n    \t<span class="file-name"></span>\n    \t<a class="glyph-icon glyph-close" ng-click="removeFile()" href=\'\'/>\n    </div>\n</div>\n'); });
 
 define('core/directives/filePicker',['require','./../module','simpleUpload','tpl!./filePicker.html'],function (require) {
     'use strict';
@@ -50159,7 +49800,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
 
 !function() {
   var d3 = {
-    version: "3.5.6"
+    version: "3.5.5"
   };
   var d3_arraySlice = [].slice, d3_array = function(list) {
     return d3_arraySlice.call(list);
@@ -51341,7 +50982,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
           svg.remove();
         }
       }
-      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX,
+      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX, 
       point.y = e.clientY;
       point = point.matrixTransform(container.getScreenCTM().inverse());
       return [ point.x, point.y ];
@@ -51622,7 +51263,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     function zoomended(dispatch) {
       if (!--zooming) dispatch({
         type: "zoomend"
-      }), center0 = null;
+      });
+      center0 = null;
     }
     function mousedowned() {
       var that = this, target = d3.event.target, dispatch = event.of(that, arguments), dragged = 0, subject = d3.select(d3_window(that)).on(mousemove, moved).on(mouseup, ended), location0 = location(d3.mouse(that)), dragRestore = d3_event_dragSuppress(that);
@@ -51711,8 +51353,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     }
     function mousewheeled() {
       var dispatch = event.of(this, arguments);
-      if (mousewheelTimer) clearTimeout(mousewheelTimer); else d3_selection_interrupt.call(this),
-      translate0 = location(center0 = center || d3.mouse(this)), zoomstarted(dispatch);
+      if (mousewheelTimer) clearTimeout(mousewheelTimer); else translate0 = location(center0 = center || d3.mouse(this)), 
+      d3_selection_interrupt.call(this), zoomstarted(dispatch);
       mousewheelTimer = setTimeout(function() {
         mousewheelTimer = null;
         zoomended(dispatch);
@@ -51857,9 +51499,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     return v < 16 ? "0" + Math.max(0, v).toString(16) : Math.min(255, v).toString(16);
   }
   function d3_rgb_parse(format, rgb, hsl) {
-    format = format.toLowerCase();
     var r = 0, g = 0, b = 0, m1, m2, color;
-    m1 = /([a-z]+)\((.*)\)/.exec(format);
+    m1 = /([a-z]+)\((.*)\)/i.exec(format);
     if (m1) {
       m2 = m1[2].split(",");
       switch (m1[1]) {
@@ -51874,7 +51515,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
         }
       }
     }
-    if (color = d3_rgb_names.get(format)) {
+    if (color = d3_rgb_names.get(format.toLowerCase())) {
       return rgb(color.r, color.g, color.b);
     }
     if (format != null && format.charAt(0) === "#" && !isNaN(color = parseInt(format.slice(1), 16))) {
@@ -52081,7 +51722,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
   d3.xhr = d3_xhrType(d3_identity);
   function d3_xhrType(response) {
     return function(url, mimeType, callback) {
-      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType,
+      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType, 
       mimeType = null;
       return d3_xhr(url, mimeType, response, callback);
     };
@@ -52919,7 +52560,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     return n ? (date.y = d3_time_expandYear(+n[0]), i + n[0].length) : -1;
   }
   function d3_time_parseZone(date, string, i) {
-    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string,
+    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string, 
     i + 5) : -1;
   }
   function d3_time_expandYear(d) {
@@ -53112,7 +52753,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     var λ00, φ00, λ0, cosφ0, sinφ0;
     d3_geo_area.point = function(λ, φ) {
       d3_geo_area.point = nextPoint;
-      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4),
+      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4), 
       sinφ0 = Math.sin(φ);
     };
     function nextPoint(λ, φ) {
@@ -54941,7 +54582,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
       return _ ? center([ -_[1], _[0] ]) : (_ = center(), [ _[1], -_[0] ]);
     };
     projection.rotate = function(_) {
-      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(),
+      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(), 
       [ _[0], _[1], _[2] - 90 ]);
     };
     return rotate([ 0, 0, 90 ]);
@@ -55795,7 +55436,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     };
     quadtree.extent = function(_) {
       if (!arguments.length) return x1 == null ? null : [ [ x1, y1 ], [ x2, y2 ] ];
-      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0],
+      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0], 
       y2 = +_[1][1];
       return quadtree;
     };
@@ -55944,7 +55585,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
   }
   d3.interpolators = [ function(a, b) {
     var t = typeof b;
-    return (t === "string" ? d3_rgb_names.has(b.toLowerCase()) || /^(#|rgb\(|hsl\()/i.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
+    return (t === "string" ? d3_rgb_names.has(b) || /^(#|rgb\(|hsl\()/.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
   } ];
   d3.interpolateArray = d3_interpolateArray;
   function d3_interpolateArray(a, b) {
@@ -57499,7 +57140,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
         return d3_layout_treemapPad(node, x);
       }
       var type;
-      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ],
+      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ], 
       padConstant) : padConstant;
       return treemap;
     };
@@ -57799,7 +57440,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     scale.tickFormat = function(n, format) {
       if (!arguments.length) return d3_scale_logFormat;
       if (arguments.length < 2) format = d3_scale_logFormat; else if (typeof format !== "function") format = d3.format(format);
-      var k = Math.max(.1, n / scale.ticks().length), f = positive ? (e = 1e-12, Math.ceil) : (e = -1e-12,
+      var k = Math.max(.1, n / scale.ticks().length), f = positive ? (e = 1e-12, Math.ceil) : (e = -1e-12, 
       Math.floor), e;
       return function(d) {
         return d / pow(f(log(d) + e)) <= k ? format(d) : "";
@@ -57899,7 +57540,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     };
     scale.rangePoints = function(x, padding) {
       if (arguments.length < 2) padding = 0;
-      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2,
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2, 
       0) : (stop - start) / (domain.length - 1 + padding);
       range = steps(start + step * padding / 2, step);
       rangeBand = 0;
@@ -57911,7 +57552,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     };
     scale.rangeRoundPoints = function(x, padding) {
       if (arguments.length < 2) padding = 0;
-      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2),
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2), 
       0) : (stop - start) / (domain.length - 1 + padding) | 0;
       range = steps(start + Math.round(step * padding / 2 + (stop - start - (domain.length - 1 + padding) * step) / 2), step);
       rangeBand = 0;
@@ -58334,7 +57975,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     return points.length < 4 ? d3_svg_lineLinear(points) : points[1] + d3_svg_lineHermite(points.slice(1, -1), d3_svg_lineCardinalTangents(points, tension));
   }
   function d3_svg_lineCardinalClosed(points, tension) {
-    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite((points.push(points[0]),
+    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite((points.push(points[0]), 
     points), d3_svg_lineCardinalTangents([ points[points.length - 2] ].concat(points, [ points[1] ]), tension));
   }
   function d3_svg_lineCardinal(points, tension) {
@@ -59092,7 +58733,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
         var g = d3.select(this);
         var scale0 = this.__chart__ || scale, scale1 = this.__chart__ = scale.copy();
         var ticks = tickValues == null ? scale1.ticks ? scale1.ticks.apply(scale1, tickArguments_) : scale1.domain() : tickValues, tickFormat = tickFormat_ == null ? scale1.tickFormat ? scale1.tickFormat.apply(scale1, tickArguments_) : d3_identity : tickFormat_, tick = g.selectAll(".tick").data(ticks, scale1), tickEnter = tick.enter().insert("g", ".domain").attr("class", "tick").style("opacity", ε), tickExit = d3.transition(tick.exit()).style("opacity", ε).remove(), tickUpdate = d3.transition(tick.order()).style("opacity", 1), tickSpacing = Math.max(innerTickSize, 0) + tickPadding, tickTransform;
-        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"),
+        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"), 
         d3.transition(path));
         tickEnter.append("line");
         tickEnter.append("text");
@@ -59662,7 +59303,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
   this.d3 = d3;
 }();
 
-define('tpl!core/directives/pacingChart.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/pacingChart.html', '<span>43.3K of 65K</span>\n<svg class=\'meter\' version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\n    enable-background="new 0 0 100% 100%">\n  <g class="fill">\n    <rect width="0%" height="100%"/>\n  </g>\n  <g class="stroke">\n    <rect width="100%" height="100%"/>\n  </g>\n  <g class="target">\n    <rect x="0%" width="3" height="100%"/>\n  </g>\n</svg>\n'); });
+define('tpl!core/directives/pacingChart.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/pacingChart.html', '<span ng-if="current && max">{{current|truncateNumber}} of {{max|truncateNumber}}</span>\n<svg ng-show="current && max" class=\'meter\' version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"\n     enable-background="new 0 0 100% 100%">\n    <g class="fill">\n        <rect width="0%" height="100%"/>\n    </g>\n    <g class="stroke">\n        <rect width="100%" height="100%"/>\n    </g>\n    <g ng-if="target" class="target">\n        <rect x="0%" width="3" height="100%"/>\n    </g>\n</svg>\n<div ng-if="current && !max">\n    {{current|truncateNumber}}\n</div>\n'); });
 
 define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacingChart.html'],function (require) {
 	'use strict';
@@ -59671,20 +59312,33 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
 	var d3 = require('d3');
 	require('tpl!./pacingChart.html');
 
-	app.directive('pacingChart', ['$timeout', function ($timeout) {
+	app.directive('pacingChart', ['$timeout', function () {
 		return {
 			restrict: 'A',
-			scope: {},
-			require: '?ngModel',
 			templateUrl: 'core/directives/pacingChart.html',
-			link: function (scope, elem) {
-				$timeout(function () {
-					var fill = d3.select(elem.find('.fill > rect')[0]);
-					fill.attr('width', '60%');
-					var target = d3.select(elem.find('.target > rect')[0]);
-					target.attr('x', '80%');
-					scope.$apply();
-				});
+			link: function (scope, elem, attr) {
+                var key = attr.pacingChart;
+
+                scope.$watch(key, function (data) {
+                    if (data) {
+                        scope.max = data.max;
+                        scope.current = data.current;
+                        scope.target = data.target;
+
+
+                        if (data.current > data.max) {
+                            scope.target = 0;
+                        }
+
+                        if (data.max) {
+                            var fill = d3.select(elem.find('.fill > rect')[0]);
+                            fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
+                        }
+
+                        //var target = d3.select(elem.find('.target > rect')[0]);
+                        //target.attr('x', '80%');
+                    }
+                });
 			}
 		};
 	}]);
@@ -59800,41 +59454,6 @@ define('core/filters/truncateNumber',['require','./../module'],function (require
     }]);
 });
 
-define('core/services/store',['require','./../module'],function (require) {
-    'use strict';
-
-    var module = require('./../module');
-
-    var store = {};
-
-    module.service('storeService', ['dataFactory', function (dataFactory) {
-        function setData(id, data) {
-            if (typeof store[id] === 'undefined') {
-                store[id] = dataFactory();
-            }
-            store[id].setData(data);
-            store[id].notifyObservers();
-        }
-
-        function all(id) {
-            return store[id].all();
-        }
-
-        function observe(id, callback) {
-            if (typeof store[id] === 'undefined') {
-                store[id] = dataFactory();
-            }
-            store[id].observe(callback);
-        }
-
-        return {
-            setData: setData,
-            observe: observe,
-            all: all
-        };
-    }]);
-});
-
 define('core/services/channel',['require','./../module','angular'],function (require) {
     'use strict';
 
@@ -59888,9 +59507,81 @@ define('core/services/clientSet',['require','./../module','angular'],function (r
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+    var baseUrl = '/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.clientSet;
+            }
+        });
+
+        function filter() {
+            var output = '';
+
+            if ($state.params.clientId) {
+                output = '&filters=id:eq:' + $state.params.clientId;
+            }
+
+            return output;
+        }
+
+        function url() {
+            return baseUrl + filter();
+        }
+
+        function all() {
+            var datum = cache.all(url());
+            var output = {
+                'count': 0,
+                'countCampaignsPreFlight': 0,
+                'countCampaignsInFlight': 0,
+                'countCampaigns': 0,
+                'countAccounts': 0,
+                'countCampaignsArchived': 0,
+                'countCampaignsCompleted': 0
+            };
+
+            if (datum.length) {
+                ng.forEach(datum[0].metrics, function (d, key){
+                    output[key] = d;
+                });
+                output.countCampaigns = output.countCampaignsPreFlight + output.countCampaignsInFlight;
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
+        }
+
+        return {
+            url: url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+define('core/services/divisionSet',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+
+    module.service('divisionSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
             transform: function (data) {
                 return data.divisionSet;
@@ -59902,8 +59593,6 @@ define('core/services/clientSet',['require','./../module','angular'],function (r
 
             if ($state.params.divisionId) {
                 output = '&filters=id:eq:' + $state.params.divisionId;
-            } else if ($state.params.clientId) {
-                output = '&filters=client.id:eq:' + $state.params.clientId;
             }
 
             return output;
@@ -59970,7 +59659,7 @@ define('core/constants/apiURI',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/store','./services/channel','./services/clientSet','./constants/apiURI'],function (require) {
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./constants/apiURI'],function (require) {
     'use strict';
 
     require('./modal/index');
@@ -59992,9 +59681,9 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./filters/errorCount');
     require('./filters/date');
     require('./filters/truncateNumber');
-    require('./services/store');
     require('./services/channel');
     require('./services/clientSet');
+    require('./services/divisionSet');
     require('./constants/apiURI');
 });
 
@@ -60026,31 +59715,31 @@ define('table/filters/format',['require','./../module'],function (require) {
 
         return function (input, row, rules) {
             var rule = rules[input];
-            input = row[input];
+            var data = row[input];
             switch (rule) {
             case 'number':
-                return $filter('number')(input, 0);
+                return $filter('number')(data, 0);
             case 'percent':
-                return percent(input);
+                return percent(data);
             case 'quartile':
-                return input.map(function (d) {
+                return data.map(function (d) {
                     return percent(d);
                 }).join(' ');
             case 'date':
-                return date(input);
+                return date(data);
             case 'bullet':
-                return '';
+                return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
             case 'link':
-                return '<a ui-sref="' + input.route + '">' + input.name + '</a>';
+                return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
             default:
-                return input;
+                return data;
             }
         };
     }]);
 });
 
 
-define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-hover" basic-table="row.content"></div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-wrapper">\n                <div class="table-hover" basic-table="row.content"></div>\n            </div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
 
 define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
     'use strict';
@@ -60066,13 +59755,24 @@ define('table/directives/accordionTable',['require','./../module','tpl!./accordi
             scope: {
                 table: '=accordionTable',
                 classes: '@class'
+            },
+            link: function (scope) {
+                var opened = false;
+
+                scope.init = init;
+
+                function init(length, s){
+                    if (length && !opened) {
+                        s.open = opened = true;
+                    }
+                }
             }
         };
     }]);
 });
 
 
-define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            [[header.name]]\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.name}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
 
 /**
  * Created by alex on 4/23/15.
@@ -60090,6 +59790,7 @@ define('table/directives/basicTable',['require','./../module','tpl!./basicTable.
             replace: true,
             scope: {
                 table: '=basicTable',
+                footer: '=basicFooter',
                 classes: '@class'
             }
         };
@@ -60214,13 +59915,13 @@ define('campaignManagement/module',['require','angular','ui-router','./../chart/
 });
 
 
-define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div class="header-summary" ui-view="header">\n    <div ng-include="\'campaignManagement/clients/clients.summary.html\'"></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div basic-table="topClients" class="table table-hover"></div>\n</div>\n'); });
+define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div class="header-summary" ui-view="header">\n    <div ng-include="\'campaignManagement/clients/clients.summary.html\'"></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div class="table-wrapper">\n        <div basic-table="topClients" class="table table-hover"></div>\n    </div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/clients/clients.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/clients.summary.html', '<div class="btns">\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">Add New Client</button>\n</div>\n<div active-summary></div>\n'); });
+define('tpl!campaignManagement/clients/clients.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/clients.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>All Clients Summary</div>\n    <div class="dropdown-menu">\n        <div active-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openModal(\'lg\')">New Client</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/clients/client.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.summary.html', '<h3 class="title">You Work On</h3>\n<button class="btn btn-default solid right">New Account</button>\n<button class="btn btn-default solid right">New Division</button>\n<button class="btn btn-default solid right">Edit Client</button>\n<div you-work-on></div>\n'); });
+define('tpl!campaignManagement/clients/client.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{client.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">New Account</button>\n    <button class="btn btn-default solid">New Division</button>\n    <button class="btn btn-default solid">Edit Client</button>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/clients/new-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.channels.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="channels" class="single-select" chosen ng-options="item as item for item in channels track by item" disable-search-threshold="10" ng-model="client.channel" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newClient.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div file-picker ng-model="client.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="client.requireRepEmail" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newClient.$error)">Add Client</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
@@ -60245,23 +59946,23 @@ define('campaignManagement/clients/routes',['require','./../module','tpl!./index
 });
 
 
-define('tpl!campaignManagement/divisions/divisions.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/divisions.summary.html', '<h3 class="title">You Work On</h3>\n<button class="btn btn-default solid right">New Division</button>\n<div you-work-on></div>\n'); });
+define('tpl!campaignManagement/divisions/division.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/division.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{division.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">New Account</button>\n    <button class="btn btn-default solid">Edit Division</button>\n</div>\n'); });
 
-
-define('tpl!campaignManagement/divisions/division.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/division.summary.html', '<h3 class="title">You Work On</h3>\n<button class="btn btn-default solid right">New Account</button>\n<button class="btn btn-default solid right">Edit Division</button>\n<div you-work-on></div>\n'); });
-
-define('campaignManagement/divisions/routes',['require','tpl!./divisions.summary.html','tpl!./division.summary.html'],function (require) {
+define('campaignManagement/divisions/routes',['require','tpl!./division.summary.html'],function (require) {
     'use strict';
-    require('tpl!./divisions.summary.html');
     require('tpl!./division.summary.html');
 });
 
 
 define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/new-account.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Account</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newAccount">\n        <div ng-pluralize ng-show="newAccount.$invalid && submitted" class="alert alert-danger" count="(newAccount.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newAccount.accountName.$invalid && submitted}">\n            <label for="accountName" class="col-sm-3 form-label required"><span>Account Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.accountName" type="text" name="accountName" class="form-control" id="accountName" placeholder="Enter new account name" required />\n                <p ng-show="newAccount.accountName.$invalid && submitted" class="help-block">\n                    account name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="accountKeywords" class="col-sm-3 form-label"><span>Account Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.keywords" type="text" class="form-control" id="accountKeywords" placeholder="Enter account keywords" />\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newAccount.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Industry</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="industry" class="single-select" chosen ng-options="industry.id as industry.name for industry in industries" disable-search-threshold="10" ng-model="account.industry" required>\n                </select>\n                <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">\n                    industry is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="account.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.clickthroughURL" type="text" class="form-control" name="clickthroughURL" id="clickthroughURL" placeholder="Enter URL" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="leadCaptureEmail" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.leadCaptureEmail" name="email" type="email" class="form-control" name="leadCaptureEmail" id="leadCaptureEmail" placeholder="Enter email" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="account.enableSpanishPlayer" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Spanish Player</span>\n            </label>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok()">Create Account</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
-define('campaignManagement/accounts/routes',['require','tpl!./new-account.html'],function (require) {
+
+define('tpl!campaignManagement/accounts/summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div account-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openModal(\'lg\')">New Campaign</button>\n    <button class="btn btn-default solid">Edit Account</button>\n</div>\n'); });
+
+define('campaignManagement/accounts/routes',['require','tpl!./new-account.html','tpl!./summary.html'],function (require) {
     'use strict';
     require('tpl!./new-account.html');
+    require('tpl!./summary.html');
 });
 
 
@@ -60271,38 +59972,32 @@ define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angula
 define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div class="header-summary" ui-view="summary">\n</div>\n<div ui-view="content">\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaigns.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.summary.html', '<h1>All Campaigns for Account: {accountName}</h1>\n<div class="header-summary">\n    <ul class="list">\n        <li>\n            <span>Pre-Flight</span>\n            <span>[[summary.preFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>In-Flight</span>\n            <span>[[summary.inFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>Completed</span>\n            <span>[[summary.completed|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>Archived</span>\n            <span>[[summary.archived|truncateNumber]]</span>\n        </li>\n    </ul>\n    <button class="btn btn-default solid right" ng-click="openModal(\'lg\')">New Campaign</button>\n    <button class="btn btn-default solid right">Edit Account</button>\n</div>\n'); });
-
-
-define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<button class="btn btn-default solid right">Edit Campaign</button>\n<div campaign-details />\n'); });
-
-
-define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<p>\n    View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n</p>\n<br />\n<div ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>\n        <span ng-show="campaign">Summary for {{campaign.name}}</span>\n        <span ng-show="!campaign">Summary</span>\n    </div>\n    <div class="dropdown-menu">\n        <div campaign-details></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">Edit Campaign</button>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementTableHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".publisher">Publisher (4)</a>\n        <a ui-sref=".ad-unit">Ad unit (15)</a>\n        <a ui-sref=".ad-type">Ad type (3)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-lg-3 col-lg-offset-1" style="padding-bottom: 1rem;">\n                <label class="form-label">\n                    <div class="dropdown">\n                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                        <ul class="dropdown-menu" role="menu">\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                        </ul>\n                    </div>\n                </label>\n            </div>\n            <div class="col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/placements/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".publisher">Publisher (4)</a>\n        <a ui-sref=".ad-unit">Ad unit (15)</a>\n        <a ui-sref=".ad-type">Ad type (3)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-lg-3 col-lg-offset-1" style="padding-bottom: 1rem;">\n                <label class="form-label">\n                    <div class="dropdown">\n                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                        <ul class="dropdown-menu" role="menu">\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                        </ul>\n                    </div>\n                </label>\n            </div>\n            <div class="col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/placementsList.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
+define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesThumbnails.html', '<div class="thumbnail-view row ng-scope">\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot active"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <div>\n                <span>Placements:</span><span>13</span>\n            </div>\n            <div>\n                <span>Last Modified:</span><span>10/1/2014</span>\n            </div>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/180" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/thumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/thumbnails.html', '<div class="thumbnail-view row ng-scope">\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot active"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <div>\n                <span>Placements:</span><span>13</span>\n            </div>\n            <div>\n                <span>Last Modified:</span><span>10/1/2014</span>\n            </div>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/180" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/placementTableHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="[[format]]" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaigns.summary.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementTableHeader.html','tpl!./campaigns/creatives/placementsList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/placements/header.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/creatives/thumbnails.html','tpl!./campaigns/creatives/header.html','tpl!./campaigns/new-campaign.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('./clients/routes');
@@ -60311,15 +60006,13 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
 
     require('tpl!./index.html');
     require('tpl!./campaigns/index.html');
-    require('tpl!./campaigns/campaigns.summary.html');
     require('tpl!./campaigns/campaign.summary.html');
-    require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/campaign.html');
-    require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementTableHeader.html');
-    require('tpl!./campaigns/creatives/placementsList.html');
-    require('tpl!./campaigns/creatives/creativesThumbnails.html');
-    require('tpl!./campaigns/creatives/placementTableHeader.html');
+    require('tpl!./campaigns/placements/list.html');
+    require('tpl!./campaigns/placements/header.html');
+    require('tpl!./campaigns/creatives/list.html');
+    require('tpl!./campaigns/creatives/thumbnails.html');
+    require('tpl!./campaigns/creatives/header.html');
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -60339,6 +60032,7 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
         //Routes
         $stateProvider
             .state('analytics', {
+                abstract: true,
                 url: '/analytics',
                 parent: 'index',
                 templateUrl: 'campaignManagement/index.html'
@@ -60359,24 +60053,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 templateUrl: 'campaignManagement/campaigns/index.html'
             })
             .state({
-                name: 'cm.campaigns.all',
-                url: '/campaigns?clientId&divisionId&accountId',
-                views: {
-                    'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
                 name: 'cm.campaigns.client',
                 url: '/client/:clientId',
                 views: {
                     'summary': {
+                        controller: 'clientCtrl',
                         templateUrl: 'campaignManagement/clients/client.summary.html'
                     },
                     'content': {
@@ -60390,20 +60071,8 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/division/:divisionId',
                 views: {
                     'summary': {
+                        controller: 'divisionCtrl',
                         templateUrl: 'campaignManagement/divisions/division.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.divisions',
-                url: '/divisions?clientId',
-                views: {
-                    'summary': {
-                        templateUrl: 'campaignManagement/divisions/divisions.summary.html'
                     },
                     'content': {
                         controller: 'campaignsCtrl',
@@ -60416,22 +60085,8 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/account/:accountId',
                 views: {
                     'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.accounts',
-                url: '/accounts?divisionId&clientId',
-                views: {
-                    'summary': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.summary.html'
+                        controller: 'accountCtrl',
+                        templateUrl: 'campaignManagement/accounts/summary.html'
                     },
                     'content': {
                         controller: 'campaignsCtrl',
@@ -60458,11 +60113,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/placements',
                 views: {
                     'tab-header': {
-                        templateUrl: 'campaignManagement/campaigns/placements/placementTableHeader.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/header.html'
                     },
                     'table': {
                         controller: 'placementListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/list.html'
                     }
                 }
             })
@@ -60475,11 +60130,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/placementTableHeader.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
                     },
                     'table@cm.campaigns.detail': {
                         controller: 'creativeListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/placementsList.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/list.html'
                     }
                 }
             })
@@ -60488,11 +60143,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/placementTableHeader.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
                     },
                     'table@cm.campaigns.detail': {
                         controller: 'creativeThumbnailsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/thumbnails.html'
                     }
                 }
             });
@@ -60519,7 +60174,7 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                     name: base + '.campaigns.detail',
                     url: '/analytics/reports/campaign/:campaignId',
                     template: '<ui-view />'
-                })
+                });
         }
 
         function buildAnalyticsRoutes(base) {
@@ -60553,21 +60208,6 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                     url: '/campaign/:campaignId',
                     template: '<ui-view />'
                 })
-                .state({
-                    name: base + '.campaigns.divisions',
-                    url: '/dashboard/client/:clientId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.accounts',
-                    url: '/dashboard/division/:divisionId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.all',
-                    url: '/dashboard/account/:accountId',
-                    template: '<ui-view />'
-                })
                 .state(base + '.catch', {
                     url: '/*path',
                     template: '<ui-view />'
@@ -60578,20 +60218,22 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
     }]);
 });
 
-//jshint ignore:start
+define('campaignManagement/divisions/controllers/division',['require','./../../module'],function (require) {
+    'use strict';
 
-
-
-define('campaignManagement/divisions/controllers/divisions',['require','./../../module'],function (require) {
     var app = require('./../../module');
 
-    app.controller('divisionsCtrl', ['$scope', function ($scope) {
+    app.controller('divisionCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateDivisionInfo() {
+            $scope.division = navbar.all().division;
+        }
 
+        navbar.observe(updateDivisionInfo, $scope);
     }]);
 });
 
 
-define('tpl!campaignManagement/divisions/directives/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/directives/youWorkOn.html', '<ul class="list">\n    <li>\n        <span>accounts</span>\n        <span>[[summary.countAccounts|truncateNumber]]</span>\n    </li>\n    <li class=\'border-right\'>\n        <span>campaigns</span>\n        <span>[[summary.countCampaigns|truncateNumber]]</span>\n    </li>\n    <li>\n        <span>pre-flight</span>\n        <span>[[summary.countCampaignsPreFlight|truncateNumber]]</span>\n    </li>\n    <li>\n        <span>in-flight</span>\n        <span>[[summary.countCampaignsInFlight|truncateNumber]]</span>\n    </li>\n    <li>\n        <span>complete</span>\n        <span>[[summary.countCampaignsCompleted|truncateNumber]]</span>\n    </li>\n    <li>\n        <span>archive</span>\n        <span>[[summary.countCampaignsArchived|truncateNumber]]</span>\n    </li>\n</ul>\n'); });
+define('tpl!campaignManagement/divisions/directives/youWorkOn.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/directives/youWorkOn.html', '<div>\n    <h3 class="title">You Work On</h3>\n    <ul class="list">\n        <li>\n            <span>accounts</span>\n            <span>{{summary.countAccounts|truncateNumber}}</span>\n        </li>\n        <li class=\'border-right\'>\n            <span>campaigns</span>\n            <span>{{summary.countCampaigns|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>{{summary.countCampaignsPreFlight|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>in-flight</span>\n            <span>{{summary.countCampaignsInFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>complete</span>\n            <span>{{summary.countCampaignsCompleted|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>archive</span>\n            <span>{{summary.countCampaignsArchived|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('campaignManagement/divisions/directives/youWorkOn',['require','./../../module','tpl!./youWorkOn.html'],function (require) {
     'use strict';
@@ -60605,21 +60247,29 @@ define('campaignManagement/divisions/directives/youWorkOn',['require','./../../m
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/divisions/directives/youWorkOn.html',
-            controller: ['$scope', 'clientSet', function ($scope, activeSummary) {
-                function updateSummary() {
-                    $scope.summary = activeSummary.all();
+            controller: ['$scope', '$state', 'clientSet', 'divisionSet', function ($scope, $state, clientSet, divisionSet) {
+                function updateSummaryClientSet() {
+                    $scope.summary = clientSet.all();
                 }
 
-                activeSummary.observe(updateSummary, $scope);
+                function updateSummaryDivisionSet() {
+                    $scope.summary = divisionSet.all();
+                }
+
+                if ($state.params.divisionId) {
+                    divisionSet.observe(updateSummaryDivisionSet, $scope);
+                } else {
+                    clientSet.observe(updateSummaryClientSet, $scope);
+                }
             }]
         };
     }]);
 });
 
-define('campaignManagement/divisions/index',['require','./controllers/divisions','./directives/youWorkOn'],function (require) {
+define('campaignManagement/divisions/index',['require','./controllers/division','./directives/youWorkOn'],function (require) {
     'use strict';
 
-    require('./controllers/divisions');
+    require('./controllers/division');
     require('./directives/youWorkOn');
 });
 
@@ -60651,7 +60301,7 @@ define('campaignManagement/campaigns/services/campaignCache',['require','./../..
 });
 
 
-define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<span>[[name]] </span><span class="muted normal">[[metrics.countCampaigns]] live campaigns | [[metrics.countCampaignsPreFlight]] work in progress | [[metrics.countCampaignsCompleted]] completed</span>\n'); });
+define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<span>{{name}} </span><span class="muted normal">{{metrics.countCampaigns}} live campaigns | {{metrics.countCampaignsPreFlight}} work in progress | {{metrics.countCampaignsCompleted}} completed</span>\n'); });
 
 define('campaignManagement/campaigns/services/campaignsByAccount',['require','./../../module','angular','tpl!./campaignsByAccountHeader.html'],function (require) {
     'use strict';
@@ -60659,7 +60309,8 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
     var module = require('./../../module');
     var ng = require('angular');
     var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
-    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns,countCampaignsPreFlight,countCampaignsCompleted';
+    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns' +
+        ',countCampaignsPreFlight,countCampaignsCompleted';
     var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
@@ -60692,8 +60343,13 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
 
         function url() {
             var accountIds = getAccountIds();
+            var opt = '';
 
-            return baseUrl + filter('account.id:eq:' + accountIds.join(':eq:'));
+            if (accountIds.length) {
+                opt = 'account.id:eq:' + accountIds.join(':eq:');
+            }
+
+            return baseUrl + filter(opt);
         }
 
         function headerTransform(data) {
@@ -60761,7 +60417,10 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
                             route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
                             name: campaign.name
                         },
-                        impressions: campaign.metrics.impressions,
+                        impressions: {
+                            max: campaign.metrics.bookedImpressions,
+                            current: campaign.metrics.impressions
+                        },
                         start: campaign.startDate,
                         end: campaign.endDate,
                         creatives: campaign.metrics.countCreatives,
@@ -60993,9 +60652,9 @@ define('campaignManagement/campaigns/services/campaignsHeader',['require','./../
 });
 
 
-define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>[[title]] ([[count|truncateNumber]])\n'); });
+define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})\n'); });
 
-define('campaignManagement/campaigns/factories/campaignAccordionTable',['require','./../../module','tpl!./../campaignsByStatusHeader.html'],function (require) {
+define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',['require','./../../module','tpl!./../campaignsByStatusHeader.html'],function (require) {
     'use strict';
 
     var module = require('./../../module');
@@ -61013,8 +60672,8 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
 
             function sortRows(transformedRows) {
                 var sortFn = function (a, b) {
-                    if (a.name && b.name) {
-                        return a.name.localeCompare(b.name);
+                    if (a.campaign.name && b.campaign.name) {
+                        return a.campaign.name.localeCompare(b.campaign.name);
                     } else {
                         return 0;
                     }
@@ -61029,11 +60688,11 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                 header = data.header;
                 title = data.title;
                 if (data.rows) {
-                    rows.init(data.rows, transformRows);
+                    rows.init(data.rows, _transformRows);
                 }
             }
 
-            function transformRows(data) {
+            function _transformRows(data) {
                 var rows = data.campaigns;
                 var newRows = [];
                 var row;
@@ -61052,8 +60711,8 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                             name: row.name
                         },
                         impressions: {
-                            target: row.metrics.bookedImpressions,
-                            max: row.metrics.impressions
+                            max: row.metrics.bookedImpressions,
+                            current: row.metrics.impressions
                         },
                         start: row.startDate,
                         end: row.endDate,
@@ -61090,11 +60749,11 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
 
                 if ($state.params.accountId) {
                     delete rules.account;
-                    headers.shift();
+                    headers.splice(1, 1);
                 }
 
                 return {
-                    header: getTableHeader(header.all()),
+                    header: _getTableHeader(header.all()),
                     options: options,
                     content: {
                         rules: rules,
@@ -61104,7 +60763,7 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                 };
             }
 
-            function getTableHeader(data) {
+            function _getTableHeader(data) {
                 var template;
 
                 for (var i = 0; i < data.length; i++) {
@@ -61120,7 +60779,7 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
                     }
                 }
 
-                template = $interpolate('<span class="icon-status"></span>[[title]] (0)');
+                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
                 return template({
                     title: title
                 });
@@ -61134,7 +60793,9 @@ define('campaignManagement/campaigns/factories/campaignAccordionTable',['require
             return {
                 init: init,
                 observe: observe,
-                all: getTable
+                all: getTable,
+                _transformRows: _transformRows,
+                _getTableHeader: _getTableHeader
             };
         };
     }]);
@@ -61230,31 +60891,9 @@ define('campaignManagement/campaigns/controllers/campaigns',['require','./../../
 
     var app = require('./../../module');
 
-    app.controller('campaignsCtrl', ['$scope', '$modal', '$state', 'campaignsHeader', function ($scope, $modal, $state, campaignsHeader) {
-
-        $scope.summary = [];
-
-        function updateSummary() {
-            $scope.summary = campaignsHeader.all();
-        }
-
-        campaignsHeader.observe(updateSummary, $scope);
-
-        // Modal
-        $scope.openModal = openModal;
-
+    app.controller('campaignsCtrl', ['$scope', '$state', function ($scope, $state) {
+        //Needed for viewBy query Parameter
         $scope.params = $state.params;
-
-        function openModal(size) {
-            $modal.open({
-                animation: 'true',
-                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
-                controller: 'newCampaignCtrl',
-                size: size
-            });
-		}
-
-
     }]);
 });
 
@@ -61263,7 +60902,13 @@ define('campaignManagement/campaigns/controllers/campaign',['require','./../../m
 
     var app = require('./../../module');
 
-    app.controller('campaignCtrl', ['$scope', function ($scope) {
+    app.controller('campaignCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateCampaignInfo() {
+            $scope.campaign = navbar.all().campaign;
+        }
+
+        navbar.observe(updateCampaignInfo, $scope);
+
         $scope.placements = [
             {
                 header: '<span class=\'icon-status success\'></span> Discovery (12)',
@@ -61295,7 +60940,7 @@ define('campaignManagement/campaigns/controllers/campaign',['require','./../../m
 });
 
 
-define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<ul class="list">\n  <li>\n    <span>status</span>\n    <span class="status"><i class="glyph-dot small" ng-class="{\'success\': isLive}"></i> [[campaignStatus]]</span>\n  </li>\n  <li>\n    <span>flight dates</span>\n    <span>[[details.startDate|date:\'MMM d, yy\']] - [[details.endDate|date:\'MMM d, yy\']]</span>\n  </li>\n  <li ng-if="showImpressions">\n    <span>total impressions</span>\n    <span>[[details.metrics.impressions|truncateNumber]]</span>\n  </li>\n  <li ng-if="showImpressions">\n    <span>booked impressions</span>\n    <span>[[details.metrics.bookedImpressions|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>publishers</span>\n    <span>[[details.distinctPublishers|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>creatives</span>\n    <span>[[details.countCreatives|truncateNumber]]</span>\n  </li>\n  <li>\n    <span>placements</span>\n    <span>[[details.countPlacements|truncateNumber]]</span>\n  </li>\n</ul>\n'); });
+define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<div>\n    <ul class="list">\n        <li>\n            <span>status</span>\n            <span class="status"><i class="glyph-dot small" ng-class="{\'success\': isLive}"></i> {{campaignStatus}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>flight dates</span>\n            <span>{{details.startDate|date:\'MMM d, yy\'}} - {{details.endDate|date:\'MMM d, yy\'}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-if="showImpressions">\n            <span>total impressions</span>\n            <span>{{details.metrics.impressions|truncateNumber}}</span>\n        </li>\n        <li ng-if="showImpressions">\n            <span>booked impressions</span>\n            <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>publishers</span>\n            <span>{{details.distinctPublishers|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>creatives</span>\n            <span>{{details.countCreatives|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>placements</span>\n            <span>{{details.countPlacements|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('campaignManagement/campaigns/directives/campaignDetails',['require','./../../module','tpl!./campaignDetails.html'],function (require) {
     'use strict';
@@ -61468,7 +61113,7 @@ define('campaignManagement/campaigns/placements/controllers/list',['require','./
                     ],
                     data: [
                         {
-                            checked: '<input type="checkbox" checked>',
+                            checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
                             name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
                             type: 'RM',
                             delivering: '<span class="icon-status success"></span>',
@@ -61830,7 +61475,7 @@ define('campaignManagement/campaigns/creatives/controllers/thumbnails',['require
     ]);
 });
 
-define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/list','./creatives/controllers/list','./creatives/controllers/thumbnails'],function (require) {
+define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/list','./creatives/controllers/list','./creatives/controllers/thumbnails'],function (require) {
     'use strict';
 
     require('./services/campaignCache');
@@ -61838,7 +61483,7 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
     require('./services/campaignsByStatus');
     require('./services/campaignsFilter');
     require('./services/campaignsHeader');
-    require('./factories/campaignAccordionTable');
+    require('./factories/campaignsByStatusAccordionTable');
     require('./controllers/newCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');
@@ -61851,51 +61496,8 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
     require('./creatives/controllers/thumbnails');
 });
 
-/**
- * Created by Alex on 3/2/2015.
- */
-/* jshint camelcase: false */
-/* jshint -W098 */
-/* jshint -W004 */
-/* jshint -W101 */
 
-
-
-define('campaignManagement/controllers/campaignManagement',['require','./../module'],function (require) {
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
-    }]);
-});
-
-/* jshint camelcase: false */
-/* jshint -W098 */
-/* jshint -W004 */
-/* jshint -W101 */
-
-
-
-define('campaignManagement/controllers/index',['require','./../module'],function (require) {
-    var app = require('./../module');
-    //var ng = require('angular');
-
-    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
-        clients.init('/api/v3/clients?dimensions=id,name,pinned');
-        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
-        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
-        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
-
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            if (window.Router) {
-                window.Router.handleURL($location.url());
-            }
-        });
-    }]);
-});
-
-
-define('tpl!campaignManagement/clients/directives/activeSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/directives/activeSummary.html', '<div>\n    <h3 class="title">Active</h3>\n    <ul class="list">\n        <li>\n            <span>clients</span>\n            <span>[[active.count|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>accounts</span>\n            <span>[[active.countAccounts|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>campaigns</span>\n            <span>[[active.countCampaigns|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>pre-flight</span>\n            <span>[[active.countCampaignsPreFlight|truncateNumber]]</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>[[active.countCampaignsInFlight|truncateNumber]]</span>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!campaignManagement/clients/directives/activeSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/directives/activeSummary.html', '<div>\n    <h3 class="title">Active</h3>\n    <ul class="list">\n        <li>\n            <span>clients</span>\n            <span>{{active.count|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>accounts</span>\n            <span>{{active.countAccounts|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>campaigns</span>\n            <span>{{active.countCampaigns|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>pre-flight</span>\n            <span>{{active.countCampaignsPreFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>in-flight</span>\n            <span>{{active.countCampaignsInFlight|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
 
 define('campaignManagement/clients/directives/activeSummary',['require','./../../module','tpl!./activeSummary.html'],function (require) {
     'use strict';
@@ -61920,13 +61522,27 @@ define('campaignManagement/clients/directives/activeSummary',['require','./../..
     }]);
 });
 
+define('campaignManagement/clients/controllers/client',['require','./../../module'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+
+    app.controller('clientCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateClientName() {
+            $scope.client = navbar.all().client;
+        }
+
+        navbar.observe(updateClientName, $scope);
+    }]);
+});
+
 
 
 define('campaignManagement/clients/controllers/clients',['require','./../../module','tpl!./../new-client.html'],function (require) {
     var app = require('./../../module');
     require('tpl!./../new-client.html');
 
-    app.controller('clientsCtrl', ['$scope', '$http', '$timeout', 'topClientsService', '$modal', function ($scope, $http, $timeout, topClients, $modal) {
+    app.controller('clientsCtrl', ['$scope', 'topClientsService', '$modal', function ($scope, topClients, $modal) {
 
         $scope.openModal = openModal;
 
@@ -62016,7 +61632,7 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
                 output.push({
                     'id': client.id,
                     'channel': client.channel,
-                    'client': {route: 'cm.clients.detail({ clientId: row.id })', name: client.name },
+                    'client': {route: 'cm.campaigns.client({ clientId: row.id })', name: client.name },
                     'activeAccounts': client.metrics.countAccountsActive,
                     'activeCampaigns': client.metrics.countCampaignsPreFlight + client.metrics.countCampaignsInFlight,
                     'impressions': client.metrics.impressions,
@@ -62061,33 +61677,72 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
     }]);
 });
 
-define('campaignManagement/accounts/controllers/accounts',['require','./../../module','tpl!./../new-account.html'],function (require) {
+define('campaignManagement/clients/index',['require','./directives/activeSummary','./controllers/client','./controllers/clients','./controllers/newClient','./services/topClients'],function(require) {
+    'use strict';
+
+    require('./directives/activeSummary');
+    require('./controllers/client');
+    require('./controllers/clients');
+    require('./controllers/newClient');
+    require('./services/topClients');
+});
+
+/**
+ * Created by Alex on 3/2/2015.
+ */
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaignManagement/controllers/campaignManagement',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('campaignManagementCtrl', ['$scope', function ($scope) {
+    }]);
+});
+
+/* jshint camelcase: false */
+/* jshint -W098 */
+/* jshint -W004 */
+/* jshint -W101 */
+
+
+
+define('campaignManagement/controllers/index',['require','./../module'],function (require) {
+    var app = require('./../module');
+    //var ng = require('angular');
+
+    app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
+        clients.init('/api/v3/clients?dimensions=id,name,pinned');
+        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
+        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
+        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            if (window.Router) {
+                window.Router.handleURL($location.url());
+            }
+        });
+    }]);
+});
+
+define('campaignManagement/accounts/controllers/account',['require','./../../module','tpl!./../new-account.html'],function (require) {
     'use strict';
 
     var app = require('./../../module');
     require('tpl!./../new-account.html');
 
-    app.controller('accountsCtrl', ['$scope', '$modal', function ($scope, $modal) {
-        $scope.openModal = openModal;
-
-        function openModal(size) {
-            $modal.open({
-                animation: 'true',
-                templateUrl: 'campaignManagement/accounts/new-account.html',
-                controller: 'newAccountCtrl',
-                size: size
-            });
+    app.controller('accountCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+        function updateAccountInfo() {
+            $scope.account = navbar.all().account;
         }
+
+        navbar.observe(updateAccountInfo, $scope);
     }]);
-});
-
-/**
- * Created by Alex on 3/1/2015.
- */
-define('campaignManagement/accounts/index',['require','./controllers/accounts'],function (require) {
-    'use strict';
-
-    require('./controllers/accounts');
 });
 
 define('campaignManagement/accounts/controllers/newAccount',['require','./../../module'],function (require) {
@@ -62138,21 +61793,53 @@ define('campaignManagement/accounts/controllers/newAccount',['require','./../../
     }]);
 });
 
-define('campaignManagement/index',['require','./routes','./divisions/index','./campaigns/index','./controllers/campaignManagement','./controllers/index','./clients/directives/activeSummary','./clients/controllers/clients','./clients/controllers/newClient','./clients/services/topClients','./accounts/index','./accounts/controllers/accounts','./accounts/controllers/newAccount'],function (require) {
+
+define('tpl!campaignManagement/accounts/directives/accountSummary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/directives/accountSummary.html', '<div>\n    <h3 class="title">Campaigns</h3>\n    <ul class="list">\n        <li>\n            <span>Pre-Flight</span>\n            <span>{{summary.preFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>In-Flight</span>\n            <span>{{summary.inFlight|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>Completed</span>\n            <span>{{summary.completed|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>Archived</span>\n            <span>{{summary.archived|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+define('campaignManagement/accounts/directives/accountSummary',['require','./../../module','tpl!./accountSummary.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./accountSummary.html');
+
+    app.directive('accountSummary', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/accounts/directives/accountSummary.html',
+            controller: ['$scope', 'campaignsHeader', function ($scope, campaignsHeader) {
+                function updateSummary() {
+                    $scope.summary = campaignsHeader.all();
+                }
+
+                campaignsHeader.observe(updateSummary, $scope);
+            }]
+        };
+    }]);
+});
+
+/**
+ * Created by Alex on 3/1/2015.
+ */
+define('campaignManagement/accounts/index',['require','./controllers/account','./controllers/newAccount','./directives/accountSummary'],function (require) {
+    'use strict';
+
+    require('./controllers/account');
+    require('./controllers/newAccount');
+    require('./directives/accountSummary');
+});
+
+define('campaignManagement/index',['require','./routes','./divisions/index','./campaigns/index','./clients/index','./controllers/campaignManagement','./controllers/index','./accounts/index'],function (require) {
     'use strict';
 
     require('./routes');
     require('./divisions/index');
     require('./campaigns/index');
+    require('./clients/index');
     require('./controllers/campaignManagement');
     require('./controllers/index');
-    require('./clients/directives/activeSummary');
-    require('./clients/controllers/clients');
-    require('./clients/controllers/newClient');
-    require('./clients/services/topClients');
     require('./accounts/index');
-    require('./accounts/controllers/accounts');
-    require('./accounts/controllers/newAccount');
 });
 
 define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index'],function (require) {
@@ -62319,11 +62006,7 @@ define('bootstrap-core',['require','angular','app-core'],function (require) {
     'use strict';
 
     var ng = require('angular');
-    var app = require('app-core');
-
-    app.config(['$interpolateProvider', function ($interpolateProvider) {
-        $interpolateProvider.startSymbol('[[').endSymbol(']]');
-    }]);
+    require('app-core');
 
     require(['domReady!'], function () {
         ng.bootstrap(window.document.querySelector('body'), ['app']);
