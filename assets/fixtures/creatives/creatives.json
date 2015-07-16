@@ -1,0 +1,52 @@
+{
+    "creatives": [
+        {
+            "id": 1,
+            "name": "Creative 1",
+            "live": true,
+            "adType": "IBV",
+            "device": "Tablet",
+            "embedWidth": "300",
+            "embedHeight": "250",
+            "expandedWidth": "600",
+            "expandedHeight": "250",
+            "numPlacements": 2
+        },
+        {
+            "id": 2,
+            "name": "Creative 2",
+            "live": false,
+            "adType": "IS",
+            "device": "Tablet",
+            "embedWidth": "300",
+            "embedHeight": "250",
+            "expandedWidth": "300",
+            "expandedHeight": "250",
+            "numPlacements": 1
+        },
+        {
+            "id": 3,
+            "name": "Creative 3",
+            "live": true,
+            "adType": "RM",
+            "device": "Desktop",
+            "embedWidth": "300",
+            "embedHeight": "250",
+            "expandedWidth": "600",
+            "expandedHeight": "250",
+            "numPlacements": 5
+        },
+        {
+            "id": 3,
+            "name": "Creative 3",
+            "live": false,
+            "adType": "RM",
+            "device": "Mobile",
+            "embedWidth": "728",
+            "embedHeight": "90",
+            "expandedWidth": "728",
+            "expandedHeight": "300",
+            "numPlacements": 3
+        }
+    ]
+}
