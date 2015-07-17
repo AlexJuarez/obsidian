@@ -26,7 +26,7 @@ define(function (require) {
         {name: '', id: 'options'}
     ];
 
-    module.service('campaignCreative', ['cacheFactory', '$state', function (cacheFactory, $state) {
+    module.service('creatives', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
             transform: transformCampaigns
         });

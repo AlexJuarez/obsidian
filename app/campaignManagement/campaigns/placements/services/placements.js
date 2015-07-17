@@ -81,7 +81,7 @@ define(function (require) {
                         delivering: placement.live,
                         startDate: placement.startDate,
                         endDate: placement.endDate,
-                        type: placement.adType,
+                        type: placement.type,
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions

@@ -3,15 +3,10 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeader', ['$scope', '$rootScope', '$state', 'campaignCreative', function($scope, $rootScope, $state, campaignCreative) {
-        $scope.creativesFilter = $state.params.filter;
-        $rootScope.$on('$stateChangeSuccess', function () {
-            $scope.creativesFilter = $state.params.filter;
-        });
-
+    app.controller('creativesHeader', ['$scope', '$rootScope', '$state', 'creatives', function($scope, $rootScope, $state, creatives) {
         function updateMeta() {
 
-            var allCreatives = campaignCreative.all().data;
+            var allCreatives = creatives.all().data;
 
             if (allCreatives) {
                 var creative = 0;
@@ -35,7 +30,7 @@ define(function(require) {
             }
         }
         updateMeta();
-        campaignCreative.observe(updateMeta, $scope, true);
+        creatives.observe(updateMeta, $scope, true);
     }
     ]);
 });

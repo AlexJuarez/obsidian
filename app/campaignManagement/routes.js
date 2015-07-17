@@ -12,12 +12,16 @@ define(function (require) {
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/campaigns.html');
-    require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementsHeader.html');
+
     require('tpl!./campaigns/creatives/creativesList.html');
     require('tpl!./campaigns/creatives/creativesThumbnails.html');
     require('tpl!./campaigns/creatives/creativesHeader.html');
+    require('tpl!./campaigns/creatives/directives/creativeThumbnails.html');
+
+    require('tpl!./campaigns/placements/placementsList.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
     require('tpl!./campaigns/placements/services/placementTableHeader.html');
+
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {

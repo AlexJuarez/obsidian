@@ -11,7 +11,7 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$rootScope', '$state', '$filter', 'campaignCreative', function ($scope, $rootScope, $state, $filter, campaignCreative) {
+            controller: ['$scope', '$rootScope', '$state', '$filter', 'creatives', function ($scope, $rootScope, $state, $filter, creatives) {
 
                 var filter = $state.params.filter;
                 $rootScope.$on('$stateChangeSuccess', function () {
@@ -19,14 +19,14 @@ define(function (require) {
                 });
 
                 function updateCreatives() {
-                    var creatives = campaignCreative.all();
+                    var allCreatives = creatives.all();
                     var duplicateCreatives = [];
 
-                    duplicateCreatives = $filter('filter')(creatives.data, {type: filter});
+                    duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
                     $scope.creatives = duplicateCreatives;
                 }
 
-                campaignCreative.observe(updateCreatives, $scope);
+                creatives.observe(updateCreatives, $scope);
 
             }]
         };

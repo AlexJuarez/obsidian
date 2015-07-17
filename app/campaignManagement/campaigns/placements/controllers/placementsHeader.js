@@ -19,7 +19,7 @@ define(function(require) {
                     placement = allPlacements[i];
 
                     pushUnique(publishers, placement.publisher.id);
-                    pushUnique(types, placement.adType);
+                    pushUnique(types, placement.type);
 
                     for (var k=0; k<placement.creatives.length; k++) {
                         creative = placement.creatives[k];
