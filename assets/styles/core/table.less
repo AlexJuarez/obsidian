@@ -198,6 +198,12 @@ table {
 }
 
 @media (max-width: @screen-xs-max) {
+    .table-wrapper {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+    }
+
     .table {
         .meter-wrapper {
             .meter {
@@ -212,7 +218,6 @@ table {
         tbody {
             display: block;
             white-space: nowrap;
-            overflow-x: auto;
             overflow-y: hidden;
             width: auto;
 
@@ -220,8 +225,6 @@ table {
                 display: inline-block;
                 width: ~"calc(100vw - 4rem)";
                 padding: 1rem @mobile-gutter;
-                max-height: 500px;
-                overflow-y: auto;
                 box-sizing: border-box;
 
                 &:last-child {

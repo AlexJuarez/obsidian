@@ -33,6 +33,10 @@ define(function (require) {
                 return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+            case 'creatives':
+                return '<div table-creatives creatives="row.' + input + '"></div>';
+            case 'delivering':
+                return '<span table-delivering delivering="row.' + input + '"></div>';
             default:
                 return data;
             }
