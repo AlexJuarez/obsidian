@@ -46998,7 +46998,11 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
             if (state.client && state.client.id !== client.id) {
                 client = state.client;
                 divisions.notifyObservers();
+            } else if (!state.client) {
+                client = {};
+                divisions.notifyObservers();
             }
+
         });
 
         function init(url) {
@@ -60762,7 +60766,7 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
             .state('analytics', {
                 url: '/analytics',
                 parent: 'index',
-                templateUrl: 'campaignManagement/index.html'
+                template: '<header><div navbar></div></header>'
             })
             .state('index', {
                 template: '<ui-view />',

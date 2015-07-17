@@ -12,7 +12,11 @@ define(function (require) {
             if (state.client && state.client.id !== client.id) {
                 client = state.client;
                 divisions.notifyObservers();
+            } else if (!state.client) {
+                client = {};
+                divisions.notifyObservers();
             }
+
         });
 
         function init(url) {

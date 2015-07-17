@@ -38,7 +38,7 @@ define(function (require) {
             .state('analytics', {
                 url: '/analytics',
                 parent: 'index',
-                templateUrl: 'campaignManagement/index.html'
+                template: '<header><div navbar></div></header>'
             })
             .state('index', {
                 template: '<ui-view />',
