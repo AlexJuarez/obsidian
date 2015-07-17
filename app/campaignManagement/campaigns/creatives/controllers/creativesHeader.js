@@ -3,7 +3,12 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeader', ['$scope', '$rootScope', 'campaignCreative', function($scope, $rootScope, campaignCreative) {
+    app.controller('creativesHeader', ['$scope', '$rootScope', '$state', 'campaignCreative', function($scope, $rootScope, $state, campaignCreative) {
+        $scope.creativesFilter = $state.params.filter;
+        $rootScope.$on('$stateChangeSuccess', function () {
+            $scope.creativesFilter = $state.params.filter;
+        });
+
         function updateMeta() {
 
             var allCreatives = campaignCreative.all().data;

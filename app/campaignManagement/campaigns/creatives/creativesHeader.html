@@ -1,8 +1,8 @@
 <nav class="row" role="form">
     <div class="form-group col-lg-5">
         <span style="font-size: 20px; padding-right: 20px;">
-            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>
-            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>
+            <a ui-sref="cm.campaigns.detail.creatives.thumbnails({filter: creativesFilter})"><i class="glyph-icon glyph-grid"></i></a>
+            <a ui-sref="cm.campaigns.detail.creatives.list({filter: creativesFilter})"><i class="glyph-icon glyph-list"></i></a>
         </span>
         <b>Filter:</b>
         <a ui-sref=".({filter: ''})">all ({{creativesMeta.all}})</a>
