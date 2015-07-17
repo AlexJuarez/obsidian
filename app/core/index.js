@@ -28,5 +28,6 @@ define(function (require) {
     require('./services/clientSet');
     require('./services/divisionSet');
     require('./services/campaignCreative');
+    require('./services/apiURIGenerator');
     require('./constants/apiURI');
 });

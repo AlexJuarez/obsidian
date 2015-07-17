@@ -85,3 +85,18 @@
         }
     }
 }
+
+@media (max-width: @screen-xs-max) {
+    .dropdown-xs-12 {
+        display: block;
+        .dropdown-toggle {
+            width: 100%;
+            .font-size(2);
+        }
+
+        .dropdown-menu {
+            position: static;
+            margin-bottom: 1rem;
+        }
+    }
+}

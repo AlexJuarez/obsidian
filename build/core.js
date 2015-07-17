@@ -46806,7 +46806,7 @@ define('core/datepicker/index',['require','tpl!./datepicker.html','tpl!./day.htm
 });
 
 
-define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ui-sref="cm" ui-sref-active="active">Campaign Management</a></li>\n            <li><a class="primary" ui-sref="analytics"  ui-sref-active="active">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n            </li>\n            <li class="dropdown" division-dropdown>\n            </li>\n            <li class="dropdown" account-dropdown>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
+define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a ng-click="transition(\'cm\', $event)" ng-class="{\'active\': $state.includes(\'cm\')}">Campaign Management</a></li>\n            <li><a class="primary" ng-click="transition(\'analytics\', $event)" ng-class="{\'active\': $state.includes(\'analytics\')}">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li class="dropdown" client-dropdown>\n            </li>\n            <li class="dropdown" division-dropdown>\n            </li>\n            <li class="dropdown" account-dropdown>\n            </li>\n            <li class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
 
 /**
  * Created by alex on 4/15/15.
@@ -46817,13 +46817,38 @@ define('core/navbar/navbar',['require','./../module','tpl!./navbar.html'],functi
     var app = require('./../module');
     require('tpl!./navbar.html');
 
-    app.directive('navbar', [function () {
+    app.directive('navbar', ['$rootScope', '$state', function ($rootScope, $state) {
         return {
             restrict: 'A',
             templateUrl: 'core/navbar/navbar.html',
             replace: true,
             scope: {
                 open: '='
+            },
+            link: function (scope) {
+                scope.transition = transition;
+                scope.$state = $state;
+
+                function transition(area){
+                    if ($state.includes(area)){
+                        $state.go(area);
+                    } else if ($state.params.clientId) {
+                        $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
+                    } else if ($state.params.divisionId) {
+                        $state.go(area + '.campaigns.division', {divisionId: $state.params.divisionId});
+                    } else if ($state.params.accountId) {
+                        $state.go(area + '.campaigns.account', {accountId: $state.params.accountId});
+                    } else if ($state.params.campaignId) {
+                        $state.go(area +'.campaigns.campaign', {campaignId: $state.params.campaignId});
+                    } else {
+                        $state.go(area);
+                    }
+
+                }
+
+                $rootScope.$on('$stateChangeSuccess', function () {
+                    scope.open = false;
+                });
             }
         };
     }]);
@@ -46965,8 +46990,20 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('divisionService', ['$http', 'dataFactory', '$state', function ($http, dataFactory, $state) {
+    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', function ($http, dataFactory, $state, $rootScope) {
         var divisions = dataFactory(utils.sortByName);
+        var client = {};
+
+        $rootScope.$on('navStateChange', function (event, state) {
+            if (state.client && state.client.id !== client.id) {
+                client = state.client;
+                divisions.notifyObservers();
+            } else if (!state.client) {
+                client = {};
+                divisions.notifyObservers();
+            }
+
+        });
 
         function init(url) {
             return divisions.init(url, function (data) {
@@ -46988,6 +47025,11 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
             var output = [];
             var division = get($state.params.divisionId);
             var clientId = $state.params.clientId || division && division.client.id;
+
+            if(client && !clientId) {
+                clientId = client.id;
+            }
+
             var item;
 
             if (!clientId) {
@@ -47421,10 +47463,11 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
 
 /* jshint -W101 */
 
-define('core/navbar/services/navbar',['require','./../../module'],function (require) {
+define('core/navbar/services/navbar',['require','./../../module','angular'],function (require) {
     'use strict';
 
     var module = require('./../../module');
+    var ng = require('angular');
 
     module.service('navbarService', ['dataFactory', 'clientService', 'divisionService', 'accountService', 'campaignService', '$rootScope', '$state', function (dataFactory, clients, divisions, accounts, campaigns, $rootScope, $state) {
         var navInfo = dataFactory();
@@ -47436,6 +47479,16 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
             navInfo.setData(toParams);
+        });
+
+        var oldState = all();
+        navInfo.observe(function () {
+            var currentState = all();
+
+            if(!ng.equals(oldState, currentState)){
+                oldState = currentState;
+                $rootScope.$broadcast('navStateChange', currentState);
+            }
         });
 
         function getClient(id) {
@@ -47539,7 +47592,7 @@ define('core/navbar/services/navbar',['require','./../../module'],function (requ
 });
 
 
-define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li><a ui-sref=".clients">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul  class="pinned">\n                <li ng-repeat="client in pinned track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                    <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul >\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li ng-repeat="item in clientsMap track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="client in results track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                    <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/client.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li><a ui-sref=".clients">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul  class="pinned">\n                    <li ng-repeat="client in pinned track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                        <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul >\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in clientsMap track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                        <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="client in results track by client.id">\n                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>\n                        <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!./client.html'],function (require) {
     'use strict';
@@ -47583,7 +47636,7 @@ define('core/navbar/directives/clientDropdown',['require','./../../module','tpl!
 });
 
 
-define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li ng-if="!state.clientId"><a>All {{section}}</a></li>\n        <li ng-if="state.clientId"><a ui-sref=".campaigns.client(state)">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="division in pinned track by division.id">\n                    <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                    <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list">\n        <li ng-repeat="item in divisionsMap track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                    <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="division in results track by division.id">\n                    <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>\n                    <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/division.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/division.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-if="!state.clientId"><a>All {{section}}</a></li>\n            <li ng-if="state.clientId"><a ui-sref=".campaigns.client(state)">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul class="pinned">\n                    <li ng-repeat="division in pinned track by division.id">\n                        <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                        <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="divisionsMap" wheel-propagation="true"  class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in divisionsMap track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">\n                        <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>\n                        <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="division in results track by division.id">\n                        <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>\n                        <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/divisionDropdown',['require','./../../module','tpl!./division.html'],function (require) {
     'use strict';
@@ -47652,7 +47705,7 @@ define('core/navbar/directives/divisionDropdown',['require','./../../module','tp
 });
 
 
-define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="tooltip dropdown-toggle-title hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list">\n        <li ng-if="!state.divisionId"><a>All {{section}}</a></li>\n        <li ng-if="state.divisionId"><a ui-sref=".campaigns.division(state)">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="account in pinned track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                    <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list">\n        <li ng-repeat="item in accountsMap track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="account in (item.value | limitTo: limit) track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="account in results track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({ accountId: account.id })">{{account.name}}</a>\n                    <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/account.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="tooltip dropdown-toggle-title hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-if="!state.divisionId"><a>All {{section}}</a></li>\n        <li ng-if="state.divisionId"><a ui-sref=".campaigns.division(state)">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul class="pinned">\n                    <li ng-repeat="account in pinned track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                        <a ng-click="unpin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="accountsMap" wheel-propagation="true" wheel-speed="10" class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in accountsMap track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="account in (item.value | limitTo: limit) track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({accountId: account.id})">{{account.name}}</a>\n                        <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="account in results track by account.id">\n                    <a title="{{account.name}}" ui-sref=".campaigns.account({ accountId: account.id })">{{account.name}}</a>\n                        <a ng-click="pin(account)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/accountDropdown',['require','./../../module','tpl!./account.html'],function (require) {
     'use strict';
@@ -47704,7 +47757,7 @@ define('core/navbar/directives/accountDropdown',['require','./../../module','tpl
 });
 
 
-define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <ul class="list" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">\n        <li ng-if="!state.accountId"><a>All {{section}}</a></li>\n        <li ng-if="state.accountId"><a ui-sref=".campaigns.account(state)">All {{section}}</a></li>\n        <li ng-if="pinned.length">Pinned\n            <ul class="pinned">\n                <li ng-repeat="campaign in pinned track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="preFlight.length">preFlight\n            <ul>\n                <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="inFlight.length">inFlight\n            <ul>\n                <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n        <li ng-show="completed.length">completed\n            <ul>\n                <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                </li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list">\n        <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">\n            {{item.key}}\n            <ul limit="5">\n                <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n            </ul>\n        </li>\n    </ul>\n    <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list">\n        <li>Results for "{{query}}"\n            <ul>\n                <li ng-repeat="campaign in results track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                    <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n            </ul>\n        </li>\n    </ul>\n</div>\n'); });
+define('tpl!core/navbar/directives/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/directives/campaign.html', '<div class="dropdown-toggle">\n    <div class="dropdown-toggle-subtitle">\n        {{section}}\n    </div>\n    <div tooltip="current" tooltip-overflow="true" class="dropdown-toggle-title tooltip hover tooltip-basic tooltip-light">\n        <i class="glyph-chevron-down"></i>\n        {{current}}\n    </div>\n</div>\n<div class="dropdown-menu" role="menu">\n    <label class="dropdown-search">\n        <input ng-model="query" class="input" placeholder="Search" type="search" />\n        <i class="glyph-close" ng-click="query = \'\'"></i>\n    </label>\n    <div class="row">\n        <ul class="list col-sm-12 col-md-6" suppress-scroll-x="true" perfect-scrollbar refresh-on-change="[pinned, preFlight, inFlight, completed]" wheel-propagation="true" wheel-speed="10">\n            <li ng-if="!state.accountId"><a>All {{section}}</a></li>\n            <li ng-if="state.accountId"><a ui-sref=".account(state)">All {{section}}</a></li>\n            <li ng-if="pinned.length">Pinned\n                <ul class="pinned">\n                    <li ng-repeat="campaign in pinned track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="unpin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n            <li ng-show="preFlight.length">preFlight\n                <ul>\n                    <li ng-repeat="campaign in (preFlight | limitTo: preFlightLimit) track by campaign.id ">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n            <li ng-show="inFlight.length">inFlight\n                <ul>\n                    <li ng-repeat="campaign in (inFlight | limitTo: inFlightLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n            <li ng-show="completed.length">completed\n                <ul>\n                    <li ng-repeat="campaign in (completed | limitTo: completedLimit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>\n                    </li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-hide="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="quarterMap" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li ng-repeat="item in (quarterMap | limitTo: quarterLimit) track by $index">\n                {{item.key}}\n                <ul limit="5">\n                    <li ng-repeat="campaign in (item.value | limitTo: limit) track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                    <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>\n                </ul>\n            </li>\n        </ul>\n        <ul ng-show="query.length" perfect-scrollbar suppress-scroll-x="true" refresh-on-change="results" wheel-propagation="true" class="list col-sm-12 col-md-6">\n            <li>Results for "{{query}}"\n                <ul>\n                    <li ng-repeat="campaign in results track by campaign.id">\n                    <a title="{{campaign.name}}" ui-sref=".campaigns.detail({ campaignId: campaign.id })">{{campaign.name}}</a>\n                        <a ng-click="pin(campaign)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>\n                </ul>\n            </li>\n        </ul>\n    </div>\n</div>\n'); });
 
 define('core/navbar/directives/campaignDropdown',['require','./../../module','tpl!./campaign.html'],function (require) {
     'use strict';
@@ -48243,7 +48296,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
 
     app.directive('placeholder', ['$interpolate', function ($interpolate) {
         return {
-            restrict: 'E',
+            restrict: 'C',
             templateUrl: 'core/directives/placeholder.html',
             scope: {},
             link: function ($scope, elem, attr) {
@@ -59789,6 +59842,8 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
                 var key = attr.pacingChart;
 
                 scope.$watch(key, function (data) {
+                    var fill;
+
                     if (data) {
                         scope.max = data.max;
                         scope.current = data.current;
@@ -59796,11 +59851,14 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
 
 
                         if (data.current > data.max) {
-                            scope.target = 0;
+                            var target = Math.round(data.max/data.current*100);
+                            scope.target = true;
+                            fill = d3.select(elem.find('.target > rect')[0]);
+                            fill.attr('x', target + '%');
                         }
 
                         if (data.max) {
-                            var fill = d3.select(elem.find('.fill > rect')[0]);
+                            fill = d3.select(elem.find('.fill > rect')[0]);
                             fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
                         }
 
@@ -60115,6 +60173,151 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
     }]);
 });
 
+define('core/services/campaignCreative',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+    var baseUrl = '/fixtures/campaignCreative.json';
+
+    module.service('campaignCreative', ['cacheFactory', '$state', function (cacheFactory, $state) {
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.campaignCreatives;
+            }
+        });
+
+        function filter() {
+            var output = '';
+
+            if ($state.params.clientId) {
+                output = '&filters=id:eq:' + $state.params.clientId;
+            }
+
+            return output;
+        }
+
+        function url() {
+            return baseUrl + filter();
+        }
+
+        function all() {
+            var datum = cache.all(url());
+            var output = [];
+
+            if (datum.length) {
+                ng.forEach(datum, function (d, key){
+                    output[key] = d;
+                });
+            }
+
+            return output;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(url(), initialize);
+        }
+
+        return {
+            url: url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+/**
+ * Generate an API URI based on a parameters object. Possible parameters are:
+ */
+define('core/services/apiURIGenerator',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../module');
+    var ng = require('angular');
+
+    var defaultConfig = {
+        version: 3
+    };
+
+    // Note: These are concatenated in order
+    var uriTemplates = [
+        {paramKey: 'version', template: '/api/v{{version}}/'},
+        {paramKey: 'endpoint', template: '{{endpoint}}?'},
+        {paramKey: 'dimensions', template: 'dimensions={{dimensions}}&'},
+        {paramKey: 'metrics', template: 'metrics={{metrics}}&'},
+        {paramKey: 'offset', template: 'offset={{offset}}&'},
+        {paramKey: 'limit', template: 'limit={{limit}}&'},
+        {paramKey: 'order', template: 'order={{order}}&'},
+        {paramKey: 'filters', template: 'filters={{filters}}&'}
+    ];
+
+    var requiredParams = [
+        'endpoint',
+        'dimensions'
+    ];
+
+    // TODO: add the API_URI constant, replace domainInterceptor.js
+    module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
+        function getApiUri(params) {
+            setupDefaultParams(params);
+            if (validate(params)) {
+                return createApiUri(params);
+            } else {
+                return false;
+            }
+        }
+
+        function setupDefaultParams(params) {
+            ng.extend(params, defaultConfig);
+            if (params.dimensions) {
+                params.dimensions = params.dimensions.join(',');
+            }
+            if (params.metrics) {
+                params.metrics = params.metrics.join(',');
+            }
+            if (params.filters) {
+                params.filters = params.filters.join(',');
+            }
+        }
+
+        function validate(params) {
+            var valid = true;
+            requiredParams.forEach(function(requiredParam) {
+                if (typeof params[requiredParam] === 'undefined') {
+                    valid = false;
+                }
+            });
+
+            return valid;
+        }
+
+        function createApiUri(params) {
+            var uri = '';
+            uriTemplates.forEach(function(uriTemplate) {
+                var paramKey = uriTemplate.paramKey;
+                if (typeof params[paramKey] !== 'undefined') {
+                    var template = $interpolate(uriTemplate.template);
+                    uri = uri + template(params);
+                }
+            });
+
+            return uri;
+        }
+
+        return getApiUri;
+    }]);
+});
+
 define('core/constants/apiURI',['require','./../module'],function (require) {
     'use strict';
 
@@ -60128,7 +60331,7 @@ define('core/constants/apiURI',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./constants/apiURI'],function (require) {
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./services/campaignCreative','./services/apiURIGenerator','./constants/apiURI'],function (require) {
     'use strict';
 
     require('./modal/index');
@@ -60153,6 +60356,8 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./services/channel');
     require('./services/clientSet');
     require('./services/divisionSet');
+    require('./services/campaignCreative');
+    require('./services/apiURIGenerator');
     require('./constants/apiURI');
 });
 
@@ -60200,6 +60405,10 @@ define('table/filters/format',['require','./../module'],function (require) {
                 return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+            case 'creatives':
+                return '<div table-creatives creatives="row.' + input + '"></div>';
+            case 'delivering':
+                return '<span table-delivering delivering="row.' + input + '"></div>';
             default:
                 return data;
             }
@@ -60241,7 +60450,7 @@ define('table/directives/accordionTable',['require','./../module','tpl!./accordi
 });
 
 
-define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.name}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
+define('tpl!table/directives/basicTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/basicTable.html', '<table class="table" ng-class="classes">\n    <thead>\n    <tr>\n        <th ng-repeat="header in table.headers track by $index">\n            {{header.name}}\n        </th>\n    </tr>\n    </thead>\n    <tbody>\n    <tr ng-repeat="row in table.data track by $index">\n        <td data-header="{{header.name && header.name + \':\'}}" ng-repeat="header in table.headers" compile="header.id|format:row:table.rules">\n        </td>\n        <td class="table-number">row: {{$index + 1}}/{{table.data.length}}</td>\n    </tr>\n    </tbody>\n</table>\n\n'); });
 
 /**
  * Created by alex on 4/23/15.
@@ -60266,15 +60475,65 @@ define('table/directives/basicTable',['require','./../module','tpl!./basicTable.
     }]);
 });
 
+
+define('tpl!table/directives/tableCreatives.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableCreatives.html', '<div ng-repeat="creative in creatives">\n    {{creative.name}}\n</div>\n'); });
+
+define('table/directives/tableCreatives',['require','./../module','tpl!./tableCreatives.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./tableCreatives.html');
+
+    app.directive('tableCreatives', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/tableCreatives.html',
+            replace: true,
+            scope: {
+                creatives: '=creatives',
+                classes: '@class'
+            },
+            link: function () {
+            }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/tableDelivering.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableDelivering.html', '<span class="icon-status" ng-class="{\'success\':delivering}"></span>\n'); });
+
+define('table/directives/tableDelivering',['require','./../module','tpl!./tableDelivering.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./tableDelivering.html');
+
+    app.directive('tableDelivering', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/tableDelivering.html',
+            replace: true,
+            scope: {
+                delivering: '=delivering',
+                classes: '@class'
+            },
+            link: function () {
+            }
+        };
+    }]);
+});
+
 /**
  * Created by Alex on 3/1/2015.
  */
-define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable'],function (require) {
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable','./directives/tableCreatives','./directives/tableDelivering'],function (require) {
     'use strict';
 
     require('./filters/format');
     require('./directives/accordionTable');
     require('./directives/basicTable');
+    require('./directives/tableCreatives');
+    require('./directives/tableDelivering');
 });
 
 /**
@@ -60444,29 +60703,35 @@ define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], functi
 define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>\n        <span ng-show="campaign">Summary for {{campaign.name}}</span>\n        <span ng-show="!campaign">Summary</span>\n    </div>\n    <div class="dropdown-menu">\n        <div campaign-details></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">Edit Campaign</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<placeholder style="width: 100%" image="images/placeholders/campaign-detail-graph.jpg"></placeholder>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="placeholder" image="images/placeholders/campaign-detail-graph.jpg"></div>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/list.html', '<div accordion-table="placements" class="table table-hover"></div>\n'); });
+define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<p>\n    View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n</p>\n<div ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".publisher">Publisher (4)</a>\n        <a ui-sref=".ad-unit">Ad unit (15)</a>\n        <a ui-sref=".ad-type">Ad type (3)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-lg-3 col-lg-offset-1" style="padding-bottom: 1rem;">\n                <label class="form-label">\n                    <div class="dropdown">\n                        <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                        <ul class="dropdown-menu" role="menu">\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                            <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                        </ul>\n                    </div>\n                </label>\n            </div>\n            <div class="col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/list.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/list.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher (4)</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative (15)</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type (3)</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                    <ul class="dropdown-menu" role="menu">\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                    </ul>\n                </div>\n            </div>\n            <div class="col-sm-8 btn-group text-right-sm col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/thumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/thumbnails.html', '<div class="thumbnail-view row ng-scope">\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot active"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <div>\n                <span>Placements:</span><span>13</span>\n            </div>\n            <div>\n                <span>Last Modified:</span><span>10/1/2014</span>\n            </div>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/180" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/240/135" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Stream | 16:9</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/300/250" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">Rich Media | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n\n    <div class="col-sm-3">\n        <div class="thumbnail-wrapper">\n            <div class="ratio-box">\n                <img src="http://www.placecage.com/256/120" class="thumbnail">\n            </div>\n        </div>\n        <div class="image-info">\n            <i class="glyph-icon glyph-dot"></i>\n            <span class="size">In-Banner Video | 300x250</span>\n        </div>\n        <div class="creative-info">\n            <span class="title">Creative_Title</span>\n            <span class="last-modified">Last Modified: 10/1/2014</span>\n            <span class="placements">Placements: 13</span>\n            <span class="edit-creative">Edit in Studio</span>\n            <div class="utility">\n                <a href="#" class="glyph-icon glyph-settings"></a>\n                <a href="#" class="glyph-icon glyph-copy"></a>\n                <a href="#" class="glyph-icon glyph-close"></a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesList.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/header.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/header.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesThumbnails.html', '<div creative-thumbnails />\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span> <span class="muted normal">{{group.meta.count}} placements, {{group.meta.numDelivering}} delivering, {{group.meta.impressions}} of {{group.meta.bookedImpressions}} impressions</span>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/list.html','tpl!./campaigns/placements/header.html','tpl!./campaigns/creatives/list.html','tpl!./campaigns/creatives/thumbnails.html','tpl!./campaigns/creatives/header.html','tpl!./campaigns/new-campaign.html'],function (require) {
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('./clients/routes');
@@ -60477,11 +60742,13 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
-    require('tpl!./campaigns/placements/list.html');
-    require('tpl!./campaigns/placements/header.html');
-    require('tpl!./campaigns/creatives/list.html');
-    require('tpl!./campaigns/creatives/thumbnails.html');
-    require('tpl!./campaigns/creatives/header.html');
+    require('tpl!./campaigns/campaigns.html');
+    require('tpl!./campaigns/placements/placementsList.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
+    require('tpl!./campaigns/creatives/creativesList.html');
+    require('tpl!./campaigns/creatives/creativesThumbnails.html');
+    require('tpl!./campaigns/creatives/creativesHeader.html');
+    require('tpl!./campaigns/placements/services/placementTableHeader.html');
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -60503,7 +60770,7 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
             .state('analytics', {
                 url: '/analytics',
                 parent: 'index',
-                templateUrl: 'campaignManagement/index.html'
+                template: '<header><div navbar></div></header>'
             })
             .state('index', {
                 template: '<ui-view />',
@@ -60581,11 +60848,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/placements',
                 views: {
                     'tab-header': {
-                        templateUrl: 'campaignManagement/campaigns/placements/header.html'
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
-                        controller: 'placementListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/placements/list.html'
+                        controller: 'placementsListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
                     }
                 }
             })
@@ -60598,11 +60865,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativeListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/list.html'
+                        controller: 'creativesListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
                     }
                 }
             })
@@ -60611,11 +60878,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/header.html'
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativeThumbnailsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/thumbnails.html'
+                        controller: 'creativesThumbnailsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
                     }
                 }
             });
@@ -61536,10 +61803,12 @@ define('campaignManagement/campaigns/directives/campaignsByStatus',['require','.
 
 
 
-define('campaignManagement/campaigns/placements/controllers/list',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/placements/controllers/placementsList',['require','./../../../module'],function (require) {
     var app = require('./../../../module');
 
-    app.controller('placementListCtrl', ['$scope', function ($scope) {
+    app.controller('placementsListCtrl', ['$scope', '$state', 'placements', function ($scope, $state, placements) {
+        $scope.placements = [];
+        $scope.params = $state.params;
         $scope.placementTypes = [
             {
                 name: 'Add Manually',
@@ -61551,311 +61820,437 @@ define('campaignManagement/campaigns/placements/controllers/list',['require','./
             }
         ];
 
+        placements.observe(updatePlacements, $scope);
+        function updatePlacements() {
+            $scope.placements = placements.all();
+        }
+    }]);
+});
 
-        var options = '<span style="font-size: 2rem"><a><i class="glyph-icon glyph-tag"></i></a><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
-        $scope.placements = [
-            {
-                header: '<input type="checkbox"> <a>Brightroll</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
+define('campaignManagement/campaigns/placements/services/placements.js',['require','./../../../module','tpl!./placementTableHeader.html'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+    var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
+
+    //var baseApiEndpoint = {
+    //    version: 3,
+    //    endpoint: 'placements',
+    //    dimensions: ['id', 'name', 'live', 'startDate', 'endDate', 'bookedImpressions', 'creatives', 'publisher.id', 'publisher.name', 'adType', 'budget'],
+    //    metrics: ['impressions', 'spend']
+    //};
+
+    var apiURI = '/fixtures/placements/placements.json';
+
+    var rules = {
+        checked: '',
+        placementName: '',
+        delivering: 'delivering',
+        startDate: 'date',
+        endDate: 'date',
+        type: '',
+        pacing: 'bullet',
+        spend: 'bullet',
+        creatives: 'creatives',
+        options: ''
+    };
+
+    var headers = [
+        {name: '', id: 'checked'},
+        {name: 'Placement Name', id: 'placementName'},
+        {name: 'Delivering', id: 'delivering'},
+        {name: 'Start Date', id: 'startDate'},
+        {name: 'End Date', id: 'endDate'},
+        {name: 'Type', id: 'type'},
+        {name: 'Impressions & Pacing', id: 'pacing'},
+        {name: 'Spend & Budget', id: 'spend'},
+        {name: 'Creatives', id: 'creatives'},
+        {name: '', id: 'options'}
+    ];
+
+    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
+                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+        var placementCache = cache();
+
+        function sortPlacements(a, b) {
+            return a.name.localeCompare(b.name);
+        }
+
+        function transformPlacements(data) {
+            if (data && data.placements) {
+                var groups = getPlacementGroups(data.placements.sort(sortPlacements));
+                return transformPlacementGroups(groups);
+            } else {
+                return [];
+            }
+        }
+
+        function transformPlacementGroups(groups) {
+            var transformedGroups = [];
+            var groupData;
+            var transformedGroup;
+            var placement;
+
+            for(var i=0; i<groups.length; i++) {
+                groupData = groups[i];
+                transformedGroup = {
+                    header: $interpolate(tableHeaderTemplate)(groupData),
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: []
+                    }
+                };
+
+                for(var k=0; k<groupData.group.placements.length; k++) {
+                    placement = groupData.group.placements[k];
+                    transformedGroup.content.data.push({
+                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        placementName: placement.name,
+                        delivering: placement.live,
+                        startDate: placement.startDate,
+                        endDate: placement.endDate,
+                        type: placement.adType,
+                        pacing: {
+                            current: placement.metrics.impressions,
+                            max: placement.bookedImpressions
+                        },
+                        spend: {
+                            current: placement.metrics.spend,
+                            max: placement.budget
+                        },
+                        creatives: placement.creatives,
                         options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input class="checkbox checkbox-light" type="checkbox" checked><span></span>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
+                    });
                 }
-            },
-            {
-                header: '<input type="checkbox"> <a>Google</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
-                        options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input type="checkbox" checked>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
-                }
-            },
-            {
-                header: '<input type="checkbox"> <a>NBCU</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
-                        options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input type="checkbox" checked>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
-                }
-            },
-            {
-                header: '<input type="checkbox"> <a>MSN</a> 30 Placements 10 Live 1,234,567 of 3,000,000 impressions</div>',
-                content: {
-                    rules: {
-                        checked: '',
-                        name: '',
-                        type: '',
-                        delivering: '',
-                        start: 'date',
-                        end: 'date',
-                        assignedCreatives: '',
-                        pacingAndImpressions: '',
-                        options: ''
-                    },
-                    headers: [
-                        {name: '', id: 'checked'},
-                        {name: 'PLACEMENT NAME', id: 'name'},
-                        {name: 'TYPE', id: 'type'},
-                        {name: 'DELIVERING', id: 'delivering'},
-                        {name: 'START', id: 'start'},
-                        {name: 'END', id: 'end'},
-                        {name: 'ASSIGNED CREATIVES', id: 'assignedCreatives'},
-                        {name: 'PACING & IMPRESSIONS', id: 'pacingAndImpressions'},
-                        {name: 'OPTIONS', id: 'options'}
-                    ],
-                    data: [
-                        {
-                            checked: '<input type="checkbox" checked>',
-                            name: 'AOD_Q2_EveryDay_Desktop_RichMedia_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a><br /><a>RichMedia_Ad2_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_IBV_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'RM',
-                            delivering: '<span class="icon-status success"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '<div pacing-chart class="meter-wrapper meter-sm"></div>',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        },
-                        {
-                            checked: '<input type="checkbox">',
-                            name: 'AOD_Q2_EveryDay_Desktop_Instream_Private<br />Marketplace_Time Inc_ROS_160x600_1x1_clk<br />ID: a576-0058-fde8-09ea',
-                            type: 'IS',
-                            delivering: '<span class="icon-status"></span>',
-                            start: '07/07/2014',
-                            end: '08/20/2014',
-                            assignedCreatives: '<a>RichMedia_Ad1_300x600</a></a>',
-                            pacingAndImpressions: '100,000 booked impressions',
-                            options: options
-                        }
-                    ]
+
+                transformedGroups.push(transformedGroup);
+            }
+
+            return transformedGroups;
+        }
+
+        function getPlacementGroups(placements) {
+            var viewBy = $state.params.viewBy;
+            if (viewBy === 'creative') {
+                return placementsByCreative(placements);
+            } else if(viewBy === 'ad-type') {
+                return placementsByAdType(placements);
+            } else {
+                return placementsByPublisher(placements);
+            }
+        }
+
+        function getPlacementsUrl() {
+            return apiURI; // Until API is built
+
+            //var apiParams = ng.extend({
+            //    filters: ['campaign.id:eq:' + $state.params.campaignId]
+            //}, baseApiEndpoint);
+
+            //return apiUriGenerator(apiParams);
+        }
+
+        var initializeCache = true;
+        function all() {
+
+            // We can do this because someone using this service will be observing it
+            // before they call all()
+            var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
+            initializeCache = false;
+
+            var placements = transformPlacements(data);
+            return placements;
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+
+            updateCache();
+
+            function updateCache() {
+                placementCache.get(getPlacementsUrl(), initializeCache);
+                initializeCache = false;
+
+                placementCache.observe(getPlacementsUrl(), callback, $scope, preventImmediate);
+            }
+        }
+
+        return {
+            all: all,
+            observe: observe
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByPublisher.js',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByPublisher', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var publisher;
+
+
+            // Throw placements into a hash map that's indexed by publisher
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                publisher = placement.publisher;
+
+                if (!groups[publisher.id]) {
+                    groups[publisher.id] = {
+                        name: publisher.name,
+                        placements: [placement]
+                    };
+                } else {
+                    groups[publisher.id].placements.push(placement);
                 }
             }
-        ];
+
+            // Get metadata about each group
+            var group;
+            for (var publisherId in groups) {
+                group = groups[publisherId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortGroups);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortGroups(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByCreative.js',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByCreative', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var creatives;
+            var creativeId;
+
+            // Throw placements into a hash map that's indexed by creative id
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                creatives = placement.creatives;
+
+                for(var k= 0; k<creatives.length; k++) {
+                    creativeId = creatives[k].id;
+                    if (!groups[creativeId]) {
+                        groups[creativeId] = {
+                            name: creatives[k].name,
+                            placements: [placement]
+                        };
+                    } else {
+                        groups[creativeId].placements.push(placement);
+                    }
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (creativeId in groups) {
+                group = groups[creativeId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortFn);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortFn(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByAdType.js',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByAdType', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var adType;
+
+            // Throw placements into a hash map that's indexed by publisher
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                adType = placement.adType;
+
+                if (!groups[adType]) {
+                    groups[adType] = {
+                        name: adType,
+                        placements: [placement]
+                    };
+                } else {
+                    groups[adType].placements.push(placement);
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (adType in groups) {
+                group = groups[adType];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortFn);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortFn(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
     }]);
 });
 
 
 
-define('campaignManagement/campaigns/creatives/controllers/list',['require','./../../../module'],function(require) {
+define('campaignManagement/campaigns/creatives/controllers/creativesList',['require','./../../../module'],function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeListCtrl', [
+    app.controller('creativesListCtrl', [
         '$scope', function($scope) {
             var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
             $scope.creatives = {
@@ -61933,17 +62328,70 @@ define('campaignManagement/campaigns/creatives/controllers/list',['require','./.
 
 
 
-define('campaignManagement/campaigns/creatives/controllers/thumbnails',['require','./../../../module'],function(require) {
+define('campaignManagement/campaigns/creatives/controllers/creativesThumbnails',['require','./../../../module'],function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeThumbnailsCtrl', [
-        '$scope', function() {
+    app.controller('creativesThumbnailsCtrl', ['$scope', '$window',
+        function($scope, $window) {
+
+            $scope.openStudio = function(id) {
+                $window.open('https://staging-studio.mixpo.com/studio?sdf=open&guid=' + id, '_blank');
+            };
+
+            $scope.openSettings = function(id) {
+                console.log( 'thumbnail controller: open settings ' + id );
+            };
+
+            $scope.openPlacements = function(id) {
+                console.log( 'thumbnail controller: open placements ' + id );
+            };
+
+            $scope.copyCreative = function(id) {
+                console.log( 'thumbnail controller: copy creative ' + id );
+            };
+
+            $scope.deleteCreative = function(id) {
+                console.log( 'thumbnail controller: delete creative ' + id );
+            };
+
+            $scope.previewCreative = function(id) {
+                console.log( 'thumbnail controller: preview creative ' + id );
+            };
 
         }
     ]);
 });
 
-define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/list','./creatives/controllers/list','./creatives/controllers/thumbnails'],function (require) {
+
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay"><span><i class="glyph-view"></i>Preview Creative</span></div>\n\t\t\t\t<img ng-src="{{creative.thumb}}" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.live}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.size}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedSize}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.name}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>'); });
+
+define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['require','./../../../module','tpl!./creativeThumbnails.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+
+    require('tpl!./creativeThumbnails.html');
+
+    app.directive('creativeThumbnails', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
+            controller: ['$scope', 'campaignCreative', function ($scope, campaignCreative) {
+
+                function updateCreatives() {
+                    $scope.creatives = campaignCreative.all();
+                }
+
+                campaignCreative.observe(updateCreatives, $scope);
+
+            }]
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/services/placements.js','./placements/services/placementsByPublisher.js','./placements/services/placementsByCreative.js','./placements/services/placementsByAdType.js','./creatives/controllers/creativesList','./creatives/controllers/creativesThumbnails','./creatives/directives/creativeThumbnails'],function (require) {
     'use strict';
 
     require('./services/campaignCache');
@@ -61959,9 +62407,16 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
     require('./directives/campaignDetails');
     require('./directives/campaignsByAccount');
     require('./directives/campaignsByStatus');
-    require('./placements/controllers/list');
-    require('./creatives/controllers/list');
-    require('./creatives/controllers/thumbnails');
+
+    require('./placements/controllers/placementsList');
+    require('./placements/services/placements.js');
+    require('./placements/services/placementsByPublisher.js');
+    require('./placements/services/placementsByCreative.js');
+    require('./placements/services/placementsByAdType.js');
+
+    require('./creatives/controllers/creativesList');
+    require('./creatives/controllers/creativesThumbnails');
+    require('./creatives/directives/creativeThumbnails');
 });
 
 

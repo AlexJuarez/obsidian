@@ -3,6 +3,14 @@ html {
     margin: 0;
 }
 
+.container-fluid {
+    margin-bottom: 6rem;
+
+    @media (max-width: @screen-xs-max) {
+        margin-bottom: 3rem;
+    }
+}
+
 @media screen and (min-width: @screen-sm-min){
     html{
         font-size: 8px;

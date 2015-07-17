@@ -3,7 +3,7 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeListCtrl', [
+    app.controller('creativesListCtrl', [
         '$scope', function($scope) {
             var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
             $scope.creatives = {

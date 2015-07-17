@@ -3,9 +3,9 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativeThumbnailsCtrl', ['$scope', '$window',
+    app.controller('creativesThumbnailsCtrl', ['$scope', '$window',
         function($scope, $window) {
-            
+
             $scope.openStudio = function(id) {
                 $window.open('//staging-studio.mixpo.com/studio?sdf=open&guid=' + id, '_blank');
             };
@@ -17,7 +17,7 @@ define(function(require) {
             $scope.openPlacements = function(id) {
                 console.log( 'thumbnail controller: open placements ' + id );
             };
-            
+
             $scope.copyCreative = function(id) {
                 console.log( 'thumbnail controller: copy creative ' + id );
             };
