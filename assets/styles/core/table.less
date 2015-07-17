@@ -212,7 +212,9 @@ table {
         tbody {
             display: block;
             white-space: nowrap;
-            overflow-x: auto;
+            overflow-x: scroll;
+            -webkit-overflow-scrolling: touch;
+            overflow-scrolling: touch;
             overflow-y: hidden;
             width: auto;
 
@@ -220,8 +222,6 @@ table {
                 display: inline-block;
                 width: ~"calc(100vw - 4rem)";
                 padding: 1rem @mobile-gutter;
-                overflow-y: scroll;
-                -webkit-overflow-scrolling: touch;
                 box-sizing: border-box;
 
                 &:last-child {
