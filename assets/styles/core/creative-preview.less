@@ -1,15 +1,9 @@
 .creative-preview {
-    // position: relative;
-    // z-index: 50;
-    // background: @dark-gray;
-    // border: 1px solid #fff;
     color: #fff;
     font-size: 1.2rem;
     text-align: left;
     padding: 1.2rem 0.5rem 0 0.5rem;
-    //padding: 0.8rem 1.5rem 1rem 1.5rem;
-    width: 360px;
-    // border-radius: 0.5rem;
+    width: 320px;
 
     .preview-overlay {
         .font-size(1.6);
@@ -21,8 +15,8 @@
         right: .5rem;
         z-index: 999;
         color: @light-blue;
-        .font-size(1.2);
         line-height: 1;
+        .font-size(1.2);
         &:hover {
             cursor: pointer;
             color: #fff;
@@ -81,32 +75,12 @@
             }
         }
     }
-
-    // Bubble arrow
-    // &:before, &:after {
-    //     content: '';
-    //     position: absolute;
-    //     top: 100%;
-    //     width: 0;
-    //     height: 0;
-    //     pointer-events: none;
-    //     border: solid transparent;
-    // }
-    // &:before {
-    //     border-top-color: #fff;
-    //     border-width: 10px;
-    //     left: 19px;
-    // }
-    // &:after {
-    //     border-top-color: @tool-tip-dark-bg;
-    //     border-width: 8px;
-    //     left: 21px;
-    // }
         
 }
 @media (max-width: 767px) {
     .creative-preview {
-        padding: 1rem 1rem 0 1rem;
+        //width: auto;
+        padding: 0.2rem 0 0 0;
         .glyph-close {
             color: #fff;
         }

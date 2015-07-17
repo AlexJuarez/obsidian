@@ -33,7 +33,7 @@ define(function (require) {
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var body = $('body');
+                var body;
                 var wrapper, closeBtn;
 
                 scope.$watch(tooltip, function (newValue) {
@@ -44,6 +44,7 @@ define(function (require) {
                         scope.content = template;
                         isBasicTooltip = false;
                         elem.on('mouseup', showOnClick);
+                        body = $document;
                     }
                     elem.html($compile(baseTemplate)(scope));
                 });
@@ -53,12 +54,13 @@ define(function (require) {
                     closeBtn.off('mouseup', hideOnClick);
                 }
 
-                function documentClickHandler(e) {
+                function documentClickHandler() {
                     wrapper.css({'visibility': 'hidden', 'opacity': '0'});
                     removeHandlers();
                 }
                
                 function showOnClick(e) {
+                    //updatePosition();
                     e.stopPropagation();
                     wrapper = elem.find('.wrapper').css({'visibility': 'visible', 'opacity': '1'});
                     
