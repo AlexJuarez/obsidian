@@ -11,6 +11,7 @@ define(function (require) {
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
+    require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/placements/placementsList.html');
     require('tpl!./campaigns/placements/placementsHeader.html');
     require('tpl!./campaigns/creatives/creativesList.html');
