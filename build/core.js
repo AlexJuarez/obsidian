@@ -60706,6 +60706,9 @@ define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tp
 define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="placeholder" image="images/placeholders/campaign-detail-graph.jpg"></div>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
+define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<p>\n    View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n</p>\n<div ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
+
+
 define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
 
 
@@ -60728,7 +60731,7 @@ define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'],
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('./clients/routes');
@@ -60739,6 +60742,7 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
     require('tpl!./campaigns/index.html');
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
+    require('tpl!./campaigns/campaigns.html');
     require('tpl!./campaigns/placements/placementsList.html');
     require('tpl!./campaigns/placements/placementsHeader.html');
     require('tpl!./campaigns/creatives/creativesList.html');
