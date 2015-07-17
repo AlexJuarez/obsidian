@@ -198,6 +198,12 @@ table {
 }
 
 @media (max-width: @screen-xs-max) {
+    .table-wrapper {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+    }
+
     .table {
         .meter-wrapper {
             .meter {
@@ -207,12 +213,6 @@ table {
 
         thead {
             display: none;
-        }
-
-        .table-wrapper {
-            overflow-x: scroll;
-            -webkit-overflow-scrolling: touch;
-            overflow-scrolling: touch;
         }
 
         tbody {
