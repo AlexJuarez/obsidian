@@ -117,6 +117,7 @@ define(function (require) {
                 url: '/placements',
                 views: {
                     'tab-header': {
+                        controller: 'placementsHeader',
                         templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
@@ -127,13 +128,14 @@ define(function (require) {
             })
             .state({
                 name: 'cm.campaigns.detail.creatives',
-                url: '/creatives'
+                url: '/creatives?filter'
             })
             .state({
                 name: 'cm.campaigns.detail.creatives.list',
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeader',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
@@ -147,6 +149,7 @@ define(function (require) {
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeader',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {

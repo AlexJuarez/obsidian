@@ -123,12 +123,16 @@ define(function (require) {
         }
 
         var initializeCache = true;
-        function all() {
+        function all(skipTransform) {
 
             // We can do this because someone using this service will be observing it
             // before they call all()
             var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
             initializeCache = false;
+
+            if (skipTransform) {
+                return data;
+            }
 
             var placements = transformPlacements(data);
             return placements;
