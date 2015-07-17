@@ -23,12 +23,18 @@ define(function (require) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.onHandleClick = onHandleClick;
+                scope.showOnClick = showOnClick;
+                scope.hideOnClick = hideOnClick;
+                scope.documentClickHandler = documentClickHandler;
+                scope.removeHandlers = removeHandlers;
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
+                var isBasicTooltip = true;
+                var body = $('body');
+                var wrapper, closeBtn;
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);
@@ -36,14 +42,37 @@ define(function (require) {
                         scope.content = newValue;
                     } else {
                         scope.content = template;
-                        //console.log( elem.find('.main'), scope.main );
-                        //elem[0].firstChild.setAttribute('ngClick', 'onHandleClick()');
+                        isBasicTooltip = false;
+                        elem.on('mouseup', showOnClick);
                     }
                     elem.html($compile(baseTemplate)(scope));
                 });
 
-                function onHandleClick() {
-                    console.log( 'clicked' );
+                function removeHandlers() {
+                    body.off('mouseup', documentClickHandler);
+                    closeBtn.off('mouseup', hideOnClick);
+                }
+
+                function documentClickHandler(e) {
+                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
+                    removeHandlers();
+                }
+               
+                function showOnClick(e) {
+                    e.stopPropagation();
+                    wrapper = elem.find('.wrapper').css({'visibility': 'visible', 'opacity': '1'});
+                    
+                    closeBtn = wrapper.find('.glyph-close');
+                    closeBtn.on('mouseup', hideOnClick);
+
+                    body.on('mouseup', documentClickHandler);
+                    
+                }
+
+                function hideOnClick(e) {
+                    e.stopPropagation();
+                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
+                    removeHandlers();
                 }
 
                 function calculateClass(dims) {
@@ -51,8 +80,17 @@ define(function (require) {
                         elem.removeClass(c);
                     });
 
-                    if (dims.top > 50) {
-                        if (dims.left > 200 && dims.right > 200) {
+                    var topBuffer, leftRightBuffer;
+                    if (isBasicTooltip) {
+                        topBuffer = 50;
+                        leftRightBuffer = 200;
+                    } else {
+                        topBuffer = 410;
+                        leftRightBuffer = 380;
+                    }
+
+                    if (dims.top > topBuffer) {
+                        if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
                             return 'tooltip-top-center';
                         } else if (dims.left > dims.right) {
                             return 'tooltip-top-left';
@@ -60,7 +98,7 @@ define(function (require) {
                             return 'tooltip-top-right';
                         }
                     } else {
-                        if (dims.left > 200 && dims.right > 200) {
+                        if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
                             return 'tooltip-bottom-center';
                         } else if (dims.left > dims.right) {
                             return 'tooltip-bottom-left';
@@ -83,9 +121,7 @@ define(function (require) {
                 }
 
                 function updatePosition() {
-                    console.log( 'updatePosition' );
                     if (overflow) {
-                        console.log( 'overflow' );
                         var element = elem.find('.main')[0];
                         if (element.offsetWidth >= element.scrollWidth) {
                             elem.find('.wrapper').addClass('ng-hide');
@@ -95,7 +131,6 @@ define(function (require) {
                     }
 
                     var dims = calculateDims();
-                    console.log( 'dimensions: ', dims );
                     elem.addClass(calculateClass(dims));
                 }
             }

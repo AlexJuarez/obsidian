@@ -4,18 +4,24 @@
     display: inline-block;
 }
 .tooltip-advanced {
-    &:before {
-        .glyph-view();
-    }
+    // &:before {
+    //     .glyph-view();
+    // }
     .main {
         display: inline-block;
+        i {
+            margin-right: 0.5rem;
+        }
     }
     .main:hover {
         cursor: pointer;
     }
-    // i {
-    //     margin-right: 0.5rem;
-    // }
+    &.tooltip {
+        .wrapper {
+            transition-delay: 0s;
+        }
+
+    }
 }
 .tooltip .wrapper {
     position: absolute;
