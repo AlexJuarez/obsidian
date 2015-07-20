@@ -49,14 +49,14 @@ define(function (require) {
 
         function transformPlacements(data) {
             if (data && data.placements) {
-                var groups = getPlacementGroups(data.placements.sort(sortPlacements));
-                return transformPlacementGroups(groups);
+                var groups = _getPlacementGroups(data.placements.sort(sortPlacements));
+                return _transformPlacementGroups(groups);
             } else {
                 return [];
             }
         }
 
-        function transformPlacementGroups(groups) {
+        function _transformPlacementGroups(groups) {
             var transformedGroups = [];
             var groupData;
             var transformedGroup;
@@ -101,7 +101,7 @@ define(function (require) {
             return transformedGroups;
         }
 
-        function getPlacementGroups(placements) {
+        function _getPlacementGroups(placements) {
             var viewBy = $state.params.viewBy;
             if (viewBy === 'creative') {
                 return placementsByCreative(placements);
@@ -151,6 +151,8 @@ define(function (require) {
         }
 
         return {
+            _transformPlacementGroups: _transformPlacementGroups,
+            _getPlacementGroups: _getPlacementGroups,
             all: all,
             observe: observe
         };
