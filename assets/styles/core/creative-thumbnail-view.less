@@ -59,6 +59,12 @@
 .thumbnail-view {
 
     .creative-wrapper {
+        @media (min-width: @screen-lg-min) {
+            &.col-md-5 {
+                width: 20%;
+            }
+        }
+
         margin-bottom: 2rem;
         .font-size(1.4);
         .line-height(2); 

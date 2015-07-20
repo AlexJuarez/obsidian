@@ -22,6 +22,5 @@ define(function (require) {
     require('./placements/services/placementsByAdType.js');
 
     require('./creatives/controllers/creativesList');
-    require('./creatives/controllers/creativesThumbnails');
     require('./creatives/directives/creativeThumbnails');
 });
