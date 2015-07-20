@@ -95,7 +95,7 @@ define(function(require) {
                     'id': 'campaignId',
                     'account': {
                         'id': 'accountId',
-                        'route': 'cm.campaigns.all({ accountId: row.account.id })',
+                        'route': 'cm.campaigns.account({ accountId: row.account.id })',
                         'name': 'accountName'
                     },
                     'campaign': {
