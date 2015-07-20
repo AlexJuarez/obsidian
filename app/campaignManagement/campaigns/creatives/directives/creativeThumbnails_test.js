@@ -1,3 +1,4 @@
+/* globals spyOn */
 define(function (require) {
     'use strict';
 
@@ -20,7 +21,7 @@ define(function (require) {
                         {type: 'IS'},
                         {type: 'IBV'}
                     ]
-                }
+                };
             },
             observe: function(callback) {
                 callback();
@@ -53,7 +54,7 @@ define(function (require) {
         describe('controller', function () {
 
             it('should observe creatives', function() {
-                var scope = createThumbnails();
+                createThumbnails();
                 expect(mockCreatives.observe).toHaveBeenCalled();
             });
 

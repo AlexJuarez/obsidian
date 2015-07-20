@@ -63,7 +63,8 @@ define(function (require) {
         }
 
         function _filter() {
-            if ($state.params.campaignId) {
+            // TODO: change to campaignId when actual API is ready
+            if ($state.params.campaignIdNotThere) {
                 return '&filters=campaign.id:eq:' + $state.params.campaignId;
             } else {
                 return '';

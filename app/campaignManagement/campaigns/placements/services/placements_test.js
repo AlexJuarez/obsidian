@@ -1,3 +1,4 @@
+/* globals jasmine */
 define(function(require) {
     'use strict';
 
@@ -26,18 +27,16 @@ define(function(require) {
             };
         };
 
-        var mockPlacementsByCreative =
-
-            beforeEach(function() {
-                module('app.campaign-management', function($provide) {
-                    $provide.value('cacheFactory', mockCacheFactory);
-                });
-                inject(function(placements, $httpBackend, $state) {
-                    placementsService = placements;
-                    httpBackend = $httpBackend;
-                    state = $state;
-                });
+        beforeEach(function() {
+            module('app.campaign-management', function($provide) {
+                $provide.value('cacheFactory', mockCacheFactory);
             });
+            inject(function(placements, $httpBackend, $state) {
+                placementsService = placements;
+                httpBackend = $httpBackend;
+                state = $state;
+            });
+        });
 
         afterEach(function() {
             httpBackend.verifyNoOutstandingExpectation();

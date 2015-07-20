@@ -1,3 +1,4 @@
+/* globals spyOn */
 define(function (require) {
     'use strict';
 
@@ -16,7 +17,7 @@ define(function (require) {
                         {type: 'IS'},
                         {type: 'IBV'}
                     ]
-                }
+                };
             },
             observe: function() {}
         };

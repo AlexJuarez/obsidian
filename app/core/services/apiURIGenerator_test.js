@@ -3,7 +3,6 @@ define(function (require) {
 
     require('./apiURIGenerator');
     require('angularMocks');
-    var data = require('text!/base/assets/fixtures/channel.json');
 
     describe('apiUriGenerator', function () {
         var uriGeneratorService, httpBackend;
