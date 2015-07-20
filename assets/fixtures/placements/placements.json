@@ -2,11 +2,11 @@
     "placements": [
         {
             "id": "1",
-            "name": "Placement 1",
+            "name": "AnimalLover.com",
             "live": true,
             "startDate": "2015-07-14",
             "endDate": "2015-08-15",
-            "adType": "IBV",
+            "type": "IBV",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
@@ -24,11 +24,11 @@
         },
         {
             "id": "2",
-            "name": "Placement 2",
+            "name": "AnimalApathy.com",
             "live": false,
             "startDate": "2015-07-14",
             "endDate": "2015-08-15",
-            "adType": "RM",
+            "type": "RM",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
@@ -45,11 +45,11 @@
         },
         {
             "id": "3",
-            "name": "Placement 3",
+            "name": "AnimalHaters.com",
             "live": false,
             "startDate": "2015-07-14",
             "endDate": "2015-08-15",
-            "adType": "RM",
+            "type": "RM",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [

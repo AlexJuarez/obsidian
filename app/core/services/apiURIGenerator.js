@@ -30,8 +30,8 @@ define(function (require) {
 
     // TODO: add the API_URI constant, replace domainInterceptor.js
     module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
-        function getApiUri(params) {
-            setupDefaultParams(params);
+        function getApiUri(outsideParams) {
+            var params = setupDefaultParams(outsideParams);
             if (validate(params)) {
                 return createApiUri(params);
             } else {
@@ -40,16 +40,18 @@ define(function (require) {
         }
 
         function setupDefaultParams(params) {
-            ng.extend(params, defaultConfig);
-            if (params.dimensions) {
-                params.dimensions = params.dimensions.join(',');
+            var mergedParams = {};
+            ng.extend(mergedParams, defaultConfig, params);
+            if (mergedParams.dimensions) {
+                mergedParams.dimensions = mergedParams.dimensions.join(',');
             }
-            if (params.metrics) {
-                params.metrics = params.metrics.join(',');
+            if (mergedParams.metrics) {
+                mergedParams.metrics = mergedParams.metrics.join(',');
             }
-            if (params.filters) {
-                params.filters = params.filters.join(',');
+            if (mergedParams.filters) {
+                mergedParams.filters = mergedParams.filters.join(',');
             }
+            return mergedParams;
         }
 
         function validate(params) {

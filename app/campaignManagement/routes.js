@@ -12,12 +12,16 @@ define(function (require) {
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/campaigns.html');
-    require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementsHeader.html');
+
     require('tpl!./campaigns/creatives/creativesList.html');
     require('tpl!./campaigns/creatives/creativesThumbnails.html');
     require('tpl!./campaigns/creatives/creativesHeader.html');
+    require('tpl!./campaigns/creatives/directives/creativeThumbnails.html');
+
+    require('tpl!./campaigns/placements/placementsList.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
     require('tpl!./campaigns/placements/services/placementTableHeader.html');
+
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -117,6 +121,7 @@ define(function (require) {
                 url: '/placements',
                 views: {
                     'tab-header': {
+                        controller: 'placementsHeader',
                         templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
@@ -127,13 +132,14 @@ define(function (require) {
             })
             .state({
                 name: 'cm.campaigns.detail.creatives',
-                url: '/creatives'
+                url: '/creatives?filter'
             })
             .state({
                 name: 'cm.campaigns.detail.creatives.list',
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
@@ -147,6 +153,7 @@ define(function (require) {
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {

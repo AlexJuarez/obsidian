@@ -2,51 +2,115 @@
     "creatives": [
         {
             "id": 1,
-            "name": "Creative 1",
+            "name": "Crazy Mike's Spatula Warehouse and Emporium",
             "live": true,
-            "adType": "IBV",
+            "type": "IBV",
             "device": "Tablet",
             "embedWidth": "300",
             "embedHeight": "250",
             "expandedWidth": "600",
             "expandedHeight": "250",
-            "numPlacements": 2
+            "numPlacements": 2,
+            "lastModified": "2015-12-05",
+            "thumbnail": "http://www.placecage.com/728/90"
         },
         {
             "id": 2,
-            "name": "Creative 2",
+            "name": "Girls' Costume Warehouse",
             "live": false,
-            "adType": "IS",
+            "type": "IS",
             "device": "Tablet",
             "embedWidth": "300",
             "embedHeight": "250",
             "expandedWidth": "300",
             "expandedHeight": "250",
-            "numPlacements": 1
+            "numPlacements": 1,
+            "lastModified": "2014-02-22",
+            "thumbnail": "http://www.placecage.com/300/700"
         },
         {
             "id": 3,
-            "name": "Creative 3",
+            "name": "Hallow's Eve Pumpkin Supply",
             "live": true,
-            "adType": "RM",
+            "type": "RM",
             "device": "Desktop",
             "embedWidth": "300",
             "embedHeight": "250",
             "expandedWidth": "600",
             "expandedHeight": "250",
-            "numPlacements": 5
+            "numPlacements": 5,
+            "lastModified": "2015-12-05",
+            "thumbnail": "http://www.placecage.com/600/225"
         },
         {
             "id": 3,
-            "name": "Creative 3",
+            "name": "Confidence Lessons by Alex",
             "live": false,
-            "adType": "RM",
+            "type": "RM",
             "device": "Mobile",
             "embedWidth": "728",
             "embedHeight": "90",
             "expandedWidth": "728",
             "expandedHeight": "300",
-            "numPlacements": 3
+            "numPlacements": 3,
+            "lastModified": "2015-08-09",
+            "thumbnail": "http://www.placecage.com/500/700"
+        },
+        {
+            "id": 1,
+            "name": "Salim's Crystal Ball",
+            "live": true,
+            "type": "IBV",
+            "device": "Tablet",
+            "embedWidth": "300",
+            "embedHeight": "250",
+            "expandedWidth": "600",
+            "expandedHeight": "250",
+            "numPlacements": 2,
+            "lastModified": "2015-12-05",
+            "thumbnail": "http://www.placecage.com/500/400"
+        },
+        {
+            "id": 3,
+            "name": "Asia Sings the Holidays",
+            "live": false,
+            "type": "RM",
+            "device": "Mobile",
+            "embedWidth": "728",
+            "embedHeight": "90",
+            "expandedWidth": "728",
+            "expandedHeight": "300",
+            "numPlacements": 3,
+            "lastModified": "2015-08-09",
+            "thumbnail": "http://www.placecage.com/300/250"
+        },
+        {
+            "id": 2,
+            "name": "Flo's Neck Pain Alleviation Therapy",
+            "live": false,
+            "type": "IS",
+            "device": "Tablet",
+            "embedWidth": "300",
+            "embedHeight": "250",
+            "expandedWidth": "300",
+            "expandedHeight": "250",
+            "numPlacements": 1,
+            "lastModified": "2014-02-22",
+            "thumbnail": "http://www.placecage.com/460/340"
+        },
+        {
+            "id": 3,
+            "name": "Bird's News about Birds",
+            "live": true,
+            "type": "RM",
+            "device": "Desktop",
+            "embedWidth": "300",
+            "embedHeight": "250",
+            "expandedWidth": "600",
+            "expandedHeight": "250",
+            "numPlacements": 5,
+            "lastModified": "2015-12-05",
+            "thumbnail": "http://www.placecage.com/600/225"
         }
     ]
 }
