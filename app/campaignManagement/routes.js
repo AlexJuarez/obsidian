@@ -139,7 +139,7 @@ define(function (require) {
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeader',
+                        controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
@@ -153,7 +153,7 @@ define(function (require) {
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeader',
+                        controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {

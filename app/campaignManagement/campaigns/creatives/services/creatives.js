@@ -28,10 +28,10 @@ define(function (require) {
 
     module.service('creatives', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
-            transform: transformCampaigns
+            transform: _transformCreatives
         });
 
-        function transformCampaigns(data) {
+        function _transformCreatives(data) {
             var creatives = data.creatives;
             var creative;
             var transformedTable = {
@@ -62,26 +62,24 @@ define(function (require) {
             return transformedTable;
         }
 
-        function filter() {
-            var output = '';
-
-            if ($state.params.clientId) {
-                output = '&filters=id:eq:' + $state.params.clientId;
+        function _filter() {
+            if ($state.params.campaignId) {
+                return '&filters=campaign.id:eq:' + $state.params.campaignId;
+            } else {
+                return '';
             }
-
-            return output;
         }
 
-        function url() {
-            return baseUrl + filter();
+        function _url() {
+            return baseUrl + _filter();
         }
 
         function all() {
-            return cache.all(url());
+            return cache.all(_url());
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(_url(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -90,11 +88,13 @@ define(function (require) {
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(_url(), initialize);
         }
 
         return {
-            url: url,
+            _filter: _filter,
+            _transformCreatives: _transformCreatives,
+            _url: _url,
             all: all,
             data: data,
             observe: observe

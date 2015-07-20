@@ -3,7 +3,7 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeader', ['$scope', '$rootScope', '$state', 'creatives', function($scope, $rootScope, $state, creatives) {
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', 'creatives', function($scope, $rootScope, $state, creatives) {
         function updateMeta() {
 
             var allCreatives = creatives.all().data;
