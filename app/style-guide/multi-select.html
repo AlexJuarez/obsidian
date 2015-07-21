@@ -1,7 +1,13 @@
 <h1 id="multiselect">Multi-Select</h1>
 <hr />
-<label for="multiselction" class="form-label multiple-label">Select Tags:</label>
-<select id="multiselction" chosen multiple ng-model="selected" ng-options="item.name for item in multiselect track by item.value"></select>
+<div class="form-inline">
+    <div class="form-group">
+        <label for="multiselction">Select Tags:</label>
+    </div>
+    <div class="form-group">
+        <select id="multiselction" chosen multiple ng-model="selected" ng-options="item.name for item in multiselect track by item.value"></select>
+    </div>
+</div>
 
 <div class="highlight" highlight>
 <pre><code class="html">

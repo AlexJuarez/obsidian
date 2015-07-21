@@ -45,6 +45,8 @@ define(function (require) {
             return {
                 init: init,
                 observe: data.observe,
+                filtered: data.filtered,
+                notifyObservers: data.notifyObservers,
                 nextPage: nextPage,
                 buildUrl: buildPageUrl,
                 limit: limit,

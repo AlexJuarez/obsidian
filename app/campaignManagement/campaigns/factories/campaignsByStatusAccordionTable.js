@@ -69,7 +69,7 @@ define(function (require) {
                 return newRows;
             }
 
-            function getTable() {
+            function getTable(filter) {
                 var rules = {
                     account: 'link',
                     campaign: 'link',
@@ -103,7 +103,7 @@ define(function (require) {
                     content: {
                         rules: rules,
                         headers: headers,
-                        data: rows.all()
+                        data: rows.filtered(filter)
                     }
                 };
             }
@@ -135,10 +135,16 @@ define(function (require) {
                 rows.observe(callback, $scope);
             }
 
+            function notifyObservers() {
+                header.notifyObservers();
+                rows.notifyObservers();
+            }
+
             return {
                 init: init,
                 observe: observe,
                 all: getTable,
+                notifyObservers: notifyObservers,
                 _transformRows: _transformRows,
                 _getTableHeader: _getTableHeader
             };

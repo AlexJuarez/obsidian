@@ -4,6 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var previewModals = {};
     var editModals = {};
+    var createModal;
 
     module.service('campaignModal', ['$modal', function ($modal) {
         function preview(id, row) {
@@ -25,7 +26,7 @@ define(function (require) {
                     }
                 },
                 size: 'lg'
-            })
+            });
         }
 
         function settings(id, row) {
@@ -43,12 +44,31 @@ define(function (require) {
                     }
                 },
                 size: 'lg'
-            })
+            });
+        }
+
+        function create(){
+            if (!createModal) {
+                createModal = {};
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
+                controller: 'newCampaignCtrl',
+                resolve: {
+                    modalState: function() {
+                        return createModal;
+                    }
+                },
+                size: 'lg'
+            });
         }
 
         return {
             preview: preview,
-            settings: settings
+            settings: settings,
+            create: create
         };
     }]);
 });

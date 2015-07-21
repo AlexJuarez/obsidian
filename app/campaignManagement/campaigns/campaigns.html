@@ -12,6 +12,9 @@
             </li>
         </ul>
     </div>
+    <div class="form-group">
+        <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>
+    </div>
 </div>
 <div class="tab-content" ui-view="tab-content">
     <div ng-if="params.viewBy !== 'account'">
