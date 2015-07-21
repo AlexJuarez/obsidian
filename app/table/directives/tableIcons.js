@@ -2,6 +2,7 @@ define(function (require) {
     'use strict';
 
     var app = require('./../module');
+    require('tpl!./tableIcons.html');
 
     app.directive('tableIcons', [function () {
         return {
