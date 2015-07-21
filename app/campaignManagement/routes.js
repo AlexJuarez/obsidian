@@ -157,7 +157,6 @@ define(function (require) {
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativesThumbnailsCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
                     }
                 }

@@ -27,7 +27,6 @@ define(function (require) {
 
     require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');
-    require('./creatives/controllers/creativesThumbnails');
     require('./creatives/directives/creativeThumbnails');
     require('./creatives/services/creatives');
 });
