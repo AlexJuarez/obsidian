@@ -47901,6 +47901,22 @@ define('core/factories/data',['require','./../module'],function (require) {
                 return data;
             }
 
+            function filtered(filterfn){
+                filterfn = filterfn || function () { return true; };
+                var data = all();
+                var output = [];
+                var item;
+
+                for (var i = 0; i < data.length; i++) {
+                    item = data[i];
+                    if(filterfn(item)) {
+                        output.push(item);
+                    }
+                }
+
+                return output;
+            }
+
             function observe(callback, $scope, preventImmediate) {
                 var id = observerId++;
                 observers[id] = callback;
@@ -47932,6 +47948,7 @@ define('core/factories/data',['require','./../module'],function (require) {
                 setData: setData,
                 addData: addData,
                 all: all,
+                filtered: filtered,
                 observe: observe,
                 notifyObservers: notifyObservers
             };
@@ -48030,6 +48047,8 @@ define('core/factories/pagination',['require','./../module'],function (require) 
             return {
                 init: init,
                 observe: data.observe,
+                filtered: data.filtered,
+                notifyObservers: data.notifyObservers,
                 nextPage: nextPage,
                 buildUrl: buildPageUrl,
                 limit: limit,
@@ -48191,29 +48210,76 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
+                scope.showOnClick = showOnClick;
+                scope.hideOnClick = hideOnClick;
+                scope.documentClickHandler = documentClickHandler;
+                scope.removeHandlers = removeHandlers;
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
+                var isBasicTooltip = true;
+                var body;
+                var wrapper, closeBtn;
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         scope.content = newValue;
                     } else {
-                        scope.content = $compile(template)(scope);
+                        scope.content = template;
+                        isBasicTooltip = false;
+                        elem.on('mouseup', showOnClick);
+                        body = $document;
                     }
                     elem.html($compile(baseTemplate)(scope));
                 });
+
+                function removeHandlers() {
+                    body.off('mouseup', documentClickHandler);
+                    closeBtn.off('mouseup', hideOnClick);
+                }
+
+                function documentClickHandler() {
+                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
+                    removeHandlers();
+                }
+               
+                function showOnClick(e) {
+                    //updatePosition();
+                    e.stopPropagation();
+                    wrapper = elem.find('.wrapper').css({'visibility': 'visible', 'opacity': '1'});
+                    
+                    closeBtn = wrapper.find('.glyph-close');
+                    closeBtn.on('mouseup', hideOnClick);
+
+                    body.on('mouseup', documentClickHandler);
+                    
+                }
+
+                function hideOnClick(e) {
+                    e.stopPropagation();
+                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
+                    removeHandlers();
+                }
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
                         elem.removeClass(c);
                     });
 
-                    if (dims.top > 50) {
-                        if (dims.left > 200 && dims.right > 200) {
+                    var topBuffer, leftRightBuffer;
+                    if (isBasicTooltip) {
+                        topBuffer = 50;
+                        leftRightBuffer = 200;
+                    } else {
+                        topBuffer = 410;
+                        leftRightBuffer = 380;
+                    }
+
+                    if (dims.top > topBuffer) {
+                        if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
                             return 'tooltip-top-center';
                         } else if (dims.left > dims.right) {
                             return 'tooltip-top-left';
@@ -48221,7 +48287,7 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                             return 'tooltip-top-right';
                         }
                     } else {
-                        if (dims.left > 200 && dims.right > 200) {
+                        if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
                             return 'tooltip-bottom-center';
                         } else if (dims.left > dims.right) {
                             return 'tooltip-bottom-left';
@@ -59872,6 +59938,27 @@ define('core/directives/pacingChart',['require','./../module','d3','tpl!./pacing
 
 });
 
+
+define('tpl!core/directives/creativePreviewModal.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/directives/creativePreviewModal.html', '<div class="creative-preview">\n\t<i class="glyph-close"></i>\n\t<div ng-click="previewCreative()" class="thumbnail-wrapper">\n\t\t<div class="ratio-box">\n\t\t\t<div class="preview-overlay"><span><i class="glyph-view"></i>Preview Creative</span></div>\n\t\t\t<img src="http://www.placecage.com/540/360" class="preview-thumbnail"/>\n\t\t</div>\n\t</div>\n\t<ul class="preview-info row">\n\t\t<li class="col-xs-6 col-sm-4 col-md-4">\n\t\t\t<span><strong>Ad Type</strong></span>\n\t\t\t<span>In-Banner Video</span>\n\t\t</li>\n\t\t<li class="col-xs-6 col-sm-4 col-md-4">\n\t\t\t<span><strong>Size</strong></span>\n\t\t\t<span>1024x90<span>&nbsp;&gt; 1024x768</span></span>\n\t\t</li>\n\t\t<li class="col-xs-12 col-sm-4 col-md-4">\n\t\t\t<ul class="row links">\n\t\t\t\t<li class="col-xs-6 col-sm-12">\n\t\t\t\t\t<span><a class="btn btn-lg" ng-click="openPreview(creative.id)" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a></span>\n\t\t\t\t</li>\n\t\t\t\t<li class="col-xs-6 col-sm-12">\n\t\t\t\t\t<span><a class="btn btn-lg" ng-click="openPreview(creative.id)" title="Edit in Studio"><i class="glyph-view"></i>Edit in Studio</a></span>\n\t\t\t\t</li>\n\t\t\t</ul>\n\t\t</li>\n\t</ul>\n\t<ul class="preview-info row">\n\t\t<li class="col-xs-6 col-sm-6">\n\t\t\t<span><strong>Creative ID</strong></span>\n\t\t\t<span>KLSDI8_OI14S</span>\n\t\t</li>\n\t\t<li class="col-xs-6 col-sm-6">\n\t\t\t<span><strong>GUID</strong></span>\n\t\t\t<span>K83HG_LKW3_83H_19HR7G</span>\n\t\t</li>\n\t</ul>\n</div>\n'); });
+
+define('core/directives/creativePreviewModal',['require','./../module','tpl!./creativePreviewModal.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./creativePreviewModal.html');
+
+    app.directive('creativePreviewModal', function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            templateUrl: 'core/directives/creativePreviewModal.html',
+            link: function(elem) {
+                console.log( elem );
+            }
+        };
+
+    });
+});
 define('core/filters/safe',['require','./../module'],function (require) {
     'use strict';
 
@@ -60173,69 +60260,6 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
     }]);
 });
 
-define('core/services/campaignCreative',['require','./../module','angular'],function (require) {
-    'use strict';
-
-    var module = require('./../module');
-    var ng = require('angular');
-    var baseUrl = '/fixtures/campaignCreative.json';
-
-    module.service('campaignCreative', ['cacheFactory', '$state', function (cacheFactory, $state) {
-        var cache = cacheFactory({
-            transform: function (data) {
-                return data.campaignCreatives;
-            }
-        });
-
-        function filter() {
-            var output = '';
-
-            if ($state.params.clientId) {
-                output = '&filters=id:eq:' + $state.params.clientId;
-            }
-
-            return output;
-        }
-
-        function url() {
-            return baseUrl + filter();
-        }
-
-        function all() {
-            var datum = cache.all(url());
-            var output = [];
-
-            if (datum.length) {
-                ng.forEach(datum, function (d, key){
-                    output[key] = d;
-                });
-            }
-
-            return output;
-        }
-
-        function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
-        }
-
-        /**
-         * Returns underlying dataFactory object for the cache entry
-         * @param {boolean} [initialize=false] should we call init
-         * @returns {{dataFactory}}
-         */
-        function data(initialize) {
-            return cache.get(url(), initialize);
-        }
-
-        return {
-            url: url,
-            all: all,
-            data: data,
-            observe: observe
-        };
-    }]);
-});
-
 /**
  * Generate an API URI based on a parameters object. Possible parameters are:
  */
@@ -60268,8 +60292,8 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
 
     // TODO: add the API_URI constant, replace domainInterceptor.js
     module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
-        function getApiUri(params) {
-            setupDefaultParams(params);
+        function getApiUri(outsideParams) {
+            var params = setupDefaultParams(outsideParams);
             if (validate(params)) {
                 return createApiUri(params);
             } else {
@@ -60278,16 +60302,18 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
         }
 
         function setupDefaultParams(params) {
-            ng.extend(params, defaultConfig);
-            if (params.dimensions) {
-                params.dimensions = params.dimensions.join(',');
+            var mergedParams = {};
+            ng.extend(mergedParams, defaultConfig, params);
+            if (mergedParams.dimensions) {
+                mergedParams.dimensions = mergedParams.dimensions.join(',');
             }
-            if (params.metrics) {
-                params.metrics = params.metrics.join(',');
+            if (mergedParams.metrics) {
+                mergedParams.metrics = mergedParams.metrics.join(',');
             }
-            if (params.filters) {
-                params.filters = params.filters.join(',');
+            if (mergedParams.filters) {
+                mergedParams.filters = mergedParams.filters.join(',');
             }
+            return mergedParams;
         }
 
         function validate(params) {
@@ -60331,7 +60357,7 @@ define('core/constants/apiURI',['require','./../module'],function (require) {
 /**
  * Created by Alex on 3/1/2015.
  */
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./services/campaignCreative','./services/apiURIGenerator','./constants/apiURI'],function (require) {
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/domainInterceptor','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/placeholder','./directives/filePicker','./directives/pacingChart','./directives/creativePreviewModal','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./services/channel','./services/clientSet','./services/divisionSet','./services/apiURIGenerator','./constants/apiURI'],function (require) {
     'use strict';
 
     require('./modal/index');
@@ -60348,6 +60374,7 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./directives/placeholder');
     require('./directives/filePicker');
     require('./directives/pacingChart');
+    require('./directives/creativePreviewModal');
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
@@ -60356,7 +60383,6 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
     require('./services/channel');
     require('./services/clientSet');
     require('./services/divisionSet');
-    require('./services/campaignCreative');
     require('./services/apiURIGenerator');
     require('./constants/apiURI');
 });
@@ -60395,6 +60421,8 @@ define('table/filters/format',['require','./../module'],function (require) {
                 return $filter('number')(data, 0);
             case 'percent':
                 return percent(data);
+            case 'icons':
+                return '<div data-id="row.id" data-object="row" table-icons="row.' + input + '"></div>';
             case 'quartile':
                 return data.map(function (d) {
                     return percent(d);
@@ -60417,7 +60445,7 @@ define('table/filters/format',['require','./../module'],function (require) {
 });
 
 
-define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-wrapper">\n                <div class="table-hover" basic-table="row.content"></div>\n            </div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-wrapper table-xs-scroll">\n                <div class="table-hover" basic-table="row.content"></div>\n            </div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
 
 define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
     'use strict';
@@ -60430,6 +60458,7 @@ define('table/directives/accordionTable',['require','./../module','tpl!./accordi
             restrict: 'A',
             templateUrl: 'table/directives/accordionTable.html',
             replace: true,
+            transclude: true,
             scope: {
                 table: '=accordionTable',
                 classes: '@class'
@@ -60466,11 +60495,57 @@ define('table/directives/basicTable',['require','./../module','tpl!./basicTable.
             restrict: 'A',
             templateUrl: 'table/directives/basicTable.html',
             replace: true,
+            transclude: true,
             scope: {
                 table: '=basicTable',
                 footer: '=basicFooter',
                 classes: '@class'
             }
+        };
+    }]);
+});
+
+
+define('tpl!table/directives/tableIcons.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableIcons.html', '<div>\n    <a ng-if="showSettings" ng-click="settings(id, object)"><i class="glyph-settings"></i></a>\n    <a ng-if="showPreview" ng-click="preview(id, object)"><i class="glyph-preview"></i></a>\n</div>\n'); });
+
+define('table/directives/tableIcons',['require','./../module','tpl!./tableIcons.html'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    require('tpl!./tableIcons.html');
+
+    app.directive('tableIcons', [function () {
+        return {
+            restrict: 'A',
+            templateUrl: 'table/directives/tableIcons.html',
+            replace: true,
+            transclude: true,
+            scope: {
+                icons: '=tableIcons',
+                id: '=id',
+                object: '=object',
+                classes: '@class'
+            },
+            controller: ['$scope', 'campaignModal', function ($scope, campaignModal) {
+                var icons = $scope.icons;
+
+                for (var i = 0; i < icons.length; i++) {
+                    var icon = icons[i];
+                    var name = icon.toLowerCase().split('.');
+                    if (name.length === 2) {
+                        var control = name[0];
+                        var action = name[1];
+
+                        if (control === 'campaign') {
+                            //capitalized the first letter of the action
+                            $scope['show' + action.charAt(0).toUpperCase() + action.slice(1)] = true;
+                            $scope[action] = campaignModal[action];
+                        }
+                    } else {
+                        console.warn('Invalid syntax for icons use control.action');
+                    }
+                }
+            }]
         };
     }]);
 });
@@ -60526,14 +60601,16 @@ define('table/directives/tableDelivering',['require','./../module','tpl!./tableD
 /**
  * Created by Alex on 3/1/2015.
  */
-define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable','./directives/tableCreatives','./directives/tableDelivering'],function (require) {
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable','./directives/tableIcons','./directives/tableCreatives','./directives/tableDelivering'],function (require) {
     'use strict';
 
     require('./filters/format');
     require('./directives/accordionTable');
     require('./directives/basicTable');
+    require('./directives/tableIcons');
     require('./directives/tableCreatives');
     require('./directives/tableDelivering');
+
 });
 
 /**
@@ -60643,7 +60720,7 @@ define('campaignManagement/module',['require','angular','ui-router','./../chart/
 });
 
 
-define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div class="header-summary" ui-view="header">\n    <div ng-include="\'campaignManagement/clients/clients.summary.html\'"></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div class="table-wrapper">\n        <div basic-table="topClients" class="table table-hover"></div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/index.html', '<div class="header-summary" ui-view="header">\n    <div ng-include="\'campaignManagement/clients/clients.summary.html\'"></div>\n</div>\n<div ui-view="topClients">\n    <h3>Top Clients</h3>\n    <div class="table-wrapper table-xs-scroll">\n        <div basic-table="topClients" class="table table-hover"></div>\n    </div>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/clients/clients.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/clients.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>All Clients Summary</div>\n    <div class="dropdown-menu">\n        <div active-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openModal(\'lg\')">New Client</button>\n</div>\n'); });
@@ -60685,7 +60762,7 @@ define('campaignManagement/divisions/routes',['require','tpl!./division.summary.
 define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/new-account.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Account</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newAccount">\n        <div ng-pluralize ng-show="newAccount.$invalid && submitted" class="alert alert-danger" count="(newAccount.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newAccount.accountName.$invalid && submitted}">\n            <label for="accountName" class="col-sm-3 form-label required"><span>Account Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.accountName" type="text" name="accountName" class="form-control" id="accountName" placeholder="Enter new account name" required />\n                <p ng-show="newAccount.accountName.$invalid && submitted" class="help-block">\n                    account name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="accountKeywords" class="col-sm-3 form-label"><span>Account Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.keywords" type="text" class="form-control" id="accountKeywords" placeholder="Enter account keywords" />\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newAccount.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Industry</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="industry" class="single-select" chosen ng-options="industry.id as industry.name for industry in industries" disable-search-threshold="10" ng-model="account.industry" required>\n                </select>\n                <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">\n                    industry is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="account.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.clickthroughURL" type="text" class="form-control" name="clickthroughURL" id="clickthroughURL" placeholder="Enter URL" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="leadCaptureEmail" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="account.leadCaptureEmail" name="email" type="email" class="form-control" name="leadCaptureEmail" id="leadCaptureEmail" placeholder="Enter email" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="account.enableSpanishPlayer" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Spanish Player</span>\n            </label>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok()">Create Account</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/accounts/summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div account-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openModal(\'lg\')">New Campaign</button>\n    <button class="btn btn-default solid">Edit Account</button>\n</div>\n'); });
+define('tpl!campaignManagement/accounts/summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div account-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="campaignModal()">New Campaign</button>\n    <button class="btn btn-default solid">Edit Account</button>\n</div>\n'); });
 
 define('campaignManagement/accounts/routes',['require','tpl!./new-account.html','tpl!./summary.html'],function (require) {
     'use strict';
@@ -60706,32 +60783,35 @@ define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tp
 define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="placeholder" image="images/placeholders/campaign-detail-graph.jpg"></div>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<p>\n    View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n</p>\n<div ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
-
-
-define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
-
-
-define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher (4)</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative (15)</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type (3)</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                    <ul class="dropdown-menu" role="menu">\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                    </ul>\n                </div>\n            </div>\n            <div class="col-sm-8 btn-group text-right-sm col-lg-8">\n                <button class="btn btn-default">Edit Placements</button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="form-inline">\n    <div class="form-group">\n        View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n    </div>\n    <div class="form-group search-wrapper">\n        <label class="form-label search">\n            <input class="input" ng-model="filter" ng-change="updateFilters(filter)" placeholder="Search" type="search"/>\n        </label>\n        <ul ng-show="results.length" class="search-results">\n            <li ng-repeat="result in (results | limitTo: 5) track by $index">\n                <a ng-click="filterBy(result)">{{result.name}}</a>\n            </li>\n        </ul>\n    </div>\n    <div class="form-group">\n        <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>\n    </div>\n</div>\n<div class="tab-content" ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/creatives/creativesList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesList.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesThumbnails.html', '<div creative-thumbnails />\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesThumbnails.html', '<div creative-thumbnails></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-3">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".all">all (10)</a>\n        <a ui-sref=".in-banner">In-Banner (3)</a>\n        <a ui-sref=".in-stream">In-Stream(4)</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-7 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-5">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".({filter: \'\'})">all ({{creativesMeta.all}})</a>\n        <a ui-sref=".({filter: \'IBV\'})">In-Banner ({{creativesMeta.IBV}})</a>\n        <a ui-sref=".({filter: \'IS\'})">In-Stream({{creativesMeta.IS}})</a>\n        <a ui-sref=".({filter: \'RM\'})">Rich Media({{creativesMeta.RM}})</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-5 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay" ng-click="openPreviewPage(creative.id, creative.name)"><span><i class="glyph-view"></i>Preview in Page</span></div>\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.live}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers}})</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives}})</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types}})</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                    <ul class="dropdown-menu" role="menu">\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                    </ul>\n                </div>\n            </div>\n            <div class="col-sm-8 text-right-sm col-lg-8">\n                <div class="btn-group">\n                    <button class="btn btn-default">Edit Placements</button>\n                    <button class="btn btn-default">Set Trackers</button>\n                    <button class="btn btn-default">Pull Tags</button>\n                </div>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span> <span class="muted normal">{{group.meta.count}} placements, {{group.meta.numDelivering}} delivering, {{group.meta.impressions}} of {{group.meta.bookedImpressions}} impressions</span>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">New Campaign</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <span class="form-label col-sm-3">Options</span>\n            <label class="col-sm-9">\n                <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                <span>Measure Reach &amp; Frequency</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                <span>Add Google AnalyticsUTM Parameters to URLs</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Conversion Tracking</span>\n            </label>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Type of Geotargeting</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">\n        <span ng-if="edit">Edit Campaign</span>\n        <span ng-if="!edit">New Campaign</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm">Options</div>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Measure Reach &amp; Frequency</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Add Google AnalyticsUTM Parameters to URLs</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Enable Conversion Tracking</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm"><span>Type of Geotargeting</span></div>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button ng-if="edit" class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save Changes</button>\n    <button ng-if="!edit" class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 /* jshint -W015 */
 
-define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/creatives/directives/creativeThumbnails.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
     'use strict';
     var app = require('./module');
     require('./clients/routes');
@@ -60743,12 +60823,16 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
     require('tpl!./campaigns/campaign.summary.html');
     require('tpl!./campaigns/campaign.html');
     require('tpl!./campaigns/campaigns.html');
-    require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementsHeader.html');
+
     require('tpl!./campaigns/creatives/creativesList.html');
     require('tpl!./campaigns/creatives/creativesThumbnails.html');
     require('tpl!./campaigns/creatives/creativesHeader.html');
+    require('tpl!./campaigns/creatives/directives/creativeThumbnails.html');
+
+    require('tpl!./campaigns/placements/placementsList.html');
+    require('tpl!./campaigns/placements/placementsHeader.html');
     require('tpl!./campaigns/placements/services/placementTableHeader.html');
+
     require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
@@ -60848,6 +60932,7 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/placements',
                 views: {
                     'tab-header': {
+                        controller: 'placementsHeader',
                         templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
                     },
                     'table': {
@@ -60858,13 +60943,14 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
             })
             .state({
                 name: 'cm.campaigns.detail.creatives',
-                url: '/creatives'
+                url: '/creatives?filter'
             })
             .state({
                 name: 'cm.campaigns.detail.creatives.list',
                 url: '/list',
                 views: {
                     'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
@@ -60878,10 +60964,10 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 url: '/thumbnails',
                 views: {
                     'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativesThumbnailsCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
                     }
                 }
@@ -61071,9 +61157,11 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
 
     var limits = {};
 
-    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', function (cache, filter, $interpolate) {
+    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', 'dataFactory', function (cache, campaignsFilter, $interpolate, dataFactory) {
+        var filter = dataFactory();
+
         function accountUrl() {
-            return headerUrl + filter();
+            return headerUrl + campaignsFilter();
         }
 
         function url() {
@@ -61084,7 +61172,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
                 opt = 'account.id:eq:' + accountIds.join(':eq:');
             }
 
-            return baseUrl + filter(opt);
+            return baseUrl + campaignsFilter(opt);
         }
 
         function headerTransform(data) {
@@ -61111,7 +61199,8 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
             var campaignCache = cache.get(url(), campaignTransform);
 
             var accounts = {};
-            var campaigns = campaignCache.all();
+            var campaigns = campaignCache.filtered(filtered);
+
 
             for (var i = 0; i < campaigns.length; i++) {
                 var campaign = campaigns[i];
@@ -61167,6 +61256,27 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
             }
         }
 
+        function filtered(result) {
+            if (filter.all().length) {
+                var filters = filter.all()[0];
+                if(filters._type === 'campaign') {
+                    return result.id === filters.id;
+                } else {
+                    return result.account.id === filters.id;
+                }
+            }
+
+            return true;
+        }
+
+        function setFilter(result) {
+            filter.setData([result]);
+        }
+
+        function clearFilter() {
+            filter.setData([]);
+        }
+
         function showMore(accountId) {
             return function () {
                 if (!limits[accountId]) {
@@ -61205,6 +61315,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
         function observe(callback, $scope, preventImmediate) {
             var campaignHeader = cache.get(accountUrl(), headerTransform);
 
+            filter.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(function() {
                 var campaignCache = cache.get(url(), campaignTransform);
@@ -61215,6 +61326,8 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
         return {
             _getAccountIds: getAccountIds,
             _groupByAccount: groupByAccount,
+            clearFilter: clearFilter,
+            setFilter: setFilter,
             all: all,
             observe: observe
         };
@@ -61236,16 +61349,20 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
         'archived': 'Archived'
     };
 
-    module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', function (campaignsHeader, campaignAccordionTableFactory, filter) {
+
+
+    module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', 'dataFactory', function (campaignsHeader, campaignAccordionTableFactory, campaignsFilter, dataFactory) {
+        var filter = dataFactory();
+
         function tableUrl(status) {
-            return tableBaseUrl + filter('status:eq:' + status );
+            return tableBaseUrl + campaignsFilter('status:eq:' + status );
         }
 
         function init() {
-            var accordionTables = cache[filter()];
+            var accordionTables = cache[campaignsFilter()];
 
             if (!accordionTables) {
-                accordionTables = cache[filter()] = {};
+                accordionTables = cache[campaignsFilter()] = {};
 
                 accordionTables.header = campaignsHeader.data(true);
                 accordionTables.rows = {};
@@ -61265,13 +61382,34 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
             }
         }
 
+        function setFilter(result) {
+            filter.setData([result]);
+        }
+
+        function clearFilter() {
+            filter.setData([]);
+        }
+
+        function filtered(result) {
+            if (filter.all().length) {
+                var filters = filter.all()[0];
+                if(filters._type === 'campaign') {
+                    return result.id === filters.id;
+                } else {
+                    return result.account.id === filters.id;
+                }
+            }
+
+            return true;
+        }
+
         function all() {
             init();
 
             var output = [];
 
-            ng.forEach(cache[filter()].rows, function (table) {
-                output.push(table.all());
+            ng.forEach(cache[campaignsFilter()].rows, function (table) {
+                output.push(table.all(filtered));
             });
 
             return output;
@@ -61280,14 +61418,17 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
         function observe(callback, $scope){
             init();
 
-            ng.forEach(cache[filter()].rows, function (table) {
+            filter.observe(callback, $scope);
+            ng.forEach(cache[campaignsFilter()].rows, function (table) {
                 table.observe(callback, $scope);
             });
         }
 
         return {
             all: all,
-            observe: observe
+            observe: observe,
+            clearFilter: clearFilter,
+            setFilter: setFilter
         };
     }]);
 });
@@ -61386,6 +61527,81 @@ define('campaignManagement/campaigns/services/campaignsHeader',['require','./../
     }]);
 });
 
+define('campaignManagement/campaigns/services/campaignModal',['require','./../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var previewModals = {};
+    var editModals = {};
+    var createModal;
+
+    module.service('campaignModal', ['$modal', function ($modal) {
+        function preview(id, row) {
+            if (!previewModals[id]) {
+                previewModals[id] = {
+                    id: id,
+                    name: row.campaign.name,
+                    impressions: row.impressions.current
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/analytics-preview.html',
+                controller: 'analyticsPreviewCtrl',
+                resolve: {
+                    modalState: function() {
+                        return previewModals[id];
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
+        function settings(id, row) {
+            if (!editModals[id]) {
+                editModals[id] = {id: id, name: row.campaign.name};
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
+                controller: 'editCampaignCtrl',
+                resolve: {
+                    modalState: function() {
+                        return editModals[id];
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
+        function create(){
+            if (!createModal) {
+                createModal = {};
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
+                controller: 'newCampaignCtrl',
+                resolve: {
+                    modalState: function() {
+                        return createModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
+        return {
+            preview: preview,
+            settings: settings,
+            create: create
+        };
+    }]);
+});
+
 
 define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})\n'); });
 
@@ -61438,7 +61654,7 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                         id: row.id,
                         account: {
                             id: row.account.id,
-                            route: 'cm.campaigns.all({ accountId: row.account.id })',
+                            route: 'cm.campaigns.account({ accountId: row.account.id })',
                             name: row.account.name
                         },
                         campaign: {
@@ -61452,14 +61668,15 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                         start: row.startDate,
                         end: row.endDate,
                         placements: row.metrics.countPlacements,
-                        creatives: row.metrics.countCreatives
+                        creatives: row.metrics.countCreatives,
+                        edit: ['campaign.preview', 'campaign.settings']
                     });
                 }
 
                 return newRows;
             }
 
-            function getTable() {
+            function getTable(filter) {
                 var rules = {
                     account: 'link',
                     campaign: 'link',
@@ -61468,7 +61685,7 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                     end: 'date',
                     placements: 'number',
                     creatives: 'number',
-                    edit: ''
+                    edit: 'icons'
                 };
 
                 var headers = [
@@ -61493,7 +61710,7 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                     content: {
                         rules: rules,
                         headers: headers,
-                        data: rows.all()
+                        data: rows.filtered(filter)
                     }
                 };
             }
@@ -61525,10 +61742,16 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                 rows.observe(callback, $scope);
             }
 
+            function notifyObservers() {
+                header.notifyObservers();
+                rows.notifyObservers();
+            }
+
             return {
                 init: init,
                 observe: observe,
                 all: getTable,
+                notifyObservers: notifyObservers,
                 _transformRows: _transformRows,
                 _getTableHeader: _getTableHeader
             };
@@ -61542,7 +61765,7 @@ define('campaignManagement/campaigns/controllers/newCampaign',['require','./../.
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('newCampaignCtrl', ['$scope', '$modalInstance', 'accountService', function ($scope, $modalInstance, accounts) {
+    app.controller('newCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', function ($scope, $modalInstance, accounts, modalState) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
@@ -61553,7 +61776,97 @@ define('campaignManagement/campaigns/controllers/newCampaign',['require','./../.
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        $scope.campaign =  {
+        $scope.campaign = modalState.campaign || {
+            startDate: new Date(),
+            endDate: new Date(),
+            objectives: []
+        };
+
+        $scope.dateOptions = {
+            formatYear: 'yy',
+            startingDay: 0,
+            maxMode: 'day'
+        };
+
+        accounts.observe(updateAccounts, $scope);
+
+        function updateAccounts() {
+            $scope.accounts = accounts.filtered();
+        }
+
+        $scope.select = [
+            {
+                name: 'Uno 1',
+                value: '1'
+            },
+            {
+                name: 'Second',
+                value: '2'
+            },
+            {
+                name: 'Choice #3',
+                value: '3'
+            },
+            {
+                name: 'Pick me, pick me, pick me!',
+                value: '4'
+            },
+            {
+                name: 'Sheeple',
+                value: '5'
+            }
+        ];
+
+        function openPicker($event, name) {
+            $event.preventDefault();
+            $event.stopPropagation();
+
+            ng.forEach($scope.datePickers, function (value, key) {
+                $scope.datePickers[key] = false;
+            });
+
+            $scope.datePickers[name] = true;
+        }
+
+        function cancel() {
+            $modalInstance.dismiss('cancel');
+        }
+
+        function ok(errors) {
+            console.log($scope.campaign);
+            $scope.errors = errors;
+            $scope.submitted = true;
+            console.log('do something');
+        }
+
+        //Before closing the modal save the state;
+        $scope.$on('$destroy', function() {
+            modalState.campaign = $scope.campaign;
+        });
+
+    }]);
+});
+
+define('campaignManagement/campaigns/controllers/editCampaign',['require','./../../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    var ng = require('angular');
+
+    app.controller('editCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', function ($scope, $modalInstance, accounts, modalState) {
+
+        //Datepicker functions
+        $scope.format = 'MM/dd/yyyy';
+        $scope.openPicker = openPicker;
+        $scope.datePickers = {};
+        $scope.edit = true;
+
+        //Modal functions
+        $scope.ok = ok;
+        $scope.cancel = cancel;
+
+        $scope.campaign = {
+            campaignName: modalState.name,
             startDate: new Date(),
             endDate: new Date(),
             objectives: []
@@ -61621,14 +61934,92 @@ define('campaignManagement/campaigns/controllers/newCampaign',['require','./../.
 
 // jshint ignore: start
 
-define('campaignManagement/campaigns/controllers/campaigns',['require','./../../module'],function (require) {
+define('campaignManagement/campaigns/controllers/campaigns',['require','./../../module','angular'],function (require) {
     'use strict';
 
     var app = require('./../../module');
+    var ng = require('angular');
 
-    app.controller('campaignsCtrl', ['$scope', '$state', function ($scope, $state) {
+    app.controller('campaignsCtrl', ['$scope', '$state', 'campaignService', 'accountService', 'campaignsByStatus', 'campaignsByAccount', '$timeout', function ($scope, $state, campaigns, accounts, campaignsByStatus, campaignsByAccount, $timeout) {
         //Needed for viewBy query Parameter
         $scope.params = $state.params;
+        $scope.filter = '';
+        campaignsByStatus.clearFilter();
+        campaignsByAccount.clearFilter();
+
+        $scope.filterBy = filterBy;
+        $scope.clearFilter = clearFilter;
+        $scope.updateFilters = updateFilters;
+
+        accounts.observe(function() {
+            updateFilters($scope.filter);
+        }, $scope, true);
+
+        campaigns.observe(function() {
+            updateFilters($scope.filter);
+        }, $scope, true);
+
+        function filterBy(result) {
+            campaignsByStatus.setFilter(result);
+            campaignsByAccount.setFilter(result);
+            $scope.filter = result.name;
+            $scope.results = [];
+
+            $timeout(function() {
+                $scope.$apply();
+            });
+        }
+
+        function clearFilter() {
+            campaignsByStatus.clearFilter();
+            campaignsByAccount.clearFilter();
+
+            $scope.filter = '';
+            $scope.results = [];
+
+            $timeout(function() {
+                $scope.$apply();
+            });
+        }
+
+        function updateFilters(filter){
+            var results = [];
+            var i;
+
+            if (filter && filter.trim()) {
+                results.concat(campaigns.search(filter));
+
+                //Add _type property for the filterBy function
+                for (i = 0; i < results.length; i++) {
+                    results[i]._type = "campaign";
+                }
+
+                if (!$state.params.accountId) {
+                    var accountResults = accounts.search(filter);
+
+                    for (i = 0; i < accountResults.length; i++) {
+                        accountResults[i]._type = "account";
+                    }
+                    results = results.concat(accountResults);
+                }
+
+                results.sort(function(a, b) {
+                    if (a.name && b.name) {
+                        return a.name.localeCompare(b.name);
+                    } else {
+                        return 0;
+                    }
+                });
+            }
+
+
+            if(!ng.equals(results, $scope.results)) {
+                $scope.results = results;
+                $timeout(function() {
+                    $scope.$apply();
+                })
+            }
+        }
     }]);
 });
 
@@ -61671,6 +62062,28 @@ define('campaignManagement/campaigns/controllers/campaign',['require','./../../m
         ];
 
 
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/analytics-preview.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/analytics-preview.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{name}}</h2>\n</div>\n<div class="modal-body analytics-preview">\n    <div class="row">\n        <div class="col-lg-3 col-md-6 col-xs-12">\n            <h3>Summary</h3>\n            <div class="thin-header">Impressions</div>\n            <div class="impressions">{{impressions|number}}</div>\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n    </div>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-default left">View Complete Analytics</button>\n</div>\n'); });
+
+// jshint ignore: start
+
+define('campaignManagement/campaigns/controllers/analyticsPreview',['require','./../../module','tpl!./../analytics-preview.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../module');
+    require('tpl!./../analytics-preview.html');
+
+    app.controller('analyticsPreviewCtrl', ['$scope', '$modalInstance', 'modalState', function ($scope, $modalInstance, modalState) {
+        $scope.name = modalState.name;
+        $scope.cancel = cancel;
+        $scope.impressions = modalState.impressions;
+
+        function cancel() {
+            $modalInstance.dismiss('cancel');
+        }
     }]);
 });
 
@@ -61827,6 +62240,63 @@ define('campaignManagement/campaigns/placements/controllers/placementsList',['re
     }]);
 });
 
+
+
+define('campaignManagement/campaigns/placements/controllers/placementsHeader',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('placementsHeader', ['$scope', '$rootScope', 'placements', function($scope, $rootScope, placements) {
+        function updateMeta() {
+            var allPlacements = placements.all(true).placements;
+
+            if (allPlacements) {
+                var placement;
+                var creative;
+
+                var publishers = [];
+                var creatives = [];
+                var types = [];
+
+                for(var i=0; i<allPlacements.length; i++) {
+                    placement = allPlacements[i];
+
+                    pushUnique(publishers, placement.publisher.id);
+                    pushUnique(types, placement.type);
+
+                    for (var k=0; k<placement.creatives.length; k++) {
+                        creative = placement.creatives[k];
+
+                        pushUnique(creatives, creative.id);
+                    }
+                }
+
+                $scope.placementsMeta = {
+                    publishers: publishers.length,
+                    creatives: creatives.length,
+                    types: types.length
+                };
+            }
+        }
+        updateMeta();
+        placements.observe(updateMeta, $scope, true);
+
+        /**
+         * Push an item to an array if the item isn't already in the array
+         * @param array
+         * @param item
+         */
+        function pushUnique(array, item) {
+            if (!inArray(item, array)) {
+                array.push(item);
+            }
+        }
+
+        function inArray(needle, haystack) {
+            return haystack.indexOf(needle) > -1;
+        }
+    }]);
+});
+
 define('campaignManagement/campaigns/placements/services/placements.js',['require','./../../../module','tpl!./placementTableHeader.html'],function (require) {
     'use strict';
 
@@ -61878,14 +62348,14 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
 
         function transformPlacements(data) {
             if (data && data.placements) {
-                var groups = getPlacementGroups(data.placements.sort(sortPlacements));
-                return transformPlacementGroups(groups);
+                var groups = _getPlacementGroups(data.placements.sort(sortPlacements));
+                return _transformPlacementGroups(groups);
             } else {
                 return [];
             }
         }
 
-        function transformPlacementGroups(groups) {
+        function _transformPlacementGroups(groups) {
             var transformedGroups = [];
             var groupData;
             var transformedGroup;
@@ -61910,7 +62380,7 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
                         delivering: placement.live,
                         startDate: placement.startDate,
                         endDate: placement.endDate,
-                        type: placement.adType,
+                        type: placement.type,
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions
@@ -61930,7 +62400,7 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
             return transformedGroups;
         }
 
-        function getPlacementGroups(placements) {
+        function _getPlacementGroups(placements) {
             var viewBy = $state.params.viewBy;
             if (viewBy === 'creative') {
                 return placementsByCreative(placements);
@@ -61952,12 +62422,16 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
         }
 
         var initializeCache = true;
-        function all() {
+        function all(skipTransform) {
 
             // We can do this because someone using this service will be observing it
             // before they call all()
             var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
             initializeCache = false;
+
+            if (skipTransform) {
+                return data;
+            }
 
             var placements = transformPlacements(data);
             return placements;
@@ -61976,6 +62450,8 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
         }
 
         return {
+            _transformPlacementGroups: _transformPlacementGroups,
+            _getPlacementGroups: _getPlacementGroups,
             all: all,
             observe: observe
         };
@@ -62040,7 +62516,7 @@ define('campaignManagement/campaigns/placements/services/placementsByPublisher.j
                 };
             }
 
-            // Throw groups into an array and sort by creative name
+            // Throw groups into an array and sort by publisher name
             var groupArray = groupsToArray(groups);
             groupArray.sort(sortGroups);
 
@@ -62174,7 +62650,7 @@ define('campaignManagement/campaigns/placements/services/placementsByAdType.js',
             // Throw placements into a hash map that's indexed by publisher
             for(var i=0; i<placements.length; i++) {
                 placement = placements[i];
-                adType = placement.adType;
+                adType = placement.type;
 
                 if (!groups[adType]) {
                     groups[adType] = {
@@ -62216,7 +62692,7 @@ define('campaignManagement/campaigns/placements/services/placementsByAdType.js',
                 };
             }
 
-            // Throw groups into an array and sort by creative name
+            // Throw groups into an array and sort by ad type
             var groupArray = groupsToArray(groups);
             groupArray.sort(sortFn);
 
@@ -62247,123 +62723,67 @@ define('campaignManagement/campaigns/placements/services/placementsByAdType.js',
 
 
 
+define('campaignManagement/campaigns/creatives/controllers/creativesHeader',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', 'creatives', function($scope, $rootScope, $state, creatives) {
+        function updateMeta() {
+
+            var allCreatives = creatives.all().data;
+
+            if (allCreatives) {
+                var creative = 0;
+
+                var meta = {
+                    all: 0,
+                    IBV: 0,
+                    RM: 0,
+                    IS: 0
+                };
+
+                for(var i = 0; i < allCreatives.length; i ++) {
+                    creative = allCreatives[i];
+
+                    meta.all ++;
+                    if(creative.type) {
+                        meta[creative.type] ++;
+                    }
+                }
+                $scope.creativesMeta = meta;
+            }
+        }
+        updateMeta();
+        creatives.observe(updateMeta, $scope, true);
+    }
+    ]);
+});
+
+
+
 define('campaignManagement/campaigns/creatives/controllers/creativesList',['require','./../../../module'],function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesListCtrl', [
-        '$scope', function($scope) {
-            var options = '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>';
-            $scope.creatives = {
-                rules: {
-                    checked: '',
-                    name: '',
-                    delivering: '',
-                    type: '',
-                    device: '',
-                    size: '',
-                    expandedSize: '',
-                    numPlacements: '',
-                    options: ''
-                },
-                headers: [
-                    {name: '', id: 'checked'},
-                    {name: 'CREATIVE NAME', id: 'name'},
-                    {name: 'DELIVERING', id: 'delivering'},
-                    {name: 'DEVICE', id: 'device'},
-                    {name: 'SIZE', id: 'size'},
-                    {name: 'EXPANDABLE', id: 'expandedSize'},
-                    {name: 'NO PLACEMENTS', id: 'numPlacements'},
-                    {name: 'OPTIONS', id: 'options'}
-                ],
-                data: [
-                    {
-                        checked: '<input type="checkbox" checked>',
-                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
-                        delivering: '<span class="icon-status success"></span>',
-                        type: 'RM',
-                        device: 'Tablet',
-                        size: '300x600',
-                        expandedSize: '600x600',
-                        numPlacements: 15,
-                        options: options
-                    },
-                    {
-                        checked: '<input type="checkbox">',
-                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
-                        delivering: '<span class="icon-status success"></span>',
-                        type: 'IBV',
-                        device: 'Desktop',
-                        size: '300x600',
-                        expandedSize: 'N/A',
-                        numPlacements: 13,
-                        options: options
-                    },
-                    {
-                        checked: '<input type="checkbox">',
-                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
-                        delivering: '<span class="icon-status"></span>',
-                        type: 'IBV',
-                        device: 'Multidevice',
-                        size: '300x600',
-                        expandedSize: '600x600',
-                        numPlacements: 11,
-                        options: options
-                    },
-                    {
-                        checked: '<input type="checkbox">',
-                        name: 'InBanner_Ad1_300x600<br />Creative ID: a576-0058-kde7-90ea',
-                        delivering: '<span class="icon-status"></span>',
-                        type: 'IS',
-                        device: 'Mobile',
-                        size: '300x600',
-                        expandedSize: 'N/A',
-                        numPlacements: 10,
-                        options: options
-                    }
-                ]
+    app.controller('creativesListCtrl', ['$scope', '$rootScope', '$state', '$filter', 'creatives', function($scope, $rootScope, $state, $filter, creatives) {
+        var filter = $state.params.filter;
+        $rootScope.$on('$stateChangeSuccess', function () {
+            filter = $state.params.filter;
+        });
+
+        function updateCreatives() {
+            var allCreatives = creatives.all();
+            var duplicateCreatives = {
+                rules: allCreatives.rules,
+                headers: allCreatives.headers,
+                data: []
             };
+
+            duplicateCreatives.data = $filter('filter')(allCreatives.data, {type: filter});
+            $scope.creatives = duplicateCreatives;
         }
-    ]);
+
+        creatives.observe(updateCreatives, $scope);
+    }]);
 });
-
-
-
-define('campaignManagement/campaigns/creatives/controllers/creativesThumbnails',['require','./../../../module'],function(require) {
-    var app = require('./../../../module');
-
-    app.controller('creativesThumbnailsCtrl', ['$scope', '$window',
-        function($scope, $window) {
-
-            $scope.openStudio = function(id) {
-                $window.open('https://staging-studio.mixpo.com/studio?sdf=open&guid=' + id, '_blank');
-            };
-
-            $scope.openSettings = function(id) {
-                console.log( 'thumbnail controller: open settings ' + id );
-            };
-
-            $scope.openPlacements = function(id) {
-                console.log( 'thumbnail controller: open placements ' + id );
-            };
-
-            $scope.copyCreative = function(id) {
-                console.log( 'thumbnail controller: copy creative ' + id );
-            };
-
-            $scope.deleteCreative = function(id) {
-                console.log( 'thumbnail controller: delete creative ' + id );
-            };
-
-            $scope.previewCreative = function(id) {
-                console.log( 'thumbnail controller: preview creative ' + id );
-            };
-
-        }
-    ]);
-});
-
-
-define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay"><span><i class="glyph-view"></i>Preview Creative</span></div>\n\t\t\t\t<img ng-src="{{creative.thumb}}" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.live}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.size}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedSize}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.name}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>'); });
 
 define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['require','./../../../module','tpl!./creativeThumbnails.html'],function (require) {
     'use strict';
@@ -62378,20 +62798,173 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', 'campaignCreative', function ($scope, campaignCreative) {
+            controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', function ($scope, $window, $state, $rootScope, $filter, creatives) {
 
-                function updateCreatives() {
-                    $scope.creatives = campaignCreative.all();
+                // Should this be a shared filter for other parts of the app to use? -JFlo
+                var mixpoURL,
+                subDomainSegments = location.hostname.split('-');
+
+                // Get development subdomain segments
+                if (subDomainSegments.length > 1) {
+                    subDomainSegments.pop();
+                    subDomainSegments.join('-');
+                    mixpoURL = '//' + subDomainSegments + '-studio.mixpo.com';
+                } else {
+                    mixpoURL = '//studio.mixpo.com';
                 }
 
-                campaignCreative.observe(updateCreatives, $scope);
+                $scope.openPreviewPage = function(id, name) {
+                    console.log( 'thumbnail controller: preview creative ' + id, name );
+                    $window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
+                };
+
+                $scope.openStudio = function(id) {
+                    $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
+                };
+
+                $scope.openSettings = function(id) {
+                    console.log( 'thumbnail controller: open settings ' + id );
+                };
+
+                $scope.openPlacements = function(id) {
+                    console.log( 'thumbnail controller: open placements ' + id );
+                };
+
+                $scope.copyCreative = function(id) {
+                    console.log( 'open Copy Creative modal ' + id );
+                };
+
+                $scope.deleteCreative = function(id) {
+                    console.log( 'thumbnail controller: delete creative ' + id );
+                };
+
+                var filter = $state.params.filter;
+
+                $rootScope.$on('$stateChangeSuccess', function () {
+                    filter = $state.params.filter;
+                });
+
+                function updateCreatives() {
+                    var allCreatives = creatives.all();
+                    var duplicateCreatives = [];
+
+                    duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    $scope.creatives = duplicateCreatives;
+                }
+
+                creatives.observe(updateCreatives, $scope);
 
             }]
         };
     }]);
 });
 
-define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/campaigns','./controllers/campaign','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/services/placements.js','./placements/services/placementsByPublisher.js','./placements/services/placementsByCreative.js','./placements/services/placementsByAdType.js','./creatives/controllers/creativesList','./creatives/controllers/creativesThumbnails','./creatives/directives/creativeThumbnails'],function (require) {
+define('campaignManagement/campaigns/creatives/services/creatives',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+    var baseUrl = '/fixtures/creatives/creatives.json';
+
+    var rules = {
+        checked: '',
+        creativeName: '',
+        delivering: 'delivering',
+        type: '',
+        dimensions: '',
+        expandedDimensions: '',
+        numPlacements: '',
+        options: ''
+    };
+
+    var headers = [
+        {name: '', id: 'checked'},
+        {name: 'Creative Name', id: 'creativeName'},
+        {name: 'Delivering', id: 'delivering'},
+        {name: 'Type', id: 'type'},
+        {name: 'Dimensions', id: 'dimensions'},
+        {name: 'Expandable', id: 'expandedDimensions'},
+        {name: 'No. Placements', id: 'numPlacements'},
+        {name: '', id: 'options'}
+    ];
+
+    module.service('creatives', ['cacheFactory', '$state', function (cacheFactory, $state) {
+        var cache = cacheFactory({
+            transform: _transformCreatives
+        });
+
+        function _transformCreatives(data) {
+            var creatives = data.creatives;
+            var creative;
+            var transformedTable = {
+                rules: rules,
+                headers: headers,
+                data: []
+            };
+
+            for (var i=0; i<creatives.length; i++) {
+                creative = creatives[i];
+
+                transformedTable.data.push({
+                    checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                    creativeName: creative.name,
+                    delivering: creative.live,
+                    type: creative.type,
+                    dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                    expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                    numPlacements: creative.numPlacements,
+                    options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
+
+                    // These properties are needed by thumbnails but aren't in the table
+                    lastModified: creative.lastModified,
+                    thumbnail: creative.thumbnail
+                });
+            }
+
+            return transformedTable;
+        }
+
+        function _filter() {
+            // TODO: change to campaignId when actual API is ready
+            if ($state.params.campaignIdNotThere) {
+                return '&filters=campaign.id:eq:' + $state.params.campaignId;
+            } else {
+                return '';
+            }
+        }
+
+        function _url() {
+            return baseUrl + _filter();
+        }
+
+        function all() {
+            return cache.all(_url());
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            return cache.observe(_url(), callback, $scope, preventImmediate);
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return cache.get(_url(), initialize);
+        }
+
+        return {
+            _filter: _filter,
+            _transformCreatives: _transformCreatives,
+            _url: _url,
+            all: all,
+            data: data,
+            observe: observe
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/editCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/controllers/placementsHeader','./placements/services/placements.js','./placements/services/placementsByPublisher.js','./placements/services/placementsByCreative.js','./placements/services/placementsByAdType.js','./creatives/controllers/creativesHeader','./creatives/controllers/creativesList','./creatives/directives/creativeThumbnails','./creatives/services/creatives'],function (require) {
     'use strict';
 
     require('./services/campaignCache');
@@ -62399,24 +62972,29 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
     require('./services/campaignsByStatus');
     require('./services/campaignsFilter');
     require('./services/campaignsHeader');
+    require('./services/campaignModal');
     require('./factories/campaignsByStatusAccordionTable');
     require('./controllers/newCampaign');
+    require('./controllers/editCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');
+    require('./controllers/analyticsPreview');
 
     require('./directives/campaignDetails');
     require('./directives/campaignsByAccount');
     require('./directives/campaignsByStatus');
 
     require('./placements/controllers/placementsList');
+    require('./placements/controllers/placementsHeader');
     require('./placements/services/placements.js');
     require('./placements/services/placementsByPublisher.js');
     require('./placements/services/placementsByCreative.js');
     require('./placements/services/placementsByAdType.js');
 
+    require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');
-    require('./creatives/controllers/creativesThumbnails');
     require('./creatives/directives/creativeThumbnails');
+    require('./creatives/services/creatives');
 });
 
 
@@ -62659,12 +63237,14 @@ define('campaignManagement/accounts/controllers/account',['require','./../../mod
     var app = require('./../../module');
     require('tpl!./../new-account.html');
 
-    app.controller('accountCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+    app.controller('accountCtrl', ['$scope', 'navbarService', 'campaignModal', function ($scope, navbar, campaignModal) {
         function updateAccountInfo() {
             $scope.account = navbar.all().account;
         }
 
         navbar.observe(updateAccountInfo, $scope);
+
+        $scope.campaignModal = campaignModal.create;
     }]);
 });
 
