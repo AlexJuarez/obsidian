@@ -6,23 +6,9 @@ define(function (require) {
     require('./clients/routes');
     require('./divisions/routes');
     require('./accounts/routes');
+    require('./campaigns/routes');
 
     require('tpl!./index.html');
-    require('tpl!./campaigns/index.html');
-    require('tpl!./campaigns/campaign.summary.html');
-    require('tpl!./campaigns/campaign.html');
-    require('tpl!./campaigns/campaigns.html');
-
-    require('tpl!./campaigns/creatives/creativesList.html');
-    require('tpl!./campaigns/creatives/creativesThumbnails.html');
-    require('tpl!./campaigns/creatives/creativesHeader.html');
-    require('tpl!./campaigns/creatives/directives/creativeThumbnails.html');
-
-    require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementsHeader.html');
-    require('tpl!./campaigns/placements/services/placementTableHeader.html');
-
-    require('tpl!./campaigns/new-campaign.html');
 
     return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
         //httpProvider settings
@@ -32,8 +18,6 @@ define(function (require) {
 
         //urlRouter Settings
         $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
-        $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/list');
-        $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
         if (!window.disableRouter) {
             $urlRouterProvider.when('/', '/analytics');
         }
@@ -54,112 +38,6 @@ define(function (require) {
                 controller: 'campaignManagementCtrl',
                 templateUrl: 'campaignManagement/index.html',
                 parent: 'index'
-            })
-            .state({
-                name: 'cm.campaigns',
-                url: '?viewBy',
-                templateUrl: 'campaignManagement/campaigns/index.html'
-            })
-            .state({
-                name: 'cm.campaigns.client',
-                url: '/client/:clientId',
-                views: {
-                    'summary': {
-                        controller: 'clientCtrl',
-                        templateUrl: 'campaignManagement/clients/client.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.division',
-                url: '/division/:divisionId',
-                views: {
-                    'summary': {
-                        controller: 'divisionCtrl',
-                        templateUrl: 'campaignManagement/divisions/division.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.account',
-                url: '/account/:accountId',
-                views: {
-                    'summary': {
-                        controller: 'accountCtrl',
-                        templateUrl: 'campaignManagement/accounts/summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.detail',
-                url: '/campaign/:campaignId',
-                views: {
-                    'summary': {
-                        controller: 'campaignCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaign.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaign.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.detail.placements',
-                url: '/placements',
-                views: {
-                    'tab-header': {
-                        controller: 'placementsHeader',
-                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
-                    },
-                    'table': {
-                        controller: 'placementsListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives',
-                url: '/creatives?filter'
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives.list',
-                url: '/list',
-                views: {
-                    'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeaderCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
-                    },
-                    'table@cm.campaigns.detail': {
-                        controller: 'creativesListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives.thumbnails',
-                url: '/thumbnails',
-                views: {
-                    'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeaderCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
-                    },
-                    'table@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
-                    }
-                }
             });
 
         buildAnalyticsRoutes('analytics');
