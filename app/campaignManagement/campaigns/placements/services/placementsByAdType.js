@@ -13,7 +13,7 @@ define(function (require) {
             // Throw placements into a hash map that's indexed by publisher
             for(var i=0; i<placements.length; i++) {
                 placement = placements[i];
-                adType = placement.adType;
+                adType = placement.type;
 
                 if (!groups[adType]) {
                     groups[adType] = {
@@ -55,7 +55,7 @@ define(function (require) {
                 };
             }
 
-            // Throw groups into an array and sort by creative name
+            // Throw groups into an array and sort by ad type
             var groupArray = groupsToArray(groups);
             groupArray.sort(sortFn);
 

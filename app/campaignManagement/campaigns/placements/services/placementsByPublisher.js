@@ -56,7 +56,7 @@ define(function (require) {
                 };
             }
 
-            // Throw groups into an array and sort by creative name
+            // Throw groups into an array and sort by publisher name
             var groupArray = groupsToArray(groups);
             groupArray.sort(sortGroups);
 

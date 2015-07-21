@@ -11,13 +11,22 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', 'campaignCreative', function ($scope, campaignCreative) {
+            controller: ['$scope', '$rootScope', '$state', '$filter', 'creatives', function ($scope, $rootScope, $state, $filter, creatives) {
+
+                var filter = $state.params.filter;
+                $rootScope.$on('$stateChangeSuccess', function () {
+                    filter = $state.params.filter;
+                });
 
                 function updateCreatives() {
-                    $scope.creatives = campaignCreative.all();
+                    var allCreatives = creatives.all();
+                    var duplicateCreatives = [];
+
+                    duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    $scope.creatives = duplicateCreatives;
                 }
 
-                campaignCreative.observe(updateCreatives, $scope);
+                creatives.observe(updateCreatives, $scope);
 
             }]
         };

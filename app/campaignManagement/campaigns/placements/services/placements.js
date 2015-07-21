@@ -49,14 +49,14 @@ define(function (require) {
 
         function transformPlacements(data) {
             if (data && data.placements) {
-                var groups = getPlacementGroups(data.placements.sort(sortPlacements));
-                return transformPlacementGroups(groups);
+                var groups = _getPlacementGroups(data.placements.sort(sortPlacements));
+                return _transformPlacementGroups(groups);
             } else {
                 return [];
             }
         }
 
-        function transformPlacementGroups(groups) {
+        function _transformPlacementGroups(groups) {
             var transformedGroups = [];
             var groupData;
             var transformedGroup;
@@ -81,7 +81,7 @@ define(function (require) {
                         delivering: placement.live,
                         startDate: placement.startDate,
                         endDate: placement.endDate,
-                        type: placement.adType,
+                        type: placement.type,
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions
@@ -101,7 +101,7 @@ define(function (require) {
             return transformedGroups;
         }
 
-        function getPlacementGroups(placements) {
+        function _getPlacementGroups(placements) {
             var viewBy = $state.params.viewBy;
             if (viewBy === 'creative') {
                 return placementsByCreative(placements);
@@ -123,12 +123,16 @@ define(function (require) {
         }
 
         var initializeCache = true;
-        function all() {
+        function all(skipTransform) {
 
             // We can do this because someone using this service will be observing it
             // before they call all()
             var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
             initializeCache = false;
+
+            if (skipTransform) {
+                return data;
+            }
 
             var placements = transformPlacements(data);
             return placements;
@@ -147,6 +151,8 @@ define(function (require) {
         }
 
         return {
+            _transformPlacementGroups: _transformPlacementGroups,
+            _getPlacementGroups: _getPlacementGroups,
             all: all,
             observe: observe
         };
