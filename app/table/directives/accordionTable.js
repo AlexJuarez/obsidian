@@ -9,6 +9,7 @@ define(function (require) {
             restrict: 'A',
             templateUrl: 'table/directives/accordionTable.html',
             replace: true,
+            transclude: true,
             scope: {
                 table: '=accordionTable',
                 classes: '@class'

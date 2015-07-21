@@ -7,6 +7,8 @@ define(function (require) {
     require('./filters/format');
     require('./directives/accordionTable');
     require('./directives/basicTable');
+    require('./directives/tableIcons');
     require('./directives/tableCreatives');
     require('./directives/tableDelivering');
+
 });

@@ -198,59 +198,60 @@ table {
 }
 
 @media (max-width: @screen-xs-max) {
-    .table-wrapper {
+    .table-wrapper.table-xs-scroll {
         overflow-x: scroll;
         -webkit-overflow-scrolling: touch;
         overflow-scrolling: touch;
     }
+    .table-xs-scroll {
+        .table {
+            .meter-wrapper {
+                .meter {
+                    display: none;
+                }
+            }
 
-    .table {
-        .meter-wrapper {
-            .meter {
+            thead {
                 display: none;
             }
-        }
 
-        thead {
-            display: none;
-        }
+            tbody {
+                display: block;
+                white-space: nowrap;
+                overflow-y: hidden;
+                width: auto;
 
-        tbody {
-            display: block;
-            white-space: nowrap;
-            overflow-y: hidden;
-            width: auto;
+                > tr {
+                    display: inline-block;
+                    width: ~"calc(100vw - 4rem)";
+                    padding: 1rem @mobile-gutter;
+                    box-sizing: border-box;
 
-            > tr {
-                display: inline-block;
-                width: ~"calc(100vw - 4rem)";
-                padding: 1rem @mobile-gutter;
-                box-sizing: border-box;
-
-                &:last-child {
-                    border-bottom: 0;
-                }
-
-                > td {
-                    padding: 0;
-                    display: block;
-                    text-align: right;
-                    clear: both;
-
-                    a {
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        line-height: 1;
+                    &:last-child {
+                        border-bottom: 0;
                     }
 
-                    &:before {
-                        content: attr(data-header);
+                    > td {
+                        padding: 0;
                         display: block;
-                        float: left;
-                    }
+                        text-align: right;
+                        clear: both;
 
-                    &.table-number {
-                        display: block;
+                        a {
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            line-height: 1;
+                        }
+
+                        &:before {
+                            content: attr(data-header);
+                            display: block;
+                            float: left;
+                        }
+
+                        &.table-number {
+                            display: block;
+                        }
                     }
                 }
             }

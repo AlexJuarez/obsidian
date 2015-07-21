@@ -6,10 +6,13 @@ define(function (require) {
     require('./services/campaignsByStatus');
     require('./services/campaignsFilter');
     require('./services/campaignsHeader');
+    require('./services/campaignModal');
     require('./factories/campaignsByStatusAccordionTable');
     require('./controllers/newCampaign');
+    require('./controllers/editCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');
+    require('./controllers/analyticsPreview');
 
     require('./directives/campaignDetails');
     require('./directives/campaignsByAccount');

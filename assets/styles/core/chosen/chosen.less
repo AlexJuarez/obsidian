@@ -7,6 +7,12 @@
     text-align: left;
 }
 
+@media (max-width: @screen-xs-max) {
+    .localytics-chosen {
+        max-width: 100%;
+    }
+}
+
 // Color styles
 .single-select-light {
     .chosen-container {
@@ -200,11 +206,6 @@
     }
 }
 
-
-// Multiple Select Styles
-.multiple-label {
-    margin-right: 2rem;
-}
 .chosen-container-multi .chosen-choices {
     border: none;
     border-bottom: 1px solid @dark-gray;

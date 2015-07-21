@@ -63,6 +63,22 @@ define(function (require) {
                 return data;
             }
 
+            function filtered(filterfn){
+                filterfn = filterfn || function () { return true; };
+                var data = all();
+                var output = [];
+                var item;
+
+                for (var i = 0; i < data.length; i++) {
+                    item = data[i];
+                    if(filterfn(item)) {
+                        output.push(item);
+                    }
+                }
+
+                return output;
+            }
+
             function observe(callback, $scope, preventImmediate) {
                 var id = observerId++;
                 observers[id] = callback;
@@ -94,6 +110,7 @@ define(function (require) {
                 setData: setData,
                 addData: addData,
                 all: all,
+                filtered: filtered,
                 observe: observe,
                 notifyObservers: notifyObservers
             };

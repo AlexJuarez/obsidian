@@ -3,7 +3,7 @@
         "id": "1ea62c36-7851-4d1a-ab12-b9193e27cf18",
         "account": {
             "id": "1ea62c36-7851-4d1a-ab12-b9193e27cf18",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "01_kck_71045_snugdryultra"
         },
         "campaign": {
@@ -17,13 +17,14 @@
         "start": "2015-04-27",
         "end": "2015-07-14",
         "placements": 22,
-        "creatives": 22
+        "creatives": 22,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "8a191fd6-3a5e-4e32-b2b4-4b93f943661b",
         "account": {
             "id": "8a191fd6-3a5e-4e32-b2b4-4b93f943661b",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "01_kck_71046_littlemovers"
         },
         "campaign": {
@@ -37,13 +38,14 @@
         "start": "2015-02-17",
         "end": "2015-07-14",
         "placements": 38,
-        "creatives": 38
+        "creatives": 38,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "3abc704f-eeb9-48c0-b834-faf1b6f018ff",
         "account": {
             "id": "3abc704f-eeb9-48c0-b834-faf1b6f018ff",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "01_kck_76820_hugpome2015"
         },
         "campaign": {
@@ -57,13 +59,14 @@
         "start": "2015-02-17",
         "end": "2015-07-14",
         "placements": 31,
-        "creatives": 31
+        "creatives": 31,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "8f7c11ea-83af-4b3c-9aac-ab119b0e9139",
         "account": {
             "id": "8f7c11ea-83af-4b3c-9aac-ab119b0e9139",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "01_kck_77071_dependmiata"
         },
         "campaign": {
@@ -77,13 +80,14 @@
         "start": "2015-05-20",
         "end": "2015-07-14",
         "placements": 94,
-        "creatives": 94
+        "creatives": 94,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "6aab4f9a-81ba-44db-bc19-8273d7e03837",
         "account": {
             "id": "6aab4f9a-81ba-44db-bc19-8273d7e03837",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "01_png_63530_braunfy1415"
         },
         "campaign": {
@@ -97,13 +101,14 @@
         "start": "2014-10-17",
         "end": "2015-07-14",
         "placements": 104,
-        "creatives": 104
+        "creatives": 104,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "d3c58ad5-5479-4844-b969-bbea866c5ade",
         "account": {
             "id": "d3c58ad5-5479-4844-b969-bbea866c5ade",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "01_ppg_78931_glidden15"
         },
         "campaign": {
@@ -117,13 +122,14 @@
         "start": "2015-06-25",
         "end": "2015-07-14",
         "placements": 22,
-        "creatives": 22
+        "creatives": 22,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "481bafb7-207b-40d3-b07c-91fa101ff19e",
         "account": {
             "id": "481bafb7-207b-40d3-b07c-91fa101ff19e",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "02_scb_77330_q2tirespon"
         },
         "campaign": {
@@ -137,13 +143,14 @@
         "start": "2015-06-28",
         "end": "2015-07-14",
         "placements": 1,
-        "creatives": 1
+        "creatives": 1,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "ffbe8b81-d467-449a-b75c-36355d3bce79",
         "account": {
             "id": "ffbe8b81-d467-449a-b75c-36355d3bce79",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "02_scb_84692_pushdnamex"
         },
         "campaign": {
@@ -157,13 +164,14 @@
         "start": "2015-04-30",
         "end": "2015-07-14",
         "placements": 22,
-        "creatives": 22
+        "creatives": 22,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "351a7ef2-07b8-49dd-9b2e-905e5a962e8a",
         "account": {
             "id": "351a7ef2-07b8-49dd-9b2e-905e5a962e8a",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "02_sta_86889_serta4th2015"
         },
         "campaign": {
@@ -177,13 +185,14 @@
         "start": "2015-06-26",
         "end": "2015-07-14",
         "placements": 6,
-        "creatives": 6
+        "creatives": 6,
+        "edit": ["campaign.preview", "campaign.settings"]
     },
     {
         "id": "1ad614a9-2658-4d65-b192-05e5b2fdb399",
         "account": {
             "id": "19df4c3c-f01f-4231-9673-f3c60e9615a1",
-            "route": "cm.campaigns.all({ accountId: row.account.id })",
+            "route": "cm.campaigns.account({ accountId: row.account.id })",
             "name": "al_golden_biloxi"
         },
         "campaign": {
@@ -197,6 +206,7 @@
         "start": "2015-04-27",
         "end": "2015-07-14",
         "placements": 1,
-        "creatives": 1
+        "creatives": 1,
+        "edit": ["campaign.preview", "campaign.settings"]
     }
 ]
