@@ -15,11 +15,13 @@ define(function (require) {
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        $scope.campaign = modalState.campaign || {
-            startDate: new Date(),
-            endDate: new Date(),
+        var initialCampaignScope = {
+            startDate: (modalState.campaign && modalState.campaign.startDate) || new Date(),
+            endDate: (modalState.campaign && modalState.campaign.endDate) || new Date(),
             objectives: []
         };
+
+        $scope.campaign = modalState.campaign || initialCampaignScope;
 
         $scope.dateOptions = {
             formatYear: 'yy',
@@ -68,7 +70,18 @@ define(function (require) {
         }
 
         function cancel() {
-            $modalInstance.dismiss('cancel');
+            if (campaignScopeChanged()) {
+                if (confirm("You have unsaved changes. Really close?")) {
+                    $scope.campaign = initialCampaignScope;
+                    $modalInstance.dismiss('cancel');
+                }
+            } else {
+                $modalInstance.dismiss('cancel');
+            }
+        }
+
+        function campaignScopeChanged() {
+            return !ng.equals($scope.campaign, initialCampaignScope);
         }
 
         function ok(errors) {
@@ -82,6 +95,5 @@ define(function (require) {
         $scope.$on('$destroy', function() {
             modalState.campaign = $scope.campaign;
         });
-
     }]);
 });
