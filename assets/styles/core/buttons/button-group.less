@@ -1,17 +1,35 @@
 @import "../variables";
 
-@media (max-width: @screen-xs-max) {
-    .btn-group {
+.btn-group {
+    width: 100%;
+    box-sizing: border-box;
+    .btn {
+        display: block;
         width: 100%;
+        margin: 1rem 0;
+        .font-size(2);
+        + .btn {
+            margin-top: 0;
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+        &.right {
+            margin-right: 1rem;
+            //Clear margin added for btns in row
+        }
+    }
+}
+
+@media (min-width: @screen-xs-max) {
+    .btn-group {
+        width: initial;
         box-sizing: border-box;
         .btn {
-            display: block;
-            width: 100%;
-            margin: 1rem 0;
-            .font-size(2);
-            + .btn {
-                margin-top: 0;
-            }
+            display: inline-block;
+            width: initial;
+            margin: 0;
+            margin-right: 1rem;
             &.right {
                 margin-right: 0;
                 //Clear margin added for btns in row

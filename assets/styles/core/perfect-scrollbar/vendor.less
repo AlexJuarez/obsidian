@@ -1,6 +1,10 @@
+@import "./../brand";
+
 @rail-bg: rgba(0, 0, 0, 0.15);
-@scrollbar-bg-active: rgba(0, 0, 0, 0.9);
-@scrollbar-bg: rgba(0, 0, 0, 0.7);
+@scrollbar-bg-active: @light-blue;
+@scrollbar-bg: @light-blue;
+@x-rail-border-radius: 0;
+@y-rail-border-radius: 0;
 
 .ps-container.ps-active-x > .ps-scrollbar-x-rail, .ps-container.ps-active-y > .ps-scrollbar-y-rail {
     display: block; }
@@ -24,10 +28,10 @@
     display: none;
     position: absolute;
     /* please don't change 'position' */
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    -ms-border-radius: 4px;
-    border-radius: 4px;
+    -webkit-border-radius: @x-rail-border-radius;
+    -moz-border-radius: @x-rail-border-radius;
+    -ms-border-radius: @x-rail-border-radius;
+    border-radius: @x-rail-border-radius;
     opacity: 0;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
     filter: alpha(opacity=0);
@@ -42,10 +46,10 @@
     position: absolute;
     /* please don't change 'position' */
     background-color: @scrollbar-bg;
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    -ms-border-radius: 4px;
-    border-radius: 4px;
+    -webkit-border-radius: @x-rail-border-radius;
+    -moz-border-radius: @x-rail-border-radius;
+    -ms-border-radius: @x-rail-border-radius;
+    border-radius: @x-rail-border-radius;
     -webkit-transition: background-color 0.2s linear;
     -moz-transition: background-color 0.2s linear;
     -o-transition: background-color 0.2s linear;
@@ -57,10 +61,10 @@
     display: none;
     position: absolute;
     /* please don't change 'position' */
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    -ms-border-radius: 4px;
-    border-radius: 4px;
+    -webkit-border-radius: @y-rail-border-radius;
+    -moz-border-radius: @y-rail-border-radius;
+    -ms-border-radius: @y-rail-border-radius;
+    border-radius: @y-rail-border-radius;
     opacity: 0;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
     filter: alpha(opacity=0);
@@ -75,10 +79,10 @@
     position: absolute;
     /* please don't change 'position' */
     background-color: @scrollbar-bg;
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    -ms-border-radius: 4px;
-    border-radius: 4px;
+    -webkit-border-radius: @y-rail-border-radius;
+    -moz-border-radius: @y-rail-border-radius;
+    -ms-border-radius: @y-rail-border-radius;
+    border-radius: @y-rail-border-radius;
     -webkit-transition: background-color 0.2s linear;
     -moz-transition: background-color 0.2s linear;
     -o-transition: background-color 0.2s linear;

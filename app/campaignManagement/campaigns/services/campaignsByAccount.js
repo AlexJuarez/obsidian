@@ -31,9 +31,11 @@ define(function (require) {
 
     var limits = {};
 
-    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', function (cache, filter, $interpolate) {
+    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', 'dataFactory', function (cache, campaignsFilter, $interpolate, dataFactory) {
+        var filter = dataFactory();
+
         function accountUrl() {
-            return headerUrl + filter();
+            return headerUrl + campaignsFilter();
         }
 
         function url() {
@@ -44,7 +46,7 @@ define(function (require) {
                 opt = 'account.id:eq:' + accountIds.join(':eq:');
             }
 
-            return baseUrl + filter(opt);
+            return baseUrl + campaignsFilter(opt);
         }
 
         function headerTransform(data) {
@@ -71,7 +73,8 @@ define(function (require) {
             var campaignCache = cache.get(url(), campaignTransform);
 
             var accounts = {};
-            var campaigns = campaignCache.all();
+            var campaigns = campaignCache.filtered(filtered);
+
 
             for (var i = 0; i < campaigns.length; i++) {
                 var campaign = campaigns[i];
@@ -127,6 +130,27 @@ define(function (require) {
             }
         }
 
+        function filtered(result) {
+            if (filter.all().length) {
+                var filters = filter.all()[0];
+                if(filters._type === 'campaign') {
+                    return result.id === filters.id;
+                } else {
+                    return result.account.id === filters.id;
+                }
+            }
+
+            return true;
+        }
+
+        function setFilter(result) {
+            filter.setData([result]);
+        }
+
+        function clearFilter() {
+            filter.setData([]);
+        }
+
         function showMore(accountId) {
             return function () {
                 if (!limits[accountId]) {
@@ -165,6 +189,7 @@ define(function (require) {
         function observe(callback, $scope, preventImmediate) {
             var campaignHeader = cache.get(accountUrl(), headerTransform);
 
+            filter.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(function() {
                 var campaignCache = cache.get(url(), campaignTransform);
@@ -175,6 +200,8 @@ define(function (require) {
         return {
             _getAccountIds: getAccountIds,
             _groupByAccount: groupByAccount,
+            clearFilter: clearFilter,
+            setFilter: setFilter,
             all: all,
             observe: observe
         };

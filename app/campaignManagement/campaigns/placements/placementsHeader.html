@@ -1,9 +1,9 @@
 <nav class="row tab-header" role="form">
     <div class="col-lg-3">
         <b>View By:</b>
-        <a ui-sref=".({viewBy: ''})">Publisher (4)</a>
-        <a ui-sref=".({viewBy: 'creative'})">Creative (15)</a>
-        <a ui-sref=".({viewBy: 'ad-type'})">Ad type (3)</a>
+        <a ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers}})</a>
+        <a ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives}})</a>
+        <a ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types}})</a>
     </div>
     <div class="col-lg-2">
         <label class="form-label search">
@@ -21,10 +21,12 @@
                     </ul>
                 </div>
             </div>
-            <div class="col-sm-8 btn-group text-right-sm col-lg-8">
-                <button class="btn btn-default">Edit Placements</button>
-                <button class="btn btn-default">Set Trackers</button>
-                <button class="btn btn-default">Pull Tags</button>
+            <div class="col-sm-8 text-right-sm col-lg-8">
+                <div class="btn-group">
+                    <button class="btn btn-default">Edit Placements</button>
+                    <button class="btn btn-default">Set Trackers</button>
+                    <button class="btn btn-default">Pull Tags</button>
+                </div>
             </div>
         </div>
     </div>

@@ -11,12 +11,12 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', 'campaignCreative', function ($scope, $window, campaignCreative) {
+            controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', function ($scope, $window, $state, $rootScope, $filter, creatives) {
 
                 // Should this be a shared filter for other parts of the app to use? -JFlo
                 var mixpoURL,
                 subDomainSegments = location.hostname.split('-');
-                
+
                 // Get development subdomain segments
                 if (subDomainSegments.length > 1) {
                     subDomainSegments.pop();
@@ -25,7 +25,7 @@ define(function (require) {
                 } else {
                     mixpoURL = '//studio.mixpo.com';
                 }
-                
+
                 $scope.openPreviewPage = function(id, name) {
                     console.log( 'thumbnail controller: preview creative ' + id, name );
                     $window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
@@ -51,13 +51,21 @@ define(function (require) {
                     console.log( 'thumbnail controller: delete creative ' + id );
                 };
 
+                var filter = $state.params.filter;
 
+                $rootScope.$on('$stateChangeSuccess', function () {
+                    filter = $state.params.filter;
+                });
 
                 function updateCreatives() {
-                    $scope.creatives = campaignCreative.all();
+                    var allCreatives = creatives.all();
+                    var duplicateCreatives = [];
+
+                    duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    $scope.creatives = duplicateCreatives;
                 }
 
-                campaignCreative.observe(updateCreatives, $scope);
+                creatives.observe(updateCreatives, $scope);
 
             }]
         };

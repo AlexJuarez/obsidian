@@ -21,6 +21,8 @@ define(function (require) {
                 return $filter('number')(data, 0);
             case 'percent':
                 return percent(data);
+            case 'icons':
+                return '<div data-id="row.id" data-object="row" table-icons="row.' + input + '"></div>';
             case 'quartile':
                 return data.map(function (d) {
                     return percent(d);

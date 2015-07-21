@@ -47,7 +47,7 @@ define(function (require) {
                         id: row.id,
                         account: {
                             id: row.account.id,
-                            route: 'cm.campaigns.all({ accountId: row.account.id })',
+                            route: 'cm.campaigns.account({ accountId: row.account.id })',
                             name: row.account.name
                         },
                         campaign: {
@@ -61,14 +61,15 @@ define(function (require) {
                         start: row.startDate,
                         end: row.endDate,
                         placements: row.metrics.countPlacements,
-                        creatives: row.metrics.countCreatives
+                        creatives: row.metrics.countCreatives,
+                        edit: ['campaign.preview', 'campaign.settings']
                     });
                 }
 
                 return newRows;
             }
 
-            function getTable() {
+            function getTable(filter) {
                 var rules = {
                     account: 'link',
                     campaign: 'link',
@@ -77,7 +78,7 @@ define(function (require) {
                     end: 'date',
                     placements: 'number',
                     creatives: 'number',
-                    edit: ''
+                    edit: 'icons'
                 };
 
                 var headers = [
@@ -102,7 +103,7 @@ define(function (require) {
                     content: {
                         rules: rules,
                         headers: headers,
-                        data: rows.all()
+                        data: rows.filtered(filter)
                     }
                 };
             }
@@ -134,10 +135,16 @@ define(function (require) {
                 rows.observe(callback, $scope);
             }
 
+            function notifyObservers() {
+                header.notifyObservers();
+                rows.notifyObservers();
+            }
+
             return {
                 init: init,
                 observe: observe,
                 all: getTable,
+                notifyObservers: notifyObservers,
                 _transformRows: _transformRows,
                 _getTableHeader: _getTableHeader
             };

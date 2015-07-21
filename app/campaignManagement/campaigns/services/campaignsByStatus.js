@@ -13,16 +13,20 @@ define(function (require) {
         'archived': 'Archived'
     };
 
-    module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', function (campaignsHeader, campaignAccordionTableFactory, filter) {
+
+
+    module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', 'dataFactory', function (campaignsHeader, campaignAccordionTableFactory, campaignsFilter, dataFactory) {
+        var filter = dataFactory();
+
         function tableUrl(status) {
-            return tableBaseUrl + filter('status:eq:' + status );
+            return tableBaseUrl + campaignsFilter('status:eq:' + status );
         }
 
         function init() {
-            var accordionTables = cache[filter()];
+            var accordionTables = cache[campaignsFilter()];
 
             if (!accordionTables) {
-                accordionTables = cache[filter()] = {};
+                accordionTables = cache[campaignsFilter()] = {};
 
                 accordionTables.header = campaignsHeader.data(true);
                 accordionTables.rows = {};
@@ -42,13 +46,34 @@ define(function (require) {
             }
         }
 
+        function setFilter(result) {
+            filter.setData([result]);
+        }
+
+        function clearFilter() {
+            filter.setData([]);
+        }
+
+        function filtered(result) {
+            if (filter.all().length) {
+                var filters = filter.all()[0];
+                if(filters._type === 'campaign') {
+                    return result.id === filters.id;
+                } else {
+                    return result.account.id === filters.id;
+                }
+            }
+
+            return true;
+        }
+
         function all() {
             init();
 
             var output = [];
 
-            ng.forEach(cache[filter()].rows, function (table) {
-                output.push(table.all());
+            ng.forEach(cache[campaignsFilter()].rows, function (table) {
+                output.push(table.all(filtered));
             });
 
             return output;
@@ -57,14 +82,17 @@ define(function (require) {
         function observe(callback, $scope){
             init();
 
-            ng.forEach(cache[filter()].rows, function (table) {
+            filter.observe(callback, $scope);
+            ng.forEach(cache[campaignsFilter()].rows, function (table) {
                 table.observe(callback, $scope);
             });
         }
 
         return {
             all: all,
-            observe: observe
+            observe: observe,
+            clearFilter: clearFilter,
+            setFilter: setFilter
         };
     }]);
 });

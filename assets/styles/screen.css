@@ -90,7 +90,7 @@
   right: 0;
   padding: 0 .5rem;
 }
-.side-nav {
+.style-guide .side-nav {
   position: fixed;
   top: 20px;
   padding-right: 40px;
@@ -98,35 +98,32 @@
   bottom: 45px;
   overflow-y: hidden;
 }
-.side-nav .nav {
+.style-guide .side-nav .nav {
   padding-left: 0;
   margin-bottom: 0;
   list-style: none;
 }
-.side-nav .nav .active {
+.style-guide .side-nav .nav .active {
   color: #003c60;
 }
-.side-nav .nav > li > a {
+.style-guide .side-nav .nav > li > a {
   display: block;
   padding: 4px 20px;
   font-size: 13px;
 }
-.side-nav .nav .nav > li > a {
+.style-guide .side-nav .nav .nav > li > a {
   padding-top: 1px;
   padding-bottom: 1px;
   padding-left: 30px;
   font-size: 1.2rem;
   font-weight: 400;
 }
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+.style-guide h1,
+.style-guide h2,
+.style-guide h3,
+.style-guide h4,
+.style-guide h5,
+.style-guide h6 {
   padding-top: 3rem;
   margin-top: 0;
-}
-.body > .container {
-  padding-bottom: 3rem;
 }

@@ -12,6 +12,7 @@ define(function (require) {
             restrict: 'A',
             templateUrl: 'table/directives/basicTable.html',
             replace: true,
+            transclude: true,
             scope: {
                 table: '=basicTable',
                 footer: '=basicFooter',

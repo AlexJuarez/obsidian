@@ -4,18 +4,20 @@ define(function (require) {
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('newCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', function ($scope, $modalInstance, accounts, modalState) {
+    app.controller('editCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', function ($scope, $modalInstance, accounts, modalState) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
         $scope.openPicker = openPicker;
         $scope.datePickers = {};
+        $scope.edit = true;
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        $scope.campaign = modalState.campaign || {
+        $scope.campaign = {
+            campaignName: modalState.name,
             startDate: new Date(),
             endDate: new Date(),
             objectives: []
@@ -77,11 +79,6 @@ define(function (require) {
             $scope.submitted = true;
             console.log('do something');
         }
-
-        //Before closing the modal save the state;
-        $scope.$on('$destroy', function() {
-            modalState.campaign = $scope.campaign;
-        });
 
     }]);
 });

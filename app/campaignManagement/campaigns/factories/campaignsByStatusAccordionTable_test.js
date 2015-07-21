@@ -6,8 +6,8 @@ define(function(require) {
     var $ = require('jquery');
 
 
-    var campaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json');
-    var sortedCampaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json');
+    var campaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json'));
+    var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
 
     describe('campaignAccordionTableFactory', function() {
         var factory, httpBackend, scope, interpolate;
@@ -92,21 +92,19 @@ define(function(require) {
 
             var expected = [
                 {
-                    'id': 'campaignId',
-                    'account': {
-                        'id': 'accountId',
-                        'route': 'cm.campaigns.all({ accountId: row.account.id })',
-                        'name': 'accountName'
+                    id: 'campaignId',
+                    account: {
+                        id: 'accountId',
+                        route: 'cm.campaigns.account({ accountId: row.account.id })',
+                        name: 'accountName'
                     },
-                    'campaign': {
-                        'route': 'cm.campaigns.detail({ campaignId: row.id })',
-                        'name': 'name'
-                    },
-                    'impressions': {'max': 0, 'current': 5444326},
-                    'start': '2015-04-27',
-                    'end': '2015-07-14',
-                    'placements': 22,
-                    'creatives': 22
+                    campaign: {route: 'cm.campaigns.detail({ campaignId: row.id })', name: 'name'},
+                    impressions: {max: 0, current: 5444326},
+                    start: '2015-04-27',
+                    end: '2015-07-14',
+                    placements: 22,
+                    creatives: 22,
+                    edit: ['campaign.preview', 'campaign.settings']
                 }
             ];
 
@@ -161,13 +159,10 @@ define(function(require) {
             test.observe(function() {
                 var tableData = test.all();
                 if (tableData.content.data.length > 0) {
-                    expect(tableData.content.data).toEqual(JSON.parse(sortedCampaignJSON));
+                    expect(tableData.content.data).toEqual(sortedCampaignJSON);
                 }
             }, scope, true);
             httpBackend.flush();
         });
-
-
-
     });
 });

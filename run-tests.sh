@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 npm install
 node ./node_modules/bower/bin/bower install
 
