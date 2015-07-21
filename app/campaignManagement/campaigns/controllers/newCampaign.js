@@ -1,3 +1,4 @@
+/* globals confirm */
 define(function (require) {
     'use strict';
 
@@ -21,7 +22,7 @@ define(function (require) {
             objectives: []
         };
 
-        $scope.campaign = modalState.campaign || initialCampaignScope;
+        $scope.campaign = modalState.campaign || ng.extend({}, initialCampaignScope);
 
         $scope.dateOptions = {
             formatYear: 'yy',
@@ -71,7 +72,7 @@ define(function (require) {
 
         function cancel() {
             if (campaignScopeChanged()) {
-                if (confirm("You have unsaved changes. Really close?")) {
+                if (confirm('You have unsaved changes. Really close?')) {
                     $scope.campaign = initialCampaignScope;
                     $modalInstance.dismiss('cancel');
                 }
@@ -85,10 +86,9 @@ define(function (require) {
         }
 
         function ok(errors) {
-            console.log($scope.campaign);
             $scope.errors = errors;
             $scope.submitted = true;
-            console.log('do something');
+            //TODO: do something
         }
 
         //Before closing the modal save the state;

@@ -6,7 +6,7 @@ define(function (require) {
     var editModals = {};
     var createModal;
 
-    module.service('campaignModal', ['$modal', '$rootScope', function ($modal, $rootScope) {
+    module.service('campaignModal', ['$modal', function ($modal) {
         function preview(id, row) {
             if (!previewModals[id]) {
                 previewModals[id] = {
