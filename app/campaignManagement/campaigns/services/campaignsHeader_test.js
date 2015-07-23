@@ -7,15 +7,17 @@ define(function (require) {
     var campaignSetJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaignSet.json');
 
     describe('campaignsHeader', function () {
-        var header, httpBackend, state, scope;
+        var header, httpBackend, state, scope, apiGenerator;
 
         beforeEach(function () {
             module('app.campaign-management');
-            inject(function (campaignsHeader, $httpBackend, $state, $rootScope) {
+            module('app.core');
+            inject(function (campaignsHeader, $httpBackend, $state, $rootScope, apiUriGenerator) {
                 header = campaignsHeader;
                 httpBackend = $httpBackend;
                 state = $state;
                 scope = $rootScope.$new();
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -24,9 +26,8 @@ define(function (require) {
             httpBackend.verifyNoOutstandingRequest();
         });
 
-        function setUpTests(filter) {
-            filter = filter || '';
-            httpBackend.when('GET', '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive' + filter)
+        function setUpTests() {
+            httpBackend.when('GET', apiGenerator(header._apiConfig))
                 .respond(campaignSetJSON);
         }
 
@@ -34,9 +35,9 @@ define(function (require) {
             expect(header).not.toEqual(null);
         });
 
-        it('should produce the correct url', function () {
+        it('should produce the correct filters', function () {
             state.params.clientId = 'client1';
-            expect(header.url()).toEqual('/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive&filters=client.id:eq:client1');
+            expect(header._getApiUriConfig().filters).toEqual(['client.id:eq:client1']);
         });
 
         it('should get all of the data', function () {

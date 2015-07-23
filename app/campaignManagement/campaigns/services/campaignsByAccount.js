@@ -3,9 +3,21 @@ define(function (require) {
 
     var module = require('./../../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
-    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns' +
-        ',countCampaignsPreFlight,countCampaignsCompleted';
+
+    var campaignsApiConfig = {
+        endpoint: 'campaigns',
+        dimensions: ['id', 'name', 'startDate', 'endDate', 'budget', 'account.id', 'account.name'],
+        metrics: ['countPlacements', 'countCreatives', 'impressions', 'bookedImpressions'],
+        order: 'account.name:asc',
+    };
+
+    var headerApiConfig = {
+        endpoint: 'accounts',
+        dimensions: ['id', 'name'],
+        order: 'name:asc',
+        metrics: ['countCampaigns', 'countCampaignsPreFlight', 'countCampaignsCompleted']
+    };
+
     var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
@@ -34,11 +46,11 @@ define(function (require) {
     module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', 'dataFactory', function (cache, campaignsFilter, $interpolate, dataFactory) {
         var filter = dataFactory();
 
-        function accountUrl() {
-            return headerUrl + campaignsFilter();
+        function accountApiConfig() {
+            return ng.extend(campaignsFilter(), headerApiConfig);
         }
 
-        function url() {
+        function apiConfig() {
             var accountIds = getAccountIds();
             var opt = '';
 
@@ -46,7 +58,7 @@ define(function (require) {
                 opt = 'account.id:eq:' + accountIds.join(':eq:');
             }
 
-            return baseUrl + campaignsFilter(opt);
+            return ng.extend(campaignsFilter(opt), campaignsApiConfig);
         }
 
         function headerTransform(data) {
@@ -58,7 +70,7 @@ define(function (require) {
         }
 
         function getAccountIds() {
-            var campaignHeader = cache.get(accountUrl(), headerTransform);
+            var campaignHeader = cache.get(accountApiConfig(), headerTransform);
             var accounts = campaignHeader.all();
             var ids = [];
 
@@ -70,7 +82,7 @@ define(function (require) {
         }
 
         function groupByAccount() {
-            var campaignCache = cache.get(url(), campaignTransform);
+            var campaignCache = cache.get(apiConfig(), campaignTransform);
 
             var accounts = {};
             var campaigns = campaignCache.filtered(filtered);
@@ -164,7 +176,7 @@ define(function (require) {
         }
 
         function all() {
-            var accountInfo = cache.get(accountUrl(), headerTransform).all();
+            var accountInfo = cache.get(accountApiConfig(), headerTransform).all();
             var accounts = groupByAccount();
             var output = [];
 
@@ -187,17 +199,19 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            var campaignHeader = cache.get(accountUrl(), headerTransform);
+            var campaignHeader = cache.get(accountApiConfig(), headerTransform);
 
             filter.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(function() {
-                var campaignCache = cache.get(url(), campaignTransform);
+                var campaignCache = cache.get(apiConfig(), campaignTransform);
                 campaignCache.observe(callback, $scope);
             }, $scope, true);
         }
 
         return {
+            _headerApiConfig: headerApiConfig,
+            _accountApiConfig: accountApiConfig,
             _getAccountIds: getAccountIds,
             _groupByAccount: groupByAccount,
             clearFilter: clearFilter,

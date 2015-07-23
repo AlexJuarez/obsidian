@@ -1,15 +1,16 @@
 define(function (require) {
     'use strict';
 
+    var ng = require('angular');
     var module = require('./../module');
 
     module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
-        function buildPageUrl(url, limit, offset) {
-            if (url.indexOf('?') > -1) {
-                return url + '&limit=' + limit + '&offset=' + offset;
-            } else {
-                return url + '?limit=' + limit + '&offset=' + offset;
-            }
+        function buildPageUrl(config, limit, offset) {
+            ng.extend(config, {
+                limit: limit,
+                offset: offset
+            });
+            return config;
         }
 
         /**
@@ -28,11 +29,10 @@ define(function (require) {
             var baseUrl = '';
             var transform;
 
-            function init(url, transformFn, perPage) {
-                baseUrl = url;
+            function init(apiConfig, transformFn, perPage) {
                 transform = transformFn || function (d) { return d; };
                 limit = perPage || 10;
-                data.init(buildPageUrl(baseUrl, limit, offset), transformFn);
+                data.init(buildPageUrl(apiConfig, limit, offset), transformFn);
             }
 
             function nextPage() {

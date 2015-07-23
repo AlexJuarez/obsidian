@@ -28,7 +28,12 @@ define(function (require) {
         }
 
         function init() {
-            return data.init('/api/v3/clientSet?dimensions=channel', transform);
+            var apiConfig = {
+                endpoint: 'clientSet',
+                dimensions: ['channel']
+            };
+
+            return data.init(apiConfig, transform);
         }
 
         function sortFn(a, b) {

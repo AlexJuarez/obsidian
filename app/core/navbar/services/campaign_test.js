@@ -5,7 +5,12 @@ define(function (require) {
     require('angularMocks');
 
     describe('campaignService', function () {
-        var campaign, httpBackend, state, accountServ;
+        var campaign, httpBackend, state, accountServ, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            dimensions: 'one'
+        };
 
         var campaigns = [
             {
@@ -31,11 +36,12 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (campaignService, $httpBackend, $state, accountService) {
+            inject(function (campaignService, $httpBackend, $state, accountService, apiUriGenerator) {
                 campaign = campaignService;
                 accountServ = accountService;
                 httpBackend = $httpBackend;
                 state = $state;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -49,12 +55,12 @@ define(function (require) {
         });
 
         it('should make a request on init', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond({
                     'campaigns': campaigns
                 });
 
-            campaign.init('/test').then(function () {
+            campaign.init(apiConfig).then(function () {
                 expect(campaign.all()).toEqual(campaigns);
             });
             httpBackend.flush();

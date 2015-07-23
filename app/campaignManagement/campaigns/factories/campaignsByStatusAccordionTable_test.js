@@ -3,6 +3,7 @@ define(function(require) {
 
     require('./campaignsByStatusAccordionTable');
     require('angularMocks');
+    var ng = require('angular');
     var $ = require('jquery');
 
 
@@ -10,7 +11,12 @@ define(function(require) {
     var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
 
     describe('campaignAccordionTableFactory', function() {
-        var factory, httpBackend, scope, interpolate;
+        var factory, httpBackend, scope, interpolate, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            dimensions: ['one']
+        };
 
         var defaultData = {
             status: 'Pre-Flight',
@@ -24,17 +30,18 @@ define(function(require) {
                 }
             },
             title: 'preFlight',
-            rows: '/campaigns/by/status/endpoint'
+            rows: apiGenerator(apiConfig)
         };
 
         beforeEach(function() {
             module('app.campaign-management');
 
-            inject(function(campaignAccordionTableFactory, $httpBackend, $rootScope, $interpolate) {
+            inject(function(campaignAccordionTableFactory, $httpBackend, $rootScope, $interpolate, apiUriGenerator) {
                 factory = campaignAccordionTableFactory;
                 httpBackend = $httpBackend;
                 scope = $rootScope.$new();
                 interpolate = $interpolate;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -44,7 +51,11 @@ define(function(require) {
         });
 
         function setUpTests() {
-            httpBackend.when('GET', '/campaigns/by/status/endpoint?limit=10&offset=0')
+            var apiConfigWithPagination = ng.extend({}, apiConfig, {
+                limit: 10,
+                offset: 0
+            });
+            httpBackend.when('GET', apiGenerator(apiConfigWithPagination))
                 .respond(campaignJSON);
         }
 

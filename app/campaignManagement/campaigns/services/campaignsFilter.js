@@ -26,10 +26,12 @@ define(function (require) {
             }
 
             if (filters.length) {
-                return '&filters=' + filters.join(',');
+                return {
+                    filters: filters
+                };
             }
 
-            return '';
+            return {};
         }
 
         return idFilter;

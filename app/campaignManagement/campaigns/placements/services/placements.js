@@ -11,7 +11,7 @@ define(function (require) {
     //    metrics: ['impressions', 'spend']
     //};
 
-    var apiURI = '/fixtures/placements/placements.json';
+    var apiUri = '/fixtures/placements/placements.json';
 
     var rules = {
         checked: '',
@@ -112,8 +112,12 @@ define(function (require) {
             }
         }
 
-        function getPlacementsUrl() {
-            return apiURI; // Until API is built
+        function getPlacementsApiConfig() {
+
+            return {
+                override: true,
+                uri: apiUri
+            };
 
             //var apiParams = ng.extend({
             //    filters: ['campaign.id:eq:' + $state.params.campaignId]
@@ -127,7 +131,7 @@ define(function (require) {
 
             // We can do this because someone using this service will be observing it
             // before they call all()
-            var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
+            var data = placementCache.get(getPlacementsApiConfig(), initializeCache).all();
             initializeCache = false;
 
             if (skipTransform) {
@@ -143,10 +147,10 @@ define(function (require) {
             updateCache();
 
             function updateCache() {
-                placementCache.get(getPlacementsUrl(), initializeCache);
+                placementCache.get(getPlacementsApiConfig(), initializeCache);
                 initializeCache = false;
 
-                placementCache.observe(getPlacementsUrl(), callback, $scope, preventImmediate);
+                placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
             }
         }
 

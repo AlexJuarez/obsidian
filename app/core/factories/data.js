@@ -3,7 +3,7 @@ define(function (require) {
 
     var module = require('./../module');
 
-    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', function ($http, $q, $rootScope, $timeout) {
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
             var data = [];
@@ -12,7 +12,12 @@ define(function (require) {
 
             sortFn = sortFn || function (d) { return d; };
 
-            function init(url, transform) {
+            function init(config, transform) {
+                var url = apiUriGenerator(config);
+                if (!url) {
+                    throw new Error('Malformed API URI object');
+                }
+
                 var deferred = $q.defer();
 
                 if (!initialized) {

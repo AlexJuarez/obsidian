@@ -21,7 +21,7 @@ define(function (require) {
             httpBackend.verifyNoOutstandingRequest();
         });
 
-        it('should be an instance of campaignByAccountService', function () {
+        it('should be an instance of campaignCache', function () {
             expect(cache).not.toEqual(null);
         });
 

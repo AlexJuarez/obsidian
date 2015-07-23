@@ -3,19 +3,27 @@ define(function (require) {
 
     require('./divisionSet');
     require('angularMocks');
+
+    var ng = require('angular');
+
     var data = require('text!/base/assets/fixtures/divisionSet.json');
-    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
 
     describe('division', function () {
-        var metrics, httpBackend, state, scope;
+        var metrics, httpBackend, state, scope, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            dimensions: 'one'
+        };
 
         beforeEach(function () {
             module('app.core');
-            inject(function (divisionSet, $httpBackend, $state, $rootScope) {
+            inject(function (divisionSet, $httpBackend, $state, $rootScope, apiUriGenerator) {
                 metrics = divisionSet;
                 httpBackend = $httpBackend;
                 state = $state;
                 scope = $rootScope.$new();
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -25,18 +33,19 @@ define(function (require) {
         });
 
         function setUpTest(resp) {
-            httpBackend.when('GET', baseUrl).respond(resp);
+            httpBackend.when('GET', apiGenerator(apiConfig)).respond(resp);
         }
 
-        describe('url()', function () {
-            it('should return the correct url with no state', function () {
-                expect(metrics.url()).toEqual(baseUrl);
+        describe('_apiConfig()', function () {
+            it('should return the correct _apiConfig with no state', function () {
+                expect(metrics._apiConfig()).toEqual(apiConfig);
             });
 
-            it('should return a url with a filter', function () {
+            it('should return a _apiConfig with a filter', function () {
                 state.params.divisionId = 'division0';
 
-                expect(metrics.url()).toEqual(baseUrl + '&filters=id:eq:division0');
+                var newConfig = ng.extend({filters: ['id:eq:division0']}, apiConfig);
+                expect(metrics._apiConfig()).toEqual(newConfig);
             });
         });
 

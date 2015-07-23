@@ -3,7 +3,10 @@ define(function (require) {
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+    var apiConfig = {
+        endpoint: 'clientSet',
+        metrics: ['countAccounts', 'countCampaignsPreFlight', 'countCampaignsInFlight', 'countCampaignsCompleted', 'countCampaignsArchived', 'count']
+    };
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
@@ -13,21 +16,23 @@ define(function (require) {
         });
 
         function filter() {
-            var output = '';
+            var output = {};
 
             if ($state.params.clientId) {
-                output = '&filters=id:eq:' + $state.params.clientId;
+                output.filters = ['id:eq:' + $state.params.clientId];
             }
 
             return output;
         }
 
-        function url() {
-            return baseUrl + filter();
+        function getApiConfig() {
+            var config = filter();
+            ng.extend(config, apiConfig);
+            return config;
         }
 
         function all() {
-            var datum = cache.all(url());
+            var datum = cache.all(getApiConfig());
             var output = {
                 'count': 0,
                 'countCampaignsPreFlight': 0,
@@ -49,7 +54,7 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -58,11 +63,11 @@ define(function (require) {
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(getApiConfig(), initialize);
         }
 
         return {
-            url: url,
+            _getApiConfig: getApiConfig,
             all: all,
             data: data,
             observe: observe

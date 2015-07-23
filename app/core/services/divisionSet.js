@@ -3,7 +3,11 @@ define(function (require) {
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+
+    var apiConfig = {
+        endpoint: 'divisionSet',
+        metrics: ['countAccounts', 'countCampaignsPreFlight', 'countCampaignsInFlight', 'countCampaignsCompleted', 'countCampaignsArchived', 'count']
+    };
 
     module.service('divisionSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
@@ -12,22 +16,19 @@ define(function (require) {
             }
         });
 
-        function filter() {
-            var output = '';
-
+        function getApiConfig() {
+            var newApiConfig = {};
+            ng.extend(newApiConfig, apiConfig);
             if ($state.params.divisionId) {
-                output = '&filters=id:eq:' + $state.params.divisionId;
+                ng.extend(newApiConfig, {
+                    filters: ['id:eq:' + $state.params.divisionId]
+                });
             }
-
-            return output;
-        }
-
-        function url() {
-            return baseUrl + filter();
+            return newApiConfig;
         }
 
         function all() {
-            var datum = cache.all(url());
+            var datum = cache.all(getApiConfig());
             var output = {
                 'count': 0,
                 'countCampaignsPreFlight': 0,
@@ -49,7 +50,7 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -58,11 +59,11 @@ define(function (require) {
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(getApiConfig(), initialize);
         }
 
         return {
-            url: url,
+            _apiConfig: apiConfig,
             all: all,
             data: data,
             observe: observe

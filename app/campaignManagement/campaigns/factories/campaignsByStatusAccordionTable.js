@@ -31,8 +31,8 @@ define(function (require) {
                 status = data.status;
                 header = data.header;
                 title = data.title;
-                if (data.rows) {
-                    rows.init(data.rows, _transformRows);
+                if (data.rowsConfig) {
+                    rows.init(data.rowsConfig, _transformRows);
                 }
             }
 

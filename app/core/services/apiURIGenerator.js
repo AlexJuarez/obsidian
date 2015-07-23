@@ -24,14 +24,24 @@ define(function (require) {
     ];
 
     var requiredParams = [
-        'endpoint',
-        'dimensions'
+        'endpoint'
     ];
 
     // TODO: add the API_URI constant, replace domainInterceptor.js
     module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
-        function getApiUri(outsideParams) {
-            var params = setupDefaultParams(outsideParams);
+        function getApiUri(apiConfig) {
+
+            if (!apiConfig) {
+                return false;
+            }
+
+            // NOTE: this is for use with fixtures and scaffolding the application.
+            // only use this flag when absolutely necessary.
+            if (apiConfig.override) {
+                return apiConfig.uri;
+            }
+
+            var params = setupDefaultParams(apiConfig);
             if (validate(params)) {
                 return createApiUri(params);
             } else {
@@ -40,17 +50,16 @@ define(function (require) {
         }
 
         function setupDefaultParams(params) {
-            var mergedParams = {};
-            ng.extend(mergedParams, defaultConfig, params);
-            if (mergedParams.dimensions) {
-                mergedParams.dimensions = mergedParams.dimensions.join(',');
+            var mergedParams = ng.extend({}, defaultConfig, params);
+
+            //NOTE: Sorting is done to make sure any config object will produce
+            //the same url
+            for(var key in mergedParams) {
+                if (Object.prototype.toString.call(mergedParams[key]) === '[object Array]') {
+                    mergedParams[key] = mergedParams[key].sort().join(',');
+                }
             }
-            if (mergedParams.metrics) {
-                mergedParams.metrics = mergedParams.metrics.join(',');
-            }
-            if (mergedParams.filters) {
-                mergedParams.filters = mergedParams.filters.join(',');
-            }
+
             return mergedParams;
         }
 
@@ -75,6 +84,13 @@ define(function (require) {
                 }
             });
 
+            return removeTrailingAnd(uri);
+        }
+
+        function removeTrailingAnd(uri) {
+            if (uri[uri.length - 1] === '&') {
+                uri = uri.slice(0, -1);
+            }
             return uri;
         }
 

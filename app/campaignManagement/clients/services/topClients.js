@@ -6,6 +6,20 @@ define(function (require) {
     module.service('topClientsService', ['$http', 'dataFactory', 'dateFormatterFilter', function ($http, dataFactory, dateFormatter) {
         var topClients = dataFactory(sortClients);
 
+        var _apiConfig = {
+            endpoint: 'clients',
+            dimensions: ['id', 'name', 'channel', 'lastViewedUserDate', 'lastViewedUserName'],
+            metrics: ['impressions', 'countAccountsActive', 'countCampaignsPreFlight', 'countCampaignsInFlight'],
+            order: 'metrics.impressions:desc',
+            limit: 10
+        };
+
+        function init() {
+            return topClients.init(_apiConfig, function (data) {
+                return topClientsTransform(data.clients);
+            });
+        }
+
         function sortClients(data) {
             data.sort(function (a, b) {
                 var ai = a.impressions;
@@ -18,14 +32,6 @@ define(function (require) {
             });
 
             return data;
-        }
-
-        function init() {
-            var url = '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10';
-
-            return topClients.init(url, function (data) {
-                return topClientsTransform(data.clients);
-            });
         }
 
         function topClientsTransform(data) {
@@ -72,6 +78,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: _apiConfig,
             init: init,
             observe: topClients.observe,
             transform: topClientsTransform,
