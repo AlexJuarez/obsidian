@@ -36,7 +36,7 @@ define(function (require) {
                 endpoint: 'endpoint',
                 dimensions: ['dimension1', 'dimension2']
             };
-            var expected = '/api/v3/endpoint?dimensions=dimension1,dimension2&';
+            var expected = '/api/v3/endpoint?dimensions=dimension1,dimension2';
 
             expect(uriGeneratorService(given)).toEqual(expected);
         });
@@ -52,7 +52,7 @@ define(function (require) {
                 order: 'dimension1:desc',
                 filters: ['dimension2:eq:5']
             };
-            var expected = '/api/v123/endpoint?dimensions=dimension1,dimension2&metrics=metric1&offset=100&limit=10&order=dimension1:desc&filters=dimension2:eq:5&';
+            var expected = '/api/v123/endpoint?dimensions=dimension1,dimension2&metrics=metric1&offset=100&limit=10&order=dimension1:desc&filters=dimension2:eq:5';
 
             expect(uriGeneratorService(given)).toEqual(expected);
         });

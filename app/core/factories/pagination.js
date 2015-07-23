@@ -4,8 +4,8 @@ define(function (require) {
     var ng = require('angular');
     var module = require('./../module');
 
-    module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
-        function buildPageUrl(config, limit, offset) {
+    module.factory('paginationFactory', ['$http', 'dataFactory', 'apiUriGenerator', function ($http, dataFactory, apiUriGenerator) {
+        function buildConfig(config, limit, offset) {
             ng.extend(config, {
                 limit: limit,
                 offset: offset
@@ -18,7 +18,7 @@ define(function (require) {
          * @param {function} sortFn - Optional sorting function, the data is stored after the sortFn is applied
          * @param {number} [limit=10] - Limit the number of results
          * @param {number} [offset=0] - The starting offset usually should not need to be changed.
-         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildPageUrl, limit: (number), all: (Object[])}}
+         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildConfig, limit: (number), all: (Object[])}}
          */
 
         function create(sortFn, limit, offset) {
@@ -26,18 +26,21 @@ define(function (require) {
             offset = offset || 0;
 
             var data = dataFactory(sortFn);
-            var baseUrl = '';
             var transform;
+            var initialApiConfig;
 
             function init(apiConfig, transformFn, perPage) {
+                initialApiConfig = ng.extend({}, apiConfig);
                 transform = transformFn || function (d) { return d; };
                 limit = perPage || 10;
-                data.init(buildPageUrl(apiConfig, limit, offset), transformFn);
+                data.init(buildConfig(initialApiConfig, limit, offset), transformFn);
             }
 
             function nextPage() {
                 offset = offset + limit;
-                $http.get(buildPageUrl(baseUrl, limit, offset)).success(function (res) {
+                var config = buildConfig(initialApiConfig, limit, offset);
+                var url = apiUriGenerator(config);
+                $http.get(url).success(function (res) {
                     data.addData(transform(res));
                 });
             }
@@ -48,7 +51,7 @@ define(function (require) {
                 filtered: data.filtered,
                 notifyObservers: data.notifyObservers,
                 nextPage: nextPage,
-                buildUrl: buildPageUrl,
+                _buildConfig: buildConfig,
                 limit: limit,
                 all: data.all
             };

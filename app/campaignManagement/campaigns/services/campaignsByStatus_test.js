@@ -8,6 +8,8 @@ define(function (require) {
     require('../factories/campaignsByStatusAccordionTable');
     require('angularMocks');
 
+    var ng = require('angular');
+
     var campaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json');
     var campaignSetJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaignSet.json');
 

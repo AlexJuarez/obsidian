@@ -36,7 +36,7 @@ define(function (require) {
             it('should return a url with a filter', function () {
                 state.params.clientId = 'client0';
 
-                expect(metrics._getApiConfig().filters).toEqual(['client.id:eq:client0']);
+                expect(metrics._getApiConfig().filters).toEqual(['id:eq:client0']);
             });
         });
 

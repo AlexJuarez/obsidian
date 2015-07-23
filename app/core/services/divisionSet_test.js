@@ -11,11 +11,6 @@ define(function (require) {
     describe('division', function () {
         var metrics, httpBackend, state, scope, apiGenerator;
 
-        var apiConfig = {
-            endpoint: 'test',
-            dimensions: 'one'
-        };
-
         beforeEach(function () {
             module('app.core');
             inject(function (divisionSet, $httpBackend, $state, $rootScope, apiUriGenerator) {
@@ -33,19 +28,19 @@ define(function (require) {
         });
 
         function setUpTest(resp) {
-            httpBackend.when('GET', apiGenerator(apiConfig)).respond(resp);
+            httpBackend.when('GET', apiGenerator(metrics._apiConfig)).respond(resp);
         }
 
-        describe('_apiConfig()', function () {
-            it('should return the correct _apiConfig with no state', function () {
-                expect(metrics._apiConfig()).toEqual(apiConfig);
+        describe('_getApiConfig()', function () {
+            it('should return the correct _getApiConfig with no state', function () {
+                expect(metrics._getApiConfig()).toEqual(metrics._apiConfig);
             });
 
-            it('should return a _apiConfig with a filter', function () {
+            it('should return a _getApiConfig with a filter', function () {
                 state.params.divisionId = 'division0';
 
-                var newConfig = ng.extend({filters: ['id:eq:division0']}, apiConfig);
-                expect(metrics._apiConfig()).toEqual(newConfig);
+                var newConfig = ng.extend({filters: ['id:eq:division0']}, metrics._apiConfig);
+                expect(metrics._getApiConfig()).toEqual(newConfig);
             });
         });
 

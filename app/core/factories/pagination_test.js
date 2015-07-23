@@ -14,12 +14,15 @@ define(function (require) {
             dimensions: ['one']
         };
 
-        function getPaginatedApiUri(config) {
-            var newConfig = ng.extend({}, config, {
+        function getPaginatedApiConfig(config) {
+            return ng.extend({}, config, {
                 limit: 10,
                 offset: 0
             });
-            return apiGenerator(newConfig);
+        }
+
+        function getPaginatedApiUri(config) {
+            return apiGenerator(getPaginatedApiConfig(config));
         }
 
         beforeEach(function () {
@@ -45,17 +48,17 @@ define(function (require) {
             var limit = 10;
             var offset = 0;
 
-            expect(pg.buildUrl(apiConfig, limit, offset)).toEqual(getPaginatedApiUri(apiConfig));
+            expect(pg._buildConfig(apiConfig, limit, offset)).toEqual(getPaginatedApiConfig(apiConfig));
 
             var newApiConfig = ng.extend({}, apiConfig, {
                 dimensions: ['different', 'dimensions']
             });
 
-            expect(pg.buildUrl(newApiConfig, limit, offset)).toEqual(getPaginatedApiUri(newApiConfig));
+            expect(pg._buildConfig(newApiConfig, limit, offset)).toEqual(getPaginatedApiConfig(newApiConfig));
         });
 
         describe('init function', function() {
-            it('should return the default with /test', function () {
+            it('should return the default', function () {
                 var pg = pagination();
                 httpBackend.when('GET', getPaginatedApiUri(apiConfig))
                     .respond([1]);
@@ -81,10 +84,12 @@ define(function (require) {
                 expect(pg.all()).toEqual(['test', 'test2']);
             });
 
-            it('should return with a the new limit', function () {
+            it('should return with the new limit', function () {
                 var pg = pagination();
-
-                httpBackend.when('GET', getPaginatedApiUri(apiConfig))
+                var newLimitConfig = ng.extend({}, apiConfig);
+                newLimitConfig.limit = 20;
+                newLimitConfig.offset = 0;
+                httpBackend.when('GET', apiGenerator(newLimitConfig))
                     .respond([1]);
                 pg.init(apiConfig, undefined, 20);
                 httpBackend.flush();
@@ -98,7 +103,13 @@ define(function (require) {
             httpBackend.when('GET', getPaginatedApiUri(apiConfig))
                 .respond([]);
 
-            httpBackend.when('GET', getPaginatedApiUri(apiConfig))
+            var nextPageConfig = ng.extend({}, apiConfig, {
+                limit: 10,
+                offset: 10
+            });
+            console.log(nextPageConfig);
+            console.log(apiGenerator(nextPageConfig));
+            httpBackend.when('GET', apiGenerator(nextPageConfig))
                 .respond([1]);
 
             pg.init(apiConfig);

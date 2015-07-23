@@ -6,7 +6,6 @@ define(function(require) {
     var ng = require('angular');
     var $ = require('jquery');
 
-
     var campaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json'));
     var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
 
@@ -30,7 +29,7 @@ define(function(require) {
                 }
             },
             title: 'preFlight',
-            rows: apiGenerator(apiConfig)
+            rowsConfig: apiConfig
         };
 
         beforeEach(function() {
@@ -109,7 +108,10 @@ define(function(require) {
                         route: 'cm.campaigns.account({ accountId: row.account.id })',
                         name: 'accountName'
                     },
-                    campaign: {route: 'cm.campaigns.detail({ campaignId: row.id })', name: 'name'},
+                    campaign: {
+                        route: 'cm.campaigns.detail({ campaignId: row.id })',
+                        name: 'name'
+                    },
                     impressions: {max: 0, current: 5444326},
                     start: '2015-04-27',
                     end: '2015-07-14',
@@ -169,7 +171,7 @@ define(function(require) {
             test.init(defaultData);
             test.observe(function() {
                 var tableData = test.all();
-                if (tableData.content.data.length > 0) {
+                if(tableData.content.data.length > 0) {
                     expect(tableData.content.data).toEqual(sortedCampaignJSON);
                 }
             }, scope, true);

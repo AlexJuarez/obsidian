@@ -28,9 +28,10 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (clientService, $httpBackend) {
+            inject(function (clientService, $httpBackend, apiUriGenerator) {
                 client = clientService;
                 httpBackend = $httpBackend;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -57,12 +58,13 @@ define(function (require) {
 
         it('should pin a client', function () {
             var apiConfig = ng.extend({}, client._apiPinConfig);
-
-            httpBackend.expect('PUT', apiGenerator(apiConfig))
-                .respond( 200, { pinned: true } );
             client.setData(clients);
-            var a = client.all()[0];
-            client.pin(a);
+            var firstClient = client.all()[0];
+            var pinConfig = ng.extend({}, apiConfig);
+            pinConfig.endpoint += firstClient.id;
+            httpBackend.expect('PUT', apiGenerator(pinConfig))
+                .respond( 200, { pinned: true } );
+            client.pin(firstClient);
             expect(client.pinned().length).toEqual(1);
             httpBackend.flush();
         });

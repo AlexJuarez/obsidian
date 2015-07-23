@@ -7,6 +7,8 @@ define(function (require) {
     require('./campaignCache');
     require('angularMocks');
 
+    var ng = require('angular');
+
     var accountJSON = require('text!/base/assets/fixtures/campaignsByAccounts_accounts.json');
     var campaignJSON = require('text!/base/assets/fixtures/campaignsByAccounts_campaigns.json');
 

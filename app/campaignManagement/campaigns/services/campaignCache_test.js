@@ -5,14 +5,15 @@ define(function (require) {
     require('angularMocks');
 
     describe('campaignCache', function () {
-        var cache, httpBackend, state;
+        var cache, httpBackend, state, apiGenerator;
 
         beforeEach(function () {
             module('app.campaign-management');
-            inject(function (campaignCache, $httpBackend, $state) {
+            inject(function (campaignCache, $httpBackend, $state, apiUriGenerator) {
                 cache = campaignCache;
                 httpBackend = $httpBackend;
                 state = $state;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -27,18 +28,25 @@ define(function (require) {
 
         describe('get', function () {
             it('should only make one call per url', function () {
-                httpBackend.when('GET', '/test?limit=10&offset=0')
+                var apiConfig = {
+                    endpoint: 'test',
+                    dimensions: 'one',
+                    limit: 10,
+                    offset: 0
+                };
+
+                httpBackend.when('GET', apiGenerator(apiConfig))
                     .respond({
                         test: [1, 2, 3]
                     });
 
-                cache.get('/test', function(data) {
+                cache.get(apiConfig, function(data) {
                     return data.test;
                 });
 
                 httpBackend.flush();
 
-                var data = cache.get('/test', function(data) {
+                var data = cache.get(apiConfig, function(data) {
                     return data.test;
                 });
 

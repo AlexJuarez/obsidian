@@ -63,6 +63,7 @@ define(function (require) {
         }
 
         return {
+            _getApiConfig: getApiConfig,
             _apiConfig: apiConfig,
             all: all,
             data: data,
