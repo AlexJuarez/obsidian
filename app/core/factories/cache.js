@@ -3,7 +3,7 @@ define(function (require) {
 
     var module = require('./../module');
 
-    module.factory('cacheFactory', ['dataFactory', function (dataFactory) {
+    module.factory('cacheFactory', ['dataFactory', 'apiUriGenerator', function (dataFactory, apiUriGenerator) {
         /**
          * Creates a cacheFactory object that wraps a dataFactory
          * @param {{sortFn: (function), transform: (function)}}
@@ -13,24 +13,25 @@ define(function (require) {
             var cache = {};
             options = options || {};
 
-            function get(url, initialize) {
+            function get(uriConfig, initialize) {
+                var url = apiUriGenerator(uriConfig);
                 if (!cache[url]) {
                     cache[url] = dataFactory(options.sortFn);
                 }
 
                 if (initialize) {
-                    cache[url].init(url, options.transform);
+                    cache[url].init(uriConfig, options.transform);
                 }
 
                 return cache[url];
             }
 
-            function all(url){
-                return get(url, true).all();
+            function all(uriConfig){
+                return get(uriConfig, true).all();
             }
 
-            function observe(url, callback, $scope, preventImmediate) {
-                get(url, true).observe(callback, $scope, preventImmediate);
+            function observe(uriConfig, callback, $scope, preventImmediate) {
+                get(uriConfig, true).observe(callback, $scope, preventImmediate);
             }
 
             return {

@@ -31,8 +31,8 @@ define(function (require) {
                 status = data.status;
                 header = data.header;
                 title = data.title;
-                if (data.rows) {
-                    rows.init(data.rows, _transformRows);
+                if (data.rowsConfig) {
+                    rows.init(data.rowsConfig, _transformRows);
                 }
             }
 
@@ -111,6 +111,9 @@ define(function (require) {
             function _getTableHeader(data) {
                 var template;
 
+                if (!data) {
+                    return '';
+                }
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {

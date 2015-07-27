@@ -8,19 +8,24 @@ define(function (require) {
     require('../factories/campaignsByStatusAccordionTable');
     require('angularMocks');
 
+    var ng = require('angular');
+
     var campaignJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json');
     var campaignSetJSON = require('text!/base/assets/fixtures/campaignsByStatus_campaignSet.json');
 
     describe('campaignByStatusService', function () {
-        var campaigns, httpBackend, state, scope;
+        var campaigns, header, httpBackend, state, scope, apiGenerator;
 
         beforeEach(function () {
             module('app.campaign-management');
-            inject(function (campaignsByStatus, $httpBackend, $state, $rootScope) {
+            module('app.core');
+            inject(function (campaignsByStatus, campaignsHeader, $httpBackend, $state, $rootScope, apiUriGenerator) {
                 campaigns = campaignsByStatus;
+                header = campaignsHeader;
                 httpBackend = $httpBackend;
                 state = $state;
                 scope = $rootScope.$new();
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -34,23 +39,30 @@ define(function (require) {
         });
 
         function setUpTests() {
-            httpBackend.when('GET', '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive')
+            httpBackend.when('GET', apiGenerator(header._apiConfig))
                 .respond(campaignSetJSON);
-            httpBackend.when('GET', '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc&filters=status:eq:inFlight&limit=10&offset=0')
+            httpBackend.when('GET', getPaginatedApiConfig(campaigns._apiConfig, 'status:eq:inFlight'))
                 .respond(campaignJSON);
-            httpBackend.when('GET', '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc&filters=status:eq:preFlight&limit=10&offset=0')
+            httpBackend.when('GET', getPaginatedApiConfig(campaigns._apiConfig, 'status:eq:preFlight'))
                 .respond({'campaigns': []});
-            httpBackend.when('GET', '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc&filters=status:eq:completed&limit=10&offset=0')
+            httpBackend.when('GET', getPaginatedApiConfig(campaigns._apiConfig, 'status:eq:completed'))
                 .respond({'campaigns': []});
-            httpBackend.when('GET', '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc&filters=status:eq:archived&limit=10&offset=0')
+            httpBackend.when('GET', getPaginatedApiConfig(campaigns._apiConfig, 'status:eq:archived'))
                 .respond({'campaigns': []});
+        }
+
+        function getPaginatedApiConfig(config, filter) {
+            var newConfig = ng.extend({}, config);
+            newConfig.queryParams.limit = 10;
+            newConfig.queryParams.offset = 0;
+            newConfig.queryParams.filters = [filter];
         }
 
         it('should fetch the accounts for the header', function () {
             setUpTests();
 
             campaigns.observe(function () {
-                expect(campaigns.all().length).toBeTruthy();
+                expect(campaigns.all().length > 0).toEqual(true);
             }, scope, true);
             httpBackend.flush();
         });

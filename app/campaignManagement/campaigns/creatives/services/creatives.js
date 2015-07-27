@@ -62,25 +62,31 @@ define(function (require) {
             return transformedTable;
         }
 
-        function _filter() {
-            // TODO: change to campaignId when actual API is ready
-            if ($state.params.campaignIdNotThere) {
-                return '&filters=campaign.id:eq:' + $state.params.campaignId;
-            } else {
-                return '';
-            }
-        }
+        function _apiConfig() {
+            var campaignId = $state.params.campaginId;
+            campaignId = 0;
+            return {
+                override: true,
+                uri: baseUrl
+            };
 
-        function _url() {
-            return baseUrl + _filter();
+            // TODO: put an actual api config object in there when the API is ready
+
+            //if ($state.params.campaignId) {
+            //    return {
+            //        filters: ['campaign.id:eq' + $state.params.campaignID]
+            //    };
+            //} else {
+            //    return '';
+            //}
         }
 
         function all() {
-            return cache.all(_url());
+            return cache.all(_apiConfig());
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(_url(), callback, $scope, preventImmediate);
+            return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -89,13 +95,12 @@ define(function (require) {
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(_url(), initialize);
+            return cache.get(_apiConfig(), initialize);
         }
 
         return {
-            _filter: _filter,
             _transformCreatives: _transformCreatives,
-            _url: _url,
+            _apiConfig: _apiConfig,
             all: all,
             data: data,
             observe: observe

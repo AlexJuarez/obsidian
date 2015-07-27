@@ -7,8 +7,8 @@ define(function (require) {
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
         var campaigns = dataFactory(sortByStartDate);
 
-        function init(url) {
-            return campaigns.init(url, function (data) {
+        function init(apiConfig) {
+            return campaigns.init(apiConfig, function (data) {
                 return data.campaigns;
             });
         }

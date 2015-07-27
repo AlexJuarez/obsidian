@@ -2,7 +2,16 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
-    var baseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
+
+    var ng = require('angular');
+
+    var apiConfig = {
+        endpoint: 'campaignSet',
+        queryParams: {
+            dimensions: ['status'],
+            metrics: ['count', 'countPlacementsLive']
+        }
+    };
 
     module.service('campaignsHeader', ['cacheFactory', 'campaignsFilter', function (cacheFactory, filter) {
         var cache = cacheFactory({
@@ -11,12 +20,15 @@ define(function (require) {
             }
         });
 
-        function url() {
-            return baseUrl + filter();
+        function getApiUriConfig() {
+            var newConfig = {};
+            ng.extend(newConfig, apiConfig);
+            newConfig.queryParams.filters = filter();
+            return newConfig;
         }
 
         function all() {
-            var datum = cache.all(url());
+            var datum = cache.all(getApiUriConfig());
             var output = {
                 'preFlight': 0,
                 'inFlight': 0,
@@ -33,7 +45,7 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(getApiUriConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -42,11 +54,12 @@ define(function (require) {
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(getApiUriConfig(), initialize);
         }
 
         return {
-            url: url,
+            _apiConfig: apiConfig,
+            _getApiUriConfig: getApiUriConfig,
             all: all,
             data: data,
             observe: observe

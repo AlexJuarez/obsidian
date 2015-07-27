@@ -3,14 +3,21 @@ define(function(require) {
 
     require('./campaignsByStatusAccordionTable');
     require('angularMocks');
+    var ng = require('angular');
     var $ = require('jquery');
-
 
     var campaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json'));
     var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
 
     describe('campaignAccordionTableFactory', function() {
-        var factory, httpBackend, scope, interpolate;
+        var factory, httpBackend, scope, interpolate, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            queryParams: {
+                dimensions: ['one']
+            }
+        };
 
         var defaultData = {
             status: 'Pre-Flight',
@@ -24,17 +31,18 @@ define(function(require) {
                 }
             },
             title: 'preFlight',
-            rows: '/campaigns/by/status/endpoint'
+            rowsConfig: apiConfig
         };
 
         beforeEach(function() {
             module('app.campaign-management');
 
-            inject(function(campaignAccordionTableFactory, $httpBackend, $rootScope, $interpolate) {
+            inject(function(campaignAccordionTableFactory, $httpBackend, $rootScope, $interpolate, apiUriGenerator) {
                 factory = campaignAccordionTableFactory;
                 httpBackend = $httpBackend;
                 scope = $rootScope.$new();
                 interpolate = $interpolate;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -44,7 +52,11 @@ define(function(require) {
         });
 
         function setUpTests() {
-            httpBackend.when('GET', '/campaigns/by/status/endpoint?limit=10&offset=0')
+            var apiConfigWithPagination = ng.extend({}, apiConfig);
+            apiConfigWithPagination.queryParams.offset = 0;
+            apiConfigWithPagination.queryParams.limit = 10;
+
+            httpBackend.when('GET', apiGenerator(apiConfigWithPagination))
                 .respond(campaignJSON);
         }
 
@@ -98,7 +110,10 @@ define(function(require) {
                         route: 'cm.campaigns.account({ accountId: row.account.id })',
                         name: 'accountName'
                     },
-                    campaign: {route: 'cm.campaigns.detail({ campaignId: row.id })', name: 'name'},
+                    campaign: {
+                        route: 'cm.campaigns.detail({ campaignId: row.id })',
+                        name: 'name'
+                    },
                     impressions: {max: 0, current: 5444326},
                     start: '2015-04-27',
                     end: '2015-07-14',
@@ -158,7 +173,7 @@ define(function(require) {
             test.init(defaultData);
             test.observe(function() {
                 var tableData = test.all();
-                if (tableData.content.data.length > 0) {
+                if(tableData.content.data.length > 0) {
                     expect(tableData.content.data).toEqual(sortedCampaignJSON);
                 }
             }, scope, true);

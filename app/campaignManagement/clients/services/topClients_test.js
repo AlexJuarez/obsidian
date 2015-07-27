@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('topClients', function () {
-        var topClients, httpBackend;
+        var topClients, httpBackend, apiGenerator;
         var clients = [{
             'metrics': {
                 'impressions': 50,
@@ -24,9 +24,11 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.campaign-management');
-            inject(function (topClientsService, $httpBackend) {
+            module('app.core');
+            inject(function (topClientsService, $httpBackend, apiUriGenerator) {
                 topClients = topClientsService;
                 httpBackend = $httpBackend;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -40,7 +42,7 @@ define(function (require) {
         });
 
         it('should make a request to init', function () {
-            httpBackend.when('GET', '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10')
+            httpBackend.when('GET', apiGenerator(topClients._apiConfig))
                 .respond({clients: []});
 
             topClients.init().then(function () {
@@ -50,7 +52,7 @@ define(function (require) {
         });
 
         it('should sort on impressions', function () {
-            httpBackend.when('GET', '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10')
+            httpBackend.when('GET', apiGenerator(topClients._apiConfig))
                 .respond({clients: clients});
 
             topClients.init();
@@ -61,7 +63,7 @@ define(function (require) {
         });
 
         it('should return an object describing the table', function () {
-            httpBackend.when('GET', '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10')
+            httpBackend.when('GET', apiGenerator(topClients._apiConfig))
                 .respond({clients: []});
 
             topClients.init();
