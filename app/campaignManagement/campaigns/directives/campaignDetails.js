@@ -30,9 +30,15 @@ define(function (require) {
                 function showCampaignDetails(campaignId) {
                     var apiConfig = {
                         endpoint: 'campaigns',
-                        dimensions: ['status', 'startDate', 'endDate', 'distinctPublishers', 'countPlacements', 'countCreatives'],
-                        metrics: ['impressions', 'bookedImpressions'],
-                        filters: ['id:eq:' + campaignId]
+                        queryParams: {
+                            dimensions: [
+                                'status', 'startDate', 'endDate',
+                                'distinctPublishers', 'countPlacements',
+                                'countCreatives'
+                            ],
+                            metrics: ['impressions', 'bookedImpressions'],
+                            filters: ['id:eq:' + campaignId]
+                        }
                     };
                     var data = dataFactory();
                     data.init(apiConfig);

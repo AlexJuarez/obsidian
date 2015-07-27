@@ -6,7 +6,13 @@ define(function (require) {
 
     var apiConfig = {
         endpoint: 'divisionSet',
-        metrics: ['countAccounts', 'countCampaignsPreFlight', 'countCampaignsInFlight', 'countCampaignsCompleted', 'countCampaignsArchived', 'count']
+        queryParams: {
+            metrics: [
+                'countAccounts', 'countCampaignsPreFlight',
+                'countCampaignsInFlight', 'countCampaignsCompleted',
+                'countCampaignsArchived', 'count'
+            ]
+        }
     };
 
     module.service('divisionSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
@@ -20,7 +26,7 @@ define(function (require) {
             var newApiConfig = {};
             ng.extend(newApiConfig, apiConfig);
             if ($state.params.divisionId) {
-                ng.extend(newApiConfig, {
+                ng.extend(newApiConfig.queryParams, {
                     filters: ['id:eq:' + $state.params.divisionId]
                 });
             }

@@ -27,7 +27,7 @@ define(function (require) {
         });
 
         function setUpTests() {
-            httpBackend.when('GET', apiGenerator(header._apiConfig))
+            httpBackend.when('GET', apiGenerator(header._getApiUriConfig()))
                 .respond(campaignSetJSON);
         }
 
@@ -37,7 +37,9 @@ define(function (require) {
 
         it('should produce the correct filters', function () {
             state.params.clientId = 'client1';
-            expect(header._getApiUriConfig().filters).toEqual(['client.id:eq:client1']);
+            httpBackend.when('GET', apiGenerator(header._getApiUriConfig()))
+                .respond(campaignSetJSON);
+            expect(header._getApiUriConfig().queryParams.filters).toEqual(['client.id:eq:client1']);
         });
 
         it('should get all of the data', function () {

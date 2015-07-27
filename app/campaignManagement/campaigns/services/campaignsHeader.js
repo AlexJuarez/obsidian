@@ -7,8 +7,10 @@ define(function (require) {
 
     var apiConfig = {
         endpoint: 'campaignSet',
-        dimensions: ['status'],
-        metrics: ['count', 'countPlacementsLive']
+        queryParams: {
+            dimensions: ['status'],
+            metrics: ['count', 'countPlacementsLive']
+        }
     };
 
     module.service('campaignsHeader', ['cacheFactory', 'campaignsFilter', function (cacheFactory, filter) {
@@ -19,7 +21,10 @@ define(function (require) {
         });
 
         function getApiUriConfig() {
-            return ng.extend(filter(), apiConfig);
+            var newConfig = {};
+            ng.extend(newConfig, apiConfig);
+            newConfig.queryParams.filters = filter();
+            return newConfig;
         }
 
         function all() {

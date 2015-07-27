@@ -30,13 +30,13 @@ define(function (require) {
 
         describe('_getApiConfig()', function () {
             it('should return the correct url with no state', function () {
-                expect(metrics._getApiConfig().filters).toEqual(undefined);
+                expect(metrics._getApiConfig().queryParams.filters).toEqual(undefined);
             });
 
             it('should return a url with a filter', function () {
                 state.params.clientId = 'client0';
 
-                expect(metrics._getApiConfig().filters).toEqual(['id:eq:client0']);
+                expect(metrics._getApiConfig().queryParams.filters).toEqual(['id:eq:client0']);
             });
         });
 

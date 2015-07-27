@@ -30,9 +30,11 @@ define(function (require) {
             it('should only make one call per url', function () {
                 var apiConfig = {
                     endpoint: 'test',
-                    dimensions: 'one',
-                    limit: 10,
-                    offset: 0
+                    queryParams: {
+                        dimensions: 'one',
+                        limit: 10,
+                        offset: 0
+                    }
                 };
 
                 httpBackend.when('GET', apiGenerator(apiConfig))

@@ -6,7 +6,9 @@ define(function (require) {
 
     var apiConfig = {
         endpoint: 'test',
-        dimensions: 'one'
+        queryParams: {
+            dimensions: 'one'
+        }
     };
 
     describe('cacheFactory', function () {

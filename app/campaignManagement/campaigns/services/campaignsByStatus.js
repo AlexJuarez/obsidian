@@ -6,9 +6,17 @@ define(function (require) {
 
     var apiConfig = {
         endpoint: 'campaigns',
-        dimensions: ['id', 'name', 'startDate', 'endDate', 'budget', 'account.id', 'account.name'],
-        metrics: ['countPlacements', 'countCreatives', 'impressions', 'bookedImpressions'],
-        order: 'name:asc'
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
+                'account.name'
+            ],
+            metrics: [
+                'countPlacements', 'countCreatives', 'impressions',
+                'bookedImpressions'
+            ],
+            order: 'name:asc'
+        }
     };
 
     var cache = {};
@@ -24,7 +32,9 @@ define(function (require) {
         var filter = dataFactory();
 
         function tableConfig(status) {
-            return ng.extend(campaignsFilter('status:eq:' + status), apiConfig);
+            var config = ng.extend({}, apiConfig);
+            config.queryParams.filters = campaignsFilter('status:eq:' + status);
+            return config;
         }
 
         function init() {

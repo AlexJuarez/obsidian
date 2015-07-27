@@ -5,7 +5,13 @@ define(function (require) {
     var ng = require('angular');
     var apiConfig = {
         endpoint: 'clientSet',
-        metrics: ['countAccounts', 'countCampaignsPreFlight', 'countCampaignsInFlight', 'countCampaignsCompleted', 'countCampaignsArchived', 'count']
+        queryParams: {
+            metrics: [
+                'countAccounts', 'countCampaignsPreFlight',
+                'countCampaignsInFlight', 'countCampaignsCompleted',
+                'countCampaignsArchived', 'count'
+            ]
+        }
     };
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
@@ -15,19 +21,16 @@ define(function (require) {
             }
         });
 
-        function filter() {
-            var output = {};
-
+        function filter(config) {
+            var newConfig = ng.extend({}, config);
             if ($state.params.clientId) {
-                output.filters = ['id:eq:' + $state.params.clientId];
+                newConfig.queryParams.filters = ['id:eq:' + $state.params.clientId];
             }
-
-            return output;
+            return newConfig;
         }
 
         function getApiConfig() {
-            var config = filter();
-            ng.extend(config, apiConfig);
+            var config = filter(apiConfig);
             return config;
         }
 
@@ -68,6 +71,7 @@ define(function (require) {
 
         return {
             _getApiConfig: getApiConfig,
+            _apiConfig: apiConfig,
             all: all,
             data: data,
             observe: observe

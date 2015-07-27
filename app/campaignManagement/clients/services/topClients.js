@@ -8,10 +8,18 @@ define(function (require) {
 
         var _apiConfig = {
             endpoint: 'clients',
-            dimensions: ['id', 'name', 'channel', 'lastViewedUserDate', 'lastViewedUserName'],
-            metrics: ['impressions', 'countAccountsActive', 'countCampaignsPreFlight', 'countCampaignsInFlight'],
-            order: 'metrics.impressions:desc',
-            limit: 10
+            queryParams: {
+                dimensions: [
+                    'id', 'name', 'channel', 'lastViewedUserDate',
+                    'lastViewedUserName'
+                ],
+                metrics: [
+                    'impressions', 'countAccountsActive',
+                    'countCampaignsPreFlight', 'countCampaignsInFlight'
+                ],
+                order: 'metrics.impressions:desc',
+                limit: 10
+            }
         };
 
         function init() {

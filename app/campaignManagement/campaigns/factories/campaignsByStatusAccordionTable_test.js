@@ -14,7 +14,9 @@ define(function(require) {
 
         var apiConfig = {
             endpoint: 'test',
-            dimensions: ['one']
+            queryParams: {
+                dimensions: ['one']
+            }
         };
 
         var defaultData = {
@@ -50,10 +52,10 @@ define(function(require) {
         });
 
         function setUpTests() {
-            var apiConfigWithPagination = ng.extend({}, apiConfig, {
-                limit: 10,
-                offset: 0
-            });
+            var apiConfigWithPagination = ng.extend({}, apiConfig);
+            apiConfigWithPagination.queryParams.offset = 0;
+            apiConfigWithPagination.queryParams.limit = 10;
+
             httpBackend.when('GET', apiGenerator(apiConfigWithPagination))
                 .respond(campaignJSON);
         }

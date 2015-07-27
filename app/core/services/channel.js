@@ -30,7 +30,9 @@ define(function (require) {
         function init() {
             var apiConfig = {
                 endpoint: 'clientSet',
-                dimensions: ['channel']
+                queryParams: {
+                    dimensions: ['channel']
+                }
             };
 
             return data.init(apiConfig, transform);

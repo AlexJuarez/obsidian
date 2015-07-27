@@ -111,6 +111,9 @@ define(function (require) {
             function _getTableHeader(data) {
                 var template;
 
+                if (!data) {
+                    return '';
+                }
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {

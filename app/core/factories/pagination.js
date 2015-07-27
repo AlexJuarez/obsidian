@@ -6,10 +6,11 @@ define(function (require) {
 
     module.factory('paginationFactory', ['$http', 'dataFactory', 'apiUriGenerator', function ($http, dataFactory, apiUriGenerator) {
         function buildConfig(config, limit, offset) {
-            ng.extend(config, {
-                limit: limit,
-                offset: offset
-            });
+            config.queryParams = config.queryParams || {};
+
+            config.queryParams.limit = limit;
+            config.queryParams.offset = offset;
+
             return config;
         }
 

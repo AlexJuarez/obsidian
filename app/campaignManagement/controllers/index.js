@@ -13,19 +13,30 @@ define(function (require) {
 
         clients.init({
             endpoint: 'clients',
-            dimensions: ['id', 'name', 'pinned']
+            queryParams: {
+                dimensions: ['id', 'name', 'pinned']
+            }
         });
         divisions.init({
             endpoint: 'divisions',
-            dimensions: ['id', 'name', 'pinned', 'client.id']
+            queryParams: {
+                dimensions: ['id', 'name', 'pinned', 'client.id']
+            }
         });
         accounts.init({
             endpoint: 'accounts',
-            dimensions: ['id', 'name', 'pinned', 'division.id', 'client.id']
+            queryParams: {
+                dimensions: ['id', 'name', 'pinned', 'division.id', 'client.id']
+            }
         });
         campaigns.init({
             endpoint: 'campaigns',
-            dimensions: ['id', 'name', 'pinned', 'account.id', 'division.id', 'client.id']
+            queryParams: {
+                dimensions: [
+                    'id', 'name', 'pinned', 'account.id', 'division.id',
+                    'client.id'
+                ]
+            }
         });
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {

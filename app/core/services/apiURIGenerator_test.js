@@ -34,7 +34,9 @@ define(function (require) {
         it('should return a valid api uri given a simple config', function() {
             var given = {
                 endpoint: 'endpoint',
-                dimensions: ['dimension1', 'dimension2']
+                queryParams: {
+                    dimensions: ['dimension1', 'dimension2']
+                }
             };
             var expected = '/api/v3/endpoint?dimensions=dimension1,dimension2';
 
@@ -44,15 +46,17 @@ define(function (require) {
         it('should return a valid api uri given a complex config', function() {
             var given = {
                 endpoint: 'endpoint',
-                dimensions: ['dimension1', 'dimension2'],
-                version: 123,
-                metrics: ['metric1'],
-                offset: 100,
-                limit: 10,
-                order: 'dimension1:desc',
-                filters: ['dimension2:eq:5']
+                queryParams: {
+                    dimensions: ['dimension1', 'dimension2'],
+                    version: 123,
+                    metrics: ['metric1'],
+                    offset: 100,
+                    limit: 10,
+                    order: 'dimension1:desc',
+                    filters: ['dimension2:eq:5']
+                }
             };
-            var expected = '/api/v123/endpoint?dimensions=dimension1,dimension2&metrics=metric1&offset=100&limit=10&order=dimension1:desc&filters=dimension2:eq:5';
+            var expected = '/api/v3/endpoint?dimensions=dimension1,dimension2&filters=dimension2:eq:5&limit=10&metrics=metric1&offset=100&order=dimension1:desc&version=123';
 
             expect(uriGeneratorService(given)).toEqual(expected);
         });

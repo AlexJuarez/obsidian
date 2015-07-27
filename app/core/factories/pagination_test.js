@@ -11,14 +11,17 @@ define(function (require) {
 
         var apiConfig = {
             endpoint: 'test',
-            dimensions: ['one']
+            queryParams: {
+                dimensions: ['one']
+            }
         };
 
         function getPaginatedApiConfig(config) {
-            return ng.extend({}, config, {
-                limit: 10,
-                offset: 0
-            });
+            var newConfig = ng.extend({}, config);
+            newConfig.queryParams.offset = 0;
+            newConfig.queryParams.limit = 10;
+
+            return newConfig;
         }
 
         function getPaginatedApiUri(config) {
@@ -50,9 +53,8 @@ define(function (require) {
 
             expect(pg._buildConfig(apiConfig, limit, offset)).toEqual(getPaginatedApiConfig(apiConfig));
 
-            var newApiConfig = ng.extend({}, apiConfig, {
-                dimensions: ['different', 'dimensions']
-            });
+            var newApiConfig = ng.extend({}, apiConfig);
+            newApiConfig.dimensions = ['different', 'dimensions'];
 
             expect(pg._buildConfig(newApiConfig, limit, offset)).toEqual(getPaginatedApiConfig(newApiConfig));
         });
@@ -87,8 +89,8 @@ define(function (require) {
             it('should return with the new limit', function () {
                 var pg = pagination();
                 var newLimitConfig = ng.extend({}, apiConfig);
-                newLimitConfig.limit = 20;
-                newLimitConfig.offset = 0;
+                newLimitConfig.queryParams.limit = 20;
+                newLimitConfig.queryParams.offset = 0;
                 httpBackend.when('GET', apiGenerator(newLimitConfig))
                     .respond([1]);
                 pg.init(apiConfig, undefined, 20);
@@ -103,12 +105,8 @@ define(function (require) {
             httpBackend.when('GET', getPaginatedApiUri(apiConfig))
                 .respond([]);
 
-            var nextPageConfig = ng.extend({}, apiConfig, {
-                limit: 10,
-                offset: 10
-            });
-            console.log(nextPageConfig);
-            console.log(apiGenerator(nextPageConfig));
+            var nextPageConfig = ng.extend({}, apiConfig);
+            nextPageConfig.queryParams.offset = 10;
             httpBackend.when('GET', apiGenerator(nextPageConfig))
                 .respond([1]);
 
