@@ -14,27 +14,31 @@ define(function (require) {
 
     require('tpl!./tooltip.html');
 
-    app.directive('tooltip', ['$templateCache', '$compile', '$document', function ($templateCache, $compile, $document) {
+    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$parse', '$timeout', '$window', '$controller', function ($templateCache, $rootScope, $compile, $document, $parse, $timeout, $window, $controller) {
         return {
             restrict: 'A',
             scope: false,
+            //controller: 'modalCtrl',
             link: function (scope, elem, attr) {
 
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.showOnClick = showOnClick;
+                //showOnClick = scope.showOnClick;
                 scope.hideOnClick = hideOnClick;
                 scope.documentClickHandler = documentClickHandler;
-                scope.removeHandlers = removeHandlers;
+                //scope.removePreviewModalHandlers = removePreviewModalHandlers;
+                //scope.tooltipLink = tooltipLink;
+                //scope.openPreviewPage = openPreviewPage;
+
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var body;
-                var wrapper, closeBtn;
+                var wrapper, closeBtn, toolTipTrigger, previewLink, ctrlInstance;
+
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);
@@ -43,38 +47,81 @@ define(function (require) {
                     } else {
                         scope.content = template;
                         isBasicTooltip = false;
-                        elem.on('mouseup', showOnClick);
-                        body = $document;
+
+                        if (attr.customControl) {
+                            //var newScope = $rootScope.$new(false, scope);
+                            //console.log( newScope );
+                            var customController = attr.customControl;
+                            ctrlInstance = $controller( customController, { $scope: scope });
+                            console.log( ctrlInstance );
+                        }
+                        
+                        // Assign click event to show tooltip
+                        $timeout(function() {
+                            toolTipTrigger = elem.find('.main');
+                            wrapper = elem.find('.wrapper');
+                            toolTipTrigger.on( 'mouseup', function(e) {
+                                setPreviewModalHandlers();
+                                scope.showOnClick(e, wrapper);
+                            } );
+                            
+                        });
+                        
                     }
                     elem.html($compile(baseTemplate)(scope));
                 });
 
-                function removeHandlers() {
-                    body.off('mouseup', documentClickHandler);
-                    closeBtn.off('mouseup', hideOnClick);
-                }
 
-                function documentClickHandler() {
-                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
-                    removeHandlers();
-                }
-               
-                function showOnClick(e) {
-                    //updatePosition();
-                    e.stopPropagation();
-                    wrapper = elem.find('.wrapper').css({'visibility': 'visible', 'opacity': '1'});
+                function setPreviewModalHandlers() {
+                    console.log( 'setPreviewModalHandlers' );
+
+                    previewLink = elem.find('.preview-link');
+                    previewLink.on('click', scope.openPreviewPage);
                     
                     closeBtn = wrapper.find('.glyph-close');
                     closeBtn.on('mouseup', hideOnClick);
 
-                    body.on('mouseup', documentClickHandler);
-                    
+                    $document.on('mouseup', documentClickHandler);
+                }
+                
+
+                function removePreviewModalHandlers() {
+                    console.log( 'removeHandlers' );
+                    $document.off('mouseup', documentClickHandler);
+                    closeBtn.off('mouseup', hideOnClick);
                 }
 
-                function hideOnClick(e) {
+                function documentClickHandler(e) {
+                    console.log( 'documentClickHandler' );
                     e.stopPropagation();
-                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
-                    removeHandlers();
+                    wrapper.removeClass('show');
+                    removePreviewModalHandlers();
+                }
+               
+                // function showOnClick(e, wrapper) {
+                //     console.log( 'showOnClick ' );
+                //     e.stopPropagation();
+                    
+                //     setPreviewModalHandlers();
+
+                //     wrapper.addClass('show');
+                    
+                    
+                //     //body.on('mouseup', documentClickHandler);
+                    
+                // }
+
+                // function openPreviewPage(e) {
+                //     console.log( 'open page' );
+                //     e.stopPropagation();
+                //     //$window.open();
+                // }
+
+                function hideOnClick(e) {
+                    console.log( 'hideOnClick' );
+                    e.stopPropagation();
+                    wrapper.removeClass('show');
+                    removePreviewModalHandlers();
                 }
 
                 function calculateClass(dims) {
@@ -135,6 +182,7 @@ define(function (require) {
                     var dims = calculateDims();
                     elem.addClass(calculateClass(dims));
                 }
+
             }
         };
     }]);

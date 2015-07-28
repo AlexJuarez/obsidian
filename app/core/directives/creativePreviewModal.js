@@ -8,10 +8,11 @@ define(function (require) {
         return {
             restrict: 'A',
             replace: true,
-            templateUrl: 'core/directives/creativePreviewModal.html',
-            link: function(elem) {
-                console.log( elem );
-            }
+            scope: false,
+            templateUrl: 'core/directives/creativePreviewModal.html'
+            // controller: function ($scope) {
+            //     console.log( 'controller ', $scope );
+            // }
         };
 
     });
