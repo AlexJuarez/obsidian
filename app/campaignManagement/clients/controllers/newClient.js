@@ -3,12 +3,14 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('newClientCtrl', ['$scope', '$modalInstance', 'channelService', function ($scope, $modalInstance, channels) {
+    app.controller('newClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', function ($scope, $modalInstance, channels, modalState) {
+
+        $scope.client = modalState;
+        console.log($scope.client);
 
         channels.init();
 
         channels.observe(updateChannels, $scope);
-
         $scope.ok = function (errors) {
             console.log($scope.client);
             $scope.errors = errors;
@@ -16,6 +18,7 @@ define(function (require) {
         };
 
         $scope.cancel = function () {
+            modalState = $scope.client;
             $modalInstance.dismiss('cancel');
         };
 

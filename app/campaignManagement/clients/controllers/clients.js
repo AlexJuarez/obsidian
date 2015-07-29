@@ -16,12 +16,22 @@ define(function (require) {
             $scope.topClients = topClients.all();
         }
 
-        function openModal(size) {
+        var createModal;
+        function openModal() {
+            if (!createModal) {
+                createModal = {};
+            }
+
             $modal.open({
                 animation: 'true',
                 templateUrl: 'campaignManagement/clients/new-client.html',
                 controller: 'newClientCtrl',
-                size: size
+                resolve: {
+                    modalState: function() {
+                        return createModal;
+                    }
+                },
+                size: 'lg'
             });
         }
     }]);

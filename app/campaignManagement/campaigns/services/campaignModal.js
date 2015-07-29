@@ -47,7 +47,7 @@ define(function (require) {
             });
         }
 
-        function create(){
+        function create() {
             if (!createModal) {
                 createModal = {};
             }
