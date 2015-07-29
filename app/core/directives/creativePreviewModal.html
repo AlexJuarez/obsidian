@@ -1,9 +1,9 @@
 <div class="creative-preview">
 	
 	<div class="preview-modal-header">
-		<span class="left"><a class="preview-link" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a></span>
-		<span class="left"><a title="Edit in Studio"><i class="glyph-view"></i>Edit in Studio</a></span>
-		<i class="glyph-close"></i>
+		<span class="left"><a ng-click="openPreviewPage()" class="preview-link" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a></span>
+		<span class="left"><a class="edit-link" title="Edit in Studio"><i class="glyph-view"></i>Edit in Studio</a></span>
+		<i ng-click="hideOnClick()" class="glyph-close"></i>
 	</div>
 	
 	<div class="thumbnail-wrapper">

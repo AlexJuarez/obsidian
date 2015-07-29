@@ -1,3 +1,5 @@
+/* globals $ */
+
 define(function (require) {
     'use strict';
 
@@ -17,17 +19,23 @@ define(function (require) {
     app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$parse', '$timeout', '$window', '$controller', function ($templateCache, $rootScope, $compile, $document, $parse, $timeout, $window, $controller) {
         return {
             restrict: 'A',
-            scope: false,
-            //controller: 'modalCtrl',
+            scope: {},
             link: function (scope, elem, attr) {
-
+                //console.log( 'directive scope: ', scope );
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                //showOnClick = scope.showOnClick;
-                scope.hideOnClick = hideOnClick;
+                
+                scope.isOpen = false;
+                scope.toggleVisible = function() {
+                    console.log( 'we are toggling', elem );
+                    scope.isOpen = !scope.isOpen;
+                    //scope.isOpen ? scope.setPreviewModalHandlers() : scope.removePreviewModalHandlers();
+                };
                 scope.documentClickHandler = documentClickHandler;
-                //scope.removePreviewModalHandlers = removePreviewModalHandlers;
+                scope.setPreviewModalHandlers = setPreviewModalHandlers;
+                scope.removePreviewModalHandlers = removePreviewModalHandlers;
+                
                 //scope.tooltipLink = tooltipLink;
                 //scope.openPreviewPage = openPreviewPage;
 
@@ -37,7 +45,7 @@ define(function (require) {
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var wrapper, closeBtn, toolTipTrigger, previewLink, ctrlInstance;
+                var doc, wrapper, closeBtn, toolTipTrigger, previewLink, editLink, ctrlInstance;
 
 
                 scope.$watch(tooltip, function (newValue) {
@@ -49,53 +57,79 @@ define(function (require) {
                         isBasicTooltip = false;
 
                         if (attr.customControl) {
-                            //var newScope = $rootScope.$new(false, scope);
-                            //console.log( newScope );
                             var customController = attr.customControl;
                             ctrlInstance = $controller( customController, { $scope: scope });
-                            console.log( ctrlInstance );
                         }
                         
                         // Assign click event to show tooltip
                         $timeout(function() {
-                            toolTipTrigger = elem.find('.main');
-                            wrapper = elem.find('.wrapper');
-                            toolTipTrigger.on( 'mouseup', function(e) {
-                                setPreviewModalHandlers();
-                                scope.showOnClick(e, wrapper);
-                            } );
+                            doc = $(document);
+                            // toolTipTrigger = elem.find('.main');
+                            // wrapper = elem.find('.wrapper');
                             
+                            // toolTipTrigger.on( 'click', {
+                            //     wrapper: wrapper
+                            // }, scope.toggleVisible );
+                            //console.log( scope );
                         });
                         
                     }
-                    elem.html($compile(baseTemplate)(scope));
+                    elem.html( $compile(baseTemplate)(scope) );
                 });
 
 
                 function setPreviewModalHandlers() {
                     console.log( 'setPreviewModalHandlers' );
 
-                    previewLink = elem.find('.preview-link');
-                    previewLink.on('click', scope.openPreviewPage);
+                    // Assign Preview Page Event Handler
+                    //previewLink = elem.find('.preview-link');
+                    // previewLink.on( 'click', {
+                    //     url: 'http://www.mixpo.com',
+                    //     guid: 'GUID_FOR_PREVIEWING'
+                    // }, scope.openPreviewPage);
                     
-                    closeBtn = wrapper.find('.glyph-close');
-                    closeBtn.on('mouseup', hideOnClick);
+                    // Assign Edit in Studio Event Handler
+                    // editLink = elem.find('.edit-link');
+                    // editLink.on( 'click', {
+                    //     url: 'http://www.mixpo.com',
+                    //     guid: 'GUID_FOR_EDITING'
+                    // }, scope.openStudio);
 
-                    $document.on('mouseup', documentClickHandler);
+                    // Assign Close Btn Event Handler
+                    closeBtn = elem.find('.glyph-close');
+                    closeBtn.on( 'click', scope.toggleVisible );
+                    
+                    // Add document click handler after modal opens
+                    // $timeout(function() {
+                    //     doc.on('click', documentClickHandler);
+                    // }, 500);
                 }
-                
+
 
                 function removePreviewModalHandlers() {
                     console.log( 'removeHandlers' );
-                    $document.off('mouseup', documentClickHandler);
-                    closeBtn.off('mouseup', hideOnClick);
+                    //doc.off('click', documentClickHandler);
+                    //closeBtn.off('click', scope.hideOnClick);
+                    //previewLink.off('click', scope.openPreviewPage);
                 }
 
                 function documentClickHandler(e) {
-                    console.log( 'documentClickHandler' );
-                    e.stopPropagation();
-                    wrapper.removeClass('show');
-                    removePreviewModalHandlers();
+                    if (elem !== e.target && !elem[0].contains(e.target)) {
+                        console.log( 'documentClickHandler' );
+                        scope.$apply(function() {
+                            console.log( 'hit' );
+                            scope.isOpen = false;
+                        });
+                    }
+
+                    // if (!$(event.target).closest('.wrapper').length) {
+                    //     console.log( 'documentClickHandler' );
+                    //     // Hide the menus.
+                    //     //wrapper.removeClass('show');
+                    //     scope.isOpen = false;
+                    //     removePreviewModalHandlers();
+                    //     scope.$apply();
+                    // }
                 }
                
                 // function showOnClick(e, wrapper) {
@@ -111,18 +145,18 @@ define(function (require) {
                     
                 // }
 
-                // function openPreviewPage(e) {
+                // function openPreviewPage() {
                 //     console.log( 'open page' );
-                //     e.stopPropagation();
+                //     //e.stopPropagation();
                 //     //$window.open();
                 // }
 
-                function hideOnClick(e) {
-                    console.log( 'hideOnClick' );
-                    e.stopPropagation();
-                    wrapper.removeClass('show');
-                    removePreviewModalHandlers();
-                }
+                // function hideOnClick() {
+                //     console.log( 'hideOnClick' );
+                //     //e.stopPropagation();
+                //     wrapper.removeClass('show');
+                //     removePreviewModalHandlers();
+                // }
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
