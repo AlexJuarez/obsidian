@@ -1,6 +1,12 @@
 @import "./../brand";
 
 .file-picker {
+
+    // The drag 'n drop element has a max z-index value, which interferes
+    // with the rest of the page. Create a stacking context to prevent that.
+    position: relative;
+    z-index: 1;
+
     width: 100%;
     .input-wrapper {
         display: flex;

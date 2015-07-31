@@ -10,6 +10,8 @@ define(function (require) {
     require('./factories/data');
     require('./factories/cache');
     require('./factories/pagination');
+    require('./factories/record');
+    require('./factories/recordPool');
     require('./factories/domainInterceptor');
     require('./directives/dropdown');
     require('./directives/limit');
@@ -28,5 +30,6 @@ define(function (require) {
     require('./services/clientSet');
     require('./services/divisionSet');
     require('./services/apiURIGenerator');
+    require('./services/clientRecord');
     require('./constants/apiURI');
 });
