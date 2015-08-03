@@ -36,7 +36,7 @@ define(function (require) {
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var elements, ctrlInstance;
+                var ctrlInstance;
                 scope.isOpen = false;
 
 
@@ -54,7 +54,7 @@ define(function (require) {
                         if (attr.customControl) {
                             var customController = attr.customControl;
                             
-                            $controller( customController, { $scope: scope } );
+                            ctrlInstance = $controller( customController, { $scope: scope } );
                             
                         }
                         
@@ -86,7 +86,7 @@ define(function (require) {
                         console.log( '--- toggleVisible ---', scope.isOpen );
                     }
 
-                };
+                }
 
                 function documentClickHandler(e) {
                     //e.stopPropagation();
