@@ -15,6 +15,7 @@ define(function (require) {
     ];
 
     require('tpl!./tooltip.html');
+    
 
     app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$parse', '$timeout', '$window', '$controller', function ($templateCache, $rootScope, $compile, $document, $parse, $timeout, $window, $controller) {
         return {
@@ -26,18 +27,8 @@ define(function (require) {
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
                 
-                scope.isOpen = false;
-                scope.toggleVisible = function() {
-                    console.log( 'we are toggling', elem );
-                    scope.isOpen = !scope.isOpen;
-                    //scope.isOpen ? scope.setPreviewModalHandlers() : scope.removePreviewModalHandlers();
-                };
+                scope.toggleVisible = toggleVisible;
                 scope.documentClickHandler = documentClickHandler;
-                scope.setPreviewModalHandlers = setPreviewModalHandlers;
-                scope.removePreviewModalHandlers = removePreviewModalHandlers;
-                
-                //scope.tooltipLink = tooltipLink;
-                //scope.openPreviewPage = openPreviewPage;
 
 
                 var tooltip = attr.tooltip;
@@ -45,7 +36,8 @@ define(function (require) {
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var doc, wrapper, closeBtn, toolTipTrigger, previewLink, editLink, ctrlInstance;
+                var elements, ctrlInstance;
+                scope.isOpen = false;
 
 
                 scope.$watch(tooltip, function (newValue) {
@@ -53,110 +45,62 @@ define(function (require) {
                     if (!template) {
                         scope.content = newValue;
                     } else {
+                        console.log( 'directive scope: ', scope );
+                        
                         scope.content = template;
+                        
                         isBasicTooltip = false;
 
-                        if (attr.customControl) {
-                            var customController = attr.customControl;
-                            ctrlInstance = $controller( customController, { $scope: scope });
-                        }
-                        
-                        // Assign click event to show tooltip
-                        $timeout(function() {
-                            doc = $(document);
-                            // toolTipTrigger = elem.find('.main');
-                            // wrapper = elem.find('.wrapper');
+                        // if (attr.customControl) {
+                        //     var customController = attr.customControl;
                             
-                            // toolTipTrigger.on( 'click', {
-                            //     wrapper: wrapper
-                            // }, scope.toggleVisible );
-                            //console.log( scope );
-                        });
+                        //     $controller( customController, { $scope: scope } );
+                            
+                        // }
                         
                     }
+                    
                     elem.html( $compile(baseTemplate)(scope) );
+
+                    
                 });
 
+                function toggleVisible() {
+                    if (elem.hasClass('click')) {
 
-                function setPreviewModalHandlers() {
-                    console.log( 'setPreviewModalHandlers' );
+                        console.log( '--- toggleVisible ---', scope.isOpen );
+                        
+                        scope.isOpen = !scope.isOpen;
 
-                    // Assign Preview Page Event Handler
-                    //previewLink = elem.find('.preview-link');
-                    // previewLink.on( 'click', {
-                    //     url: 'http://www.mixpo.com',
-                    //     guid: 'GUID_FOR_PREVIEWING'
-                    // }, scope.openPreviewPage);
-                    
-                    // Assign Edit in Studio Event Handler
-                    // editLink = elem.find('.edit-link');
-                    // editLink.on( 'click', {
-                    //     url: 'http://www.mixpo.com',
-                    //     guid: 'GUID_FOR_EDITING'
-                    // }, scope.openStudio);
+                        if (scope.isOpen) {
+                            $timeout(function() {
+                                $(document).on('click', scope.documentClickHandler);    
+                            }, 500);
+                            
+                        } else {
+                            $timeout(function() {
+                                $(document).off('click', scope.documentClickHandler);    
+                            }, 500);
+                        }
 
-                    // Assign Close Btn Event Handler
-                    closeBtn = elem.find('.glyph-close');
-                    closeBtn.on( 'click', scope.toggleVisible );
-                    
-                    // Add document click handler after modal opens
-                    // $timeout(function() {
-                    //     doc.on('click', documentClickHandler);
-                    // }, 500);
-                }
+                        console.log( '--- toggleVisible ---', scope.isOpen );
+                    }
 
-
-                function removePreviewModalHandlers() {
-                    console.log( 'removeHandlers' );
-                    //doc.off('click', documentClickHandler);
-                    //closeBtn.off('click', scope.hideOnClick);
-                    //previewLink.off('click', scope.openPreviewPage);
-                }
+                };
 
                 function documentClickHandler(e) {
+                    //e.stopPropagation();
                     if (elem !== e.target && !elem[0].contains(e.target)) {
                         console.log( 'documentClickHandler' );
                         scope.$apply(function() {
-                            console.log( 'hit' );
-                            scope.isOpen = false;
+                            console.log( 'doc hit' );
+                            scope.toggleVisible();
+                            //scope.isOpen = false;
                         });
                     }
 
-                    // if (!$(event.target).closest('.wrapper').length) {
-                    //     console.log( 'documentClickHandler' );
-                    //     // Hide the menus.
-                    //     //wrapper.removeClass('show');
-                    //     scope.isOpen = false;
-                    //     removePreviewModalHandlers();
-                    //     scope.$apply();
-                    // }
                 }
                
-                // function showOnClick(e, wrapper) {
-                //     console.log( 'showOnClick ' );
-                //     e.stopPropagation();
-                    
-                //     setPreviewModalHandlers();
-
-                //     wrapper.addClass('show');
-                    
-                    
-                //     //body.on('mouseup', documentClickHandler);
-                    
-                // }
-
-                // function openPreviewPage() {
-                //     console.log( 'open page' );
-                //     //e.stopPropagation();
-                //     //$window.open();
-                // }
-
-                // function hideOnClick() {
-                //     console.log( 'hideOnClick' );
-                //     //e.stopPropagation();
-                //     wrapper.removeClass('show');
-                //     removePreviewModalHandlers();
-                // }
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {

@@ -1,39 +1,17 @@
+/* globals $ */
 define(function (require) {
     'use strict';
 
     var app = require('./../module');
+    require('tpl!../../core/modal/creativePreview.html');
 
-    app.controller('modalCtrl', ['$scope', '$window', function ($scope, $window) {
+    app.controller('modalCtrl', ['$scope', '$window', '$timeout', function ($scope, $window, $timeout) {
         console.log( 'controller scope: ', $scope );
 
-        
-        //$scope.showOnClick = showOnClick;
-        //$scope.hideOnClick = hideOnClick;
-        $scope.openPreviewPage = openPreviewPage;
-        $scope.openStudio = openStudio;
-
-        // function showOnClick(event) {
-        //     console.log( 'showOnClick', event.data );
-            
-        //     //$scope.isOpen = true;
-        //     //event.data.wrapper.addClass('show');
-        //     $scope.setPreviewModalHandlers();
-        // }
-        // function hideOnClick() {
-        //     console.log( 'hideOnClick' );
-        //     $scope.toggleVisible();
-        //     $scope.removePreviewModalHandlers();
-            
-        // }
-        function openPreviewPage(event) {
-            console.log( 'open page ', event.data );
-            //$window.open();
+        $scope.testClick = testClick;
+        function testClick() {
+            console.log( 'controller testClick' );
         }
-        function openStudio() {
-            console.log( 'open studio ' );
-            $window.open();
-        }
-
 
     }]);
 });
