@@ -3,7 +3,22 @@ define(function (require) {
 
     var module = require('./../../module');
     var ng = require('angular');
-    var tableBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc';
+
+    var apiConfig = {
+        endpoint: 'campaigns',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
+                'account.name'
+            ],
+            metrics: [
+                'countPlacements', 'countCreatives', 'impressions',
+                'bookedImpressions'
+            ],
+            order: 'name:asc'
+        }
+    };
+
     var cache = {};
 
     var statuses = {
@@ -13,20 +28,20 @@ define(function (require) {
         'archived': 'Archived'
     };
 
-
-
     module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', 'dataFactory', function (campaignsHeader, campaignAccordionTableFactory, campaignsFilter, dataFactory) {
         var filter = dataFactory();
 
-        function tableUrl(status) {
-            return tableBaseUrl + campaignsFilter('status:eq:' + status );
+        function tableConfig(status) {
+            var config = ng.extend({}, apiConfig);
+            config.queryParams.filters = campaignsFilter('status:eq:' + status);
+            return config;
         }
 
         function init() {
-            var accordionTables = cache[campaignsFilter()];
+            var accordionTables = cache[filterString()];
 
             if (!accordionTables) {
-                accordionTables = cache[campaignsFilter()] = {};
+                accordionTables = cache[filterString()] = {};
 
                 accordionTables.header = campaignsHeader.data(true);
                 accordionTables.rows = {};
@@ -38,7 +53,7 @@ define(function (require) {
                         header: accordionTables.header,
                         title: title,
                         status: status,
-                        rows: tableUrl(status)
+                        rowsConfig: tableConfig(status)
                     });
 
                     accordionTables.rows[status] = accordionTable;
@@ -72,7 +87,7 @@ define(function (require) {
 
             var output = [];
 
-            ng.forEach(cache[campaignsFilter()].rows, function (table) {
+            ng.forEach(cache[filterString()].rows, function (table) {
                 output.push(table.all(filtered));
             });
 
@@ -83,12 +98,17 @@ define(function (require) {
             init();
 
             filter.observe(callback, $scope);
-            ng.forEach(cache[campaignsFilter()].rows, function (table) {
+            ng.forEach(cache[filterString()].rows, function (table) {
                 table.observe(callback, $scope);
             });
         }
 
+        function filterString() {
+            return JSON.stringify(campaignsFilter());
+        }
+
         return {
+            _apiConfig: apiConfig,
             all: all,
             observe: observe,
             clearFilter: clearFilter,

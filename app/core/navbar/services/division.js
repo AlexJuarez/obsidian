@@ -19,8 +19,8 @@ define(function (require) {
 
         });
 
-        function init(url) {
-            return divisions.init(url, function (data) {
+        function init(apiConfig) {
+            return divisions.init(apiConfig, function (data) {
                 return data.divisions;
             });
         }

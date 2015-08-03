@@ -7,8 +7,8 @@ define(function (require) {
     module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', function ($http, dataFactory, divisions, $state) {
         var accounts = dataFactory(utils.sortByName);
 
-        function init(url) {
-            return accounts.init(url, function (data) {
+        function init(apiConfig) {
+            return accounts.init(apiConfig, function (data) {
                 return data.accounts;
             });
         }

@@ -5,7 +5,12 @@ define(function (require) {
     require('angularMocks');
 
     describe('divisionService', function () {
-        var division, httpBackend, state;
+        var division, httpBackend, state, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            dimensions: ['one']
+        };
 
         var divisions = [
             {
@@ -29,10 +34,11 @@ define(function (require) {
                 });
             });
 
-            inject(function (divisionService, $httpBackend, $state) {
+            inject(function (divisionService, $httpBackend, $state, apiUriGenerator) {
                 division = divisionService;
                 httpBackend = $httpBackend;
                 state = $state;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -46,12 +52,12 @@ define(function (require) {
         });
 
         it('should make a request on init', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond({
                     'divisions': divisions
                 });
 
-            division.init('/test').then(function () {
+            division.init(apiConfig).then(function () {
                 expect(division.all()).toEqual(divisions);
             });
             httpBackend.flush();

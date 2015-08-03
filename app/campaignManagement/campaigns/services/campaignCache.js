@@ -4,16 +4,17 @@ define(function (require) {
     var module = require('./../../module');
     var cache = {};
 
-    module.service('campaignCache', ['paginationFactory', function (paginationFactory) {
-        function createCache(url, transform) {
+    module.service('campaignCache', ['paginationFactory', 'apiUriGenerator', function (paginationFactory, apiUriGenerator) {
+        function createCache(apiConfig, transform) {
             var paginate = paginationFactory();
-            paginate.init(url, transform);
+            paginate.init(apiConfig, transform);
             return paginate;
         }
 
-        function get(url, transform) {
+        function get(apiConfig, transform) {
+            var url = apiUriGenerator(apiConfig);
             if (!cache[url]) {
-                cache[url] = createCache(url, transform);
+                cache[url] = createCache(apiConfig, transform);
             }
 
             return cache[url];

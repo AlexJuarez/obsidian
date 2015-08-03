@@ -9643,7 +9643,7 @@ return jQuery;
 }));
 
 /**
- * @license AngularJS v1.4.2
+ * @license AngularJS v1.4.1
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -9701,7 +9701,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.2/' +
+    message += '\nhttp://errors.angularjs.org/1.4.1/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -10065,12 +10065,8 @@ function baseExtend(dst, objs, deep) {
       var src = obj[key];
 
       if (deep && isObject(src)) {
-        if (isDate(src)) {
-          dst[key] = new Date(src.valueOf());
-        } else {
-          if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
-          baseExtend(dst[key], [src], true);
-        }
+        if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
+        baseExtend(dst[key], [src], true);
       } else {
         dst[key] = src;
       }
@@ -10180,11 +10176,6 @@ identity.$inject = [];
 
 
 function valueFn(value) {return function() {return value;};}
-
-function hasCustomToString(obj) {
-  return isFunction(obj.toString) && obj.toString !== Object.prototype.toString;
-}
-
 
 /**
  * @ngdoc function
@@ -11994,11 +11985,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.2',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.1',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 2,
-  codeName: 'nebular-readjustment'
+  dot: 1,
+  codeName: 'hyperionic-illumination'
 };
 
 
@@ -15054,7 +15045,7 @@ function Browser(window, document, $log, $sniffer) {
 
   function getHash(url) {
     var index = url.indexOf('#');
-    return index === -1 ? '' : url.substr(index);
+    return index === -1 ? '' : url.substr(index + 1);
   }
 
   /**
@@ -17399,7 +17390,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       previousCompileContext = previousCompileContext || {};
 
       var terminalPriority = -Number.MAX_VALUE,
-          newScopeDirective = previousCompileContext.newScopeDirective,
+          newScopeDirective,
           controllerDirectives = previousCompileContext.controllerDirectives,
           newIsolateScopeDirective = previousCompileContext.newIsolateScopeDirective,
           templateDirective = previousCompileContext.templateDirective,
@@ -17565,7 +17556,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           nodeLinkFn = compileTemplateUrl(directives.splice(i, directives.length - i), $compileNode,
               templateAttrs, jqCollection, hasTranscludeDirective && childTranscludeFn, preLinkFns, postLinkFns, {
                 controllerDirectives: controllerDirectives,
-                newScopeDirective: (newScopeDirective !== directive) && newScopeDirective,
                 newIsolateScopeDirective: newIsolateScopeDirective,
                 templateDirective: templateDirective,
                 nonTlbTranscludeDirective: nonTlbTranscludeDirective
@@ -17950,7 +17940,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       $compileNode.empty();
 
-      $templateRequest(templateUrl)
+      $templateRequest($sce.getTrustedResourceUrl(templateUrl))
         .then(function(content) {
           var compileNode, tempTemplateAttrs, $template, childBoundTranscludeFn;
 
@@ -19010,7 +19000,7 @@ function $HttpProvider() {
    *
    * - **`defaults.cache`** - {Object} - an object built with {@link ng.$cacheFactory `$cacheFactory`}
    * that will provide the cache for all requests who set their `cache` property to `true`.
-   * If you set the `defaults.cache = false` then only requests that specify their own custom
+   * If you set the `default.cache = false` then only requests that specify their own custom
    * cache object will be cached. See {@link $http#caching $http Caching} for more information.
    *
    * - **`defaults.xsrfCookieName`** - {string} - Name of cookie containing the XSRF token.
@@ -19543,7 +19533,7 @@ function $HttpProvider() {
      *      XHR object. See [requests with credentials](https://developer.mozilla.org/docs/Web/HTTP/Access_control_CORS#Requests_with_credentials)
      *      for more information.
      *    - **responseType** - `{string}` - see
-     *      [XMLHttpRequest.responseType](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#xmlhttprequest-responsetype).
+     *      [requestType](https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#responseType).
      *
      * @returns {HttpPromise} Returns a {@link ng.$q promise} object with the
      *   standard `then` method and two http specific methods: `success` and `error`. The `then`
@@ -21026,7 +21016,7 @@ function LocationHashbangUrl(appBase, hashPrefix) {
     var withoutBaseUrl = beginsWith(appBase, url) || beginsWith(appBaseNoFile, url);
     var withoutHashUrl;
 
-    if (!isUndefined(withoutBaseUrl) && withoutBaseUrl.charAt(0) === '#') {
+    if (withoutBaseUrl.charAt(0) === '#') {
 
       // The rest of the url starts with a hash so we have
       // got either a hashbang path or a plain hash fragment
@@ -21040,15 +21030,7 @@ function LocationHashbangUrl(appBase, hashPrefix) {
       // There was no hashbang path nor hash fragment:
       // If we are in HTML5 mode we use what is left as the path;
       // Otherwise we ignore what is left
-      if (this.$$html5) {
-        withoutHashUrl = withoutBaseUrl;
-      } else {
-        withoutHashUrl = '';
-        if (isUndefined(withoutBaseUrl)) {
-          appBase = url;
-          this.replace();
-        }
-      }
+      withoutHashUrl = this.$$html5 ? withoutBaseUrl : '';
     }
 
     parseAppUrl(withoutHashUrl, this);
@@ -27119,14 +27101,12 @@ var $compileMinErr = minErr('$compile');
  * @name $templateRequest
  *
  * @description
- * The `$templateRequest` service runs security checks then downloads the provided template using
- * `$http` and, upon success, stores the contents inside of `$templateCache`. If the HTTP request
- * fails or the response data of the HTTP request is empty, a `$compile` error will be thrown (the
- * exception can be thwarted by setting the 2nd parameter of the function to true). Note that the
- * contents of `$templateCache` are trusted, so the call to `$sce.getTrustedUrl(tpl)` is omitted
- * when `tpl` is of type string and `$templateCache` has the matching entry.
+ * The `$templateRequest` service downloads the provided template using `$http` and, upon success,
+ * stores the contents inside of `$templateCache`. If the HTTP request fails or the response data
+ * of the HTTP request is empty, a `$compile` error will be thrown (the exception can be thwarted
+ * by setting the 2nd parameter of the function to true).
  *
- * @param {string|TrustedResourceUrl} tpl The HTTP request template URL
+ * @param {string} tpl The HTTP request template URL
  * @param {boolean=} ignoreRequestError Whether or not to ignore the exception when the request fails or the template is empty
  *
  * @return {Promise} a promise for the HTTP response data of the given URL.
@@ -27134,18 +27114,9 @@ var $compileMinErr = minErr('$compile');
  * @property {number} totalPendingRequests total amount of pending template requests being downloaded.
  */
 function $TemplateRequestProvider() {
-  this.$get = ['$templateCache', '$http', '$q', '$sce', function($templateCache, $http, $q, $sce) {
+  this.$get = ['$templateCache', '$http', '$q', function($templateCache, $http, $q) {
     function handleRequestFn(tpl, ignoreRequestError) {
       handleRequestFn.totalPendingRequests++;
-
-      // We consider the template cache holds only trusted templates, so
-      // there's no need to go through whitelisting again for keys that already
-      // are included in there. This also makes Angular accept any script
-      // directive, no matter its name. However, we still need to unwrap trusted
-      // types.
-      if (!isString(tpl) || !$templateCache.get(tpl)) {
-        tpl = $sce.getTrustedResourceUrl(tpl);
-      }
 
       var transformResponse = $http.defaults && $http.defaults.transformResponse;
 
@@ -27922,6 +27893,10 @@ function filterFilter() {
 
     return Array.prototype.filter.call(array, predicateFn);
   };
+}
+
+function hasCustomToString(obj) {
+  return isFunction(obj.toString) && obj.toString !== Object.prototype.toString;
 }
 
 // Helper functions for `filterFilter`
@@ -28896,116 +28871,90 @@ function limitToFilter() {
 orderByFilter.$inject = ['$parse'];
 function orderByFilter($parse) {
   return function(array, sortPredicate, reverseOrder) {
-
     if (!(isArrayLike(array))) return array;
-
-    if (!isArray(sortPredicate)) { sortPredicate = [sortPredicate]; }
+    sortPredicate = isArray(sortPredicate) ? sortPredicate : [sortPredicate];
     if (sortPredicate.length === 0) { sortPredicate = ['+']; }
-
-    var predicates = processPredicates(sortPredicate, reverseOrder);
-
-    // The next three lines are a version of a Swartzian Transform idiom from Perl
-    // (sometimes called the Decorate-Sort-Undecorate idiom)
-    // See https://en.wikipedia.org/wiki/Schwartzian_transform
-    var compareValues = Array.prototype.map.call(array, getComparisonObject);
-    compareValues.sort(doComparison);
-    array = compareValues.map(function(item) { return item.value; });
-
-    return array;
-
-    function getComparisonObject(value, index) {
-      return {
-        value: value,
-        predicateValues: predicates.map(function(predicate) {
-          return getPredicateValue(predicate.get(value), index);
-        })
-      };
-    }
-
-    function doComparison(v1, v2) {
-      var result = 0;
-      for (var index=0, length = predicates.length; index < length; ++index) {
-        result = compare(v1.predicateValues[index], v2.predicateValues[index]) * predicates[index].descending;
-        if (result) break;
-      }
-      return result;
-    }
-  };
-
-  function processPredicates(sortPredicate, reverseOrder) {
-    reverseOrder = reverseOrder ? -1 : 1;
-    return sortPredicate.map(function(predicate) {
-      var descending = 1, get = identity;
-
-      if (isFunction(predicate)) {
-        get = predicate;
-      } else if (isString(predicate)) {
+    sortPredicate = sortPredicate.map(function(predicate) {
+      var descending = false, get = predicate || identity;
+      if (isString(predicate)) {
         if ((predicate.charAt(0) == '+' || predicate.charAt(0) == '-')) {
-          descending = predicate.charAt(0) == '-' ? -1 : 1;
+          descending = predicate.charAt(0) == '-';
           predicate = predicate.substring(1);
         }
-        if (predicate !== '') {
-          get = $parse(predicate);
-          if (get.constant) {
-            var key = get();
-            get = function(value) { return value[key]; };
-          }
+        if (predicate === '') {
+          // Effectively no predicate was passed so we compare identity
+          return reverseComparator(compare, descending);
+        }
+        get = $parse(predicate);
+        if (get.constant) {
+          var key = get();
+          return reverseComparator(function(a, b) {
+            return compare(a[key], b[key]);
+          }, descending);
         }
       }
-      return { get: get, descending: descending * reverseOrder };
+      return reverseComparator(function(a, b) {
+        return compare(get(a),get(b));
+      }, descending);
     });
-  }
+    return slice.call(array).sort(reverseComparator(comparator, reverseOrder));
 
-  function isPrimitive(value) {
-    switch (typeof value) {
-      case 'number': /* falls through */
-      case 'boolean': /* falls through */
-      case 'string':
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  function objectValue(value, index) {
-    // If `valueOf` is a valid function use that
-    if (typeof value.valueOf === 'function') {
-      value = value.valueOf();
-      if (isPrimitive(value)) return value;
-    }
-    // If `toString` is a valid function and not the one from `Object.prototype` use that
-    if (hasCustomToString(value)) {
-      value = value.toString();
-      if (isPrimitive(value)) return value;
-    }
-    // We have a basic object so we use the position of the object in the collection
-    return index;
-  }
-
-  function getPredicateValue(value, index) {
-    var type = typeof value;
-    if (value === null) {
-      type = 'string';
-      value = 'null';
-    } else if (type === 'string') {
-      value = value.toLowerCase();
-    } else if (type === 'object') {
-      value = objectValue(value, index);
-    }
-    return { value: value, type: type };
-  }
-
-  function compare(v1, v2) {
-    var result = 0;
-    if (v1.type === v2.type) {
-      if (v1.value !== v2.value) {
-        result = v1.value < v2.value ? -1 : 1;
+    function comparator(o1, o2) {
+      for (var i = 0; i < sortPredicate.length; i++) {
+        var comp = sortPredicate[i](o1, o2);
+        if (comp !== 0) return comp;
       }
-    } else {
-      result = v1.type < v2.type ? -1 : 1;
+      return 0;
     }
-    return result;
-  }
+    function reverseComparator(comp, descending) {
+      return descending
+          ? function(a, b) {return comp(b,a);}
+          : comp;
+    }
+
+    function isPrimitive(value) {
+      switch (typeof value) {
+        case 'number': /* falls through */
+        case 'boolean': /* falls through */
+        case 'string':
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    function objectToString(value) {
+      if (value === null) return 'null';
+      if (typeof value.valueOf === 'function') {
+        value = value.valueOf();
+        if (isPrimitive(value)) return value;
+      }
+      if (typeof value.toString === 'function') {
+        value = value.toString();
+        if (isPrimitive(value)) return value;
+      }
+      return '';
+    }
+
+    function compare(v1, v2) {
+      var t1 = typeof v1;
+      var t2 = typeof v2;
+      if (t1 === t2 && t1 === "object") {
+        v1 = objectToString(v1);
+        v2 = objectToString(v2);
+      }
+      if (t1 === t2) {
+        if (t1 === "string") {
+           v1 = v1.toLowerCase();
+           v2 = v2.toLowerCase();
+        }
+        if (v1 === v2) return 0;
+        return v1 < v2 ? -1 : 1;
+      } else {
+        return t1 < t2 ? -1 : 1;
+      }
+    }
+  };
 }
 
 function ngDirective(directive) {
@@ -29259,13 +29208,6 @@ var htmlAnchorDirective = valueFn({
  * @priority 100
  *
  * @description
- * Sets the `checked` attribute on the element, if the expression inside `ngChecked` is truthy.
- *
- * Note that this directive should not be used together with {@link ngModel `ngModel`},
- * as this can lead to unexpected behavior.
- *
- * ### Why do we need `ngChecked`?
- *
  * The HTML specification does not require browsers to preserve the values of boolean attributes
  * such as checked. (Their presence means true and their absence means false.)
  * If we put an Angular interpolation expression into such an attribute then the
@@ -29290,7 +29232,7 @@ var htmlAnchorDirective = valueFn({
  *
  * @element INPUT
  * @param {expression} ngChecked If the {@link guide/expression expression} is truthy,
- *     then the `checked` attribute will be set on the element
+ *     then special attribute "checked" will be set on the element
  */
 
 
@@ -30932,15 +30874,12 @@ var inputType = {
    * HTML radio button.
    *
    * @param {string} ngModel Assignable angular expression to data-bind to.
-   * @param {string} value The value to which the `ngModel` expression should be set when selected.
-   *    Note that `value` only supports `string` values, i.e. the scope model needs to be a string,
-   *    too. Use `ngValue` if you need complex models (`number`, `object`, ...).
+   * @param {string} value The value to which the expression should be set when selected.
    * @param {string=} name Property name of the form under which the control is published.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
-   * @param {string} ngValue Angular expression to which `ngModel` will be be set when the radio
-   *    is selected. Should be used instead of the `value` attribute if you need
-   *    a non-string `ngModel` (`boolean`, `array`, ...).
+   * @param {string} ngValue Angular expression which sets the value to which the expression should
+   *    be set when selected.
    *
    * @example
       <example name="radio-input-directive" module="radioExample">
@@ -33368,7 +33307,6 @@ forEach(
  * @ngdoc directive
  * @name ngIf
  * @restrict A
- * @multiElement
  *
  * @description
  * The `ngIf` directive removes or recreates a portion of the DOM tree based on an
@@ -33667,8 +33605,8 @@ var ngIfDirective = ['$animate', function($animate) {
  * @param {Object} angularEvent Synthetic event object.
  * @param {String} src URL of content to load.
  */
-var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate',
-                  function($templateRequest,   $anchorScroll,   $animate) {
+var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate', '$sce',
+                  function($templateRequest,   $anchorScroll,   $animate,   $sce) {
   return {
     restrict: 'ECA',
     priority: 400,
@@ -33704,7 +33642,7 @@ var ngIncludeDirective = ['$templateRequest', '$anchorScroll', '$animate',
           }
         };
 
-        scope.$watch(srcExp, function ngIncludeWatchAction(src) {
+        scope.$watch($sce.parseAsResourceUrl(srcExp), function ngIncludeWatchAction(src) {
           var afterAnimation = function() {
             if (isDefined(autoScrollExp) && (!autoScrollExp || scope.$eval(autoScrollExp))) {
               $anchorScroll();
@@ -35659,41 +35597,20 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
       this.disabled = disabled;
     }
 
-    function getOptionValuesKeys(optionValues) {
-      var optionValuesKeys;
-
-      if (!keyName && isArrayLike(optionValues)) {
-        optionValuesKeys = optionValues;
-      } else {
-        // if object, extract keys, in enumeration order, unsorted
-        optionValuesKeys = [];
-        for (var itemKey in optionValues) {
-          if (optionValues.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
-            optionValuesKeys.push(itemKey);
-          }
-        }
-      }
-      return optionValuesKeys;
-    }
-
     return {
       trackBy: trackBy,
       getTrackByValue: getTrackByValue,
-      getWatchables: $parse(valuesFn, function(optionValues) {
+      getWatchables: $parse(valuesFn, function(values) {
         // Create a collection of things that we would like to watch (watchedArray)
         // so that they can all be watched using a single $watchCollection
         // that only runs the handler once if anything changes
         var watchedArray = [];
-        optionValues = optionValues || [];
+        values = values || [];
 
-        var optionValuesKeys = getOptionValuesKeys(optionValues);
-        var optionValuesLength = optionValuesKeys.length;
-        for (var index = 0; index < optionValuesLength; index++) {
-          var key = (optionValues === optionValuesKeys) ? index : optionValuesKeys[index];
-          var value = optionValues[key];
-
-          var locals = getLocals(optionValues[key], key);
-          var selectValue = getTrackByValueFn(optionValues[key], locals);
+        Object.keys(values).forEach(function getWatchable(key) {
+          if (key.charAt(0) === '$') return;
+          var locals = getLocals(values[key], key);
+          var selectValue = getTrackByValueFn(values[key], locals);
           watchedArray.push(selectValue);
 
           // Only need to watch the displayFn if there is a specific label expression
@@ -35707,7 +35624,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
             var disableWhen = disableWhenFn(scope, locals);
             watchedArray.push(disableWhen);
           }
-        }
+        });
         return watchedArray;
       }),
 
@@ -35719,7 +35636,21 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
         // The option values were already computed in the `getWatchables` fn,
         // which must have been called to trigger `getOptions`
         var optionValues = valuesFn(scope) || [];
-        var optionValuesKeys = getOptionValuesKeys(optionValues);
+        var optionValuesKeys;
+
+
+        if (!keyName && isArrayLike(optionValues)) {
+          optionValuesKeys = optionValues;
+        } else {
+          // if object, extract keys, in enumeration order, unsorted
+          optionValuesKeys = [];
+          for (var itemKey in optionValues) {
+            if (optionValues.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
+              optionValuesKeys.push(itemKey);
+            }
+          }
+        }
+
         var optionValuesLength = optionValuesKeys.length;
 
         for (var index = 0; index < optionValuesLength; index++) {
@@ -36335,7 +36266,6 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
 /**
  * @ngdoc directive
  * @name ngRepeat
- * @multiElement
  *
  * @description
  * The `ngRepeat` directive instantiates a template once per item from a collection. Each template
@@ -36865,7 +36795,6 @@ var NG_HIDE_IN_PROGRESS_CLASS = 'ng-hide-animate';
 /**
  * @ngdoc directive
  * @name ngShow
- * @multiElement
  *
  * @description
  * The `ngShow` directive shows or hides the given HTML element based on the expression
@@ -37041,7 +36970,6 @@ var ngShowDirective = ['$animate', function($animate) {
 /**
  * @ngdoc directive
  * @name ngHide
- * @multiElement
  *
  * @description
  * The `ngHide` directive shows or hides the given HTML element based on the expression
@@ -38254,7 +38182,7 @@ angular.module('ui.router.util', ['ng']);
 /**
  * @ngdoc overview
  * @name ui.router.router
- * 
+ *
  * @requires ui.router.util
  *
  * @description
@@ -38268,7 +38196,7 @@ angular.module('ui.router.router', ['ui.router.util']);
 /**
  * @ngdoc overview
  * @name ui.router.state
- * 
+ *
  * @requires ui.router.router
  * @requires ui.router.util
  *
@@ -38277,7 +38205,7 @@ angular.module('ui.router.router', ['ui.router.util']);
  *
  * This module is a dependency of the main ui.router module. Do not include this module as a dependency
  * in your angular app (use {@link ui.router} module instead).
- * 
+ *
  */
 angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
 
@@ -38289,17 +38217,17 @@ angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
  *
  * @description
  * # ui.router
- * 
- * ## The main module for ui.router 
+ *
+ * ## The main module for ui.router
  * There are several sub-modules included with the ui.router module, however only this module is needed
- * as a dependency within your angular app. The other modules are for organization purposes. 
+ * as a dependency within your angular app. The other modules are for organization purposes.
  *
  * The modules are:
  * * ui.router - the main "umbrella" module
- * * ui.router.router - 
- * 
+ * * ui.router.router -
+ *
  * *You'll need to include **only** this module as the dependency within your angular app.*
- * 
+ *
  * <pre>
  * <!doctype html>
  * <html ng-app="myApp">
@@ -38333,14 +38261,14 @@ angular.module('ui.router.compat', ['ui.router']);
  */
 $Resolve.$inject = ['$q', '$injector'];
 function $Resolve(  $q,    $injector) {
-  
+
   var VISIT_IN_PROGRESS = 1,
       VISIT_DONE = 2,
       NOTHING = {},
       NO_DEPENDENCIES = [],
       NO_LOCALS = NOTHING,
       NO_PARENT = extend($q.when(NOTHING), { $$promises: NOTHING, $$values: NOTHING });
-  
+
 
   /**
    * @ngdoc function
@@ -38356,7 +38284,7 @@ function $Resolve(  $q,    $injector) {
    * <pre>
    * $resolve.resolve(invocables, locals, parent, self)
    * </pre>
-   * but the former is more efficient (in fact `resolve` just calls `study` 
+   * but the former is more efficient (in fact `resolve` just calls `study`
    * internally).
    *
    * @param {object} invocables Invocable objects
@@ -38365,19 +38293,19 @@ function $Resolve(  $q,    $injector) {
   this.study = function (invocables) {
     if (!isObject(invocables)) throw new Error("'invocables' must be an object");
     var invocableKeys = objectKeys(invocables || {});
-    
+
     // Perform a topological sort of invocables to build an ordered plan
     var plan = [], cycle = [], visited = {};
     function visit(value, key) {
       if (visited[key] === VISIT_DONE) return;
-      
+
       cycle.push(key);
       if (visited[key] === VISIT_IN_PROGRESS) {
         cycle.splice(0, indexOf(cycle, key));
         throw new Error("Cyclic dependency: " + cycle.join(" -> "));
       }
       visited[key] = VISIT_IN_PROGRESS;
-      
+
       if (isString(value)) {
         plan.push(key, [ function() { return $injector.get(value); }], NO_DEPENDENCIES);
       } else {
@@ -38387,17 +38315,17 @@ function $Resolve(  $q,    $injector) {
         });
         plan.push(key, value, params);
       }
-      
+
       cycle.pop();
       visited[key] = VISIT_DONE;
     }
     forEach(invocables, visit);
     invocables = cycle = visited = null; // plan is all that's required
-    
+
     function isResolve(value) {
       return isObject(value) && value.then && value.$$promises;
     }
-    
+
     return function (locals, parent, self) {
       if (isResolve(locals) && self === undefined) {
         self = parent; parent = locals; locals = null;
@@ -38405,12 +38333,12 @@ function $Resolve(  $q,    $injector) {
       if (!locals) locals = NO_LOCALS;
       else if (!isObject(locals)) {
         throw new Error("'locals' must be an object");
-      }       
+      }
       if (!parent) parent = NO_PARENT;
       else if (!isResolve(parent)) {
         throw new Error("'parent' must be a promise returned by $resolve.resolve()");
       }
-      
+
       // To complete the overall resolution, we have to wait for the parent
       // promise and for the promise for each invokable in our plan.
       var resolution = $q.defer(),
@@ -38419,18 +38347,18 @@ function $Resolve(  $q,    $injector) {
           values = extend({}, locals),
           wait = 1 + plan.length/3,
           merged = false;
-          
+
       function done() {
         // Merge parent values we haven't got yet and publish our own $$values
         if (!--wait) {
-          if (!merged) merge(values, parent.$$values); 
+          if (!merged) merge(values, parent.$$values);
           result.$$values = values;
           result.$$promises = result.$$promises || true; // keep for isResolve()
           delete result.$$inheritedValues;
           resolution.resolve(values);
         }
       }
-      
+
       function fail(reason) {
         result.$$failure = reason;
         resolution.reject(reason);
@@ -38441,7 +38369,7 @@ function $Resolve(  $q,    $injector) {
         fail(parent.$$failure);
         return result;
       }
-      
+
       if (parent.$$inheritedValues) {
         merge(values, omit(parent.$$inheritedValues, invocableKeys));
       }
@@ -38456,16 +38384,16 @@ function $Resolve(  $q,    $injector) {
       } else {
         if (parent.$$inheritedValues) {
           result.$$inheritedValues = omit(parent.$$inheritedValues, invocableKeys);
-        }        
+        }
         parent.then(done, fail);
       }
-      
+
       // Process each invocable in the plan, but ignore any where a local of the same name exists.
       for (var i=0, ii=plan.length; i<ii; i+=3) {
         if (locals.hasOwnProperty(plan[i])) done();
         else invoke(plan[i], plan[i+1], plan[i+2]);
       }
-      
+
       function invoke(key, invocable, params) {
         // Create a deferred for this invocation. Failures will propagate to the resolution as well.
         var invocation = $q.defer(), waitParams = 0;
@@ -38500,65 +38428,65 @@ function $Resolve(  $q,    $injector) {
         // Publish promise synchronously; invocations further down in the plan may depend on it.
         promises[key] = invocation.promise;
       }
-      
+
       return result;
     };
   };
-  
+
   /**
    * @ngdoc function
    * @name ui.router.util.$resolve#resolve
    * @methodOf ui.router.util.$resolve
    *
    * @description
-   * Resolves a set of invocables. An invocable is a function to be invoked via 
-   * `$injector.invoke()`, and can have an arbitrary number of dependencies. 
+   * Resolves a set of invocables. An invocable is a function to be invoked via
+   * `$injector.invoke()`, and can have an arbitrary number of dependencies.
    * An invocable can either return a value directly,
-   * or a `$q` promise. If a promise is returned it will be resolved and the 
-   * resulting value will be used instead. Dependencies of invocables are resolved 
+   * or a `$q` promise. If a promise is returned it will be resolved and the
+   * resulting value will be used instead. Dependencies of invocables are resolved
    * (in this order of precedence)
    *
    * - from the specified `locals`
    * - from another invocable that is part of this `$resolve` call
-   * - from an invocable that is inherited from a `parent` call to `$resolve` 
+   * - from an invocable that is inherited from a `parent` call to `$resolve`
    *   (or recursively
    * - from any ancestor `$resolve` of that parent).
    *
-   * The return value of `$resolve` is a promise for an object that contains 
+   * The return value of `$resolve` is a promise for an object that contains
    * (in this order of precedence)
    *
    * - any `locals` (if specified)
    * - the resolved return values of all injectables
    * - any values inherited from a `parent` call to `$resolve` (if specified)
    *
-   * The promise will resolve after the `parent` promise (if any) and all promises 
-   * returned by injectables have been resolved. If any invocable 
-   * (or `$injector.invoke`) throws an exception, or if a promise returned by an 
-   * invocable is rejected, the `$resolve` promise is immediately rejected with the 
-   * same error. A rejection of a `parent` promise (if specified) will likewise be 
-   * propagated immediately. Once the `$resolve` promise has been rejected, no 
+   * The promise will resolve after the `parent` promise (if any) and all promises
+   * returned by injectables have been resolved. If any invocable
+   * (or `$injector.invoke`) throws an exception, or if a promise returned by an
+   * invocable is rejected, the `$resolve` promise is immediately rejected with the
+   * same error. A rejection of a `parent` promise (if specified) will likewise be
+   * propagated immediately. Once the `$resolve` promise has been rejected, no
    * further invocables will be called.
-   * 
+   *
    * Cyclic dependencies between invocables are not permitted and will caues `$resolve`
-   * to throw an error. As a special case, an injectable can depend on a parameter 
-   * with the same name as the injectable, which will be fulfilled from the `parent` 
-   * injectable of the same name. This allows inherited values to be decorated. 
+   * to throw an error. As a special case, an injectable can depend on a parameter
+   * with the same name as the injectable, which will be fulfilled from the `parent`
+   * injectable of the same name. This allows inherited values to be decorated.
    * Note that in this case any other injectable in the same `$resolve` with the same
    * dependency would see the decorated value, not the inherited value.
    *
-   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an 
-   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous) 
+   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an
+   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous)
    * exception.
    *
-   * Invocables are invoked eagerly as soon as all dependencies are available. 
+   * Invocables are invoked eagerly as soon as all dependencies are available.
    * This is true even for dependencies inherited from a `parent` call to `$resolve`.
    *
-   * As a special case, an invocable can be a string, in which case it is taken to 
-   * be a service name to be passed to `$injector.get()`. This is supported primarily 
-   * for backwards-compatibility with the `resolve` property of `$routeProvider` 
+   * As a special case, an invocable can be a string, in which case it is taken to
+   * be a service name to be passed to `$injector.get()`. This is supported primarily
+   * for backwards-compatibility with the `resolve` property of `$routeProvider`
    * routes.
    *
-   * @param {object} invocables functions to invoke or 
+   * @param {object} invocables functions to invoke or
    * `$injector` services to fetch.
    * @param {object} locals  values to make available to the injectables
    * @param {object} parent  a promise returned by another call to `$resolve`.
@@ -38594,23 +38522,23 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @methodOf ui.router.util.$templateFactory
    *
    * @description
-   * Creates a template from a configuration object. 
+   * Creates a template from a configuration object.
    *
-   * @param {object} config Configuration object for which to load a template. 
-   * The following properties are search in the specified order, and the first one 
+   * @param {object} config Configuration object for which to load a template.
+   * The following properties are search in the specified order, and the first one
    * that is defined is used to create the template:
    *
-   * @param {string|object} config.template html string template or function to 
+   * @param {string|object} config.template html string template or function to
    * load via {@link ui.router.util.$templateFactory#fromString fromString}.
-   * @param {string|object} config.templateUrl url to load or a function returning 
+   * @param {string|object} config.templateUrl url to load or a function returning
    * the url to load via {@link ui.router.util.$templateFactory#fromUrl fromUrl}.
-   * @param {Function} config.templateProvider function to invoke via 
+   * @param {Function} config.templateProvider function to invoke via
    * {@link ui.router.util.$templateFactory#fromProvider fromProvider}.
    * @param {object} params  Parameters to pass to the template function.
-   * @param {object} locals Locals to pass to `invoke` if the template is loaded 
+   * @param {object} locals Locals to pass to `invoke` if the template is loaded
    * via a `templateProvider`. Defaults to `{ params: params }`.
    *
-   * @return {string|object}  The template html as a string, or a promise for 
+   * @return {string|object}  The template html as a string, or a promise for
    * that string,or `null` if no template is configured.
    */
   this.fromConfig = function (config, params, locals) {
@@ -38630,11 +38558,11 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @description
    * Creates a template from a string or a function returning a string.
    *
-   * @param {string|object} template html template as a string or function that 
+   * @param {string|object} template html template as a string or function that
    * returns an html template as a string.
    * @param {object} params Parameters to pass to the template function.
    *
-   * @return {string|object} The template html as a string, or a promise for that 
+   * @return {string|object} The template html as a string, or a promise for that
    * string.
    */
   this.fromString = function (template, params) {
@@ -38645,14 +38573,14 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @ngdoc function
    * @name ui.router.util.$templateFactory#fromUrl
    * @methodOf ui.router.util.$templateFactory
-   * 
+   *
    * @description
    * Loads a template from the a URL via `$http` and `$templateCache`.
    *
-   * @param {string|Function} url url of the template to load, or a function 
+   * @param {string|Function} url url of the template to load, or a function
    * that returns a url.
    * @param {Object} params Parameters to pass to the url function.
-   * @return {string|Promise.<string>} The template html as a string, or a promise 
+   * @return {string|Promise.<string>} The template html as a string, or a promise
    * for that string.
    */
   this.fromUrl = function (url, params) {
@@ -38673,9 +38601,9 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    *
    * @param {Function} provider Function to invoke via `$injector.invoke`
    * @param {Object} params Parameters for the template.
-   * @param {Object} locals Locals to pass to `invoke`. Defaults to 
+   * @param {Object} locals Locals to pass to `invoke`. Defaults to
    * `{ params: params }`.
-   * @return {string|Promise.<string>} The template html as a string, or a promise 
+   * @return {string|Promise.<string>} The template html as a string, or a promise
    * for that string.
    */
   this.fromProvider = function (provider, params, locals) {
@@ -39744,9 +39672,9 @@ angular.module('ui.router.util').run(['$urlMatcherFactory', function($urlMatcher
  * @requires $locationProvider
  *
  * @description
- * `$urlRouterProvider` has the responsibility of watching `$location`. 
- * When `$location` changes it runs through a list of rules one by one until a 
- * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify 
+ * `$urlRouterProvider` has the responsibility of watching `$location`.
+ * When `$location` changes it runs through a list of rules one by one until a
+ * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify
  * a url in a state configuration. All urls are compiled into a UrlMatcher object.
  *
  * There are several methods on `$urlRouterProvider` that make it useful to use directly
@@ -39831,8 +39759,8 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
    * });
    * </pre>
    *
-   * @param {string|object} rule The url path you want to redirect to or a function 
-   * rule that returns the url path. The function version is passed two params: 
+   * @param {string|object} rule The url path you want to redirect to or a function
+   * rule that returns the url path. The function version is passed two params:
    * `$injector` and `$location` services, and must return a url string.
    *
    * @return {object} `$urlRouterProvider` - `$urlRouterProvider` instance
@@ -40134,7 +40062,7 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
         if (angular.isObject(isHtml5)) {
           isHtml5 = isHtml5.enabled;
         }
-        
+
         var url = urlMatcher.format(params);
         options = options || {};
 
@@ -40288,7 +40216,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
     if (path) {
       if (!base) throw new Error("No reference point given for path '"  + name + "'");
       base = findState(base);
-      
+
       var rel = name.split("."), i = 0, pathLength = rel.length, current = base;
 
       for (; i < pathLength; i++) {
@@ -40423,9 +40351,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @methodOf ui.router.state.$stateProvider
    *
    * @description
-   * Allows you to extend (carefully) or override (at your own peril) the 
-   * `stateBuilder` object used internally by `$stateProvider`. This can be used 
-   * to add custom functionality to ui-router, for example inferring templateUrl 
+   * Allows you to extend (carefully) or override (at your own peril) the
+   * `stateBuilder` object used internally by `$stateProvider`. This can be used
+   * to add custom functionality to ui-router, for example inferring templateUrl
    * based on the state name.
    *
    * When passing only a name, it returns the current (original or decorated) builder
@@ -40434,14 +40362,14 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * The builder functions that can be decorated are listed below. Though not all
    * necessarily have a good use case for decoration, that is up to you to decide.
    *
-   * In addition, users can attach custom decorators, which will generate new 
-   * properties within the state's internal definition. There is currently no clear 
-   * use-case for this beyond accessing internal states (i.e. $state.$current), 
-   * however, expect this to become increasingly relevant as we introduce additional 
+   * In addition, users can attach custom decorators, which will generate new
+   * properties within the state's internal definition. There is currently no clear
+   * use-case for this beyond accessing internal states (i.e. $state.$current),
+   * however, expect this to become increasingly relevant as we introduce additional
    * meta-programming features.
    *
-   * **Warning**: Decorators should not be interdependent because the order of 
-   * execution of the builder functions in non-deterministic. Builder functions 
+   * **Warning**: Decorators should not be interdependent because the order of
+   * execution of the builder functions in non-deterministic. Builder functions
    * should only be dependent on the state definition object and super function.
    *
    *
@@ -40452,21 +40380,21 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *   overridden by own values (if any).
    * - **url** `{object}` - returns a {@link ui.router.util.type:UrlMatcher UrlMatcher}
    *   or `null`.
-   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is 
+   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is
    *   navigable).
-   * - **params** `{object}` - returns an array of state params that are ensured to 
+   * - **params** `{object}` - returns an array of state params that are ensured to
    *   be a super-set of parent's params.
-   * - **views** `{object}` - returns a views object where each key is an absolute view 
-   *   name (i.e. "viewName@stateName") and each value is the config object 
-   *   (template, controller) for the view. Even when you don't use the views object 
+   * - **views** `{object}` - returns a views object where each key is an absolute view
+   *   name (i.e. "viewName@stateName") and each value is the config object
+   *   (template, controller) for the view. Even when you don't use the views object
    *   explicitly on a state config, one is still created for you internally.
-   *   So by decorating this builder function you have access to decorating template 
+   *   So by decorating this builder function you have access to decorating template
    *   and controller properties.
-   * - **ownParams** `{object}` - returns an array of params that belong to the state, 
+   * - **ownParams** `{object}` - returns an array of params that belong to the state,
    *   not including any params defined by ancestor states.
-   * - **path** `{string}` - returns the full path from the root down to this state. 
+   * - **path** `{string}` - returns the full path from the root down to this state.
    *   Needed for state activation.
-   * - **includes** `{object}` - returns an object that includes every state that 
+   * - **includes** `{object}` - returns an object that includes every state that
    *   would pass a `$state.includes()` test.
    *
    * @example
@@ -40495,12 +40423,12 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * // ...
    *
    * $state.go('home');
-   * // Auto-populates list and item views with /partials/home/contact/list.html,
+   * // Auto-populates list and item views with /partials/home/contact/placementsList.html,
    * // and /partials/home/contact/item.html, respectively.
    * </pre>
    *
-   * @param {string} name The name of the builder function to decorate. 
-   * @param {object} func A function that is responsible for decorating the original 
+   * @param {string} name The name of the builder function to decorate.
+   * @param {object} func A function that is responsible for decorating the original
    * builder function. The function receives two parameters:
    *
    *   - `{object}` - state - The state config object.
@@ -40539,9 +40467,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @param {string|function=} stateConfig.template
    * <a id='template'></a>
    *   html template as a string or a function that returns
-   *   an html template as a string which should be used by the uiView directives. This property 
+   *   an html template as a string which should be used by the uiView directives. This property
    *   takes precedence over templateUrl.
-   *   
+   *
    *   If `template` is a function, it will be called with the following parameters:
    *
    *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
@@ -40559,10 +40487,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *
    *   path or function that returns a path to an html
    *   template that should be used by uiView.
-   *   
+   *
    *   If `templateUrl` is a function, it will be called with the following parameters:
    *
-   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by 
+   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
    *     applying the current state
    *
    * <pre>templateUrl: "home.html"</pre>
@@ -40606,7 +40534,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *
    * @param {string=} stateConfig.controllerAs
    * <a id='controllerAs'></a>
-   * 
+   *
    * A controller alias name. If present the controller will be
    *   published to scope under the controllerAs name.
    * <pre>controllerAs: "myCtrl"</pre>
@@ -40622,17 +40550,17 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='resolve'></a>
    *
    * An optional map&lt;string, function&gt; of dependencies which
-   *   should be injected into the controller. If any of these dependencies are promises, 
+   *   should be injected into the controller. If any of these dependencies are promises,
    *   the router will wait for them all to be resolved before the controller is instantiated.
    *   If all the promises are resolved successfully, the $stateChangeSuccess event is fired
    *   and the values of the resolved promises are injected into any controllers that reference them.
    *   If any  of the promises are rejected the $stateChangeError event is fired.
    *
    *   The map object is:
-   *   
+   *
    *   - key - {string}: name of dependency to be injected into controller
-   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function, 
-   *     it is injected and return value it treated as dependency. If result is a promise, it is 
+   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function,
+   *     it is injected and return value it treated as dependency. If result is a promise, it is
    *     resolved before its value is injected into controller.
    *
    * <pre>resolve: {
@@ -40646,7 +40574,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='url'></a>
    *
    *   A url fragment with optional parameters. When a state is navigated or
-   *   transitioned to, the `$stateParams` service will be populated with any 
+   *   transitioned to, the `$stateParams` service will be populated with any
    *   parameters that were passed.
    *
    *   (See {@link ui.router.util.type:UrlMatcher UrlMatcher} `UrlMatcher`} for
@@ -40674,7 +40602,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <pre>views: {
    *     header: {
    *       controller: "headerCtrl",
-   *       templateUrl: "header.html"
+   *       templateUrl: "placementTableHeader.html"
    *     }, body: {
    *       controller: "bodyCtrl",
    *       templateUrl: "body.html"
@@ -40729,7 +40657,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='reloadOnSearch'></a>
    *
    * If `false`, will not retrigger the same state
-   *   just because a search/query parameter has changed (via $location.search() or $location.hash()). 
+   *   just because a search/query parameter has changed (via $location.search() or $location.hash()).
    *   Useful for when you'd like to modify $location.search() without triggering a reload.
    * <pre>reloadOnSearch: false</pre>
    *
@@ -40864,11 +40792,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @requires ui.router.state.$stateParams
    * @requires ui.router.router.$urlRouter
    *
-   * @property {object} params A param object, e.g. {sectionId: section.id)}, that 
+   * @property {object} params A param object, e.g. {sectionId: section.id)}, that
    * you'd like to test against the current active state.
-   * @property {object} current A reference to the state's config object. However 
+   * @property {object} current A reference to the state's config object. However
    * you passed it in. Useful for accessing custom data.
-   * @property {object} transition Currently pending transition. A promise that'll 
+   * @property {object} transition Currently pending transition. A promise that'll
    * resolve or reject.
    *
    * @description
@@ -40981,7 +40909,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *
      * `reload()` is just an alias for:
      * <pre>
-     * $state.transitionTo($state.current, $stateParams, { 
+     * $state.transitionTo($state.current, $stateParams, {
      *   reload: true, inherit: false, notify: true
      * });
      * </pre>
@@ -40989,7 +40917,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @param {string=|object=} state - A state name or a state object, which is the root of the resolves to be re-resolved.
      * @example
      * <pre>
-     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item' 
+     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item'
      * //and current state is 'contacts.detail.item'
      * var app angular.module('app', ['ui.router']);
      *
@@ -41003,7 +40931,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *
      * `reload()` is just an alias for:
      * <pre>
-     * $state.transitionTo($state.current, $stateParams, { 
+     * $state.transitionTo($state.current, $stateParams, {
      *   reload: true, inherit: false, notify: true
      * });
      * </pre>
@@ -41021,11 +40949,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @methodOf ui.router.state.$state
      *
      * @description
-     * Convenience method for transitioning to a new state. `$state.go` calls 
-     * `$state.transitionTo` internally but automatically sets options to 
-     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`. 
-     * This allows you to easily use an absolute or relative to path and specify 
-     * only the parameters you'd like to update (while letting unspecified parameters 
+     * Convenience method for transitioning to a new state. `$state.go` calls
+     * `$state.transitionTo` internally but automatically sets options to
+     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`.
+     * This allows you to easily use an absolute or relative to path and specify
+     * only the parameters you'd like to update (while letting unspecified parameters
      * inherit from the currently active ancestor states).
      *
      * @example
@@ -41047,8 +40975,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - `$state.go('^.sibling')` - will go to a sibling state
      * - `$state.go('.child.grandchild')` - will go to grandchild state
      *
-     * @param {object=} params A map of the parameters that will be sent to the state, 
-     * will populate $stateParams. Any parameters that are not specified will be inherited from currently 
+     * @param {object=} params A map of the parameters that will be sent to the state,
+     * will populate $stateParams. Any parameters that are not specified will be inherited from currently
      * defined parameters. This allows, for example, going to a sibling state that shares parameters
      * specified in a parent state. Parameter inheritance only works between common ancestor states, I.e.
      * transitioning to a sibling will get you the parameters for all parents, transitioning to a child
@@ -41058,10 +40986,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
      *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
      * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'),
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params 
+     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
      *
@@ -41113,10 +41041,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
      *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
      * - **`inherit`** - {boolean=false}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'), 
+     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'),
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params 
+     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
      *    if String, then will reload the state with the name given in reload, and any children.
@@ -41179,7 +41107,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
         if (isObject(options.reload) && !options.reload.name) {
           throw new Error('Invalid reload state object');
         }
-        
+
         var reloadState = options.reload === true ? fromPath[0] : findState(options.reload);
         if (options.reload && !reloadState) {
           throw new Error("No such reload state '" + (isString(options.reload) ? options.reload : options.reload.name) + "'");
@@ -41495,10 +41423,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *    first parameter, then the constructed href url will be built from the first navigable ancestor (aka
      *    ancestor with a valid url).
      * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'),
      *    defines which state to be relative from.
      * - **`absolute`** - {boolean=false},  If true will generate an absolute url, e.g. "http://www.example.com/fullurl".
-     * 
+     *
      * @returns {string} compiled state url
      */
     $state.href = function href(stateOrName, params, options) {
@@ -41513,7 +41441,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
 
       if (!isDefined(state)) return null;
       if (options.inherit) params = inheritParams($stateParams, params || {}, $state.$current, state);
-      
+
       var nav = (state && options.lossy) ? state.navigable : state;
 
       if (!nav || nav.url === undefined || nav.url === null) {
@@ -41783,26 +41711,26 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  * functionality, call `$uiViewScrollProvider.useAnchorScroll()`.*
  *
  * @param {string=} onload Expression to evaluate whenever the view updates.
- * 
+ *
  * @example
- * A view can be unnamed or named. 
+ * A view can be unnamed or named.
  * <pre>
  * <!-- Unnamed -->
- * <div ui-view></div> 
- * 
+ * <div ui-view></div>
+ *
  * <!-- Named -->
  * <div ui-view="viewName"></div>
  * </pre>
  *
- * You can only have one unnamed view within any template (or root html). If you are only using a 
+ * You can only have one unnamed view within any template (or root html). If you are only using a
  * single view and it is unnamed then you can populate it like so:
  * <pre>
- * <div ui-view></div> 
+ * <div ui-view></div>
  * $stateProvider.state("home", {
  *   template: "<h1>HELLO!</h1>"
  * })
  * </pre>
- * 
+ *
  * The above is a convenient shortcut equivalent to specifying your view explicitly with the {@link ui.router.state.$stateProvider#views `views`}
  * config property, by name, in this case an empty name:
  * <pre>
@@ -41811,33 +41739,33 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  *     "": {
  *       template: "<h1>HELLO!</h1>"
  *     }
- *   }    
+ *   }
  * })
  * </pre>
- * 
- * But typically you'll only use the views property if you name your view or have more than one view 
- * in the same template. There's not really a compelling reason to name a view if its the only one, 
+ *
+ * But typically you'll only use the views property if you name your view or have more than one view
+ * in the same template. There's not really a compelling reason to name a view if its the only one,
  * but you could if you wanted, like so:
  * <pre>
  * <div ui-view="main"></div>
- * </pre> 
+ * </pre>
  * <pre>
  * $stateProvider.state("home", {
  *   views: {
  *     "main": {
  *       template: "<h1>HELLO!</h1>"
  *     }
- *   }    
+ *   }
  * })
  * </pre>
- * 
+ *
  * Really though, you'll use views to set up multiple views:
  * <pre>
  * <div ui-view></div>
- * <div ui-view="chart"></div> 
- * <div ui-view="data"></div> 
+ * <div ui-view="chart"></div>
+ * <div ui-view="data"></div>
  * </pre>
- * 
+ *
  * <pre>
  * $stateProvider.state("home", {
  *   views: {
@@ -41850,7 +41778,7 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  *     "data": {
  *       template: "<data_thing/>"
  *     }
- *   }    
+ *   }
  * })
  * </pre>
  *
@@ -42085,17 +42013,17 @@ function stateContext(el) {
  * @restrict A
  *
  * @description
- * A directive that binds a link (`<a>` tag) to a state. If the state has an associated 
- * URL, the directive will automatically generate & update the `href` attribute via 
- * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking 
- * the link will trigger a state transition with optional parameters. 
+ * A directive that binds a link (`<a>` tag) to a state. If the state has an associated
+ * URL, the directive will automatically generate & update the `href` attribute via
+ * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking
+ * the link will trigger a state transition with optional parameters.
  *
- * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be 
+ * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be
  * handled natively by the browser.
  *
- * You can also use relative state paths within ui-sref, just like the relative 
+ * You can also use relative state paths within ui-sref, just like the relative
  * paths passed to `$state.go()`. You just need to be aware that the path is relative
- * to the state that the link lives in, in other words the state that loaded the 
+ * to the state that the link lives in, in other words the state that loaded the
  * template containing the link.
  *
  * You can specify options to pass to {@link ui.router.state.$state#go $state.go()}
@@ -42103,22 +42031,22 @@ function stateContext(el) {
  * and `reload`.
  *
  * @example
- * Here's an example of how you'd use ui-sref and how it would compile. If you have the 
+ * Here's an example of how you'd use ui-sref and how it would compile. If you have the
  * following template:
  * <pre>
  * <a ui-sref="home">Home</a> | <a ui-sref="about">About</a> | <a ui-sref="{page: 2}">Next page</a>
- * 
+ *
  * <ul>
  *     <li ng-repeat="contact in contacts">
  *         <a ui-sref="contacts.detail({ id: contact.id })">{{ contact.name }}</a>
  *     </li>
  * </ul>
  * </pre>
- * 
+ *
  * Then the compiled html would be (assuming Html5Mode is off and current state is contacts):
  * <pre>
  * <a href="#/home" ui-sref="home">Home</a> | <a href="#/about" ui-sref="about">About</a> | <a href="#/contacts?page=2" ui-sref="{page: 2}">Next page</a>
- * 
+ *
  * <ul>
  *     <li ng-repeat="contact in contacts">
  *         <a href="#/contacts/1" ui-sref="contacts.detail({ id: contact.id })">Joe</a>
@@ -47005,8 +46933,8 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
 
         });
 
-        function init(url) {
-            return divisions.init(url, function (data) {
+        function init(apiConfig) {
+            return divisions.init(apiConfig, function (data) {
                 return data.divisions;
             });
         }
@@ -47094,8 +47022,8 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
         var campaigns = dataFactory(sortByStartDate);
 
-        function init(url) {
-            return campaigns.init(url, function (data) {
+        function init(apiConfig) {
+            return campaigns.init(apiConfig, function (data) {
                 return data.campaigns;
             });
         }
@@ -47284,17 +47212,23 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
     }]);
 });
 
-define('core/navbar/services/client',['require','./../../module','./util'],function (require) {
+define('core/navbar/services/client',['require','./../../module','./util','angular'],function (require) {
     'use strict';
 
     var module = require('./../../module');
     var utils = require('./util');
+    var ng = require('angular');
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', function ($http, $window, dataFactory) {
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', function ($http, $window, dataFactory, apiUriGenerator) {
         var clients = dataFactory(utils.sortByName);
 
-        function init(url) {
-            return clients.init(url, function (data) {
+        var _apiPinConfig = {
+            version: 2,
+            endpoint: 'clients/'
+        };
+
+        function init(apiConfig) {
+            return clients.init(apiConfig, function (data) {
                 return data.clients;
             });
         }
@@ -47311,28 +47245,26 @@ define('core/navbar/services/client',['require','./../../module','./util'],funct
             return utils.alphabetMap(all());
         }
 
-        function pin(client) {
-            client.pinned = true;
+        function togglePin(client, boolean) {
+            client.pinned = boolean;
             clients.notifyObservers('pin');
-            $http.put('/api/v2/clients/' + client.id, {pinned: true})
+            var apiConfig = ng.extend({}, _apiPinConfig);
+            apiConfig.endpoint += client.id;
+            $http.put(apiUriGenerator(apiConfig), {pinned: boolean})
                 .error(function(error) {
-                    client.pinned = false;
+                    client.pinned = boolean;
                     clients.notifyObservers('pin');
                     console.log(error);
-                    $window.alert('Failed to pin client ' + client.name);
+                    $window.alert('Failed to pin/unpin client ' + client.name);
                 });
         }
 
+        function pin(client) {
+            togglePin(client, true);
+        }
+
         function unpin(client) {
-            client.pinned = false;
-            clients.notifyObservers('pin');
-            $http.put('/api/v2/clients/' + client.id, {pinned: false})
-                .error(function(error) {
-                    client.pinned = true;
-                    clients.notifyObservers('pin');
-                    console.log(error);
-                    $window.alert('Failed to unpin client ' + client.name);
-                });
+            togglePin(client, false);
         }
 
         function pinned() {
@@ -47344,6 +47276,7 @@ define('core/navbar/services/client',['require','./../../module','./util'],funct
         }
 
         return {
+            _apiPinConfig: _apiPinConfig,
             init: init,
             setData: clients.setData,
             addData: clients.addData,
@@ -47368,8 +47301,8 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
     module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', function ($http, dataFactory, divisions, $state) {
         var accounts = dataFactory(utils.sortByName);
 
-        function init(url) {
-            return accounts.init(url, function (data) {
+        function init(apiConfig) {
+            return accounts.init(apiConfig, function (data) {
                 return data.accounts;
             });
         }
@@ -47841,7 +47774,7 @@ define('core/factories/data',['require','./../module'],function (require) {
 
     var module = require('./../module');
 
-    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', function ($http, $q, $rootScope, $timeout) {
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
             var data = [];
@@ -47850,7 +47783,12 @@ define('core/factories/data',['require','./../module'],function (require) {
 
             sortFn = sortFn || function (d) { return d; };
 
-            function init(url, transform) {
+            function init(config, transform) {
+                var url = apiUriGenerator(config);
+                if (!url) {
+                    throw new Error('Malformed API URI object');
+                }
+
                 var deferred = $q.defer();
 
                 if (!initialized) {
@@ -47961,7 +47899,7 @@ define('core/factories/cache',['require','./../module'],function (require) {
 
     var module = require('./../module');
 
-    module.factory('cacheFactory', ['dataFactory', function (dataFactory) {
+    module.factory('cacheFactory', ['dataFactory', 'apiUriGenerator', function (dataFactory, apiUriGenerator) {
         /**
          * Creates a cacheFactory object that wraps a dataFactory
          * @param {{sortFn: (function), transform: (function)}}
@@ -47971,24 +47909,25 @@ define('core/factories/cache',['require','./../module'],function (require) {
             var cache = {};
             options = options || {};
 
-            function get(url, initialize) {
+            function get(uriConfig, initialize) {
+                var url = apiUriGenerator(uriConfig);
                 if (!cache[url]) {
                     cache[url] = dataFactory(options.sortFn);
                 }
 
                 if (initialize) {
-                    cache[url].init(url, options.transform);
+                    cache[url].init(uriConfig, options.transform);
                 }
 
                 return cache[url];
             }
 
-            function all(url){
-                return get(url, true).all();
+            function all(uriConfig){
+                return get(uriConfig, true).all();
             }
 
-            function observe(url, callback, $scope, preventImmediate) {
-                get(url, true).observe(callback, $scope, preventImmediate);
+            function observe(uriConfig, callback, $scope, preventImmediate) {
+                get(uriConfig, true).observe(callback, $scope, preventImmediate);
             }
 
             return {
@@ -48000,18 +47939,20 @@ define('core/factories/cache',['require','./../module'],function (require) {
     }]);
 });
 
-define('core/factories/pagination',['require','./../module'],function (require) {
+define('core/factories/pagination',['require','angular','./../module'],function (require) {
     'use strict';
 
+    var ng = require('angular');
     var module = require('./../module');
 
-    module.factory('paginationFactory', ['$http', 'dataFactory', function ($http, dataFactory) {
-        function buildPageUrl(url, limit, offset) {
-            if (url.indexOf('?') > -1) {
-                return url + '&limit=' + limit + '&offset=' + offset;
-            } else {
-                return url + '?limit=' + limit + '&offset=' + offset;
-            }
+    module.factory('paginationFactory', ['$http', 'dataFactory', 'apiUriGenerator', function ($http, dataFactory, apiUriGenerator) {
+        function buildConfig(config, limit, offset) {
+            config.queryParams = config.queryParams || {};
+
+            config.queryParams.limit = limit;
+            config.queryParams.offset = offset;
+
+            return config;
         }
 
         /**
@@ -48019,7 +47960,7 @@ define('core/factories/pagination',['require','./../module'],function (require) 
          * @param {function} sortFn - Optional sorting function, the data is stored after the sortFn is applied
          * @param {number} [limit=10] - Limit the number of results
          * @param {number} [offset=0] - The starting offset usually should not need to be changed.
-         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildPageUrl, limit: (number), all: (Object[])}}
+         * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildConfig, limit: (number), all: (Object[])}}
          */
 
         function create(sortFn, limit, offset) {
@@ -48027,19 +47968,21 @@ define('core/factories/pagination',['require','./../module'],function (require) 
             offset = offset || 0;
 
             var data = dataFactory(sortFn);
-            var baseUrl = '';
             var transform;
+            var initialApiConfig;
 
-            function init(url, transformFn, perPage) {
-                baseUrl = url;
+            function init(apiConfig, transformFn, perPage) {
+                initialApiConfig = ng.extend({}, apiConfig);
                 transform = transformFn || function (d) { return d; };
                 limit = perPage || 10;
-                data.init(buildPageUrl(baseUrl, limit, offset), transformFn);
+                data.init(buildConfig(initialApiConfig, limit, offset), transformFn);
             }
 
             function nextPage() {
                 offset = offset + limit;
-                $http.get(buildPageUrl(baseUrl, limit, offset)).success(function (res) {
+                var config = buildConfig(initialApiConfig, limit, offset);
+                var url = apiUriGenerator(config);
+                $http.get(url).success(function (res) {
                     data.addData(transform(res));
                 });
             }
@@ -48050,7 +47993,7 @@ define('core/factories/pagination',['require','./../module'],function (require) 
                 filtered: data.filtered,
                 notifyObservers: data.notifyObservers,
                 nextPage: nextPage,
-                buildUrl: buildPageUrl,
+                _buildConfig: buildConfig,
                 limit: limit,
                 all: data.all
             };
@@ -48383,7 +48326,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
 
 /**
  * Simple Ajax Uploader
- * Version 2.1
+ * Version 2.0.1
  * https://github.com/LPology/Simple-Ajax-Uploader
  *
  * Copyright 2012-2015 LPology, LLC
@@ -48880,7 +48823,6 @@ ss.SimpleUpload = function( options ) {
         focusClass: '',
         disabledClass: '',
         customHeaders: {},
-        encodeCustomHeaders: false,
         onAbort: function( filename, uploadBtn ) {},
         onChange: function( filename, extension, uploadBtn, size ) {},
         onSubmit: function( filename, extension, uploadBtn, size ) {},
@@ -48956,13 +48898,7 @@ ss.SimpleUpload = function( options ) {
     }
 
     if ( XhrOk && this._opts.dropzone !== '' ) {
-        this._dzone = ss.verifyElem( this._opts.dropzone );
-
-        if ( !this._dzone ) {
-            this.log( 'Invalid or nonexistent element passed for drop zone' );
-        } else {
-            this.addDropZone( this._dzone );
-        }
+        this.addDropZone( this._opts.dropzone );
     }
 
     this._createInput();
@@ -49189,18 +49125,6 @@ ss.SimpleUpload.prototype = {
         while ( i-- ) {
             ss.removeClass( this._btns[i], this._opts.disabledClass );
             this._btns[i].disabled = false;
-        }
-    },
-
-    /**
-     * Updates invisible button position
-     */
-    updatePosition: function() {
-        "use strict";
-
-        if ( this._btns[0] && this._input && this._input.parentNode ) {
-            this._overBtn = this._btns[0];
-            ss.copyLayout( this._btns[0], this._input.parentNode );
         }
     }
 
@@ -49823,11 +49747,7 @@ ss.XhrUpload = {
 
         for ( var i in headers ) {
             if ( headers.hasOwnProperty( i ) ) {
-                if ( opts.encodeCustomHeaders && opts.customHeaders.hasOwnProperty( i ) ) {
-                    xhr.setRequestHeader( i, encodeURIComponent( headers[ i ] ) + '' );
-                } else {
-                    xhr.setRequestHeader( i, headers[ i ] + '' );
-                }
+                xhr.setRequestHeader( i, encodeURIComponent(headers[ i ]) + '' );
             }
         }
 
@@ -49948,7 +49868,7 @@ ss.XhrUpload = {
                 'padding' : 0,
                 'opacity' : 0,
                 'direction' : 'ltr',
-                'zIndex': 2147483582
+                'zIndex': 2147483583
             });
 
             ss.addStyles( this._input, {
@@ -50215,9 +50135,12 @@ ss.extendObj(ss.SimpleUpload.prototype, {
     addDropZone: function( elem ) {
         var self = this;
 
-        ss.addStyles( elem, {
-            'zIndex': 2147483583
-        });
+        elem = ss.verifyElem( elem );
+
+        if ( !elem ) {
+            self.log( 'Invalid or nonexistent element passed for drop zone' );
+            return false;
+        }
 
         elem.ondragenter = function( e ) {
             if ( !self._dragFileCheck( e ) ) {
@@ -50244,14 +50167,14 @@ ss.extendObj(ss.SimpleUpload.prototype, {
         elem.ondrop = function( e ) {
             e.preventDefault();
 
-            ss.removeClass( this, self._opts.dragClass );
-
+            ss.removeClass( this, self._opts.dragClass );            
+            
             if ( !self._dragFileCheck( e ) ) {
                 return false;
             }
 
             self._addFiles( e.dataTransfer.files );
-            self._cycleQueue();
+            self._cycleQueue();            
         };
     }
 });
@@ -50388,7 +50311,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
 
 !function() {
   var d3 = {
-    version: "3.5.6"
+    version: "3.5.5"
   };
   var d3_arraySlice = [].slice, d3_array = function(list) {
     return d3_arraySlice.call(list);
@@ -51851,7 +51774,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     function zoomended(dispatch) {
       if (!--zooming) dispatch({
         type: "zoomend"
-      }), center0 = null;
+      });
+      center0 = null;
     }
     function mousedowned() {
       var that = this, target = d3.event.target, dispatch = event.of(that, arguments), dragged = 0, subject = d3.select(d3_window(that)).on(mousemove, moved).on(mouseup, ended), location0 = location(d3.mouse(that)), dragRestore = d3_event_dragSuppress(that);
@@ -51940,8 +51864,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     }
     function mousewheeled() {
       var dispatch = event.of(this, arguments);
-      if (mousewheelTimer) clearTimeout(mousewheelTimer); else d3_selection_interrupt.call(this), 
-      translate0 = location(center0 = center || d3.mouse(this)), zoomstarted(dispatch);
+      if (mousewheelTimer) clearTimeout(mousewheelTimer); else translate0 = location(center0 = center || d3.mouse(this)), 
+      d3_selection_interrupt.call(this), zoomstarted(dispatch);
       mousewheelTimer = setTimeout(function() {
         mousewheelTimer = null;
         zoomended(dispatch);
@@ -52086,9 +52010,8 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
     return v < 16 ? "0" + Math.max(0, v).toString(16) : Math.min(255, v).toString(16);
   }
   function d3_rgb_parse(format, rgb, hsl) {
-    format = format.toLowerCase();
     var r = 0, g = 0, b = 0, m1, m2, color;
-    m1 = /([a-z]+)\((.*)\)/.exec(format);
+    m1 = /([a-z]+)\((.*)\)/i.exec(format);
     if (m1) {
       m2 = m1[2].split(",");
       switch (m1[1]) {
@@ -52103,7 +52026,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
         }
       }
     }
-    if (color = d3_rgb_names.get(format)) {
+    if (color = d3_rgb_names.get(format.toLowerCase())) {
       return rgb(color.r, color.g, color.b);
     }
     if (format != null && format.charAt(0) === "#" && !isNaN(color = parseInt(format.slice(1), 16))) {
@@ -56173,7 +56096,7 @@ define('core/directives/filePicker',['require','./../module','simpleUpload','tpl
   }
   d3.interpolators = [ function(a, b) {
     var t = typeof b;
-    return (t === "string" ? d3_rgb_names.has(b.toLowerCase()) || /^(#|rgb\(|hsl\()/i.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
+    return (t === "string" ? d3_rgb_names.has(b) || /^(#|rgb\(|hsl\()/.test(b) ? d3_interpolateRgb : d3_interpolateString : b instanceof d3_color ? d3_interpolateRgb : Array.isArray(b) ? d3_interpolateArray : t === "object" && isNaN(b) ? d3_interpolateObject : d3_interpolateNumber)(a, b);
   } ];
   d3.interpolateArray = d3_interpolateArray;
   function d3_interpolateArray(a, b) {
@@ -60098,7 +60021,14 @@ define('core/services/channel',['require','./../module','angular'],function (req
         }
 
         function init() {
-            return data.init('/api/v3/clientSet?dimensions=channel', transform);
+            var apiConfig = {
+                endpoint: 'clientSet',
+                queryParams: {
+                    dimensions: ['channel']
+                }
+            };
+
+            return data.init(apiConfig, transform);
         }
 
         function sortFn(a, b) {
@@ -60121,7 +60051,16 @@ define('core/services/clientSet',['require','./../module','angular'],function (r
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+    var apiConfig = {
+        endpoint: 'clientSet',
+        queryParams: {
+            metrics: [
+                'countAccounts', 'countCampaignsPreFlight',
+                'countCampaignsInFlight', 'countCampaignsCompleted',
+                'countCampaignsArchived', 'count'
+            ]
+        }
+    };
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
@@ -60130,22 +60069,21 @@ define('core/services/clientSet',['require','./../module','angular'],function (r
             }
         });
 
-        function filter() {
-            var output = '';
-
+        function filter(config) {
+            var newConfig = ng.extend({}, config);
             if ($state.params.clientId) {
-                output = '&filters=id:eq:' + $state.params.clientId;
+                newConfig.queryParams.filters = ['id:eq:' + $state.params.clientId];
             }
-
-            return output;
+            return newConfig;
         }
 
-        function url() {
-            return baseUrl + filter();
+        function getApiConfig() {
+            var config = filter(apiConfig);
+            return config;
         }
 
         function all() {
-            var datum = cache.all(url());
+            var datum = cache.all(getApiConfig());
             var output = {
                 'count': 0,
                 'countCampaignsPreFlight': 0,
@@ -60167,7 +60105,7 @@ define('core/services/clientSet',['require','./../module','angular'],function (r
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -60176,11 +60114,12 @@ define('core/services/clientSet',['require','./../module','angular'],function (r
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(getApiConfig(), initialize);
         }
 
         return {
-            url: url,
+            _getApiConfig: getApiConfig,
+            _apiConfig: apiConfig,
             all: all,
             data: data,
             observe: observe
@@ -60193,7 +60132,17 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
 
     var module = require('./../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/divisionSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count';
+
+    var apiConfig = {
+        endpoint: 'divisionSet',
+        queryParams: {
+            metrics: [
+                'countAccounts', 'countCampaignsPreFlight',
+                'countCampaignsInFlight', 'countCampaignsCompleted',
+                'countCampaignsArchived', 'count'
+            ]
+        }
+    };
 
     module.service('divisionSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
@@ -60202,22 +60151,19 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
             }
         });
 
-        function filter() {
-            var output = '';
-
+        function getApiConfig() {
+            var newApiConfig = {};
+            ng.extend(newApiConfig, apiConfig);
             if ($state.params.divisionId) {
-                output = '&filters=id:eq:' + $state.params.divisionId;
+                ng.extend(newApiConfig.queryParams, {
+                    filters: ['id:eq:' + $state.params.divisionId]
+                });
             }
-
-            return output;
-        }
-
-        function url() {
-            return baseUrl + filter();
+            return newApiConfig;
         }
 
         function all() {
-            var datum = cache.all(url());
+            var datum = cache.all(getApiConfig());
             var output = {
                 'count': 0,
                 'countCampaignsPreFlight': 0,
@@ -60239,7 +60185,7 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -60248,11 +60194,12 @@ define('core/services/divisionSet',['require','./../module','angular'],function 
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(getApiConfig(), initialize);
         }
 
         return {
-            url: url,
+            _getApiConfig: getApiConfig,
+            _apiConfig: apiConfig,
             all: all,
             data: data,
             observe: observe
@@ -60269,75 +60216,66 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
     var module = require('./../module');
     var ng = require('angular');
 
-    var defaultConfig = {
-        version: 3
-    };
-
-    // Note: These are concatenated in order
-    var uriTemplates = [
-        {paramKey: 'version', template: '/api/v{{version}}/'},
-        {paramKey: 'endpoint', template: '{{endpoint}}?'},
-        {paramKey: 'dimensions', template: 'dimensions={{dimensions}}&'},
-        {paramKey: 'metrics', template: 'metrics={{metrics}}&'},
-        {paramKey: 'offset', template: 'offset={{offset}}&'},
-        {paramKey: 'limit', template: 'limit={{limit}}&'},
-        {paramKey: 'order', template: 'order={{order}}&'},
-        {paramKey: 'filters', template: 'filters={{filters}}&'}
-    ];
-
-    var requiredParams = [
-        'endpoint',
-        'dimensions'
-    ];
+    var DEFAULT_VERSION = 3;
 
     // TODO: add the API_URI constant, replace domainInterceptor.js
-    module.service('apiUriGenerator', ['$interpolate', function ($interpolate) {
-        function getApiUri(outsideParams) {
-            var params = setupDefaultParams(outsideParams);
-            if (validate(params)) {
-                return createApiUri(params);
-            } else {
+    module.service('apiUriGenerator', [function () {
+        function getApiUri(apiConfig) {
+
+            // NOTE: this is for use with fixtures and scaffolding the application.
+            // only use this flag when absolutely necessary.
+            if (apiConfig.override) {
+                return apiConfig.uri;
+            }
+
+            if (!isValid(apiConfig)) {
                 return false;
             }
+
+            var endpoint = getEndpoint(apiConfig);
+            //console.log(endpoint + expandParams(apiConfig.queryParams || []), apiConfig);
+            return endpoint + expandParams(apiConfig.queryParams || []);
         }
 
-        function setupDefaultParams(params) {
-            var mergedParams = {};
-            ng.extend(mergedParams, defaultConfig, params);
-            if (mergedParams.dimensions) {
-                mergedParams.dimensions = mergedParams.dimensions.join(',');
-            }
-            if (mergedParams.metrics) {
-                mergedParams.metrics = mergedParams.metrics.join(',');
-            }
-            if (mergedParams.filters) {
-                mergedParams.filters = mergedParams.filters.join(',');
-            }
-            return mergedParams;
+        function getEndpoint(config) {
+            var version = config.version || DEFAULT_VERSION;
+            return '/api/v' + version + '/' + config.endpoint;
         }
 
-        function validate(params) {
-            var valid = true;
-            requiredParams.forEach(function(requiredParam) {
-                if (typeof params[requiredParam] === 'undefined') {
-                    valid = false;
+        function expandParams(params) {
+
+            var paramsArray = [];
+
+            //Convert all arrays into comma-separated strings
+            //NOTE: Sorting is done to make sure any config object will produce
+            //the same url
+            var item;
+
+            for(var key in params) {
+                if (ng.isArray(params[key])) {
+                    item = params[key].sort().join(',');
+                } else {
+                    item = params[key];
                 }
-            });
+
+                paramsArray.push(key + '=' + item);
+            }
+
+            if (paramsArray) {
+                return '?' + paramsArray.sort().join('&');
+            } else {
+                return '';
+            }
+        }
+
+        function isValid(config) {
+            var valid = true;
+
+            if (!config || !config.endpoint) {
+                valid = false;
+            }
 
             return valid;
-        }
-
-        function createApiUri(params) {
-            var uri = '';
-            uriTemplates.forEach(function(uriTemplate) {
-                var paramKey = uriTemplate.paramKey;
-                if (typeof params[paramKey] !== 'undefined') {
-                    var template = $interpolate(uriTemplate.template);
-                    uri = uri + template(params);
-                }
-            });
-
-            return uri;
         }
 
         return getApiUri;
@@ -60771,19 +60709,40 @@ define('campaignManagement/accounts/routes',['require','tpl!./new-account.html',
 });
 
 
-define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n</section>\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div class="header-summary" ui-view="summary">\n</div>\n<div ui-view="content">\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers}})</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives}})</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types}})</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                    <ul class="dropdown-menu" role="menu">\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                    </ul>\n                </div>\n            </div>\n            <div class="col-sm-8 text-right-sm col-lg-8">\n                <div class="btn-group">\n                    <button class="btn btn-default">Edit Placements</button>\n                    <button class="btn btn-default">Set Trackers</button>\n                    <button class="btn btn-default">Pull Tags</button>\n                </div>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>\n        <span ng-show="campaign">Summary for {{campaign.name}}</span>\n        <span ng-show="!campaign">Summary</span>\n    </div>\n    <div class="dropdown-menu">\n        <div campaign-details></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">Edit Campaign</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span> <span class="muted normal">{{group.meta.count}} placements, {{group.meta.numDelivering}} delivering, {{group.meta.impressions}} of {{group.meta.bookedImpressions}} impressions</span>\n'); });
 
+define('campaignManagement/campaigns/placements/routes',['require','./../../module','tpl!./placementsList.html','tpl!./placementsHeader.html','tpl!./services/placementTableHeader.html'],function (require) {
+    'use strict';
+    var app = require('./../../module');
 
-define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div class="placeholder" image="images/placeholders/campaign-detail-graph.jpg"></div>\n\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n'); });
+    require('tpl!./placementsList.html');
+    require('tpl!./placementsHeader.html');
+    require('tpl!./services/placementTableHeader.html');
 
-
-define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="form-inline">\n    <div class="form-group">\n        View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n    </div>\n    <div class="form-group search-wrapper">\n        <label class="form-label search">\n            <input class="input" ng-model="filter" ng-change="updateFilters(filter)" placeholder="Search" type="search"/>\n        </label>\n        <ul ng-show="results.length" class="search-results">\n            <li ng-repeat="result in (results | limitTo: 5) track by $index">\n                <a ng-click="filterBy(result)">{{result.name}}</a>\n            </li>\n        </ul>\n    </div>\n    <div class="form-group">\n        <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>\n    </div>\n</div>\n<div class="tab-content" ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
+    return app.config(['$stateProvider', function ($stateProvider) {
+        $stateProvider
+            .state({
+                name: 'cm.campaigns.detail.placements',
+                url: '/placements',
+                views: {
+                    'tab-header': {
+                        controller: 'placementsHeader',
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
+                    },
+                    'table': {
+                        controller: 'placementsListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
+                    }
+                }
+            });
+    }]);
+});
 
 
 define('tpl!campaignManagement/campaigns/creatives/creativesList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesList.html', '<div basic-table="creatives" class="table table-hover"></div>\n\n'); });
@@ -60797,75 +60756,107 @@ define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angu
 
 define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay" ng-click="openPreviewPage(creative.id, creative.name)"><span><i class="glyph-view"></i>Preview in Page</span></div>\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.live}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
 
+define('campaignManagement/campaigns/creatives/routes',['require','./../../module','tpl!./creativesList.html','tpl!./creativesThumbnails.html','tpl!./creativesHeader.html','tpl!./directives/creativeThumbnails.html'],function (require) {
+    'use strict';
+    var app = require('./../../module');
 
-define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
+    require('tpl!./creativesList.html');
+    require('tpl!./creativesThumbnails.html');
+    require('tpl!./creativesHeader.html');
+    require('tpl!./directives/creativeThumbnails.html');
+
+    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
+
+        $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/list');
+
+        $stateProvider
+            .state({
+                name: 'cm.campaigns.detail.creatives',
+                url: '/creatives?filter'
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives.list',
+                url: '/list',
+                views: {
+                    'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeaderCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
+                    },
+                    'table@cm.campaigns.detail': {
+                        controller: 'creativesListCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
+                    }
+                }
+            })
+            .state({
+                name: 'cm.campaigns.detail.creatives.thumbnails',
+                url: '/thumbnails',
+                views: {
+                    'tab-header@cm.campaigns.detail': {
+                        controller: 'creativesHeaderCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
+                    },
+                    'table@cm.campaigns.detail': {
+                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
+                    }
+                }
+            });
+    }]);
+});
 
 
-define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers}})</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives}})</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types}})</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <a class="dropdown-toggle btn-default btn solid">Add Placements<i class="glyph-chevron-down"></i></a>\n                    <ul class="dropdown-menu" role="menu">\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Add Manually</a></li>\n                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>\n                    </ul>\n                </div>\n            </div>\n            <div class="col-sm-8 text-right-sm col-lg-8">\n                <div class="btn-group">\n                    <button class="btn btn-default">Edit Placements</button>\n                    <button class="btn btn-default">Set Trackers</button>\n                    <button class="btn btn-default">Pull Tags</button>\n                </div>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/index.html', '<div class="header-summary" ui-view="summary">\n</div>\n<div ui-view="content">\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span> <span class="muted normal">{{group.meta.count}} placements, {{group.meta.numDelivering}} delivering, {{group.meta.impressions}} of {{group.meta.bookedImpressions}} impressions</span>\n'); });
+define('tpl!campaignManagement/campaigns/campaign.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>\n        <span ng-show="campaign">Summary for {{campaign.name}}</span>\n        <span ng-show="!campaign">Summary</span>\n    </div>\n    <div class="dropdown-menu">\n        <div campaign-details></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">Edit Campaign</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaigns.html', '<div class="form-inline">\n    <div class="form-group">\n        View By: <a ui-sref=".({viewBy: \'\'})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: \'account\'})" ui-sref-active="active">Account</a></span>\n    </div>\n    <div class="form-group search-wrapper">\n        <label class="form-label search">\n            <input class="input" ng-model="filter" ng-change="updateFilters(filter)" placeholder="Search" type="search"/>\n        </label>\n        <ul ng-show="results.length" class="search-results">\n            <li ng-repeat="result in (results | limitTo: 5) track by $index">\n                <a ng-click="filterBy(result)">{{result.name}}</a>\n            </li>\n        </ul>\n    </div>\n    <div class="form-group">\n        <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>\n    </div>\n</div>\n<div class="tab-content" ui-view="tab-content">\n    <div ng-if="params.viewBy !== \'account\'">\n        <div campaigns-by-status></div>\n    </div>\n    <div ng-if="params.viewBy === \'account\'">\n        <div campaigns-by-account></div>\n    </div>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})\n'); });
+
+
+define('tpl!campaignManagement/campaigns/analytics-preview.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/analytics-preview.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{name}}</h2>\n</div>\n<div class="modal-body analytics-preview">\n    <div class="row">\n        <div class="col-lg-3 col-md-6 col-xs-12">\n            <h3>Summary</h3>\n            <div class="thin-header">Impressions</div>\n            <div class="impressions">{{impressions|number}}</div>\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n    </div>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-default left">View Complete Analytics</button>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<span>{{name}} </span><span class="muted normal">{{metrics.countCampaigns}} live campaigns | {{metrics.countCampaignsPreFlight}} work in progress | {{metrics.countCampaignsCompleted}} completed</span>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<div>\n    <ul class="list">\n        <li>\n            <span>status</span>\n            <span class="status"><i class="glyph-dot small" ng-class="{\'success\': isLive}"></i> {{campaignStatus}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>flight dates</span>\n            <span>{{details.startDate|date:\'MMM d, yy\'}} - {{details.endDate|date:\'MMM d, yy\'}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-if="showImpressions">\n            <span>total impressions</span>\n            <span>{{details.metrics.impressions|truncateNumber}}</span>\n        </li>\n        <li ng-if="showImpressions">\n            <span>booked impressions</span>\n            <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>publishers</span>\n            <span>{{details.distinctPublishers|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>creatives</span>\n            <span>{{details.countCreatives|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>placements</span>\n            <span>{{details.countPlacements|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/directives/campaignsByAccount.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByAccount.html', '<div accordion-table="byAccount" class="table table-hover"></div>\n'); });
+
+
+define('tpl!campaignManagement/campaigns/directives/campaignsByStatus.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByStatus.html', '<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/new-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">\n        <span ng-if="edit">Edit Campaign</span>\n        <span ng-if="!edit">New Campaign</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted" class="alert alert-danger" count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.accounts.$invalid && submitted}">\n            <label class="col-sm-3 form-label required"><span>Account</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen ng-options="account.id as account.name for account in accounts track by account.id" disable-search-threshold="10" ng-model="campaign.accountId" required>\n                </select>\n                <p ng-show="newCampaign.accounts.$invalid && submitted" class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.campaignName.$invalid && submitted}">\n            <label for="campaignName" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.campaignName" type="text" name="campaignName" class="form-control" id="campaignName" placeholder="Campaign Name" required />\n                <p ng-show="newCampaign.campaignName.$invalid && submitted" class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text" class="form-control" id="campaignKeywords" placeholder="Campaign Keywords" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.clickUrl" type="text" class="form-control" id="clickthroughURL" placeholder="Clickthrough URL" />\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.startDate" is-open="datePickers.startDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'startDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text" class="form-control" datepicker-popup="{{format}}" ng-model="campaign.endDate" is-open="datePickers.endDateOpened" min-date="minDate" datepicker-options="dateOptions" date-disabled="false" ng-required="true" close-text="Close" show-weeks="false" />\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline" ng-click="openPicker($event, \'endDateOpened\')"><i class="glyph-calendar"></i></button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="text" class="form-control" id="budget" placeholder="Enter your budget" />\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Campaign Objective</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.objectives">\n                </select>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm">Options</div>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-model="campaign.measureReach" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Measure Reach &amp; Frequency</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.googleAnalyticsParams" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Add Google AnalyticsUTM Parameters to URLs</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.conversionTracking" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Enable Conversion Tracking</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm"><span>Type of Geotargeting</span></div>\n            <div class="col-sm-9 single-select-light">\n                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" ng-model="campaign.geotarget">\n                </select>\n            </div>\n        </div>\n\n        <!-- CSV File Picker goes here -->\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Upload CSV file</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="campaign.csv"></div>\n            </div>\n        </div>\n\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repName.$invalid && submitted}">\n            <label for="repName" class="col-sm-3 form-label required"><span>AE/Rep Name</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text" class="form-control" name="repName" id="repName" placeholder="Enter AE/Rep Name" required />\n                <p ng-show="newCampaign.repName.$invalid && submitted" class="help-block">\n                    rep name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.repEmail.$invalid && submitted}">\n            <label for="repEmail" class="col-sm-3 form-label required"><span>AE/Rep Email</span></label>\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text" class="form-control" name="repEmail" id="repEmail" placeholder="Enter AE/Rep Email" required />\n                <p ng-show="newCampaign.repEmail.$invalid && submitted" class="help-block">\n                    rep email is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Description</span></label>\n            <div class="col-sm-9">\n                <textarea ng-model="campaign.description" class="form-control" placeholder="Enter some text"></textarea>\n            </div>\n\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button ng-if="edit" class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save Changes</button>\n    <button ng-if="!edit" class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
-/* jshint -W015 */
-
-define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','tpl!./index.html','tpl!./campaigns/index.html','tpl!./campaigns/campaign.summary.html','tpl!./campaigns/campaign.html','tpl!./campaigns/campaigns.html','tpl!./campaigns/creatives/creativesList.html','tpl!./campaigns/creatives/creativesThumbnails.html','tpl!./campaigns/creatives/creativesHeader.html','tpl!./campaigns/creatives/directives/creativeThumbnails.html','tpl!./campaigns/placements/placementsList.html','tpl!./campaigns/placements/placementsHeader.html','tpl!./campaigns/placements/services/placementTableHeader.html','tpl!./campaigns/new-campaign.html'],function (require) {
+define('campaignManagement/campaigns/routes',['require','./../module','./placements/routes','./creatives/routes','tpl!./index.html','tpl!./campaign.summary.html','tpl!./campaigns.html','tpl!./campaignsByStatusHeader.html','tpl!./analytics-preview.html','tpl!./services/campaignsByAccountHeader.html','tpl!./directives/campaignDetails.html','tpl!./directives/campaignsByAccount.html','tpl!./directives/campaignsByStatus.html','tpl!./new-campaign.html'],function (require) {
     'use strict';
-    var app = require('./module');
-    require('./clients/routes');
-    require('./divisions/routes');
-    require('./accounts/routes');
+    var app = require('./../module');
+
+    require('./placements/routes');
+    require('./creatives/routes');
 
     require('tpl!./index.html');
-    require('tpl!./campaigns/index.html');
-    require('tpl!./campaigns/campaign.summary.html');
-    require('tpl!./campaigns/campaign.html');
-    require('tpl!./campaigns/campaigns.html');
+    require('tpl!./campaign.summary.html');
+    require('tpl!./campaigns.html');
+    require('tpl!./campaignsByStatusHeader.html');
+    require('tpl!./analytics-preview.html');
+    require('tpl!./services/campaignsByAccountHeader.html');
+    require('tpl!./directives/campaignDetails.html');
+    require('tpl!./directives/campaignsByAccount.html');
+    require('tpl!./directives/campaignsByStatus.html');
+    require('tpl!./new-campaign.html');
 
-    require('tpl!./campaigns/creatives/creativesList.html');
-    require('tpl!./campaigns/creatives/creativesThumbnails.html');
-    require('tpl!./campaigns/creatives/creativesHeader.html');
-    require('tpl!./campaigns/creatives/directives/creativeThumbnails.html');
+    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
 
-    require('tpl!./campaigns/placements/placementsList.html');
-    require('tpl!./campaigns/placements/placementsHeader.html');
-    require('tpl!./campaigns/placements/services/placementTableHeader.html');
-
-    require('tpl!./campaigns/new-campaign.html');
-
-    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
-        //httpProvider settings
-        $httpProvider.defaults.withCredentials = true;
-        $httpProvider.defaults.useXDomain = true;
-        $httpProvider.interceptors.push('domainInterceptor');
-
-        //urlRouter Settings
-        $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
-        $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/list');
         $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
-        if (!window.disableRouter) {
-            $urlRouterProvider.when('/', '/analytics');
-        }
 
-        //Routes
         $stateProvider
-            .state('analytics', {
-                url: '/analytics',
-                parent: 'index',
-                template: '<header><div navbar></div></header>'
-            })
-            .state('index', {
-                template: '<ui-view />',
-                controller: 'indexCtrl'
-            })
-            .state('cm', {
-                url: '/campaign-management',
-                controller: 'campaignManagementCtrl',
-                templateUrl: 'campaignManagement/index.html',
-                parent: 'index'
-            })
             .state({
                 name: 'cm.campaigns',
                 url: '?viewBy',
@@ -60926,51 +60917,53 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                         templateUrl: 'campaignManagement/campaigns/campaign.html'
                     }
                 }
+            });
+    }]);
+});
+
+
+define('tpl!campaignManagement/index.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/index.html', '<header>\n    <div navbar></div>\n</header>\n<section class="container-fluid" ui-view>\n</section>\n'); });
+
+/* jshint -W015 */
+
+define('campaignManagement/routes',['require','./module','./clients/routes','./divisions/routes','./accounts/routes','./campaigns/routes','tpl!./index.html'],function (require) {
+    'use strict';
+    var app = require('./module');
+    require('./clients/routes');
+    require('./divisions/routes');
+    require('./accounts/routes');
+    require('./campaigns/routes');
+
+    require('tpl!./index.html');
+
+    return app.config(['$stateProvider', '$locationProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider) {
+        //httpProvider settings
+        $httpProvider.defaults.withCredentials = true;
+        $httpProvider.defaults.useXDomain = true;
+        $httpProvider.interceptors.push('domainInterceptor');
+
+        //urlRouter Settings
+        $urlRouterProvider.when('/campaign-management', '/campaign-management/clients');
+        if (!window.disableRouter) {
+            $urlRouterProvider.when('/', '/analytics');
+        }
+
+        //Routes
+        $stateProvider
+            .state('analytics', {
+                url: '/analytics',
+                parent: 'index',
+                template: '<header><div navbar></div></header>'
             })
-            .state({
-                name: 'cm.campaigns.detail.placements',
-                url: '/placements',
-                views: {
-                    'tab-header': {
-                        controller: 'placementsHeader',
-                        templateUrl: 'campaignManagement/campaigns/placements/placementsHeader.html'
-                    },
-                    'table': {
-                        controller: 'placementsListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/placements/placementsList.html'
-                    }
-                }
+            .state('index', {
+                template: '<ui-view />',
+                controller: 'indexCtrl'
             })
-            .state({
-                name: 'cm.campaigns.detail.creatives',
-                url: '/creatives?filter'
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives.list',
-                url: '/list',
-                views: {
-                    'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeaderCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
-                    },
-                    'table@cm.campaigns.detail': {
-                        controller: 'creativesListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives.thumbnails',
-                url: '/thumbnails',
-                views: {
-                    'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeaderCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
-                    },
-                    'table@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
-                    }
-                }
+            .state('cm', {
+                url: '/campaign-management',
+                controller: 'campaignManagementCtrl',
+                templateUrl: 'campaignManagement/index.html',
+                parent: 'index'
             });
 
         buildAnalyticsRoutes('analytics');
@@ -61100,16 +61093,17 @@ define('campaignManagement/campaigns/services/campaignCache',['require','./../..
     var module = require('./../../module');
     var cache = {};
 
-    module.service('campaignCache', ['paginationFactory', function (paginationFactory) {
-        function createCache(url, transform) {
+    module.service('campaignCache', ['paginationFactory', 'apiUriGenerator', function (paginationFactory, apiUriGenerator) {
+        function createCache(apiConfig, transform) {
             var paginate = paginationFactory();
-            paginate.init(url, transform);
+            paginate.init(apiConfig, transform);
             return paginate;
         }
 
-        function get(url, transform) {
+        function get(apiConfig, transform) {
+            var url = apiUriGenerator(apiConfig);
             if (!cache[url]) {
-                cache[url] = createCache(url, transform);
+                cache[url] = createCache(apiConfig, transform);
             }
 
             return cache[url];
@@ -61121,17 +61115,39 @@ define('campaignManagement/campaigns/services/campaignCache',['require','./../..
     }]);
 });
 
-
-define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<span>{{name}} </span><span class="muted normal">{{metrics.countCampaigns}} live campaigns | {{metrics.countCampaignsPreFlight}} work in progress | {{metrics.countCampaignsCompleted}} completed</span>\n'); });
-
 define('campaignManagement/campaigns/services/campaignsByAccount',['require','./../../module','angular','tpl!./campaignsByAccountHeader.html'],function (require) {
     'use strict';
 
     var module = require('./../../module');
     var ng = require('angular');
-    var baseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=account.name:asc';
-    var headerUrl = '/api/v3/accounts?dimensions=id,name&order=name:asc&metrics=countCampaigns' +
-        ',countCampaignsPreFlight,countCampaignsCompleted';
+
+    var campaignsApiConfig = {
+        endpoint: 'campaigns',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
+                'account.name'
+            ],
+            metrics: [
+                'countPlacements', 'countCreatives', 'impressions',
+                'bookedImpressions'
+            ],
+            order: 'account.name:asc'
+        }
+    };
+
+    var headerApiConfig = {
+        endpoint: 'accounts',
+        queryParams: {
+            dimensions: ['id', 'name'],
+            order: 'name:asc',
+            metrics: [
+                'countCampaigns', 'countCampaignsPreFlight',
+                'countCampaignsCompleted'
+            ]
+        }
+    };
+
     var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
@@ -61160,11 +61176,13 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
     module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', 'dataFactory', function (cache, campaignsFilter, $interpolate, dataFactory) {
         var filter = dataFactory();
 
-        function accountUrl() {
-            return headerUrl + campaignsFilter();
+        function getHeaderApiConfig() {
+            var accountConfig = ng.extend({}, headerApiConfig);
+            accountConfig.queryParams.filters = campaignsFilter();
+            return accountConfig;
         }
 
-        function url() {
+        function getCampaignsApiConfig() {
             var accountIds = getAccountIds();
             var opt = '';
 
@@ -61172,7 +61190,9 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
                 opt = 'account.id:eq:' + accountIds.join(':eq:');
             }
 
-            return baseUrl + campaignsFilter(opt);
+            var filteredConfig = ng.extend({}, campaignsApiConfig);
+            filteredConfig.queryParams.filters = campaignsFilter(opt);
+            return filteredConfig;
         }
 
         function headerTransform(data) {
@@ -61184,7 +61204,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
         }
 
         function getAccountIds() {
-            var campaignHeader = cache.get(accountUrl(), headerTransform);
+            var campaignHeader = cache.get(getHeaderApiConfig(), headerTransform);
             var accounts = campaignHeader.all();
             var ids = [];
 
@@ -61196,7 +61216,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
         }
 
         function groupByAccount() {
-            var campaignCache = cache.get(url(), campaignTransform);
+            var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
 
             var accounts = {};
             var campaigns = campaignCache.filtered(filtered);
@@ -61290,7 +61310,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
         }
 
         function all() {
-            var accountInfo = cache.get(accountUrl(), headerTransform).all();
+            var accountInfo = cache.get(getHeaderApiConfig(), headerTransform).all();
             var accounts = groupByAccount();
             var output = [];
 
@@ -61313,17 +61333,20 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
         }
 
         function observe(callback, $scope, preventImmediate) {
-            var campaignHeader = cache.get(accountUrl(), headerTransform);
+            var campaignHeader = cache.get(getHeaderApiConfig(), headerTransform);
 
             filter.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(function() {
-                var campaignCache = cache.get(url(), campaignTransform);
+                var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
                 campaignCache.observe(callback, $scope);
             }, $scope, true);
         }
 
         return {
+            _headerApiConfig: headerApiConfig,
+            _campaignsApiConfig: campaignsApiConfig,
+            _getCampaignsApiConfig: getCampaignsApiConfig,
             _getAccountIds: getAccountIds,
             _groupByAccount: groupByAccount,
             clearFilter: clearFilter,
@@ -61339,7 +61362,22 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
 
     var module = require('./../../module');
     var ng = require('angular');
-    var tableBaseUrl = '/api/v3/campaigns?dimensions=id,name,startDate,endDate,budget,account.id,account.name&metrics=countPlacements,countCreatives,impressions,bookedImpressions&order=name:asc';
+
+    var apiConfig = {
+        endpoint: 'campaigns',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
+                'account.name'
+            ],
+            metrics: [
+                'countPlacements', 'countCreatives', 'impressions',
+                'bookedImpressions'
+            ],
+            order: 'name:asc'
+        }
+    };
+
     var cache = {};
 
     var statuses = {
@@ -61349,20 +61387,20 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
         'archived': 'Archived'
     };
 
-
-
     module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', 'dataFactory', function (campaignsHeader, campaignAccordionTableFactory, campaignsFilter, dataFactory) {
         var filter = dataFactory();
 
-        function tableUrl(status) {
-            return tableBaseUrl + campaignsFilter('status:eq:' + status );
+        function tableConfig(status) {
+            var config = ng.extend({}, apiConfig);
+            config.queryParams.filters = campaignsFilter('status:eq:' + status);
+            return config;
         }
 
         function init() {
-            var accordionTables = cache[campaignsFilter()];
+            var accordionTables = cache[filterString()];
 
             if (!accordionTables) {
-                accordionTables = cache[campaignsFilter()] = {};
+                accordionTables = cache[filterString()] = {};
 
                 accordionTables.header = campaignsHeader.data(true);
                 accordionTables.rows = {};
@@ -61374,7 +61412,7 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
                         header: accordionTables.header,
                         title: title,
                         status: status,
-                        rows: tableUrl(status)
+                        rowsConfig: tableConfig(status)
                     });
 
                     accordionTables.rows[status] = accordionTable;
@@ -61408,7 +61446,7 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
 
             var output = [];
 
-            ng.forEach(cache[campaignsFilter()].rows, function (table) {
+            ng.forEach(cache[filterString()].rows, function (table) {
                 output.push(table.all(filtered));
             });
 
@@ -61419,12 +61457,17 @@ define('campaignManagement/campaigns/services/campaignsByStatus',['require','./.
             init();
 
             filter.observe(callback, $scope);
-            ng.forEach(cache[campaignsFilter()].rows, function (table) {
+            ng.forEach(cache[filterString()].rows, function (table) {
                 table.observe(callback, $scope);
             });
         }
 
+        function filterString() {
+            return JSON.stringify(campaignsFilter());
+        }
+
         return {
+            _apiConfig: apiConfig,
             all: all,
             observe: observe,
             clearFilter: clearFilter,
@@ -61460,22 +61503,27 @@ define('campaignManagement/campaigns/services/campaignsFilter',['require','./../
                 filters.push(opt);
             }
 
-            if (filters.length) {
-                return '&filters=' + filters.join(',');
-            }
-
-            return '';
+            return filters;
         }
 
         return idFilter;
     }]);
 });
 
-define('campaignManagement/campaigns/services/campaignsHeader',['require','./../../module'],function (require) {
+define('campaignManagement/campaigns/services/campaignsHeader',['require','./../../module','angular'],function (require) {
     'use strict';
 
     var module = require('./../../module');
-    var baseUrl = '/api/v3/campaignSet?dimensions=status&metrics=count,countPlacementsLive';
+
+    var ng = require('angular');
+
+    var apiConfig = {
+        endpoint: 'campaignSet',
+        queryParams: {
+            dimensions: ['status'],
+            metrics: ['count', 'countPlacementsLive']
+        }
+    };
 
     module.service('campaignsHeader', ['cacheFactory', 'campaignsFilter', function (cacheFactory, filter) {
         var cache = cacheFactory({
@@ -61484,12 +61532,15 @@ define('campaignManagement/campaigns/services/campaignsHeader',['require','./../
             }
         });
 
-        function url() {
-            return baseUrl + filter();
+        function getApiUriConfig() {
+            var newConfig = {};
+            ng.extend(newConfig, apiConfig);
+            newConfig.queryParams.filters = filter();
+            return newConfig;
         }
 
         function all() {
-            var datum = cache.all(url());
+            var datum = cache.all(getApiUriConfig());
             var output = {
                 'preFlight': 0,
                 'inFlight': 0,
@@ -61506,7 +61557,7 @@ define('campaignManagement/campaigns/services/campaignsHeader',['require','./../
         }
 
         function observe(callback, $scope, preventImmediate) {
-            return cache.observe(url(), callback, $scope, preventImmediate);
+            return cache.observe(getApiUriConfig(), callback, $scope, preventImmediate);
         }
 
         /**
@@ -61515,11 +61566,12 @@ define('campaignManagement/campaigns/services/campaignsHeader',['require','./../
          * @returns {{dataFactory}}
          */
         function data(initialize) {
-            return cache.get(url(), initialize);
+            return cache.get(getApiUriConfig(), initialize);
         }
 
         return {
-            url: url,
+            _apiConfig: apiConfig,
+            _getApiUriConfig: getApiUriConfig,
             all: all,
             data: data,
             observe: observe
@@ -61602,9 +61654,6 @@ define('campaignManagement/campaigns/services/campaignModal',['require','./../..
     }]);
 });
 
-
-define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})\n'); });
-
 define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',['require','./../../module','tpl!./../campaignsByStatusHeader.html'],function (require) {
     'use strict';
 
@@ -61638,8 +61687,8 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                 status = data.status;
                 header = data.header;
                 title = data.title;
-                if (data.rows) {
-                    rows.init(data.rows, _transformRows);
+                if (data.rowsConfig) {
+                    rows.init(data.rowsConfig, _transformRows);
                 }
             }
 
@@ -61718,6 +61767,9 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
             function _getTableHeader(data) {
                 var template;
 
+                if (!data) {
+                    return '';
+                }
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {
@@ -61759,6 +61811,7 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
     }]);
 });
 
+/* globals confirm */
 define('campaignManagement/campaigns/controllers/newCampaign',['require','./../../module','angular'],function (require) {
     'use strict';
 
@@ -61776,11 +61829,13 @@ define('campaignManagement/campaigns/controllers/newCampaign',['require','./../.
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        $scope.campaign = modalState.campaign || {
-            startDate: new Date(),
-            endDate: new Date(),
+        var initialCampaignScope = {
+            startDate: (modalState.campaign && modalState.campaign.startDate) || new Date(),
+            endDate: (modalState.campaign && modalState.campaign.endDate) || new Date(),
             objectives: []
         };
+
+        $scope.campaign = modalState.campaign || ng.extend({}, initialCampaignScope);
 
         $scope.dateOptions = {
             formatYear: 'yy',
@@ -61829,21 +61884,30 @@ define('campaignManagement/campaigns/controllers/newCampaign',['require','./../.
         }
 
         function cancel() {
-            $modalInstance.dismiss('cancel');
+            if (campaignScopeChanged()) {
+                if (confirm('You have unsaved changes. Really close?')) {
+                    $scope.campaign = initialCampaignScope;
+                    $modalInstance.dismiss('cancel');
+                }
+            } else {
+                $modalInstance.dismiss('cancel');
+            }
+        }
+
+        function campaignScopeChanged() {
+            return !ng.equals($scope.campaign, initialCampaignScope);
         }
 
         function ok(errors) {
-            console.log($scope.campaign);
             $scope.errors = errors;
             $scope.submitted = true;
-            console.log('do something');
+            //TODO: do something
         }
 
         //Before closing the modal save the state;
         $scope.$on('$destroy', function() {
             modalState.campaign = $scope.campaign;
         });
-
     }]);
 });
 
@@ -62065,9 +62129,6 @@ define('campaignManagement/campaigns/controllers/campaign',['require','./../../m
     }]);
 });
 
-
-define('tpl!campaignManagement/campaigns/analytics-preview.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/analytics-preview.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{name}}</h2>\n</div>\n<div class="modal-body analytics-preview">\n    <div class="row">\n        <div class="col-lg-3 col-md-6 col-xs-12">\n            <h3>Summary</h3>\n            <div class="thin-header">Impressions</div>\n            <div class="impressions">{{impressions|number}}</div>\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n        <div class="col-lg-3 col-md-6 col-xs-12">\n\n        </div>\n    </div>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-default left">View Complete Analytics</button>\n</div>\n'); });
-
 // jshint ignore: start
 
 define('campaignManagement/campaigns/controllers/analyticsPreview',['require','./../../module','tpl!./../analytics-preview.html'],function (require) {
@@ -62087,9 +62148,6 @@ define('campaignManagement/campaigns/controllers/analyticsPreview',['require','.
     }]);
 });
 
-
-define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<div>\n    <ul class="list">\n        <li>\n            <span>status</span>\n            <span class="status"><i class="glyph-dot small" ng-class="{\'success\': isLive}"></i> {{campaignStatus}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>flight dates</span>\n            <span>{{details.startDate|date:\'MMM d, yy\'}} - {{details.endDate|date:\'MMM d, yy\'}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li ng-if="showImpressions">\n            <span>total impressions</span>\n            <span>{{details.metrics.impressions|truncateNumber}}</span>\n        </li>\n        <li ng-if="showImpressions">\n            <span>booked impressions</span>\n            <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>publishers</span>\n            <span>{{details.distinctPublishers|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>creatives</span>\n            <span>{{details.countCreatives|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>placements</span>\n            <span>{{details.countPlacements|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
-
 define('campaignManagement/campaigns/directives/campaignDetails',['require','./../../module','tpl!./campaignDetails.html'],function (require) {
     'use strict';
 
@@ -62102,7 +62160,7 @@ define('campaignManagement/campaigns/directives/campaignDetails',['require','./.
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/directives/campaignDetails.html',
-            controller: ['$scope', '$state', '$http', '$timeout', function ($scope, $state, $http, $timeout) {
+            controller: ['$scope', '$state', '$http', '$timeout', 'dataFactory', function ($scope, $state, $http, $timeout, dataFactory) {
                 var campaignID = $state.params.campaignId;
 
                 $scope.showCampaignDetails = showCampaignDetails;
@@ -62119,43 +62177,58 @@ define('campaignManagement/campaigns/directives/campaignDetails',['require','./.
 
                 showCampaignDetails(campaignID);
 
-                function showCampaignDetails(campaignID) {
-                    $http.get('/api/v3/campaigns?dimensions=status,startDate,endDate,distinctPublishers,countPlacements,countCreatives&metrics=impressions,bookedImpressions&filters=id:' + campaignID)
-                        .then(function (res) {
-                            if (res.data.campaigns.length) {
-                                $timeout(function () {
-                                    $scope.details = res.data.campaigns[0];
-                                    $scope.showImpressions = false;
-                                    $scope.isLive = false;
-                                    switch ($scope.details.status) {
-                                        case 'preFlight':
-                                            $scope.campaignStatus = 'Pre-Flight';
-                                            break;
-                                        case 'inFlight':
-                                            $scope.campaignStatus = 'In-Flight';
-                                            $scope.showImpressions = true;
-                                            $scope.isLive = true;
-                                            break;
-                                        case 'live':
-                                            $scope.campaignStatus = 'Live';
-                                            $scope.showImpressions = true;
-                                            $scope.isLive = true;
-                                            break;
-                                        case 'completed':
-                                            $scope.campaignStatus = 'Completed';
-                                            $scope.showImpressions = true;
-                                            break;
-                                        case 'archived':
-                                            $scope.campaignStatus = 'Archived';
-                                            $scope.showImpressions = true;
-                                            break;
-                                        default:
-                                            $scope.campaignStatus = 'Unknown';
-                                    }
-                                    $scope.$apply();
-                                });
-                            }
-                        });
+                function showCampaignDetails(campaignId) {
+                    var apiConfig = {
+                        endpoint: 'campaigns',
+                        queryParams: {
+                            dimensions: [
+                                'status', 'startDate', 'endDate',
+                                'distinctPublishers', 'countPlacements',
+                                'countCreatives'
+                            ],
+                            metrics: ['impressions', 'bookedImpressions'],
+                            filters: ['id:eq:' + campaignId]
+                        }
+                    };
+                    var data = dataFactory();
+                    data.init(apiConfig);
+
+                    data.observe(function() {
+                        var res = data.all();
+                        if (res.campaigns && res.campaigns.length) {
+                            $timeout(function () {
+                                $scope.details = res.campaigns[0];
+                                $scope.showImpressions = false;
+                                $scope.isLive = false;
+                                switch ($scope.details.status) {
+                                    case 'preFlight':
+                                        $scope.campaignStatus = 'Pre-Flight';
+                                        break;
+                                    case 'inFlight':
+                                        $scope.campaignStatus = 'In-Flight';
+                                        $scope.showImpressions = true;
+                                        $scope.isLive = true;
+                                        break;
+                                    case 'live':
+                                        $scope.campaignStatus = 'Live';
+                                        $scope.showImpressions = true;
+                                        $scope.isLive = true;
+                                        break;
+                                    case 'completed':
+                                        $scope.campaignStatus = 'Completed';
+                                        $scope.showImpressions = true;
+                                        break;
+                                    case 'archived':
+                                        $scope.campaignStatus = 'Archived';
+                                        $scope.showImpressions = true;
+                                        break;
+                                    default:
+                                        $scope.campaignStatus = 'Unknown';
+                                }
+                                $scope.$apply();
+                            });
+                        }
+                    }, $scope, false);
                 }
 
 
@@ -62163,9 +62236,6 @@ define('campaignManagement/campaigns/directives/campaignDetails',['require','./.
         };
     }]);
 });
-
-
-define('tpl!campaignManagement/campaigns/directives/campaignsByAccount.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByAccount.html', '<div accordion-table="byAccount" class="table table-hover"></div>\n'); });
 
 define('campaignManagement/campaigns/directives/campaignsByAccount',['require','./../../module','tpl!./campaignsByAccount.html'],function (require) {
     'use strict';
@@ -62188,9 +62258,6 @@ define('campaignManagement/campaigns/directives/campaignsByAccount',['require','
         };
     }]);
 });
-
-
-define('tpl!campaignManagement/campaigns/directives/campaignsByStatus.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByStatus.html', '<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
 
 define('campaignManagement/campaigns/directives/campaignsByStatus',['require','./../../module','tpl!./campaignsByStatus.html'],function (require) {
     'use strict';
@@ -62310,7 +62377,7 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
     //    metrics: ['impressions', 'spend']
     //};
 
-    var apiURI = '/fixtures/placements/placements.json';
+    var apiUri = '/fixtures/placements/placements.json';
 
     var rules = {
         checked: '',
@@ -62411,8 +62478,12 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
             }
         }
 
-        function getPlacementsUrl() {
-            return apiURI; // Until API is built
+        function getPlacementsApiConfig() {
+
+            return {
+                override: true,
+                uri: apiUri
+            };
 
             //var apiParams = ng.extend({
             //    filters: ['campaign.id:eq:' + $state.params.campaignId]
@@ -62426,7 +62497,7 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
 
             // We can do this because someone using this service will be observing it
             // before they call all()
-            var data = placementCache.get(getPlacementsUrl(), initializeCache).all();
+            var data = placementCache.get(getPlacementsApiConfig(), initializeCache).all();
             initializeCache = false;
 
             if (skipTransform) {
@@ -62442,10 +62513,10 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
             updateCache();
 
             function updateCache() {
-                placementCache.get(getPlacementsUrl(), initializeCache);
+                placementCache.get(getPlacementsApiConfig(), initializeCache);
                 initializeCache = false;
 
-                placementCache.observe(getPlacementsUrl(), callback, $scope, preventImmediate);
+                placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
             }
         }
 
@@ -62859,11 +62930,20 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
     }]);
 });
 
-define('campaignManagement/campaigns/creatives/services/creatives',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/creatives/services/creatives',['require','./../../../module'],function(require) {
     'use strict';
 
     var module = require('./../../../module');
     var baseUrl = '/fixtures/creatives/creatives.json';
+
+    var apiConfig = {
+        endpoint: 'creatives',
+        dimensions: [
+            'id', 'name', 'live', 'type', 'device', 'embedWidth',
+            'embedHeight', 'expandedWidth', 'expandedHeight', 'countPlacements',
+            'live', 'modifiedDate', 'thumbnailUrlPrefix'
+        ]
+    };
 
     var rules = {
         checked: '',
@@ -62887,81 +62967,91 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
         {name: '', id: 'options'}
     ];
 
-    module.service('creatives', ['cacheFactory', '$state', function (cacheFactory, $state) {
-        var cache = cacheFactory({
-            transform: _transformCreatives
-        });
+    module.service('creatives', [
+        'cacheFactory', '$state', function(cacheFactory, $state) {
+            var cache = cacheFactory({
+                transform: _transformCreatives
+            });
 
-        function _transformCreatives(data) {
-            var creatives = data.creatives;
-            var creative;
-            var transformedTable = {
-                rules: rules,
-                headers: headers,
-                data: []
+            function _transformCreatives(data) {
+                var creatives = data.creatives;
+                var creative;
+                var transformedTable = {
+                    rules: rules,
+                    headers: headers,
+                    data: []
+                };
+
+                for(var i = 0; i < creatives.length; i ++) {
+                    creative = creatives[i];
+
+                    transformedTable.data.push({
+                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        creativeName: creative.name,
+                        delivering: creative.live,
+                        type: creative.type,
+                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                        numPlacements: creative.numPlacements,
+                        options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
+
+                        // These properties are needed by thumbnails but aren't
+												// in the table
+                        lastModified: creative.lastModified,
+                        thumbnail: creative.thumbnail
+                    });
+                }
+
+                return transformedTable;
+            }
+
+            function _apiConfig() {
+                var campaignId = $state.params.campaginId;
+                campaignId = apiConfig;
+
+                return {
+                    override: true,
+                    uri: baseUrl
+                };
+
+                // TODO: put an actual api config object in there when the API
+								// is ready
+
+                //if ($state.params.campaignId) {
+                //    return {
+                //        filters: ['campaign.id:eq' + $state.params.campaignID]
+                //    };
+                //} else {
+                //    return '';
+                //}
+            }
+
+            function all() {
+                return cache.all(_apiConfig());
+            }
+
+            function observe(callback, $scope, preventImmediate) {
+                return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
+            }
+
+            /**
+             * Returns underlying dataFactory object for the cache entry
+             * @param {boolean} [initialize=false] should we call init
+             * @returns {{dataFactory}}
+             */
+            function data(initialize) {
+                return cache.get(_apiConfig(), initialize);
+            }
+
+            return {
+                _transformCreatives: _transformCreatives,
+                _apiConfig: _apiConfig,
+                all: all,
+                data: data,
+                observe: observe
             };
-
-            for (var i=0; i<creatives.length; i++) {
-                creative = creatives[i];
-
-                transformedTable.data.push({
-                    checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
-                    creativeName: creative.name,
-                    delivering: creative.live,
-                    type: creative.type,
-                    dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                    expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                    numPlacements: creative.numPlacements,
-                    options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
-
-                    // These properties are needed by thumbnails but aren't in the table
-                    lastModified: creative.lastModified,
-                    thumbnail: creative.thumbnail
-                });
-            }
-
-            return transformedTable;
         }
-
-        function _filter() {
-            // TODO: change to campaignId when actual API is ready
-            if ($state.params.campaignIdNotThere) {
-                return '&filters=campaign.id:eq:' + $state.params.campaignId;
-            } else {
-                return '';
-            }
-        }
-
-        function _url() {
-            return baseUrl + _filter();
-        }
-
-        function all() {
-            return cache.all(_url());
-        }
-
-        function observe(callback, $scope, preventImmediate) {
-            return cache.observe(_url(), callback, $scope, preventImmediate);
-        }
-
-        /**
-         * Returns underlying dataFactory object for the cache entry
-         * @param {boolean} [initialize=false] should we call init
-         * @returns {{dataFactory}}
-         */
-        function data(initialize) {
-            return cache.get(_url(), initialize);
-        }
-
-        return {
-            _filter: _filter,
-            _transformCreatives: _transformCreatives,
-            _url: _url,
-            all: all,
-            data: data,
-            observe: observe
-        };
-    }]);
+    ]);
 });
 
 define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/editCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/controllers/placementsHeader','./placements/services/placements.js','./placements/services/placementsByPublisher.js','./placements/services/placementsByCreative.js','./placements/services/placementsByAdType.js','./creatives/controllers/creativesHeader','./creatives/controllers/creativesList','./creatives/directives/creativeThumbnails','./creatives/services/creatives'],function (require) {
@@ -63101,6 +63191,28 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
     module.service('topClientsService', ['$http', 'dataFactory', 'dateFormatterFilter', function ($http, dataFactory, dateFormatter) {
         var topClients = dataFactory(sortClients);
 
+        var _apiConfig = {
+            endpoint: 'clients',
+            queryParams: {
+                dimensions: [
+                    'id', 'name', 'channel', 'lastViewedUserDate',
+                    'lastViewedUserName'
+                ],
+                metrics: [
+                    'impressions', 'countAccountsActive',
+                    'countCampaignsPreFlight', 'countCampaignsInFlight'
+                ],
+                order: 'metrics.impressions:desc',
+                limit: 10
+            }
+        };
+
+        function init() {
+            return topClients.init(_apiConfig, function (data) {
+                return topClientsTransform(data.clients);
+            });
+        }
+
         function sortClients(data) {
             data.sort(function (a, b) {
                 var ai = a.impressions;
@@ -63113,14 +63225,6 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
             });
 
             return data;
-        }
-
-        function init() {
-            var url = '/api/v3/clients?dimensions=id,name,channel,lastViewedUserDate,lastViewedUserName&metrics=impressions,countAccountsActive,countCampaignsPreFlight,countCampaignsInFlight&order=metrics.impressions:desc&limit=10';
-
-            return topClients.init(url, function (data) {
-                return topClientsTransform(data.clients);
-            });
         }
 
         function topClientsTransform(data) {
@@ -63167,6 +63271,7 @@ define('campaignManagement/clients/services/topClients',['require','./../../modu
         }
 
         return {
+            _apiConfig: _apiConfig,
             init: init,
             observe: topClients.observe,
             transform: topClientsTransform,
@@ -63218,10 +63323,34 @@ define('campaignManagement/controllers/index',['require','./../module'],function
     //var ng = require('angular');
 
     app.controller('indexCtrl', ['$scope', 'clientService', 'divisionService', 'campaignService', 'accountService', '$rootScope', '$location', function ($scope, clients, divisions, campaigns, accounts, $rootScope, $location) {
-        clients.init('/api/v3/clients?dimensions=id,name,pinned');
-        divisions.init('/api/v3/divisions?dimensions=id,name,pinned,client.id');
-        campaigns.init('/api/v3/campaigns?dimensions=id,name,pinned,status,startDate,client.id,account.id,division.id');
-        accounts.init('/api/v3/accounts?dimensions=id,name,pinned,division.id,client.id');
+
+        clients.init({
+            endpoint: 'clients',
+            queryParams: {
+                dimensions: ['id', 'name', 'pinned']
+            }
+        });
+        divisions.init({
+            endpoint: 'divisions',
+            queryParams: {
+                dimensions: ['id', 'name', 'pinned', 'client.id']
+            }
+        });
+        accounts.init({
+            endpoint: 'accounts',
+            queryParams: {
+                dimensions: ['id', 'name', 'pinned', 'division.id', 'client.id']
+            }
+        });
+        campaigns.init({
+            endpoint: 'campaigns',
+            queryParams: {
+                dimensions: [
+                    'id', 'name', 'pinned', 'account.id', 'division.id',
+                    'client.id'
+                ]
+            }
+        });
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router) {

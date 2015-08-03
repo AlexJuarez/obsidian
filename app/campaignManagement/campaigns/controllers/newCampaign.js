@@ -1,3 +1,4 @@
+/* globals confirm */
 define(function (require) {
     'use strict';
 
@@ -15,11 +16,13 @@ define(function (require) {
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        $scope.campaign = modalState.campaign || {
-            startDate: new Date(),
-            endDate: new Date(),
+        var initialCampaignScope = {
+            startDate: (modalState.campaign && modalState.campaign.startDate) || new Date(),
+            endDate: (modalState.campaign && modalState.campaign.endDate) || new Date(),
             objectives: []
         };
+
+        $scope.campaign = modalState.campaign || ng.extend({}, initialCampaignScope);
 
         $scope.dateOptions = {
             formatYear: 'yy',
@@ -68,20 +71,29 @@ define(function (require) {
         }
 
         function cancel() {
-            $modalInstance.dismiss('cancel');
+            if (campaignScopeChanged()) {
+                if (confirm('You have unsaved changes. Really close?')) {
+                    $scope.campaign = initialCampaignScope;
+                    $modalInstance.dismiss('cancel');
+                }
+            } else {
+                $modalInstance.dismiss('cancel');
+            }
+        }
+
+        function campaignScopeChanged() {
+            return !ng.equals($scope.campaign, initialCampaignScope);
         }
 
         function ok(errors) {
-            console.log($scope.campaign);
             $scope.errors = errors;
             $scope.submitted = true;
-            console.log('do something');
+            //TODO: do something
         }
 
         //Before closing the modal save the state;
         $scope.$on('$destroy', function() {
             modalState.campaign = $scope.campaign;
         });
-
     }]);
 });

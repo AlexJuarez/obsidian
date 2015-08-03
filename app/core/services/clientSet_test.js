@@ -6,15 +6,16 @@ define(function (require) {
     var data = require('text!/base/assets/fixtures/clientSet.json');
 
     describe('clientSet', function () {
-        var metrics, httpBackend, state, scope;
+        var metrics, httpBackend, state, scope, apiGenerator;
 
         beforeEach(function () {
             module('app.core');
-            inject(function (clientSet, $httpBackend, $state, $rootScope) {
+            inject(function (clientSet, $httpBackend, $state, $rootScope, apiUriGenerator) {
                 metrics = clientSet;
                 httpBackend = $httpBackend;
                 state = $state;
                 scope = $rootScope.$new();
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -24,18 +25,18 @@ define(function (require) {
         });
 
         function setUpTest(resp) {
-            httpBackend.when('GET', '/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count').respond(resp);
+            httpBackend.when('GET', apiGenerator(metrics._apiConfig)).respond(resp);
         }
 
-        describe('url()', function () {
+        describe('_getApiConfig()', function () {
             it('should return the correct url with no state', function () {
-                expect(metrics.url()).toEqual('/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count');
+                expect(metrics._getApiConfig().queryParams.filters).toEqual(undefined);
             });
 
             it('should return a url with a filter', function () {
                 state.params.clientId = 'client0';
 
-                expect(metrics.url()).toEqual('/api/v3/clientSet?metrics=countAccounts,countCampaignsPreFlight,countCampaignsInFlight,countCampaignsCompleted,countCampaignsArchived,count&filters=id:eq:client0');
+                expect(metrics._getApiConfig().queryParams.filters).toEqual(['id:eq:client0']);
             });
         });
 

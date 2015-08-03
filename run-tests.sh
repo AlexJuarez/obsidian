@@ -5,7 +5,7 @@ node ./node_modules/bower/bin/bower install
 set +e
 set +x
 
-results=$(node ./node_modules/karma/bin/karma start --browsers PhantomJS --single-run)
+results=$(node ./node_modules/karma/bin/karma start --browsers Firefox --single-run)
 
 fail=$(echo $results | tail -1 | grep FAIL)
 

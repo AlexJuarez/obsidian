@@ -5,14 +5,22 @@ define(function (require) {
     require('angularMocks');
 
     describe('dataFactory', function () {
-        var data, httpBackend, scope;
+        var data, httpBackend, scope, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            queryParams: {
+                dimensions: ['one']
+            }
+        };
 
         beforeEach(function () {
             module('app.core');
-            inject(function (dataFactory, $httpBackend, $rootScope) {
+            inject(function (dataFactory, $httpBackend, $rootScope, apiUriGenerator) {
                 data = dataFactory;
                 httpBackend = $httpBackend;
                 scope = $rootScope.$new();
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -45,41 +53,41 @@ define(function (require) {
         });
 
         it('should return get from a url and transform the response', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond({test: ['data']});
 
             var test1 = data();
-            test1.init('/test', function (data) { return data.test; }).then(function () {
+            test1.init(apiConfig, function (data) { return data.test; }).then(function () {
                 expect(test1.all()).toEqual(['data']);
             });
             httpBackend.flush();
         });
 
         it('should return get from a url', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond(['data']);
 
             var test1 = data();
-            test1.init('/test').then(function () {
+            test1.init(apiConfig).then(function () {
                 expect(test1.all()).toEqual(['data']);
             });
             httpBackend.flush();
-            test1.init('/test').then(function (resp) {
+            test1.init(apiConfig).then(function (resp) {
                 expect(resp).toEqual(['data']);
             });
         });
 
         it('if initalized twice it shouldn\'t make a second http request', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond(['data']);
 
             var test1 = data();
-            test1.init('/test').then(function () {
+            test1.init(apiConfig).then(function () {
                 expect(test1.all()).toEqual(['data']);
             });
             httpBackend.flush();
 
-            test1.init('/test').then(function (resp) {
+            test1.init(apiConfig).then(function (resp) {
                 expect(resp).toEqual(test1.all());
             });
         });

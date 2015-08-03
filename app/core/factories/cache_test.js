@@ -4,15 +4,23 @@ define(function (require) {
     require('./cache');
     require('angularMocks');
 
+    var apiConfig = {
+        endpoint: 'test',
+        queryParams: {
+            dimensions: 'one'
+        }
+    };
+
     describe('cacheFactory', function () {
-        var cache, httpBackend, scope;
+        var cache, httpBackend, scope, apiGenerator;
 
         beforeEach(function () {
             module('app.core');
-            inject(function (cacheFactory, $httpBackend, $rootScope) {
+            inject(function (cacheFactory, $httpBackend, $rootScope, apiUriGenerator) {
                 cache = cacheFactory();
                 httpBackend = $httpBackend;
                 scope = $rootScope.$new();
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -26,27 +34,27 @@ define(function (require) {
         });
 
         it('should call the url when created', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond(['success']);
 
-            cache.observe('/test', function () {
-                expect(cache.all('/test')).toEqual(['success']);
+            cache.observe(apiConfig, function () {
+                expect(cache.all(apiConfig)).toEqual(['success']);
             }, scope, true);
 
             httpBackend.flush();
         });
 
         it('should return an empty data object', function () {
-            expect(cache.get('/test', false)).not.toEqual(null);
+            expect(cache.get(apiConfig, false)).not.toEqual(null);
         });
 
         it('should initialize on the second get call', function () {
-            expect(cache.get('/test', false).all()).toEqual([]);
+            expect(cache.get(apiConfig, false).all()).toEqual([]);
 
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond(['success']);
 
-            var data = cache.get('/test', true);
+            var data = cache.get(apiConfig, true);
 
             httpBackend.flush();
 

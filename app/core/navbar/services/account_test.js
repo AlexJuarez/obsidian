@@ -5,7 +5,12 @@ define(function (require) {
     require('angularMocks');
 
     describe('accountService', function () {
-        var account, httpBackend, divisions, state;
+        var account, httpBackend, divisions, state, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            dimensions: ['one']
+        };
 
         var accounts = [
             {
@@ -42,11 +47,12 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (accountService, $httpBackend, divisionService, $state) {
+            inject(function (accountService, $httpBackend, divisionService, $state, apiUriGenerator) {
                 account = accountService;
                 httpBackend = $httpBackend;
                 state = $state;
                 divisions = divisionService;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -60,12 +66,12 @@ define(function (require) {
         });
 
         it('should make a request on init', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond({
                     'accounts': accounts
                 });
 
-            account.init('/test').then(function () {
+            account.init(apiConfig).then(function () {
                 expect(account.all()).toEqual(accounts);
             });
             httpBackend.flush();

@@ -3,12 +3,18 @@ define(function (require) {
 
     var module = require('./../../module');
     var utils = require('./util');
+    var ng = require('angular');
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', function ($http, $window, dataFactory) {
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', function ($http, $window, dataFactory, apiUriGenerator) {
         var clients = dataFactory(utils.sortByName);
 
-        function init(url) {
-            return clients.init(url, function (data) {
+        var _apiPinConfig = {
+            version: 2,
+            endpoint: 'clients/'
+        };
+
+        function init(apiConfig) {
+            return clients.init(apiConfig, function (data) {
                 return data.clients;
             });
         }
@@ -25,28 +31,26 @@ define(function (require) {
             return utils.alphabetMap(all());
         }
 
-        function pin(client) {
-            client.pinned = true;
+        function togglePin(client, boolean) {
+            client.pinned = boolean;
             clients.notifyObservers('pin');
-            $http.put('/api/v2/clients/' + client.id, {pinned: true})
+            var apiConfig = ng.extend({}, _apiPinConfig);
+            apiConfig.endpoint += client.id;
+            $http.put(apiUriGenerator(apiConfig), {pinned: boolean})
                 .error(function(error) {
-                    client.pinned = false;
+                    client.pinned = boolean;
                     clients.notifyObservers('pin');
                     console.log(error);
-                    $window.alert('Failed to pin client ' + client.name);
+                    $window.alert('Failed to pin/unpin client ' + client.name);
                 });
         }
 
+        function pin(client) {
+            togglePin(client, true);
+        }
+
         function unpin(client) {
-            client.pinned = false;
-            clients.notifyObservers('pin');
-            $http.put('/api/v2/clients/' + client.id, {pinned: false})
-                .error(function(error) {
-                    client.pinned = true;
-                    clients.notifyObservers('pin');
-                    console.log(error);
-                    $window.alert('Failed to unpin client ' + client.name);
-                });
+            togglePin(client, false);
         }
 
         function pinned() {
@@ -58,6 +62,7 @@ define(function (require) {
         }
 
         return {
+            _apiPinConfig: _apiPinConfig,
             init: init,
             setData: clients.setData,
             addData: clients.addData,

@@ -4,8 +4,15 @@ define(function (require) {
     require('./client');
     require('angularMocks');
 
+    var ng = require('angular');
+
     describe('clientService', function () {
-        var client, httpBackend;
+        var client, httpBackend, apiGenerator;
+
+        var apiConfig = {
+            endpoint: 'test',
+            dimensions: ['one']
+        };
 
         var clients = [
             {
@@ -21,9 +28,10 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (clientService, $httpBackend) {
+            inject(function (clientService, $httpBackend, apiUriGenerator) {
                 client = clientService;
                 httpBackend = $httpBackend;
+                apiGenerator = apiUriGenerator;
             });
         });
 
@@ -37,29 +45,34 @@ define(function (require) {
         });
 
         it('should make a request on init', function () {
-            httpBackend.when('GET', '/test')
+            httpBackend.when('GET', apiGenerator(apiConfig))
                 .respond({
                     'clients': clients
                 });
 
-            client.init('/test').then(function () {
+            client.init(apiConfig).then(function () {
                 expect(client.all()).toEqual(clients);
             });
             httpBackend.flush();
         });
 
         it('should pin a client', function () {
-            httpBackend.expect('PUT', '/api/v2/clients/clientId0')
-                .respond( 200, { pinned: true } );
+            var apiConfig = ng.extend({}, client._apiPinConfig);
             client.setData(clients);
-            var a = client.all()[0];
-            client.pin(a);
+            var firstClient = client.all()[0];
+            var pinConfig = ng.extend({}, apiConfig);
+            pinConfig.endpoint += firstClient.id;
+            httpBackend.expect('PUT', apiGenerator(pinConfig))
+                .respond( 200, { pinned: true } );
+            client.pin(firstClient);
             expect(client.pinned().length).toEqual(1);
             httpBackend.flush();
         });
 
         it('should unpin a client', function () {
-            httpBackend.expect('PUT', '/api/v2/clients/clientId0')
+            var apiConfig = ng.extend({}, client._apiPinConfig);
+            apiConfig.endpoint += clients[0].id;
+            httpBackend.expect('PUT', apiGenerator(apiConfig))
                 .respond( 200, { pinned: false } );
             client.setData(clients);
             var a = client.all()[0];

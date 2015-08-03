@@ -25,11 +25,7 @@ define(function (require) {
                 filters.push(opt);
             }
 
-            if (filters.length) {
-                return '&filters=' + filters.join(',');
-            }
-
-            return '';
+            return filters;
         }
 
         return idFilter;
