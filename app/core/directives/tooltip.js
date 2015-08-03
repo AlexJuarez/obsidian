@@ -51,12 +51,12 @@ define(function (require) {
                         
                         isBasicTooltip = false;
 
-                        // if (attr.customControl) {
-                        //     var customController = attr.customControl;
+                        if (attr.customControl) {
+                            var customController = attr.customControl;
                             
-                        //     $controller( customController, { $scope: scope } );
+                            $controller( customController, { $scope: scope } );
                             
-                        // }
+                        }
                         
                     }
                     
