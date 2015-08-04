@@ -13,9 +13,9 @@ define(function(require) {
 
                 var meta = {
                     all: 0,
-                    IBV: 0,
-                    RM: 0,
-                    IS: 0
+                    'IBV': 0,
+                    'RM': 0,
+                    'IS': 0
                 };
 
                 for(var i = 0; i < allCreatives.length; i ++) {
@@ -23,7 +23,7 @@ define(function(require) {
 
                     meta.all ++;
                     if(creative.type) {
-                        meta[creative.type] ++;
+                        meta[creative.type]++;
                     }
                 }
                 $scope.creativesMeta = meta;

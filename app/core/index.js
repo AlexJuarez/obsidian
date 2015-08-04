@@ -17,6 +17,7 @@ define(function (require) {
     require('./directives/limit');
     require('./directives/tooltip');
     require('./directives/compile');
+    require('./directives/fallbackSrc');
     require('./directives/placeholder');
     require('./directives/filePicker');
     require('./directives/pacingChart');

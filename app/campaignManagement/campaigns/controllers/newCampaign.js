@@ -22,7 +22,7 @@ define(function (require) {
             objectives: []
         };
 
-        $scope.campaign = modalState.campaign || initialCampaignScope;
+        $scope.campaign = ng.copy(modalState.campaign || initialCampaignScope);
 
         $scope.dateOptions = {
             formatYear: 'yy',

@@ -8,7 +8,7 @@ define(function (require) {
         var clients = dataFactory(utils.sortByName);
 
         var _apiPinConfig = {
-            version: 2,
+            version: 'crud',
             endpoint: 'clients/'
         };
 
@@ -46,6 +46,7 @@ define(function (require) {
         }
 
         function togglePin(client, boolean) {
+            client.pinned = boolean;
             clientRecordService.update(client.id, {pinned: boolean});
         }
 

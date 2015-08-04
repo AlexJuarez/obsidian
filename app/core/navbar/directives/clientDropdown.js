@@ -22,7 +22,7 @@ define(function (require) {
                 });
 
                 clientRecordService.observe(function() {
-                   refreshSearch($scope.query);
+                    refreshSearch($scope.query);
                 });
 
                 function refreshSearch(newValue) {
