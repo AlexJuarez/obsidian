@@ -1,3 +1,5 @@
+/* globals $ */
+
 define(function (require) {
     'use strict';
 
@@ -13,69 +15,92 @@ define(function (require) {
     ];
 
     require('tpl!./tooltip.html');
+    
 
-    app.directive('tooltip', ['$templateCache', '$compile', '$document', function ($templateCache, $compile, $document) {
+    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$parse', '$timeout', '$window', '$controller', function ($templateCache, $rootScope, $compile, $document, $parse, $timeout, $window, $controller) {
         return {
             restrict: 'A',
-            scope: false,
+            scope: {},
             link: function (scope, elem, attr) {
-
+                //console.log( 'directive scope: ', scope );
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.showOnClick = showOnClick;
-                scope.hideOnClick = hideOnClick;
+                
+                scope.toggleVisible = toggleVisible;
                 scope.documentClickHandler = documentClickHandler;
-                scope.removeHandlers = removeHandlers;
+
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
                 scope.main = elem.html();
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var body;
-                var wrapper, closeBtn;
+                var ctrlInstance;
+                scope.isOpen = false;
+
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         scope.content = newValue;
                     } else {
+                        console.log( 'directive scope: ', scope );
+                        
                         scope.content = template;
+                        
                         isBasicTooltip = false;
-                        elem.on('mouseup', showOnClick);
-                        body = $document;
+
+                        if (attr.customControl) {
+                            var customController = attr.customControl;
+                            
+                            ctrlInstance = $controller( customController, { $scope: scope } );
+                            
+                        }
+                        
                     }
-                    elem.html($compile(baseTemplate)(scope));
+                    
+                    elem.html( $compile(baseTemplate)(scope) );
+
+                    
                 });
 
-                function removeHandlers() {
-                    body.off('mouseup', documentClickHandler);
-                    closeBtn.off('mouseup', hideOnClick);
+                function toggleVisible() {
+                    if (elem.hasClass('click')) {
+
+                        console.log( '--- toggleVisible ---', scope.isOpen );
+                        
+                        scope.isOpen = !scope.isOpen;
+
+                        if (scope.isOpen) {
+                            $timeout(function() {
+                                $(document).on('click', scope.documentClickHandler);    
+                            }, 500);
+                            
+                        } else {
+                            $timeout(function() {
+                                $(document).off('click', scope.documentClickHandler);    
+                            }, 500);
+                        }
+
+                        console.log( '--- toggleVisible ---', scope.isOpen );
+                    }
+
                 }
 
-                function documentClickHandler() {
-                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
-                    removeHandlers();
+                function documentClickHandler(e) {
+                    //e.stopPropagation();
+                    if (elem !== e.target && !elem[0].contains(e.target)) {
+                        console.log( 'documentClickHandler' );
+                        scope.$apply(function() {
+                            console.log( 'doc hit' );
+                            scope.toggleVisible();
+                            //scope.isOpen = false;
+                        });
+                    }
+
                 }
                
-                function showOnClick(e) {
-                    //updatePosition();
-                    e.stopPropagation();
-                    wrapper = elem.find('.wrapper').css({'visibility': 'visible', 'opacity': '1'});
-                    
-                    closeBtn = wrapper.find('.glyph-close');
-                    closeBtn.on('mouseup', hideOnClick);
-
-                    body.on('mouseup', documentClickHandler);
-                    
-                }
-
-                function hideOnClick(e) {
-                    e.stopPropagation();
-                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
-                    removeHandlers();
-                }
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
@@ -135,6 +160,7 @@ define(function (require) {
                     var dims = calculateDims();
                     elem.addClass(calculateClass(dims));
                 }
+
             }
         };
     }]);

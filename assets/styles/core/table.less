@@ -37,7 +37,7 @@ table {
             background: @table-header-bg;
             color: @table-header-color;
             > th {
-                padding: 1.2rem 2rem;
+                padding: 1.0rem 2rem;
             }
         }
     }
@@ -50,6 +50,9 @@ table {
             max-width: 200px;
             display: inline-block;
             word-wrap: break-word;
+            &:hover {
+                color: @dark-blue;
+            }
         }
         > tr:last-child {
             border-bottom: 2px solid @table-header-bg;
@@ -60,10 +63,13 @@ table {
                 background: @table-striping;
             }
             > td {
-                vertical-align: top;
-                padding: 2.2rem 2rem 2.2rem 2rem;
+                vertical-align: middle;
+                padding: 1.2rem 2rem 1.2rem 2rem;
                 &.table-number {
                     display: none;
+                }
+                [class*="glyph"] {
+                    margin-left: .5rem;
                 }
             }
         }
@@ -297,7 +303,7 @@ table {
         border: 1px solid @table-collapse-border;
         font-weight: bold;
         .font-size(1.6);
-        padding: 1.3rem 2rem;
+        padding: 1rem 2rem;
         position: relative;
         &:after {
             font-family: "mixpo-icons";
