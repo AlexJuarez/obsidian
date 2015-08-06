@@ -60,18 +60,21 @@ define(function (require) {
             it('should change the pinned client when pin state change', function() {
                 var scope = createDropDown(clients);
 
-                httpBackend.expect('PUT', '/api/v2/clients/clientId0?')
+                httpBackend.expect('GET', '/api/crud/clients/clientId0')
+                    .respond( 200, { id: 'clientId0', pinned: false } );
+                httpBackend.expect('PUT', '/api/crud/clients/clientId0')
                     .respond( 200, { pinned: false } );
-                scope.unpin(client.all()[0]);
 
+                scope.unpin(client.all()[0]);
+                httpBackend.flush();
                 expect(scope.pinned.length).toEqual(0);
 
-                httpBackend.expect('PUT', '/api/v2/clients/clientId0?')
+                httpBackend.expect('PUT', '/api/crud/clients/clientId0')
                     .respond( 200, { pinned: true } );
                 scope.pin(client.all()[0]);
 
-                expect(scope.pinned.length).toEqual(1);
                 httpBackend.flush();
+                expect(scope.pinned.length).toEqual(1);
             });
 
             it('should have the current client', function() {

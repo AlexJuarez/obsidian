@@ -2,7 +2,7 @@
 
 .header-summary {
     margin: 2rem 0 1rem 0;
-    .clearfix();
+    &:extend(.clearfix all);
 
     .title, .list {
         padding: 0;
@@ -90,7 +90,7 @@
         margin: 0 -@mobile-gutter;
 
         .dropdown-menu {
-            .clearfix();
+            &:extend(.clearfix all);
         }
 
         .btn-group {
@@ -105,7 +105,7 @@
             line-height: 1.47;
             letter-spacing: 1px;
             .font-size(2);
-            .clearfix();
+            &:extend(.clearfix all);
             i {
                 margin: 10px 0 0 2rem;
                 line-height: 18px;

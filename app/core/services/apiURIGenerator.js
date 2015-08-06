@@ -7,7 +7,7 @@ define(function (require) {
     var module = require('./../module');
     var ng = require('angular');
 
-    var DEFAULT_VERSION = 3;
+    var DEFAULT_VERSION = 'v3';
 
     // TODO: add the API_URI constant, replace domainInterceptor.js
     module.service('apiUriGenerator', [function () {
@@ -30,7 +30,7 @@ define(function (require) {
 
         function getEndpoint(config) {
             var version = config.version || DEFAULT_VERSION;
-            return '/api/v' + version + '/' + config.endpoint;
+            return '/api/' + version + '/' + config.endpoint;
         }
 
         function expandParams(params) {
@@ -52,7 +52,7 @@ define(function (require) {
                 paramsArray.push(key + '=' + item);
             }
 
-            if (paramsArray) {
+            if (paramsArray.length > 0) {
                 return '?' + paramsArray.sort().join('&');
             } else {
                 return '';

@@ -43,7 +43,7 @@ textarea.form-control {
 
 
 .form {
-    .clearfix();
+    &:extend(.clearfix all);
 
     .required > span {
         font-weight: 600;
@@ -99,7 +99,7 @@ textarea.form-control {
 
 .form-horizontal {
     .form-group {
-        .clearfix();
+        &:extend(.clearfix all);
         .form-label {
             text-align: right;
             line-height: inherit;

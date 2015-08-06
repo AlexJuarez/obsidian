@@ -4,7 +4,7 @@ define(function (require) {
     require('tpl!./index.html');
     require('tpl!./clients.summary.html');
     require('tpl!./client.summary.html');
-    require('tpl!./new-client.html');
+    require('tpl!./new-edit-client.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
         $stateProvider

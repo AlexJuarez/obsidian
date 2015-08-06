@@ -10,15 +10,17 @@ define(function (require) {
     require('./factories/data');
     require('./factories/cache');
     require('./factories/pagination');
+    require('./factories/record');
+    require('./factories/recordPool');
     require('./factories/domainInterceptor');
     require('./directives/dropdown');
     require('./directives/limit');
     require('./directives/tooltip');
     require('./directives/compile');
+    require('./directives/fallbackSrc');
     require('./directives/placeholder');
     require('./directives/filePicker');
     require('./directives/pacingChart');
-    require('./directives/creativePreviewModal');
     require('./filters/safe');
     require('./filters/interpolate');
     require('./filters/errorCount');
@@ -28,5 +30,6 @@ define(function (require) {
     require('./services/clientSet');
     require('./services/divisionSet');
     require('./services/apiURIGenerator');
+    require('./services/clientRecord');
     require('./constants/apiURI');
 });

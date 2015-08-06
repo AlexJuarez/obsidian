@@ -14,82 +14,75 @@ define(function (require) {
 
     require('tpl!./tooltip.html');
 
-    app.directive('tooltip', ['$templateCache', '$compile', '$document', function ($templateCache, $compile, $document) {
+    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller) {
         return {
             restrict: 'A',
-            scope: false,
+            scope: true,
             link: function (scope, elem, attr) {
-
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.showOnClick = showOnClick;
-                scope.hideOnClick = hideOnClick;
-                scope.documentClickHandler = documentClickHandler;
-                scope.removeHandlers = removeHandlers;
+                scope.isOpen = false;
+                scope.main = elem.html();
+                scope.toggleOpen = toggleOpen;
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
-                scope.main = elem.html();
-                var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var body;
-                var wrapper, closeBtn;
+                var baseTemplate = $templateCache.get('core/directives/tooltip.html');
+
+                elem.html($compile(baseTemplate)(scope));
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);
                     if (!template) {
-                        scope.content = newValue;
+                        elem.find('.content').html(newValue);
                     } else {
-                        scope.content = template;
                         isBasicTooltip = false;
-                        elem.on('mouseup', showOnClick);
-                        body = $document;
+
+                        if (attr.tooltipController) {
+                            var customController = attr.tooltipController;
+                            $controller(customController, { $scope: scope });
+                        }
+
+                        var content = $compile(template)(scope);
+                        elem.find('.content').html(content);
                     }
-                    elem.html($compile(baseTemplate)(scope));
                 });
 
-                function removeHandlers() {
-                    body.off('mouseup', documentClickHandler);
-                    closeBtn.off('mouseup', hideOnClick);
+                function close() {
+                    scope.isOpen = false;
                 }
 
-                function documentClickHandler() {
-                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
-                    removeHandlers();
-                }
-               
-                function showOnClick(e) {
-                    //updatePosition();
-                    e.stopPropagation();
-                    wrapper = elem.find('.wrapper').css({'visibility': 'visible', 'opacity': '1'});
-                    
-                    closeBtn = wrapper.find('.glyph-close');
-                    closeBtn.on('mouseup', hideOnClick);
+                scope.close = close;
 
-                    body.on('mouseup', documentClickHandler);
-                    
+                $rootScope.$on('tooltip:open', function(id) {
+                    if(id !== scope.$id) {
+                        close();
+                    }
+                });
+
+                function toggleOpen() {
+                    if(!scope.isOpen) {
+                        $rootScope.$broadcast('tooltip:open', scope.$id);
+                    }
+
+                    scope.isOpen = !scope.isOpen;
                 }
 
-                function hideOnClick(e) {
-                    e.stopPropagation();
-                    wrapper.css({'visibility': 'hidden', 'opacity': '0'});
-                    removeHandlers();
-                }
+
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
                         elem.removeClass(c);
                     });
 
-                    var topBuffer, leftRightBuffer;
-                    if (isBasicTooltip) {
-                        topBuffer = 50;
-                        leftRightBuffer = 200;
-                    } else {
-                        topBuffer = 410;
-                        leftRightBuffer = 380;
-                    }
+                    //follow the height and width by about 20px;
+
+                    var content = elem.find('.content')[0];
+
+                    var topBuffer = ((content && content.offsetHeight) || 30) + 20,
+                        leftRightBuffer = ((content && content.offsetWidth) || 180) + 20;
 
                     if (dims.top > topBuffer) {
                         if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
@@ -135,6 +128,7 @@ define(function (require) {
                     var dims = calculateDims();
                     elem.addClass(calculateClass(dims));
                 }
+
             }
         };
     }]);

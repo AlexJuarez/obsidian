@@ -1,1 +1,30 @@
-{"clientSet":[{"channel":"Advertiser"},{"channel":"Agency"},{"channel":"LMP"},{"channel":"Mixpo Internal"},{"channel":"National Publisher"},{"channel":"PNDSP"},{"channel":"Tune-In"}]}
+[
+    {
+        "name": "Mixpo Internal",
+        "id": "1853b1b1-ac9e-434e-b281-b8e4f9bbf1c1"
+    },
+    {
+        "name": "LMP",
+        "id": "f427419e-e436-4fb7-accb-67a8391f32ff"
+    },
+    {
+        "name": "Tune-In",
+        "id": "0983ac62-d437-411c-89ef-6225e82e7aa9"
+    },
+    {
+        "name": "National Publisher",
+        "id": "a8b550e9-03db-4e18-b10b-4bd161e85c8c"
+    },
+    {
+        "name": "PNDSP",
+        "id": "8a4e273d-6950-4f9d-91af-b1534910e7b5"
+    },
+    {
+        "name": "Advertiser",
+        "id": "111b7e20-e56e-418e-82e4-7d6ec9f77c1a"
+    },
+    {
+        "name": "Agency",
+        "id": "cde2614a-6f21-4260-b4f8-e703d9929e2c"
+    }
+]
