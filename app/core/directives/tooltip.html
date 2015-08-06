@@ -1,5 +1,5 @@
-<div class="main" ng-mouseover="updatePosition()" ng-click="toggleVisible()" ng-bind-html="main|interpolate:this|safe"></div>
-<div class="wrapper" ng-class="isOpen ? 'show' : '' ">
-    <div class="content" ng-bind-html="content|interpolate:this|safe">
+<div class="main" ng-click="toggleOpen()" ng-mouseover="updatePosition()" ng-bind-html="main|interpolate:this|safe"></div>
+<div class="wrapper">
+    <div class="content">
     </div>
 </div>

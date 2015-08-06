@@ -1,5 +1,3 @@
-/* globals $ */
-
 define(function (require) {
     'use strict';
 
@@ -15,106 +13,76 @@ define(function (require) {
     ];
 
     require('tpl!./tooltip.html');
-    
 
-    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$parse', '$timeout', '$window', '$controller', function ($templateCache, $rootScope, $compile, $document, $parse, $timeout, $window, $controller) {
+    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller) {
         return {
             restrict: 'A',
-            scope: {},
+            scope: true,
             link: function (scope, elem, attr) {
-                //console.log( 'directive scope: ', scope );
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                
-                scope.toggleVisible = toggleVisible;
-                scope.documentClickHandler = documentClickHandler;
-
+                scope.isOpen = false;
+                scope.main = elem.html();
+                scope.toggleOpen = toggleOpen;
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
-                scope.main = elem.html();
-                var baseTemplate = $templateCache.get('core/directives/tooltip.html');
                 var isBasicTooltip = true;
-                var ctrlInstance;
-                scope.isOpen = false;
+                var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
+                elem.html($compile(baseTemplate)(scope));
 
                 scope.$watch(tooltip, function (newValue) {
                     var template = $templateCache.get(newValue);
                     if (!template) {
-                        scope.content = newValue;
+                        elem.find('.content').html(newValue);
                     } else {
-                        console.log( 'directive scope: ', scope );
-                        
-                        scope.content = template;
-                        
                         isBasicTooltip = false;
 
-                        if (attr.customControl) {
-                            var customController = attr.customControl;
-                            
-                            ctrlInstance = $controller( customController, { $scope: scope } );
-                            
+                        if (attr.tooltipController) {
+                            var customController = attr.tooltipController;
+                            $controller(customController, { $scope: scope });
                         }
-                        
-                    }
-                    
-                    elem.html( $compile(baseTemplate)(scope) );
 
-                    
+                        var content = $compile(template)(scope);
+                        elem.find('.content').html(content);
+                    }
                 });
 
-                function toggleVisible() {
-                    if (elem.hasClass('click')) {
-
-                        console.log( '--- toggleVisible ---', scope.isOpen );
-                        
-                        scope.isOpen = !scope.isOpen;
-
-                        if (scope.isOpen) {
-                            $timeout(function() {
-                                $(document).on('click', scope.documentClickHandler);    
-                            }, 500);
-                            
-                        } else {
-                            $timeout(function() {
-                                $(document).off('click', scope.documentClickHandler);    
-                            }, 500);
-                        }
-
-                        console.log( '--- toggleVisible ---', scope.isOpen );
-                    }
-
+                function close() {
+                    scope.isOpen = false;
                 }
 
-                function documentClickHandler(e) {
-                    //e.stopPropagation();
-                    if (elem !== e.target && !elem[0].contains(e.target)) {
-                        console.log( 'documentClickHandler' );
-                        scope.$apply(function() {
-                            console.log( 'doc hit' );
-                            scope.toggleVisible();
-                            //scope.isOpen = false;
-                        });
+                scope.close = close;
+
+                $rootScope.$on('tooltip:open', function(id) {
+                    if(id !== scope.$id) {
+                        close();
+                    }
+                });
+
+                function toggleOpen() {
+                    if(!scope.isOpen) {
+                        $rootScope.$broadcast('tooltip:open', scope.$id);
                     }
 
+                    scope.isOpen = !scope.isOpen;
                 }
-               
+
+
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
                         elem.removeClass(c);
                     });
 
-                    var topBuffer, leftRightBuffer;
-                    if (isBasicTooltip) {
-                        topBuffer = 50;
-                        leftRightBuffer = 200;
-                    } else {
-                        topBuffer = 410;
-                        leftRightBuffer = 380;
-                    }
+                    //follow the height and width by about 20px;
+
+                    var content = elem.find('.content')[0];
+
+                    var topBuffer = ((content && content.offsetHeight) || 30) + 20,
+                        leftRightBuffer = ((content && content.offsetWidth) || 180) + 20;
 
                     if (dims.top > topBuffer) {
                         if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
