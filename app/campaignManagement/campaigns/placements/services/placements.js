@@ -4,14 +4,19 @@ define(function (require) {
     var module = require('./../../../module');
     var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
 
-    //var baseApiEndpoint = {
-    //    version: 3,
-    //    endpoint: 'placements',
-    //    dimensions: ['id', 'name', 'live', 'startDate', 'endDate', 'bookedImpressions', 'creatives', 'publisher.id', 'publisher.name', 'adType', 'budget'],
-    //    metrics: ['impressions', 'spend']
-    //};
+    var ng = require('angular');
 
-    var apiUri = '/fixtures/placements/placements.json';
+    var apiConfig = {
+        endpoint: 'placements',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'live', 'flightStart', 'flightEnd',
+                'bookedImpressions', 'creatives.id', 'creatives.name', 'publisher.id',
+                'publisher.name', 'type', 'budget', 'spend'
+            ],
+            metrics: ['impressions']
+        }
+    };
 
     var rules = {
         checked: '',
@@ -38,6 +43,13 @@ define(function (require) {
         {name: 'Creatives', id: 'creatives'},
         {name: '', id: 'options'}
     ];
+
+    var typeTransform = {
+        'In-Banner': 'IBV',
+        'In-Stream': 'IS',
+        'Rich Media': 'RM',
+        'Display': 'DISPLAY'
+    };
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
                                   function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
@@ -79,15 +91,15 @@ define(function (require) {
                         checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                         placementName: placement.name,
                         delivering: placement.live,
-                        startDate: placement.startDate,
-                        endDate: placement.endDate,
-                        type: placement.type,
+                        startDate: placement.flightStart,
+                        endDate: placement.flightEnd,
+                        type: typeTransform[placement.type],
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions
                         },
                         spend: {
-                            current: placement.metrics.spend,
+                            current: placement.spend,
                             max: placement.budget
                         },
                         creatives: placement.creatives,
@@ -114,16 +126,11 @@ define(function (require) {
 
         function getPlacementsApiConfig() {
 
-            return {
-                override: true,
-                uri: apiUri
-            };
-
-            //var apiParams = ng.extend({
-            //    filters: ['campaign.id:eq:' + $state.params.campaignId]
-            //}, baseApiEndpoint);
-
-            //return apiUriGenerator(apiParams);
+            var newConfig = ng.copy(apiConfig);
+            if ($state.params.campaignId) {
+                newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
+            }
+            return newConfig;
         }
 
         var initializeCache = true;

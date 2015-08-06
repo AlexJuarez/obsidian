@@ -30,7 +30,7 @@
     "highlightjs": "~8.5.0",
     "angular-mocks": "~1.4.0",
     "jquery": ">=2.0",
-    "angular-chosen-localytics": "git+https://github.com/AlexJuarez/angular-chosen#~1.0.8",
+    "angular-chosen-localytics": "git+https://github.com/AlexJuarez/angular-chosen#~1.0.9",
     "angular-perfect-scrollbar": "~0.0.4",
     "Simple-Ajax-Uploader": "git://github.com/LPology/Simple-Ajax-Uploader.git"
   }

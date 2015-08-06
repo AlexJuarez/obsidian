@@ -3,13 +3,12 @@ define(function (require) {
 
     var module = require('./../../module');
     var utils = require('./util');
-    var ng = require('angular');
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', function ($http, $window, dataFactory, apiUriGenerator) {
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService) {
         var clients = dataFactory(utils.sortByName);
 
         var _apiPinConfig = {
-            version: 2,
+            version: 'crud',
             endpoint: 'clients/'
         };
 
@@ -23,6 +22,21 @@ define(function (require) {
             return clients.all();
         }
 
+        // Observe for new/updated clients
+        clientRecordService.observe(function(newUpdatedRecord) {
+            var existingRecord = get(newUpdatedRecord.id);
+            var pinned = false;
+            if (existingRecord) {
+                pinned = existingRecord.pinned;
+            }
+
+            clients.addData([{
+                id: newUpdatedRecord.id,
+                name: newUpdatedRecord.name,
+                pinned: pinned
+            }]);
+        }, undefined, true);
+
         function search(query) {
             return utils.search(all(), query);
         }
@@ -33,16 +47,7 @@ define(function (require) {
 
         function togglePin(client, boolean) {
             client.pinned = boolean;
-            clients.notifyObservers('pin');
-            var apiConfig = ng.extend({}, _apiPinConfig);
-            apiConfig.endpoint += client.id;
-            $http.put(apiUriGenerator(apiConfig), {pinned: boolean})
-                .error(function(error) {
-                    client.pinned = boolean;
-                    clients.notifyObservers('pin');
-                    console.log(error);
-                    $window.alert('Failed to pin/unpin client ' + client.name);
-                });
+            clientRecordService.update(client.id, {pinned: boolean});
         }
 
         function pin(client) {
