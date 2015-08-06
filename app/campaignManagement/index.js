@@ -6,6 +6,7 @@ define(function (require) {
     require('./campaigns/index');
     require('./clients/index');
     require('./controllers/campaignManagement');
+    require('./controllers/modalCtrl');
     require('./controllers/index');
     require('./accounts/index');
 });

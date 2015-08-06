@@ -4,7 +4,8 @@
   "main": [
     "build/core.js",
     "build/core.css",
-    "build/mixpo-icons.css"
+    "build/mixpo-icons.css",
+    "assets/fonts/"
   ],
   "ignore": [
     "views",

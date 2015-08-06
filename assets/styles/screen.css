@@ -2,10 +2,12 @@
 /* primary colors */
 /* secondary colors */
 /* tertiary colors */
-.clearfix:after,
-.clearfix:before {
-  display: table;
+.clearfix:before,
+.clearfix:after {
   content: " ";
+  display: table;
+}
+.clearfix:after {
   clear: both;
 }
 .font-smoothing {
@@ -52,10 +54,20 @@
   padding: 0;
   display: block;
 }
-.style-guide .border-right:after,
-.style-guide .border-right:before {
-  display: table;
+.style-guide .border-right:before,
+.style-guide .border-right:after {
   content: " ";
+  display: table;
+}
+.style-guide .border-right:after {
+  clear: both;
+}
+.style-guide .border-right:before,
+.style-guide .border-right:after {
+  content: " ";
+  display: table;
+}
+.style-guide .border-right:after {
   clear: both;
 }
 .style-guide .border-right li {

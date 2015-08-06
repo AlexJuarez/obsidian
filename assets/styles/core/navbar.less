@@ -119,16 +119,22 @@
 .navbar {
     box-sizing: border-box;
     position: relative;
-    .clearfix();
 
-    padding-top: 40px;
-    padding-left: 4rem;
-    padding-right: 4rem;
+    // Prevents floats from breaking the navbar
+    &:extend(.clearfix all);
+
+    &.jumbo {
+        padding-top: 40px;
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
 
     @media (max-width: @navbar-min-width) {
-        padding-top: 0;
-        padding-left: 0;
-        padding-right: 0;
+        &.jumbo {
+            padding-top: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
     }
 
     .navbar-toggle {
@@ -223,10 +229,10 @@
 }
 
 .navbar-collapse {
-    .clearfix();
+    &:extend(.clearfix all);
 
     .nav {
-        .clearfix();
+        &:extend(.clearfix all);
     }
 
     .navbar-right {
@@ -249,7 +255,7 @@
     }
 
     .dropdown-menu {
-        .clearfix();
+        &:extend(.clearfix all);
         width: 40rem;
         box-sizing: border-box;
         padding: 0 2rem 2rem 2rem;
@@ -403,7 +409,7 @@
             width: 100%;
             display: block;
             position: static;
-            .clearfix();
+            &:extend(.clearfix all);
         }
 
         .dropdown-toggle {

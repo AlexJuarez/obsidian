@@ -1,6 +1,7 @@
 define(function (require) {
     'use strict';
 
+    var ng = require('angular');
     require('./tooltip');
     require('angularMocks');
 
@@ -25,8 +26,9 @@ define(function (require) {
 
         function testDimsAndClass(dims, className) {
             var scope = rootScope.$new();
-            compile('<div tooltip="test"></div>')(scope);
-            scope.$digest();
+            var elem = ng.element('<div tooltip="test"></div>');
+            compile(elem)(scope);
+            scope = elem.scope();
             expect(scope.calculateClass(dims)).toBe(className);
         }
 
