@@ -2,6 +2,7 @@ define(function (require) {
     'use strict';
 
     var app = require('./../../../module');
+    var ng = require('angular');
 
     require('tpl!./creativeThumbnails.html');
 
@@ -11,7 +12,9 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', function ($scope, $window, $state, $rootScope, $filter, creatives) {
+            controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $state, $rootScope, $filter, creatives, creativeRecordService) {
+
+
 
                 // Should this be a shared filter for other parts of the app to use? -JFlo
                 var mixpoURL,
@@ -27,7 +30,7 @@ define(function (require) {
                 }
 
                 $scope.openPreviewPage = function(id, name) {
-                    console.log( 'thumbnail controller: preview creative ' + id, name );
+                    console.log( 'thumbnail directive: preview creative ' + id, name );
                     $window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
                 };
 
@@ -36,19 +39,25 @@ define(function (require) {
                 };
 
                 $scope.openSettings = function(id) {
-                    console.log( 'thumbnail controller: open settings ' + id );
+                    console.log( 'thumbnail directive: open settings ' + id );
                 };
 
                 $scope.openPlacements = function(id) {
-                    console.log( 'thumbnail controller: open placements ' + id );
+                    console.log( 'thumbnail directive: open placements ' + id );
                 };
 
                 $scope.copyCreative = function(id) {
-                    console.log( 'open Copy Creative modal ' + id );
+                    console.log( 'Copy Creative ' + id );
+                    
+                    creativeRecordService.getById(id).then(function(creative) {
+                        var newCreative = ng.copy(creative);
+                        delete newCreative.id;
+                        creativeRecordService.create(newCreative);
+                    });
                 };
 
                 $scope.deleteCreative = function(id) {
-                    console.log( 'thumbnail controller: delete creative ' + id );
+                    console.log( 'thumbnail directive: delete creative ' + id );
                 };
 
                 var filter = $state.params.filter;
@@ -63,9 +72,18 @@ define(function (require) {
 
                     duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
                     $scope.creatives = duplicateCreatives;
+
+                    //console.log('allCreatives', allCreatives );
+                    //console.log('duplicateCreatives', duplicateCreatives );
                 }
 
                 creatives.observe(updateCreatives, $scope);
+
+                creativeRecordService.observe(function(newUpdatedRecord) {
+                    console.log( 'newUpdatedRecord', newUpdatedRecord );
+                    creatives.addData([newUpdatedRecord]);
+
+                }, $scope, true);
 
             }]
         };

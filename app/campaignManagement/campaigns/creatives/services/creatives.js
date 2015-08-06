@@ -53,6 +53,7 @@ define(function(require) {
             });
 
             function _transformCreatives(data) {
+                //console.log( data );
                 var creatives = data.creatives;
                 var creative;
                 var transformedTable = {
@@ -103,6 +104,10 @@ define(function(require) {
                 return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
             }
 
+            function addData(newData) {
+                cache.addData(_apiConfig(), newData);
+            }
+
             /**
              * Returns underlying dataFactory object for the cache entry
              * @param {boolean} [initialize=false] should we call init
@@ -117,6 +122,7 @@ define(function(require) {
                 _apiConfig: _apiConfig,
                 all: all,
                 data: data,
+                addData: addData,
                 observe: observe
             };
         }

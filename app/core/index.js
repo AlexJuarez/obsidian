@@ -31,5 +31,6 @@ define(function (require) {
     require('./services/divisionSet');
     require('./services/apiURIGenerator');
     require('./services/clientRecord');
+    require('./services/creativeRecord');
     require('./constants/apiURI');
 });

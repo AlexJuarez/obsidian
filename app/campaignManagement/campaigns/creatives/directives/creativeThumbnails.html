@@ -3,7 +3,6 @@
 	<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">
 		<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">
 			<div class="ratio-box">
-				<div class="preview-overlay" ng-click="openPreviewPage(creative.id, creative.name)"><span><i class="glyph-view"></i>Preview in Page</span></div>
 				<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />
 			</div>
 		</div>
@@ -26,7 +25,10 @@
 				<span>{{creative.lastModified|date:'M/d/yyyy'}}</span>
 			</div>
 			<div class="data">
-				<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>
+				<span>
+					<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>
+					<a ng-click="openPreviewPage(creative.id)" title="Preview Creative in Page"><i class="glyph-icon glyph-view"></i>Preview</a>
+				</span>
 				<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>
 				<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>
 				<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>

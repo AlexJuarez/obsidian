@@ -25,35 +25,6 @@
             -webkit-transform: translate(-50%, -49.25%);
             transform: translate(-50%, -49.25%);
         }
-        .preview-overlay {
-            display: none;
-            background: rgba(0,0,0,0.6);
-            color: #fff;
-            text-align: center;
-            font-weight: bold;
-            position: relative;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 900;
-            span {
-                position: relative;
-                top: 50%;
-                transform: translateY(-50%);
-                i {
-                    font-weight: normal;
-                    margin-right: 1rem;
-                    .font-size(2);
-                }
-            }
-        }
-        &:hover {
-            cursor: pointer;
-            .preview-overlay {
-                display: block;
-            }
-        }
     }
 }
 
@@ -106,15 +77,26 @@
                 a:first-child, span:first-child {
                     float: left;
                     margin-right: 1rem;
+                    .glyph-icon {
+                        float: left;
+                        margin: 0 0.5rem 0 0;
+                        //display: inline-block;
+                        position: relative;
+                        &.glyph-view:before {
+                            top: 2px;
+                            position: relative;
+                        }
+                    }
                 }
                 a:last-child, span:last-child {
                     float: right;
                 }
                 .glyph-icon {
                     float: right;
-                    margin-left: 1.2rem;
-                    display: inline-block;
+                    margin: 0 0 0 1.2rem;
+                    //display: inline-block;
                 }
+
            }
         }
     }
