@@ -1,15 +1,38 @@
 .analytics-preview {
-    div > h3 {
-        margin-top: 0;
+    ul, li {
+        margin: 0;
+        padding: 0;
+        list-style: none;
     }
 
-    .thin-header {
-        font-family: 'Lato', sans-serif;
-        .font-size(1.8);
+    li {
+        margin-bottom: 1rem;
+        h3 {
+            font-family: 'Lato', sans-serif;
+            .font-size(1.8);
+            margin-bottom: 1rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: .5rem;
+            &.impressions {
+                font-family: 'Oswald', sans-serif;
+                font-size: 2.5rem;
+            }
+        }
+
     }
 
-    .impressions {
-        font-family: 'Oswald', sans-serif;
-        font-size: 2.5rem;
+    @media (min-width: @screen-md-min) {
+        .col-md-4:nth-child(3n+1) {
+            clear: left;
+        }
     }
+    @media (max-width: @screen-md-min) {
+        .col-sm-6:nth-child(2n+1) {
+            clear: left;
+        }
+    }
+
+
 }

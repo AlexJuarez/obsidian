@@ -3,22 +3,89 @@
     <h2 class="modal-title">{{name}}</h2>
 </div>
 <div class="modal-body analytics-preview">
-    <div class="row">
-        <div class="col-lg-3 col-md-6 col-xs-12">
-            <h3>Summary</h3>
-            <div class="thin-header">Impressions</div>
-            <div class="impressions">{{impressions|number}}</div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-xs-12">
 
-        </div>
-        <div class="col-lg-3 col-md-6 col-xs-12">
-
-        </div>
-        <div class="col-lg-3 col-md-6 col-xs-12">
-
-        </div>
-    </div>
+    <ul class="row">
+        <li class="col-md-4 col-sm-6 col-xs-6">
+            <h3 class="thin-header">Impressions</h3>
+            <p class="impressions">{{impressions|number}}</p>
+        </li>
+        <li class="col-md-4 col-sm-6 col-xs-6">
+            <h3 class="thin-header">In-Banner Video</h3>
+                <p>Placements: </p>
+                <p>Impressions: </p>
+                <p>View Rate: </p>
+                <p>User Action Rate: </p>
+                <p>Clickthrough Rate: </p>
+                <p>Average &#37; Complete: </p>
+                <div class="quartiles row">
+                  <div class="vertical-bar-graph-wrapper col-lg-3">
+                    <div class="percentage">
+                        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 13 15">
+                            <text x="0" y="13">50.00%</text>
+                        </svg>
+                    </div>
+                    
+                    <!-- <span class="percentage">50.00%</span> -->
+                    <span class="quartile">25%</span>
+                    <svg class="bar-graph" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0">
+                      <rect class="bg" x="0" y="0" width="100%" height="100%"/>
+                      <rect class="achieved" x="0" width="100%"/>
+                    </svg>
+                  </div>
+                  <div class="vertical-bar-graph-wrapper col-lg-3">
+                    <svg class="percentage" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <text dominant-baseline="hanging">50.00%</text>
+                    </svg>
+                    <span class="quartile">50%</span>
+                    <svg class="bar-graph" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0">
+                      <rect class="bg" x="0" y="0" width="100%" height="100%"/>
+                      <rect class="achieved" x="0" width="100%"/>
+                    </svg>
+                  </div>
+                  <div class="vertical-bar-graph-wrapper col-lg-3">
+                    <svg class="percentage" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <text dominant-baseline="hanging">50.00%</text>
+                    </svg>
+                    <span class="quartile">75%</span>
+                    <svg class="bar-graph" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0">
+                      <rect class="bg" x="0" y="0" width="100%" height="100%"/>
+                      <rect class="achieved" x="0" width="100%"/>
+                    </svg>
+                  </div>
+                  <div class="vertical-bar-graph-wrapper col-lg-3">
+                    <svg class="percentage" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <text dominant-baseline="hanging">50.00%</text>
+                    </svg>
+                    <span class="quartile">100%</span>
+                    <svg class="bar-graph" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0">
+                      <rect class="bg" x="0" y="0" width="100%" height="100%"/>
+                      <rect class="achieved" x="0" width="100%"/>
+                    </svg>
+                  </div>
+                </div>
+        </li>
+        <li class="col-md-4 col-sm-6 col-xs-6">
+            <h3 class="thin-header">In-Stream Video</h3>
+                <p>Placements: </p>
+                <p>Impressions: </p>
+                <p>View Rate: </p>
+                <p>User Action Rate: </p>
+        </li>
+        <li class="col-md-4 col-sm-6 col-xs-6">
+            <h3 class="thin-header">In-Stream Video</h3>
+                <p>Placements: </p>
+                <p>Impressions: </p>
+        </li>
+        <li class="col-md-4 col-sm-6 col-xs-6">
+            <h3 class="thin-header">Rich Media</h3>
+                <p>Placements: </p>
+                <p>Impressions: </p>
+                <p>View Rate: </p>
+                <p>User Action Rate: </p>
+                <p>Clickthrough Rate: </p>
+                <p>Average &#37; Complete: </p>
+        </li>
+    </ul>
 </div>
 <div class="modal-footer">
     <button class="btn btn-default left">View Complete Analytics</button>
