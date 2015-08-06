@@ -36,6 +36,7 @@ define(function (require) {
             }
 
             return {
+                _record: record,
                 init: init,
                 observe: record.observe,
                 all: record.all,

@@ -13,20 +13,20 @@ define(function (require) {
     module.factory('recordPoolFactory', ['recordFactory', '$q', '$rootScope', '$timeout', function (recordFactory, $q, $rootScope, $timeout) {
         return function (apiConfig) {
             var observers = {};
-            var clientRecords = {};
+            var records = {};
             var observerId = 0;
 
             function getById(recordId) {
                 var deferred = $q.defer();
 
-                if (clientRecords[recordId]) {
-                    deferred.resolve(clientRecords[recordId]);
+                if (records[recordId]) {
+                    deferred.resolve(records[recordId]);
                 } else {
                     var newConfig = ng.copy(apiConfig);
                     newConfig.endpoint += '/' + recordId;
                     var record = recordFactory(newConfig);
                     record.init().then(function () {
-                        clientRecords[recordId] = record;
+                        records[recordId] = record;
                         deferred.resolve(record);
                     });
 
