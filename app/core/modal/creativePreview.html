@@ -1,13 +1,13 @@
 <div class="creative-preview">
 	<div class="preview-modal-header">
-		<span class="left"><a ng-click="testClick();" class="preview-link" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a></span>
-		<span class="left"><a class="edit-link" title="Edit in Studio"><i class="glyph-edit"></i>Edit in Studio</a></span>
+		<span class="left"><a ng-click="openPreviewPage(creative.id);" class="preview-link" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a></span>
+		<span class="left"><a ng-click="openStudio(creative.id);" class="edit-link" title="Edit in Studio"><i class="glyph-edit"></i>Edit in Studio</a></span>
 		<i ng-click="close()" class="glyph-close"></i>
 	</div>
 
 	<div class="thumbnail-wrapper">
 		<div class="ratio-box">
-			<div class="preview-overlay"><span><i class="glyph-view"></i>Preview in Page</span></div>
+			<!-- TODO: Replace placecage with creative image -->
 			<img src="http://www.placecage.com/640/360" class="preview-thumbnail"/>
 		</div>
 	</div>

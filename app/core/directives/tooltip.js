@@ -19,6 +19,7 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             link: function (scope, elem, attr) {
+                console.log( attr );
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
@@ -57,14 +58,29 @@ define(function (require) {
                 scope.close = close;
 
                 $rootScope.$on('tooltip:open', function(id) {
-                    if(id !== scope.$id) {
+                    console.log( id );
+                    if (id !== scope.$id) {
+                        console.log( 'id does not match, closing...' );
                         close();
                     }
                 });
 
+                function documentClickHandler(e) {
+                    if (elem !== e.target && !elem[0].contains(e.target)) {
+                        console.log( 'documentClickHandler' );
+                        //scope.$apply(function() {
+                            console.log( 'doc hit' );
+                            scope.toggleOpen();
+                        //});
+                    }
+                }
+
                 function toggleOpen() {
-                    if(!scope.isOpen) {
+                    if (!scope.isOpen) {
                         $rootScope.$broadcast('tooltip:open', scope.$id);
+                        $document.on('click', documentClickHandler);
+                    } else {
+                        $document.off('click', documentClickHandler);
                     }
 
                     scope.isOpen = !scope.isOpen;
