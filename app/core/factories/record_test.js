@@ -40,7 +40,7 @@ define(function (require) {
             httpBackend.flush();
 
             myRecord.observe(function() {
-                expect(myRecord.all()).toEqual(object)
+                expect(myRecord.all()).toEqual(object);
             }, undefined, true);
         });
 

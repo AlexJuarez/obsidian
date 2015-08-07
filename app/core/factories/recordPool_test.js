@@ -28,9 +28,9 @@ define(function (require) {
             httpBackend.verifyNoOutstandingRequest();
         });
 
-        function setupTests(apiConfig) {
+        // function setupTests(apiConfig) {
 
-        }
+        // }
 
         it('should be an instance of recordPool', function () {
             expect(recordPool).not.toEqual(null);
@@ -64,7 +64,7 @@ define(function (require) {
             idConfig.endpoint += '/id';
 
             httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
-            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 })
+            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 });
 
             records.update('id', { success: false }).then(function(updatedRecord) {
                 expect(updatedRecord.data).toEqual({ updated: 1 });
