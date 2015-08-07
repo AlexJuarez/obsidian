@@ -3,6 +3,8 @@ define(function (require) {
 
     var module = require('./../module');
 
+    var ng = require('angular');
+
     module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
@@ -61,11 +63,24 @@ define(function (require) {
                 }
 
                 data = sortFn(temp.concat(d));
+                filterDeleted();
                 notifyObservers();
             }
 
             function all() {
                 return data;
+            }
+
+            function filterDeleted() {
+                if (ng.isArray(data)) {
+                    var item;
+                    for(var i = 0; i < data.length; i ++) {
+                        item = data[i];
+                        if(item.deleted === true) {
+                            data.splice(i, 1);
+                        }
+                    }
+                }
             }
 
             function filtered(filterfn){

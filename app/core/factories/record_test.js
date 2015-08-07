@@ -71,5 +71,21 @@ define(function (require) {
             });
 
         });
+
+        it('should delete an existing record', function() {
+            var idConfig = ng.copy(apiConfig);
+            idConfig.endpoint += '/id';
+            var myRecord = record(idConfig);
+
+            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ deleted: true });
+            myRecord._record.setData({ id: 'id', deleted: false });
+            myRecord.delete('id');
+
+            httpBackend.flush();
+            myRecord.observe(function() {
+                expect(myRecord.all()).toEqual({ id: 'id', deleted: true });
+            });
+
+        });
     });
 });
