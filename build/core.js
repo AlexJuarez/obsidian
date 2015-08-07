@@ -47857,10 +47857,12 @@ define('core/navbar/index',['require','./navbar','./services/util','./services/d
 
 });
 
-define('core/factories/data',['require','./../module'],function (require) {
+define('core/factories/data',['require','./../module','angular'],function (require) {
     'use strict';
 
     var module = require('./../module');
+
+    var ng = require('angular');
 
     module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
@@ -47920,11 +47922,24 @@ define('core/factories/data',['require','./../module'],function (require) {
                 }
 
                 data = sortFn(temp.concat(d));
+                filterDeleted();
                 notifyObservers();
             }
 
             function all() {
                 return data;
+            }
+
+            function filterDeleted() {
+                if (ng.isArray(data)) {
+                    var item;
+                    for(var i = 0; i < data.length; i ++) {
+                        item = data[i];
+                        if(item.deleted === true) {
+                            data.splice(i, 1);
+                        }
+                    }
+                }
             }
 
             function filtered(filterfn){
@@ -48122,12 +48137,27 @@ define('core/factories/record',['require','./../module','angular'],function (req
             }
 
             function update(recordId, updatedFields) {
-                return $http.put(url, updatedFields)
+                return $http.put(idUrl(recordId), updatedFields)
                     .success(function() {
                         var newRecord = ng.merge(record.all(), updatedFields);
                         record.setData(newRecord);
                     }
                 );
+            }
+
+            function _delete(recordId) {
+                return $http.put(idUrl(recordId), { deleted: true })
+                    .success(function() {
+                        var newRecord = ng.merge(record.all(), { deleted: true });
+                        record.setData(newRecord);
+                    }
+                );
+            }
+
+            function idUrl(recordId) {
+                var idConfig = ng.copy(apiConfig);
+                idConfig.endpoint += '/' + recordId;
+                return apiUriGenerator(apiConfig);
             }
 
             return {
@@ -48136,6 +48166,7 @@ define('core/factories/record',['require','./../module','angular'],function (req
                 observe: record.observe,
                 all: record.all,
                 create: create,
+                delete: _delete,
                 update: update
             };
         };
@@ -48188,6 +48219,12 @@ define('core/factories/recordPool',['require','./../module','angular'],function 
                 });
             }
 
+            function _delete(recordId) {
+                return getById(recordId).then(function(record) {
+                    return record.delete(record.all().id);
+                });
+            }
+
             function create(newRecord) {
                 var record = recordFactory(apiConfig);
                 record.observe(function() {
@@ -48223,8 +48260,10 @@ define('core/factories/recordPool',['require','./../module','angular'],function 
             }
 
             return {
+                _records: records,
                 getById: getById,
                 update: update,
+                delete: _delete,
                 create: create,
                 observe: observe
             };
@@ -48388,9 +48427,9 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                 var isBasicTooltip = true;
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
-                elem.html($compile(baseTemplate)(scope));
-
                 scope.$watch(tooltip, function (newValue) {
+                    elem.html($compile(baseTemplate)(scope));
+
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         elem.find('.content').html(newValue);
@@ -60997,7 +61036,7 @@ define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['
 define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-5">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".({filter: \'\'})">all ({{creativesMeta.all}})</a>\n        <a ui-sref=".({filter: \'IBV\'})">In-Banner ({{creativesMeta.IBV}})</a>\n        <a ui-sref=".({filter: \'IS\'})">In-Stream({{creativesMeta.IS}})</a>\n        <a ui-sref=".({filter: \'RM\'})">Rich Media({{creativesMeta.RM}})</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-5 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay" ng-click="openPreviewPage(creative.id, creative.name)"><span><i class="glyph-view"></i>Preview in Page</span></div>\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay" ng-click="openPreviewPage(creative.id, creative.name)"><span><i class="glyph-view"></i>Preview in Page</span></div>\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
 
 define('campaignManagement/campaigns/creatives/routes',['require','./../../module','tpl!./creativesList.html','tpl!./creativesThumbnails.html','tpl!./creativesHeader.html','tpl!./directives/creativeThumbnails.html'],function (require) {
     'use strict';
@@ -63121,9 +63160,9 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
             controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', function ($scope, $window, $state, $rootScope, $filter, creatives) {
 
-                // Should this be a shared filter for other parts of the app to use? -JFlo
                 var mixpoURL,
                 subDomainSegments = location.hostname.split('-');
+                var filter = $state.params.filter;
 
                 // Get development subdomain segments
                 if (subDomainSegments.length > 1) {
@@ -63159,17 +63198,20 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
                     console.log( 'thumbnail controller: delete creative ' + id );
                 };
 
-                var filter = $state.params.filter;
-
-                $rootScope.$on('$stateChangeSuccess', function () {
-                    filter = $state.params.filter;
+                $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+                    filter = toParams.filter;
                 });
 
                 function updateCreatives() {
                     var allCreatives = creatives.all();
                     var duplicateCreatives = [];
 
-                    duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    if (filter) {
+                        duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    } else {
+                        duplicateCreatives = allCreatives.data;
+                    }
+
                     $scope.creatives = duplicateCreatives;
                 }
 
