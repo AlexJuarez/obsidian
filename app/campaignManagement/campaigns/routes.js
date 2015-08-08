@@ -16,15 +16,6 @@ define(function (require) {
     require('tpl!./directives/campaignsByStatus.html');
     require('tpl!./new-campaign.html');
 
-    require('tpl!./creativesList.html');
-    require('tpl!./creativesThumbnails.html');
-    require('tpl!./creativesHeader.html');
-    require('tpl!./directives/creativeThumbnails.html');
-
-    require('tpl!./placementsList.html');
-    require('tpl!./placementsHeader.html');
-    require('tpl!./services/placementTableHeader.html');
-
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
 
         $urlRouterProvider.when('/campaign-management/campaign/:campaignId', '/campaign-management/campaign/:campaignId/placements');
