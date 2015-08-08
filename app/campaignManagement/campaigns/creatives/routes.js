@@ -2,11 +2,6 @@ define(function (require) {
     'use strict';
     var app = require('./../../module');
 
-    require('tpl!./creativesList.html');
-    require('tpl!./creativesThumbnails.html');
-    require('tpl!./creativesHeader.html');
-    require('tpl!./directives/creativeThumbnails.html');
-
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
 
         $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/list');
