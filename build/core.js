@@ -62646,7 +62646,7 @@ define('campaignManagement/campaigns/placements/controllers/placementsHeader',['
     }]);
 });
 
-define('campaignManagement/campaigns/placements/services/placements.js',['require','./../../../module','tpl!./placementTableHeader.html','angular'],function (require) {
+define('campaignManagement/campaigns/placements/services/placements',['require','./../../../module','tpl!./placementTableHeader.html','angular'],function (require) {
     'use strict';
 
     var module = require('./../../../module');
@@ -62818,7 +62818,7 @@ define('campaignManagement/campaigns/placements/services/placements.js',['requir
     }]);
 });
 
-define('campaignManagement/campaigns/placements/services/placementsByPublisher.js',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/placements/services/placementsByPublisher',['require','./../../../module'],function (require) {
     'use strict';
 
     var module = require('./../../../module');
@@ -62905,7 +62905,7 @@ define('campaignManagement/campaigns/placements/services/placementsByPublisher.j
     }]);
 });
 
-define('campaignManagement/campaigns/placements/services/placementsByCreative.js',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/placements/services/placementsByCreative',['require','./../../../module'],function (require) {
     'use strict';
 
     var module = require('./../../../module');
@@ -62995,7 +62995,7 @@ define('campaignManagement/campaigns/placements/services/placementsByCreative.js
     }]);
 });
 
-define('campaignManagement/campaigns/placements/services/placementsByAdType.js',['require','./../../../module'],function (require) {
+define('campaignManagement/campaigns/placements/services/placementsByAdType',['require','./../../../module'],function (require) {
     'use strict';
 
     var module = require('./../../../module');
@@ -63347,7 +63347,7 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
     ]);
 });
 
-define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/editCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/controllers/placementsHeader','./placements/services/placements.js','./placements/services/placementsByPublisher.js','./placements/services/placementsByCreative.js','./placements/services/placementsByAdType.js','./creatives/controllers/creativesHeader','./creatives/controllers/creativesList','./creatives/directives/creativeThumbnails','./creatives/services/creatives'],function (require) {
+define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./factories/campaignsByStatusAccordionTable','./controllers/newCampaign','./controllers/editCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./placements/controllers/placementsList','./placements/controllers/placementsHeader','./placements/services/placements','./placements/services/placementsByPublisher','./placements/services/placementsByCreative','./placements/services/placementsByAdType','./creatives/controllers/creativesHeader','./creatives/controllers/creativesList','./creatives/directives/creativeThumbnails','./creatives/services/creatives'],function (require) {
     'use strict';
 
     require('./services/campaignCache');
@@ -63369,10 +63369,10 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
 
     require('./placements/controllers/placementsList');
     require('./placements/controllers/placementsHeader');
-    require('./placements/services/placements.js');
-    require('./placements/services/placementsByPublisher.js');
-    require('./placements/services/placementsByCreative.js');
-    require('./placements/services/placementsByAdType.js');
+    require('./placements/services/placements');
+    require('./placements/services/placementsByPublisher');
+    require('./placements/services/placementsByCreative');
+    require('./placements/services/placementsByAdType');
 
     require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');
