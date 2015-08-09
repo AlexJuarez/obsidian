@@ -60966,6 +60966,20 @@ define('campaignManagement/clients/routes',['require','./../module','tpl!./index
                 url: '/clients',
                 controller: 'clientsCtrl',
                 templateUrl: 'campaignManagement/clients/index.html'
+            })
+            .state({
+                name: 'cm.campaigns.client',
+                url: '/client/:clientId',
+                views: {
+                    'summary': {
+                        controller: 'clientCtrl',
+                        templateUrl: 'campaignManagement/clients/client.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
             });
     }]);
 });
@@ -60973,9 +60987,30 @@ define('campaignManagement/clients/routes',['require','./../module','tpl!./index
 
 define('tpl!campaignManagement/divisions/division.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/divisions/division.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{division.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid">New Account</button>\n    <button class="btn btn-default solid">Edit Division</button>\n</div>\n'); });
 
-define('campaignManagement/divisions/routes',['require','tpl!./division.summary.html'],function (require) {
+define('campaignManagement/divisions/routes',['require','./../module','tpl!./division.summary.html'],function (require) {
     'use strict';
+    var app = require('./../module');
+
     require('tpl!./division.summary.html');
+
+    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider) {
+
+        $stateProvider
+            .state({
+                name: 'cm.campaigns.division',
+                url: '/division/:divisionId',
+                views: {
+                    'summary': {
+                        controller: 'divisionCtrl',
+                        templateUrl: 'campaignManagement/divisions/division.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
+            });
+    }]);
 });
 
 
@@ -60984,10 +61019,31 @@ define('tpl!campaignManagement/accounts/new-account.html', ['angular', 'tpl'], f
 
 define('tpl!campaignManagement/accounts/summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div account-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="campaignModal()">New Campaign</button>\n    <button class="btn btn-default solid">Edit Account</button>\n</div>\n'); });
 
-define('campaignManagement/accounts/routes',['require','tpl!./new-account.html','tpl!./summary.html'],function (require) {
+define('campaignManagement/accounts/routes',['require','./../module','tpl!./new-account.html','tpl!./summary.html'],function (require) {
     'use strict';
+    var app = require('./../module');
+
     require('tpl!./new-account.html');
     require('tpl!./summary.html');
+
+    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider) {
+
+        $stateProvider
+            .state({
+                name: 'cm.campaigns.account',
+                url: '/account/:accountId',
+                views: {
+                    'summary': {
+                        controller: 'accountCtrl',
+                        templateUrl: 'campaignManagement/accounts/summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
+            });
+    }]);
 });
 
 
@@ -61143,48 +61199,6 @@ define('campaignManagement/campaigns/routes',['require','./../module','./placeme
                 name: 'cm.campaigns',
                 url: '?viewBy',
                 templateUrl: 'campaignManagement/campaigns/index.html'
-            })
-            .state({
-                name: 'cm.campaigns.client',
-                url: '/client/:clientId',
-                views: {
-                    'summary': {
-                        controller: 'clientCtrl',
-                        templateUrl: 'campaignManagement/clients/client.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.division',
-                url: '/division/:divisionId',
-                views: {
-                    'summary': {
-                        controller: 'divisionCtrl',
-                        templateUrl: 'campaignManagement/divisions/division.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.account',
-                url: '/account/:accountId',
-                views: {
-                    'summary': {
-                        controller: 'accountCtrl',
-                        templateUrl: 'campaignManagement/accounts/summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
             })
             .state({
                 name: 'cm.campaigns.detail',

@@ -27,48 +27,6 @@ define(function (require) {
                 templateUrl: 'campaignManagement/campaigns/index.html'
             })
             .state({
-                name: 'cm.campaigns.client',
-                url: '/client/:clientId',
-                views: {
-                    'summary': {
-                        controller: 'clientCtrl',
-                        templateUrl: 'campaignManagement/clients/client.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.division',
-                url: '/division/:divisionId',
-                views: {
-                    'summary': {
-                        controller: 'divisionCtrl',
-                        templateUrl: 'campaignManagement/divisions/division.summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.account',
-                url: '/account/:accountId',
-                views: {
-                    'summary': {
-                        controller: 'accountCtrl',
-                        templateUrl: 'campaignManagement/accounts/summary.html'
-                    },
-                    'content': {
-                        controller: 'campaignsCtrl',
-                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
-                    }
-                }
-            })
-            .state({
                 name: 'cm.campaigns.detail',
                 url: '/campaign/:campaignId',
                 views: {
