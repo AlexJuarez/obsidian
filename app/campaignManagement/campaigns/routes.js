@@ -8,6 +8,7 @@ define(function (require) {
     require('tpl!./index.html');
     require('tpl!./campaign.summary.html');
     require('tpl!./campaigns.html');
+    require('tpl!./campaign.html');
     require('tpl!./campaignsByStatusHeader.html');
     require('tpl!./analytics-preview.html');
     require('tpl!./services/campaignsByAccountHeader.html');
