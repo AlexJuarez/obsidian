@@ -24,7 +24,6 @@ define(function (require) {
                 scope.calculateDims = calculateDims;
                 scope.main = elem.html();
                 scope.isOpen = false;
-                scope.close = close;
                 scope.toggleOpen = toggleOpen;
                 scope.removeDocHandler = removeDocHandler;
 
@@ -53,17 +52,12 @@ define(function (require) {
                     }
                 });
 
-                $rootScope.$on('tooltip:open', function(id) {
-                    if (id !== scope.$id) {
-                        close();
-                    }
-                });
-
                 function close() {
                     scope.isOpen = false;
                     scope.removeDocHandler();
                     
                 }
+                scope.close = close;
 
                 function removeDocHandler() {
                     $document.off('click', documentClickHandler);
@@ -89,6 +83,12 @@ define(function (require) {
 
                     scope.isOpen = !scope.isOpen;
                 }
+
+                $rootScope.$on('tooltip:open', function(id) {
+                    if (id !== scope.$id) {
+                        close();
+                    }
+                });
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
