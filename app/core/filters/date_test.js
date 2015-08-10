@@ -6,7 +6,7 @@ define(function (require) {
 
     describe('dateFilter', function () {
         var filter;
-        var minute = 360000;
+        var minute = 60000;
         var hour = minute * 60;
         var day = hour * 24;
         var month = day * 30;
@@ -43,7 +43,7 @@ define(function (require) {
             expect(filter(date)).toContain('days ago');
         });
 
-        it('should filter to hours ago.', function () {
+        it('should filter to months ago.', function () {
             var date = new Date();
             date -= 3*month;
             expect(filter(date)).toContain('months ago');
@@ -53,6 +53,10 @@ define(function (require) {
             var date = new Date();
             date -= 3*year;
             expect(filter(date)).toContain('years ago');
+        });
+
+        it('should return never when date is null', function() {
+           expect(filter(null)).toContain('Never');
         });
     });
 });

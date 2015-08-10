@@ -13,6 +13,20 @@ define(function (require) {
                 url: '/clients',
                 controller: 'clientsCtrl',
                 templateUrl: 'campaignManagement/clients/index.html'
+            })
+            .state({
+                name: 'cm.campaigns.client',
+                url: '/client/:clientId',
+                views: {
+                    'summary': {
+                        controller: 'clientCtrl',
+                        templateUrl: 'campaignManagement/clients/client.summary.html'
+                    },
+                    'content': {
+                        controller: 'campaignsCtrl',
+                        templateUrl: 'campaignManagement/campaigns/campaigns.html'
+                    }
+                }
             });
     }]);
 });

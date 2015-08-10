@@ -20,7 +20,7 @@ define(function (require) {
                 // Get development subdomain segments
                 if (subDomainSegments.length > 1) {
                     subDomainSegments.pop();
-                    subDomainSegments.join('-');
+                    subDomainSegments =  subDomainSegments.join('-');
                     mixpoURL = '//' + subDomainSegments + '-studio.mixpo.com';
                 } else {
                     mixpoURL = '//studio.mixpo.com';
