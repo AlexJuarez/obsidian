@@ -19,13 +19,15 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             link: function (scope, elem, attr) {
-                console.log( attr );
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.isOpen = false;
                 scope.main = elem.html();
+                scope.isOpen = false;
+                scope.close = close;
                 scope.toggleOpen = toggleOpen;
+                scope.removeDocHandler = removeDocHandler;
+
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
@@ -51,42 +53,42 @@ define(function (require) {
                     }
                 });
 
-                function close() {
-                    scope.isOpen = false;
-                }
-
-                scope.close = close;
-
                 $rootScope.$on('tooltip:open', function(id) {
-                    console.log( id );
                     if (id !== scope.$id) {
-                        console.log( 'id does not match, closing...' );
                         close();
                     }
                 });
 
+                function close() {
+                    scope.isOpen = false;
+                    scope.removeDocHandler();
+                    
+                }
+
+                function removeDocHandler() {
+                    $document.off('click', documentClickHandler);
+                }
+
                 function documentClickHandler(e) {
-                    if (elem !== e.target && !elem[0].contains(e.target)) {
-                        console.log( 'documentClickHandler' );
-                        //scope.$apply(function() {
-                            console.log( 'doc hit' );
-                            scope.toggleOpen();
-                        //});
+                    if (elem !== e.target && !elem[0].contains(e.target) && scope.isOpen) {
+                        scope.$apply(function() {
+                            scope.isOpen = false;
+                            scope.removeDocHandler();
+                        });
                     }
                 }
 
                 function toggleOpen() {
                     if (!scope.isOpen) {
                         $rootScope.$broadcast('tooltip:open', scope.$id);
-                        $document.on('click', documentClickHandler);
-                    } else {
-                        $document.off('click', documentClickHandler);
+                        $timeout(function() {
+                            $document.on('click', documentClickHandler);
+                        }, 500);
+                        
                     }
 
                     scope.isOpen = !scope.isOpen;
                 }
-
-
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
