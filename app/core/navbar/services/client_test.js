@@ -57,11 +57,13 @@ define(function (require) {
         });
 
         it('should pin a client', function () {
-            var apiConfig = ng.extend({}, client._apiPinConfig);
+            var pinConfig = ng.copy(client._apiPinConfig);
+            pinConfig.endpoint += clients[0].id;
             client.setData(clients);
             var firstClient = client.all()[0];
-            var pinConfig = ng.extend({}, apiConfig);
-            pinConfig.endpoint += firstClient.id;
+            httpBackend.expect('GET', apiGenerator(pinConfig))
+                .respond( 200, { id: clients[0].id, pinned: false } );
+
             httpBackend.expect('PUT', apiGenerator(pinConfig))
                 .respond( 200, { pinned: true } );
             client.pin(firstClient);
@@ -70,15 +72,20 @@ define(function (require) {
         });
 
         it('should unpin a client', function () {
-            var apiConfig = ng.extend({}, client._apiPinConfig);
-            apiConfig.endpoint += clients[0].id;
-            httpBackend.expect('PUT', apiGenerator(apiConfig))
-                .respond( 200, { pinned: false } );
+            var pinConfig = ng.extend({}, client._apiPinConfig);
+            pinConfig.endpoint += clients[0].id;
+
+            httpBackend.expect('GET', apiGenerator(pinConfig))
+                .respond( 200, clients[0] );
+
+            httpBackend.expect('PUT', apiGenerator(pinConfig))
+                .respond( 200, { id: clients[0].id, pinned: false } );
+
             client.setData(clients);
             var a = client.all()[0];
             client.unpin(a);
-            expect(client.pinned().length).toEqual(0);
             httpBackend.flush();
+            expect(client.pinned().length).toEqual(0);
         });
 
         it('should return a map containing a key of the first letter by name', function () {

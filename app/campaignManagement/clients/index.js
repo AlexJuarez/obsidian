@@ -4,6 +4,6 @@ define(function(require) {
     require('./directives/activeSummary');
     require('./controllers/client');
     require('./controllers/clients');
-    require('./controllers/newClient');
+    require('./controllers/newEditClient');
     require('./services/topClients');
 });

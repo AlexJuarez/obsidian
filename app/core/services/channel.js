@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var module = require('./../module');
-    var ng = require('angular');
 
     module.service('channelService', ['dataFactory', '$http', function (dataFactory) {
         var data = dataFactory(function (data) {
@@ -11,35 +10,20 @@ define(function (require) {
         });
 
         function transform(data) {
-            var channelSet = {};
-            var output = [];
-
-            data = data.clientSet;
-
-            for (var i = 0; i < data.length; i++) {
-                channelSet[data[i].channel] = true;
-            }
-
-            ng.forEach(channelSet, function (value, key) {
-                output.push(key);
-            });
-
-            return output;
+            return data;
         }
 
         function init() {
             var apiConfig = {
-                endpoint: 'clientSet',
-                queryParams: {
-                    dimensions: ['channel']
-                }
+                version: 'crud',
+                endpoint: 'channels'
             };
 
             return data.init(apiConfig, transform);
         }
 
         function sortFn(a, b) {
-            return b.localeCompare(a);
+            return b.name.localeCompare(a.name);
         }
 
         return {

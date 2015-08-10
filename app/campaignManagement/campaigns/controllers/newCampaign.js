@@ -22,7 +22,7 @@ define(function (require) {
             objectives: []
         };
 
-        $scope.campaign = modalState.campaign || ng.extend({}, initialCampaignScope);
+        $scope.campaign = ng.copy(modalState.campaign || initialCampaignScope);
 
         $scope.dateOptions = {
             formatYear: 'yy',
@@ -71,7 +71,7 @@ define(function (require) {
         }
 
         function cancel() {
-            if (campaignScopeChanged()) {
+            if (hasUnsavedChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
                     $scope.campaign = initialCampaignScope;
                     $modalInstance.dismiss('cancel');
@@ -81,7 +81,7 @@ define(function (require) {
             }
         }
 
-        function campaignScopeChanged() {
+        function hasUnsavedChanges() {
             return !ng.equals($scope.campaign, initialCampaignScope);
         }
 

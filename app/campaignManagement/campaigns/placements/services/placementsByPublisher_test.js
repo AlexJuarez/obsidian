@@ -38,9 +38,9 @@ define(function(require) {
                                 id: '1',
                                 name: 'AnimalLover.com',
                                 live: true,
-                                startDate: '2015-07-14',
-                                endDate: '2015-08-15',
-                                type: 'IBV',
+                                flightStart: '2015-07-14',
+                                flightEnd: '2015-08-15',
+                                type: 'In-Banner',
                                 bookedImpressions: 1234,
                                 budget: 10000,
                                 creatives: [
@@ -48,14 +48,15 @@ define(function(require) {
                                     {id: '2', name: 'Blastoise Rocks'}
                                 ],
                                 publisher: {id: 'discovery', name: 'Discovery'},
-                                metrics: {impressions: 123, spend: 1000}
+                                spend: 1000,
+                                metrics: {impressions: 123}
                             }, {
                                 id: '2',
                                 name: 'AnimalApathy.com',
                                 live: false,
-                                startDate: '2015-07-14',
-                                endDate: '2015-08-15',
-                                type: 'RM',
+                                flightStart: '2015-07-14',
+                                flightEnd: '2015-08-15',
+                                type: 'Rich Media',
                                 bookedImpressions: 1234,
                                 budget: 10000,
                                 creatives: [
@@ -65,7 +66,8 @@ define(function(require) {
                                     }
                                 ],
                                 publisher: {id: 'discovery', name: 'Discovery'},
-                                metrics: {impressions: 123, spend: 1000}
+                                spend: 1000,
+                                metrics: {impressions: 123}
                             }
                         ],
                         meta: {
@@ -84,14 +86,15 @@ define(function(require) {
                                 id: '3',
                                 name: 'AnimalHaters.com',
                                 live: false,
-                                startDate: '2015-07-14',
-                                endDate: '2015-08-15',
-                                type: 'RM',
+                                flightStart: '2015-07-14',
+                                flightEnd: '2015-08-15',
+                                type: 'Rich Media',
                                 bookedImpressions: 1234,
                                 budget: 10000,
                                 creatives: [{id: '2', name: 'Blastoise Rocks'}],
                                 publisher: {id: 'martha', name: 'Martha'},
-                                metrics: {impressions: 123, spend: 1000}
+                                spend: 1000,
+                                metrics: {impressions: 123}
                             }
                         ],
                         meta: {

@@ -2,15 +2,19 @@ define(function(require) {
     'use strict';
 
     var module = require('./../../../module');
-    var baseUrl = '/fixtures/creatives/creatives.json';
+
+    var ng = require('angular');
 
     var apiConfig = {
         endpoint: 'creatives',
-        dimensions: [
-            'id', 'name', 'live', 'type', 'device', 'embedWidth',
-            'embedHeight', 'expandedWidth', 'expandedHeight', 'countPlacements',
-            'live', 'modifiedDate', 'thumbnailUrlPrefix'
-        ]
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'live', 'type', 'device', 'embedWidth',
+                'embedHeight', 'expandedWidth', 'expandedHeight',
+                'countPlacements',
+                'live', 'modifiedDate', 'thumbnailUrlPrefix'
+            ]
+        }
     };
 
     var rules = {
@@ -35,6 +39,13 @@ define(function(require) {
         {name: '', id: 'options'}
     ];
 
+    var typeTransform = {
+        'In-Banner': 'IBV',
+        'In-Stream': 'IS',
+        'Rich Media': 'RM',
+        'Display': 'DISPLAY'
+    };
+
     module.service('creatives', [
         'cacheFactory', '$state', function(cacheFactory, $state) {
             var cache = cacheFactory({
@@ -57,16 +68,17 @@ define(function(require) {
                         checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                         creativeName: creative.name,
                         delivering: creative.live,
-                        type: creative.type,
+                        type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         numPlacements: creative.numPlacements,
                         options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
 
                         // These properties are needed by thumbnails but aren't
-												// in the table
-                        lastModified: creative.lastModified,
-                        thumbnail: creative.thumbnail
+						// in the table
+                        id: creative.id,
+                        lastModified: creative.modifiedDate,
+                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
                     });
                 }
 
@@ -74,24 +86,13 @@ define(function(require) {
             }
 
             function _apiConfig() {
-                var campaignId = $state.params.campaginId;
-                campaignId = apiConfig;
 
-                return {
-                    override: true,
-                    uri: baseUrl
-                };
+                var newConfig = ng.copy(apiConfig);
+                if ($state.params.campaignId) {
+                    newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
+                }
 
-                // TODO: put an actual api config object in there when the API
-								// is ready
-
-                //if ($state.params.campaignId) {
-                //    return {
-                //        filters: ['campaign.id:eq' + $state.params.campaignID]
-                //    };
-                //} else {
-                //    return '';
-                //}
+                return newConfig;
             }
 
             function all() {

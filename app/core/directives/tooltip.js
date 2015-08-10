@@ -33,9 +33,9 @@ define(function (require) {
                 var isBasicTooltip = true;
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
-                elem.html($compile(baseTemplate)(scope));
-
                 scope.$watch(tooltip, function (newValue) {
+                    elem.html($compile(baseTemplate)(scope));
+
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         elem.find('.content').html(newValue);

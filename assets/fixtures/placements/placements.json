@@ -4,64 +4,64 @@
             "id": "1",
             "name": "AnimalLover.com",
             "live": true,
-            "startDate": "2015-07-14",
-            "endDate": "2015-08-15",
-            "type": "IBV",
+            "flightStart": "2015-07-14",
+            "flightEnd": "2015-08-15",
+            "type": "In-Banner",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
                 {"id": "1", "name": "Shark Week Terror"},
                 {"id": "2", "name": "Blastoise Rocks"}
             ],
+            "spend": 1000,
             "publisher": {
                 "id": "discovery",
                 "name": "Discovery"
             },
             "metrics": {
-                "impressions": 123,
-                "spend": 1000
+                "impressions": 123
             }
         },
         {
             "id": "2",
             "name": "AnimalApathy.com",
             "live": false,
-            "startDate": "2015-07-14",
-            "endDate": "2015-08-15",
-            "type": "RM",
+            "flightStart": "2015-07-14",
+            "flightEnd": "2015-08-15",
+            "type": "Rich Media",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
                 {"id": "1", "name": "Shark Week Terror"}
             ],
+            "spend": 1000,
             "publisher": {
                 "id": "discovery",
                 "name": "Discovery"
             },
             "metrics": {
-                "impressions": 123,
-                "spend": 1000
+                "impressions": 123
             }
         },
         {
             "id": "3",
             "name": "AnimalHaters.com",
             "live": false,
-            "startDate": "2015-07-14",
-            "endDate": "2015-08-15",
-            "type": "RM",
+            "flightStart": "2015-07-14",
+            "flightEnd": "2015-08-15",
+            "type": "Rich Media",
             "bookedImpressions": 1234,
             "budget": 10000,
             "creatives": [
                 {"id": "2", "name": "Blastoise Rocks"}
             ],
+            "spend": 1000,
             "publisher": {
                 "id": "martha",
                 "name": "Martha"
             },
             "metrics": {
-                "impressions": 123,
-                "spend": 1000
+                "impressions": 123
             }
         }
     ]

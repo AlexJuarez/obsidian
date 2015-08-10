@@ -2,11 +2,11 @@
 
 define(function (require) {
     var app = require('./../../module');
-    require('tpl!./../new-client.html');
+    require('tpl!./../new-edit-client.html');
 
     app.controller('clientsCtrl', ['$scope', 'topClientsService', '$modal', function ($scope, topClients, $modal) {
 
-        $scope.openModal = openModal;
+        $scope.openNewClientModal = openNewClientModal;
 
         topClients.init();
 
@@ -16,12 +16,24 @@ define(function (require) {
             $scope.topClients = topClients.all();
         }
 
-        function openModal(size) {
+        var createModal;
+        function openNewClientModal() {
+            if (!createModal) {
+                createModal = {
+                    action: 'New'
+                };
+            }
+
             $modal.open({
                 animation: 'true',
-                templateUrl: 'campaignManagement/clients/new-client.html',
-                controller: 'newClientCtrl',
-                size: size
+                templateUrl: 'campaignManagement/clients/new-edit-client.html',
+                controller: 'newEditClientCtrl',
+                resolve: {
+                    modalState: function() {
+                        return createModal;
+                    }
+                },
+                size: 'lg'
             });
         }
     }]);

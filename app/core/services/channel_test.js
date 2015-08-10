@@ -22,7 +22,7 @@ define(function (require) {
         });
 
         function setUpTest() {
-            httpBackend.when('GET', '/api/v3/clientSet?dimensions=channel').respond(data);
+            httpBackend.when('GET', '/api/crud/channels').respond(data);
             channel.init();
             httpBackend.flush();
         }
