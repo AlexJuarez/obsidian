@@ -138,7 +138,7 @@ define(function (require) {
         it('should filter by deleted records', function() {
             var test = data();
             test.addData([{deleted: true}, {deleted: false}]);
-            expect(test.all()).toEqual([{deleted: false}])
-        })
+            expect(test.all()).toEqual([{deleted: false}]);
+        });
     });
 });

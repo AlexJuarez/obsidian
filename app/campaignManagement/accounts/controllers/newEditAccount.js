@@ -3,7 +3,7 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('newAccountCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
 
         //Modal functions
         $scope.ok = ok;

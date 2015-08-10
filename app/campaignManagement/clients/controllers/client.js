@@ -8,6 +8,8 @@ define(function (require) {
     app.controller('clientCtrl', ['$scope', '$modal', 'navbarService', function ($scope, $modal, navbar) {
 
         $scope.openEditClientModal = openEditClientModal;
+        $scope.openNewDivisionModal = openNewDivisionModal;
+        $scope.openNewAccountModall = openNewAccountModal;
 
         function updateClientName() {
             $scope.client = navbar.all().client;
@@ -15,10 +17,10 @@ define(function (require) {
 
         navbar.observe(updateClientName, $scope);
 
-        var createModal;
+        var editClientModal;
         function openEditClientModal() {
-            if (!createModal) {
-                createModal = {
+            if (!editClientModal) {
+                editClientModal = {
                     clientId: $scope.client.id,
                     action: 'Edit'
                 };
@@ -30,7 +32,51 @@ define(function (require) {
                 controller: 'newEditClientCtrl',
                 resolve: {
                     modalState: function() {
-                        return createModal;
+                        return editClientModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
+        var newAccountModal;
+        function openNewAccountModal() {
+            if (!newAccountModal) {
+                newAccountModal = {
+                    clientId: $scope.client.id,
+                    action: 'Edit'
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/accounts/new-edit-account.html',
+                controller: 'newEditAccountCtrl',
+                resolve: {
+                    modalState: function() {
+                        return newAccountModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
+        var newDivisionModal;
+        function openNewDivisionModal() {
+            if (!newDivisionModal) {
+                newDivisionModal = {
+                    clientId: $scope.client.id,
+                    action: 'Edit'
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/clients/new-edit-client.html',
+                controller: 'newEditClientCtrl',
+                resolve: {
+                    modalState: function() {
+                        return newDivisionModal;
                     }
                 },
                 size: 'lg'
