@@ -63185,7 +63185,7 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
                 // Get development subdomain segments
                 if (subDomainSegments.length > 1) {
                     subDomainSegments.pop();
-                    subDomainSegments.join('-');
+                    subDomainSegments =  subDomainSegments.join('-');
                     mixpoURL = '//' + subDomainSegments + '-studio.mixpo.com';
                 } else {
                     mixpoURL = '//studio.mixpo.com';
@@ -63777,7 +63777,7 @@ define('campaignManagement/controllers/index',['require','./../module'],function
             queryParams: {
                 dimensions: [
                     'id', 'name', 'pinned', 'account.id', 'division.id',
-                    'client.id'
+                    'client.id', 'startDate', 'endDate'
                 ]
             }
         });
