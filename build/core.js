@@ -60208,7 +60208,7 @@ define('core/filters/errorCount',['require','./../module','angular'],function (r
     }]);
 });
 
-var minute = 360000;
+var minute = 60000;
 var hour = minute * 60;
 var day = hour * 24;
 var month = day * 30;
@@ -60221,6 +60221,9 @@ define('core/filters/date',['require','./../module'],function (require) {
 
     app.filter('dateFormatter', [function () {
         return function (date) {
+            if (date === null) {
+                return 'Never';
+            }
             var then = new Date(date);
             var now = new Date();
             var timePassed = now - then;
@@ -60229,7 +60232,7 @@ define('core/filters/date',['require','./../module'],function (require) {
                 return 'moments ago';
             }
             if (timePassed < hour) {
-                return Math.floor(timePassed / minute) + ' minutes';
+                return Math.floor(timePassed / minute) + ' minutes ago';
             }
             if (timePassed < day) {
                 return Math.floor(timePassed / hour) + ' hours ago';
