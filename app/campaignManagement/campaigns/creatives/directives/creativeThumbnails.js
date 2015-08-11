@@ -27,9 +27,6 @@ define(function (require) {
                 }
 
                 $scope.openPreviewPage = function(creative) {
-                    console.log( 'thumbnail controller: preview creative ');
-                    console.log(creative);
-                    var urlName = encodeURIComponent(creative.creativeName.replace(/ /g, '-'));
                     $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
                 };
 
