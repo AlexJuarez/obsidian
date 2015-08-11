@@ -60499,8 +60499,8 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
             }
 
             var endpoint = getEndpoint(apiConfig);
-            //console.log(endpoint + expandParams(apiConfig.queryParams || []), apiConfig);
-            return endpoint + expandParams(apiConfig.queryParams || []);
+
+            return endpoint + expandParams(apiConfig.queryParams || {});
         }
 
         function getEndpoint(config) {
@@ -60509,8 +60509,6 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
         }
 
         function expandParams(params) {
-            console.log(params);
-
             var paramsArray = [];
 
             //Convert all arrays into comma-separated strings
@@ -63182,23 +63180,22 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
             controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', function ($scope, $window, $state, $rootScope, $filter, creatives) {
 
-                var mixpoURL,
-                subDomainSegments = location.hostname.split('-');
+                var mixpoURL = getStudioUrl($window.location.hostname);
                 var filter = $state.params.filter;
 
-                // Get development subdomain segments
-                if (subDomainSegments.length > 1) {
-                    subDomainSegments.pop();
-                    subDomainSegments =  subDomainSegments.join('-');
-                    mixpoURL = '//' + subDomainSegments + '-studio.mixpo.com';
-                } else {
-                    mixpoURL = '//studio.mixpo.com';
+                // For testing purposes
+                $scope.getStudioUrl = getStudioUrl;
+                function getStudioUrl(domain) {
+                    if (domain.indexOf('studio') > -1) {
+                        return '//' + domain;
+                    } else if (domain.indexOf('mixpo.com') > -1) {
+                        return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
+                    } else {
+                        return '//studio.mixpo.com';
+                    }
                 }
 
                 $scope.openPreviewPage = function(creative) {
-                    console.log( 'thumbnail controller: preview creative ');
-                    console.log(creative);
-                    var urlName = encodeURIComponent(creative.creativeName.replace(/ /g, '-'));
                     $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
                 };
 

@@ -24,8 +24,8 @@ define(function (require) {
             }
 
             var endpoint = getEndpoint(apiConfig);
-            //console.log(endpoint + expandParams(apiConfig.queryParams || []), apiConfig);
-            return endpoint + expandParams(apiConfig.queryParams || []);
+
+            return endpoint + expandParams(apiConfig.queryParams || {});
         }
 
         function getEndpoint(config) {
@@ -34,8 +34,6 @@ define(function (require) {
         }
 
         function expandParams(params) {
-            console.log(params);
-
             var paramsArray = [];
 
             //Convert all arrays into comma-separated strings
