@@ -34,6 +34,7 @@ define(function (require) {
         }
 
         function expandParams(params) {
+            console.log(params);
 
             var paramsArray = [];
 

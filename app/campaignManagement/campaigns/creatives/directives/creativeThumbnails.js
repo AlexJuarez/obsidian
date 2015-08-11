@@ -26,9 +26,11 @@ define(function (require) {
                     mixpoURL = '//studio.mixpo.com';
                 }
 
-                $scope.openPreviewPage = function(id, name) {
-                    console.log( 'thumbnail controller: preview creative ' + id, name );
-                    $window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
+                $scope.openPreviewPage = function(creative) {
+                    console.log( 'thumbnail controller: preview creative ');
+                    console.log(creative);
+                    var urlName = encodeURIComponent(creative.creativeName.replace(/ /g, '-'));
+                    $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
                 };
 
                 $scope.openStudio = function(id) {
