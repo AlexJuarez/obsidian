@@ -2,7 +2,7 @@ define(function (require) {
     'use strict';
 
     var app = require('./../../module');
-    require('tpl!./../new-account.html');
+    require('tpl!./../new-edit-account.html');
 
     app.controller('accountCtrl', ['$scope', 'navbarService', 'campaignModal', function ($scope, navbar, campaignModal) {
         function updateAccountInfo() {

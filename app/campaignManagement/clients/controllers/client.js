@@ -9,7 +9,7 @@ define(function (require) {
 
         $scope.openEditClientModal = openEditClientModal;
         $scope.openNewDivisionModal = openNewDivisionModal;
-        $scope.openNewAccountModall = openNewAccountModal;
+        $scope.openNewAccountModal = openNewAccountModal;
 
         function updateClientName() {
             $scope.client = navbar.all().client;
