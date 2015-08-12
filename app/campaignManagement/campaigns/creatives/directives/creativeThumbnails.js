@@ -12,30 +12,37 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $state, $rootScope, $filter, creatives, creativeRecordService) {
+            controller: ['$scope', '$window', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $location, $state, $rootScope, $filter, creatives, creativeRecordService) {
 
-
-
-                var mixpoURL,
-                subDomainSegments = location.hostname.split('-');
                 var filter = $state.params.filter;
 
-                // Get development subdomain segments
-                if (subDomainSegments.length > 1) {
-                    subDomainSegments.pop();
-                    subDomainSegments.join('-');
-                    mixpoURL = '//' + subDomainSegments + '-studio.mixpo.com';
-                } else {
-                    mixpoURL = '//studio.mixpo.com';
-                }
+                var urlPrefix = function() {
+                    if ($location.$$host === 'localhost') {
+                        return 'thorwhal-dev-studio.mixpo.com';
+                    } else {
+                        return $location.$$host;
+                    }
+                };
+
+
+                //console.log( creatives );
+                // $scope.creatives = {
+                //     numPlacements: 0
+                // }
 
                 $scope.openPreviewPage = function(id, name) {
                     console.log( 'thumbnail directive: preview creative ' + id, name );
-                    $window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
+                    var n = name.split(' ').join('-');
+                    var previewUrl = '//'+ urlPrefix() + '/videoad/' + id + '/' + n;
+                    $window.open(previewUrl, '_blank');
+                    //$window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
                 };
 
                 $scope.openStudio = function(id) {
-                    $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
+                    var studioUrl = '//'+ urlPrefix() + '/studio?sdf=open&guid=' + id;
+                    $window.open(studioUrl, '_blank');
+
+                    //$window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
                 };
 
                 $scope.openSettings = function(id) {
@@ -77,7 +84,7 @@ define(function (require) {
                     $scope.creatives = duplicateCreatives;
 
                     //console.log('allCreatives', allCreatives );
-                    //console.log('duplicateCreatives', duplicateCreatives );
+                    console.log('$scope.creatives', $scope.creatives );
                 }
 
                 creatives.observe(updateCreatives, $scope);

@@ -24,7 +24,7 @@ define(function(require) {
         type: '',
         dimensions: '',
         expandedDimensions: '',
-        numPlacements: '',
+        countPlacements: '',
         options: ''
     };
 
@@ -35,7 +35,7 @@ define(function(require) {
         {name: 'Type', id: 'type'},
         {name: 'Dimensions', id: 'dimensions'},
         {name: 'Expandable', id: 'expandedDimensions'},
-        {name: 'No. Placements', id: 'numPlacements'},
+        {name: 'No. Placements', id: 'countPlacements'},
         {name: '', id: 'options'}
     ];
 
@@ -53,7 +53,6 @@ define(function(require) {
             });
 
             function _transformCreatives(data) {
-                //console.log( data );
                 var creatives = data.creatives;
                 var creative;
                 var transformedTable = {
@@ -72,7 +71,7 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        numPlacements: creative.numPlacements,
+                        countPlacements: creative.countPlacements,
                         options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
 
                         // These properties are needed by thumbnails but aren't
