@@ -34,7 +34,7 @@ define(function (require) {
             queryParams: {
                 dimensions: [
                     'id', 'name', 'pinned', 'account.id', 'division.id',
-                    'client.id'
+                    'client.id', 'startDate', 'endDate'
                 ]
             }
         });

@@ -24,25 +24,15 @@ define(function (require) {
                     }
                 };
 
-
-                //console.log( creatives );
-                // $scope.creatives = {
-                //     numPlacements: 0
-                // }
-
                 $scope.openPreviewPage = function(id, name) {
-                    console.log( 'thumbnail directive: preview creative ' + id, name );
                     var n = name.split(' ').join('-');
                     var previewUrl = '//'+ urlPrefix() + '/videoad/' + id + '/' + n;
                     $window.open(previewUrl, '_blank');
-                    //$window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
                 };
 
                 $scope.openStudio = function(id) {
                     var studioUrl = '//'+ urlPrefix() + '/studio?sdf=open&guid=' + id;
                     $window.open(studioUrl, '_blank');
-
-                    //$window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
                 };
 
                 $scope.openSettings = function(id) {
