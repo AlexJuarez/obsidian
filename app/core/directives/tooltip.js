@@ -20,7 +20,8 @@ define(function (require) {
             scope: {
                 isOpen: '=',
                 creativeData: '=',
-                current: '=tooltip'
+                current: '=tooltip',
+                calculateClass: '@'
             },
             link: function (scope, elem, attr) {
                 scope.updatePosition = updatePosition;

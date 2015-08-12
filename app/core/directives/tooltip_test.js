@@ -28,7 +28,7 @@ define(function (require) {
             var scope = rootScope.$new();
             var elem = ng.element('<div tooltip="test"></div>');
             compile(elem)(scope);
-            scope = elem.scope();
+            scope = elem.isolateScope();
             expect(scope.calculateClass(dims)).toBe(className);
         }
 
