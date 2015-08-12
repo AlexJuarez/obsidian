@@ -17,7 +17,11 @@ define(function (require) {
     app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller) {
         return {
             restrict: 'A',
-            scope: true,
+            scope: {
+                isOpen: '=',
+                creativeData: '=',
+                current: '=tooltip'
+            },
             link: function (scope, elem, attr) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
@@ -27,6 +31,7 @@ define(function (require) {
                 scope.toggleOpen = toggleOpen;
                 scope.removeDocHandler = removeDocHandler;
 
+                
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
@@ -42,6 +47,10 @@ define(function (require) {
                     } else {
                         isBasicTooltip = false;
 
+                        if (scope.creativeData) {
+                            scope.name = scope.creativeData.name;    
+                        }
+                        
                         if (attr.tooltipController) {
                             var customController = attr.tooltipController;
                             $controller(customController, { $scope: scope });

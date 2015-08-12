@@ -81,7 +81,6 @@ define(function(require) {
                         thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
                     });
                 }
-
                 return transformedTable;
             }
 
