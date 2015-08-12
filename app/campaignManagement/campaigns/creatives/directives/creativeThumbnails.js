@@ -16,9 +16,9 @@ define(function (require) {
 
 
 
-                // Should this be a shared filter for other parts of the app to use? -JFlo
                 var mixpoURL,
                 subDomainSegments = location.hostname.split('-');
+                var filter = $state.params.filter;
 
                 // Get development subdomain segments
                 if (subDomainSegments.length > 1) {
@@ -60,17 +60,20 @@ define(function (require) {
                     console.log( 'thumbnail directive: delete creative ' + id );
                 };
 
-                var filter = $state.params.filter;
-
-                $rootScope.$on('$stateChangeSuccess', function () {
-                    filter = $state.params.filter;
+                $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+                    filter = toParams.filter;
                 });
 
                 function updateCreatives() {
                     var allCreatives = creatives.all();
                     var duplicateCreatives = [];
 
-                    duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    if (filter) {
+                        duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
+                    } else {
+                        duplicateCreatives = allCreatives.data;
+                    }
+
                     $scope.creatives = duplicateCreatives;
 
                     //console.log('allCreatives', allCreatives );

@@ -1,4 +1,4 @@
-#Obsidian Style Guide / Frontend UI
+#![Obsidian](http://obsidian.mixpo.com/images/obsidian-iconx32.png)Obsidian Style Guide / Frontend UI
 
 The client code lives in app
 

@@ -5,17 +5,14 @@
     padding: 0 0.5rem;
     width: 320px;
 
-    .preview-overlay {
-        .font-size(1.6);
-    }
-
     .preview-modal-header {
         .clearfix();
         margin-bottom: 0.8rem;
         span {
             margin-right: 2rem;
-            i {
+            [class*="glyph"] {
                 margin-right: 1rem;
+                margin-left: 0;
             }
             a {
                 display: inline-block;
@@ -31,7 +28,7 @@
         .glyph-close {
             position: absolute;
             top: 1rem;
-            right: 1rem;
+            right: 2rem;
             z-index: 999;
             line-height: 1;
             .font-size(1.5);

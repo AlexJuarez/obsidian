@@ -17,7 +17,7 @@ table {
 }
 
 .table-wrapper {
-    overflow-y: auto;
+    //overflow-y: auto;
     width: 100%;
     .table {
         margin-bottom: 0;
@@ -25,7 +25,7 @@ table {
 }
 
 .table {
-    overflow-y: auto;
+    //overflow-y: auto;
     width: 100%;
     margin-bottom: 3rem;
     > thead {
@@ -317,7 +317,9 @@ table {
     > .content {
         width: 100%;
         display: none;
-        overflow: auto;
+        position: relative;
+        // overflow-x: auto;
+        // overflow-y: visible;
         > .table {
             margin-bottom: 0;
         }

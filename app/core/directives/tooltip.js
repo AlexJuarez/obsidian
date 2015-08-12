@@ -17,29 +17,41 @@ define(function (require) {
     app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller) {
         return {
             restrict: 'A',
-            scope: true,
+            scope: {
+                isOpen: '=',
+                creativeData: '=',
+                current: '=tooltip',
+                calculateClass: '@'
+            },
             link: function (scope, elem, attr) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.isOpen = false;
                 scope.main = elem.html();
+                scope.isOpen = false;
                 scope.toggleOpen = toggleOpen;
+                scope.removeDocHandler = removeDocHandler;
+
+                
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
                 var isBasicTooltip = true;
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
 
-                elem.html($compile(baseTemplate)(scope));
-
                 scope.$watch(tooltip, function (newValue) {
+                    elem.html($compile(baseTemplate)(scope));
+
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         elem.find('.content').html(newValue);
                     } else {
                         isBasicTooltip = false;
 
+                        if (scope.creativeData) {
+                            scope.name = scope.creativeData.name;    
+                        }
+                        
                         if (attr.tooltipController) {
                             var customController = attr.tooltipController;
                             $controller(customController, { $scope: scope });
@@ -52,25 +64,41 @@ define(function (require) {
 
                 function close() {
                     scope.isOpen = false;
+                    scope.removeDocHandler();
+                    
                 }
-
                 scope.close = close;
 
-                $rootScope.$on('tooltip:open', function(id) {
-                    if(id !== scope.$id) {
-                        close();
+                function removeDocHandler() {
+                    $document.off('click', documentClickHandler);
+                }
+
+                function documentClickHandler(e) {
+                    if (elem !== e.target && !elem[0].contains(e.target) && scope.isOpen) {
+                        scope.$apply(function() {
+                            scope.isOpen = false;
+                            scope.removeDocHandler();
+                        });
                     }
-                });
+                }
 
                 function toggleOpen() {
-                    if(!scope.isOpen) {
+                    if (!scope.isOpen) {
                         $rootScope.$broadcast('tooltip:open', scope.$id);
+                        $timeout(function() {
+                            $document.on('click', documentClickHandler);
+                        }, 500);
+                        
                     }
 
                     scope.isOpen = !scope.isOpen;
                 }
 
-
+                $rootScope.$on('tooltip:open', function(id) {
+                    if (id !== scope.$id) {
+                        close();
+                    }
+                });
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {

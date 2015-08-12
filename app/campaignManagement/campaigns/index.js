@@ -20,10 +20,10 @@ define(function (require) {
 
     require('./placements/controllers/placementsList');
     require('./placements/controllers/placementsHeader');
-    require('./placements/services/placements.js');
-    require('./placements/services/placementsByPublisher.js');
-    require('./placements/services/placementsByCreative.js');
-    require('./placements/services/placementsByAdType.js');
+    require('./placements/services/placements');
+    require('./placements/services/placementsByPublisher');
+    require('./placements/services/placementsByCreative');
+    require('./placements/services/placementsByAdType');
 
     require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');

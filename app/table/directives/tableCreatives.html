@@ -1,3 +1,5 @@
 <div ng-repeat="creative in creatives">
-    {{creative.name}}
+    
+    <a tooltip="'core/modal/creativePreview.html'" creative-data="creative" is-open=isOpen ng-class="{'open': isOpen}" tooltip-controller="modalCtrl" class="tooltip tooltip-top-center tooltip-advanced tooltip-dark click"><i class="glyph-view"></i>{{name}}</a>
+
 </div>
