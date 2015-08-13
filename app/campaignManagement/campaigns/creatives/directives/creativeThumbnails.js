@@ -47,11 +47,45 @@ define(function (require) {
                     console.log( 'Copy Creative ' + id );
                     
                     creativeRecordService.getById(id).then(function(creative) {
+                        console.log( 'creativeRecordService' );
                         var newCreative = ng.copy(creative);
+                        console.log( 'newCreative', newCreative );
                         delete newCreative.id;
-                        creativeRecordService.create(newCreative);
+                        console.log( 'newCreative no ID', newCreative );
+                        //console.log( transformCreativeData(newCreative) );
+
+                        creativeRecordService.create( transformCreativeData(newCreative) );
                     });
                 };
+                creativeRecordService.observe(function(newUpdatedRecord) {
+                    console.log( 'newUpdatedRecord', newUpdatedRecord );
+                    creatives.addData([newUpdatedRecord]);
+
+                }, $scope, true);
+                
+                var transformCreativeData = function(obj) {
+                    console.log( 'transformCreativeData' );
+                    var allData = obj.all();
+                    var newData = {};
+                    newData.expandedWidth = allData.expandedWidth;
+                    newData.deleted = allData.deleted;
+                    newData.expandedHeight = allData.expandedHeight;
+                    newData.name = allData.name;
+                    newData.type = allData.type;
+                    newData.keywords = allData.keywords;
+                    newData.embedHeight = allData.embedHeight;
+                    newData.expandAnchor = allData.expandAnchor;
+                    newData.expandMode = allData.expandMode;
+                    newData.device = allData.device;
+                    newData.embedWidth = allData.embedWidth;
+                    newData.expandDirection = allData.expandDirection;
+                    console.log( newData );
+                    return newData;
+
+                    //return $filter('filter')(obj.all(transformedData), {type: filter});
+                };
+
+
 
                 $scope.deleteCreative = function(id) {
                     console.log( 'thumbnail directive: delete creative ' + id );
@@ -74,16 +108,11 @@ define(function (require) {
                     $scope.creatives = duplicateCreatives;
 
                     //console.log('allCreatives', allCreatives );
-                    console.log('$scope.creatives', $scope.creatives );
+                    //console.log('$scope.creatives', $scope.creatives );
                 }
 
                 creatives.observe(updateCreatives, $scope);
 
-                creativeRecordService.observe(function(newUpdatedRecord) {
-                    console.log( 'newUpdatedRecord', newUpdatedRecord );
-                    creatives.addData([newUpdatedRecord]);
-
-                }, $scope, true);
 
             }]
         };
