@@ -36,6 +36,7 @@ define(function (require) {
 
         function all() {
             var datum = cache.all(getApiConfig());
+            //console.log( 'datum', datum );
             var output = {
                 'count': 0,
                 'countCampaignsPreFlight': 0,
