@@ -8,6 +8,7 @@ define(function (require) {
     module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
+            var transformFn;
             var data = [];
             var observers = {};
             var observerId = 0;
@@ -24,6 +25,7 @@ define(function (require) {
 
                 if (!initialized) {
                     transform = transform || function (d) { return d; };
+                    transformFn = transform;
 
                     initialized = true;
 
@@ -61,9 +63,10 @@ define(function (require) {
                         temp.push(item);
                     }
                 }
-
-                data = sortFn(temp.concat(d));
+                debugger;
+                data = sortFn(transformFn.call(this, temp.concat(d)));
                 filterDeleted();
+                debugger;
                 notifyObservers();
             }
 

@@ -54,41 +54,51 @@ define(function (require) {
                         console.log( 'newCreative no ID', newCreative );
                         //console.log( transformCreativeData(newCreative) );
 
-                        creativeRecordService.create( transformCreativeData(newCreative) );
+
+                        console.log(newCreative.all());
+                        creativeRecordService.create( transformCreativeData(newCreative.all()) );
                     });
-                };
-                creativeRecordService.observe(function(newUpdatedRecord) {
-                    console.log( 'newUpdatedRecord', newUpdatedRecord );
-                    creatives.addData([newUpdatedRecord]);
+                    
+                    var transformCreativeData = function(data) {
+                        var crudCreative =  {
+                            expandedWidth: data.expandedWidth,
+                            deleted: data.deleted,
+                            expandedHeight: data.expandedHeight,
+                            name: data.name,
+                            type: data.type,
+                            keywords: data.keywords.join(','),
+                            embedHeight: data.embedHeight,
+                            expandAnchor: data.expandAnchor,
+                            device: data.device,
+                            embedWidth: data.embedWidth,
+                            expandDirection: data.expandDirection
+                        };
 
-                }, $scope, true);
+                        if (data.expandMode) {
+                            crudCreative.expandMode = data.expandMode;
+                        }
+                        console.log( 'crudCreative', crudCreative );
+                        return crudCreative;
+                    };
+                };
                 
-                var transformCreativeData = function(obj) {
-                    console.log( 'transformCreativeData' );
-                    var allData = obj.all();
-                    var newData = {};
-                    newData.expandedWidth = allData.expandedWidth;
-                    newData.deleted = allData.deleted;
-                    newData.expandedHeight = allData.expandedHeight;
-                    newData.name = allData.name;
-                    newData.type = allData.type;
-                    newData.keywords = allData.keywords;
-                    newData.embedHeight = allData.embedHeight;
-                    newData.expandAnchor = allData.expandAnchor;
-                    newData.expandMode = allData.expandMode;
-                    newData.device = allData.device;
-                    newData.embedWidth = allData.embedWidth;
-                    newData.expandDirection = allData.expandDirection;
-                    console.log( newData );
-                    return newData;
-
-                    //return $filter('filter')(obj.all(transformedData), {type: filter});
-                };
 
 
 
-                $scope.deleteCreative = function(id) {
-                    console.log( 'thumbnail directive: delete creative ' + id );
+                $scope.deleteCreative = function(creative) {
+                    //console.log( 'delete creative ', creative );
+                    creativeRecordService.delete( creative.id );
+
+                    // creativeRecordService.getById(creative.id).then(function(creative) {
+                    //     console.log( 'creative', creative.all() );
+
+                    //     var newCreativeObj = transformForDelete(creative.all());
+
+                    //     console.log( 'newCreativeObj', newCreativeObj );
+
+                    //     creativeRecordService.delete( newCreativeObj.id );
+                    // });
+
                 };
 
                 $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {

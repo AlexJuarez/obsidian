@@ -47,12 +47,57 @@ define(function(require) {
     };
 
     module.service('creatives', [
-        'cacheFactory', '$state', function(cacheFactory, $state) {
+        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
             var cache = cacheFactory({
                 transform: _transformCreatives
             });
 
+            creativeRecordService.observe(function(newUpdatedRecord) {
+                var creative = getCreative(newUpdatedRecord.id);
+
+                var transformedRecord;
+                if (creative) {
+                    transformedRecord = transformUpdated(newUpdatedRecord, creative);
+                }
+
+                function transformUpdated(updatedRecord, existingRecord) {
+                    var addRecord = {
+                         deleted: updatedRecord.deleted,
+                         embedHeight: updatedRecord.embedHeight,
+                         expandedWidth: updatedRecord.expandedWidth,
+                         embedWidth: updatedRecord.embedWidth,
+                         expandedHeight: updatedRecord.expandedHeight,
+                         modifiedDate: existingRecord.lastModified,
+                         name: updatedRecord.name,
+                         id: updatedRecord.id,
+                         thumbnailUrlPrefix:  updatedRecord.thumbnailUrlPrefix,
+                         type: updatedRecord.type,
+                         device: updatedRecord.device,
+                         live: existingRecord.delivering,
+                         countPlacements: existingRecord.countPlacements
+                      };
+                    return addRecord;
+                }
+
+                function getCreative(id) {
+                    var creatives = cache.all( _apiConfig() ).data;
+                    console.log( 'creatives', creatives );
+                    var c;
+                    for (var i=0; creatives.length > i; i++) {
+                        c = creatives[i];
+                        if (c.id === id) {
+                            return c;
+                        }
+                    }
+                    return false;
+                }
+
+                addData([transformedRecord]);
+
+            }, undefined, true);
+
             function _transformCreatives(data) {
+                console.log( 'data', data );
                 var creatives = data.creatives;
                 var creative;
                 var transformedTable = {
@@ -81,6 +126,7 @@ define(function(require) {
                         thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
                     });
                 }
+                //console.log( transformedTable );
                 return transformedTable;
             }
 

@@ -12,7 +12,7 @@
 		<div class="creative-info">
 			<span class="title">{{creative.creativeName}}</span>
 			<div class="data">
-				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>
+				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements:</a>
 				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.countPlacements}}</a>
 			</div>
 			<div class="data">
@@ -30,7 +30,7 @@
 				</span>
 				<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>
 				<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>
-				<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>
+				<a ng-click="deleteCreative(creative)" title="Delete Creative" class="glyph-icon glyph-close"></a>
 			</div>
 		</div>
 	</div>
