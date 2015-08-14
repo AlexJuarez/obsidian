@@ -44,7 +44,7 @@ define(function (require) {
             if (!newAccountModal) {
                 newAccountModal = {
                     clientId: $scope.client.id,
-                    action: 'Edit'
+                    action: 'New'
                 };
             }
 
@@ -66,7 +66,7 @@ define(function (require) {
             if (!newDivisionModal) {
                 newDivisionModal = {
                     clientId: $scope.client.id,
-                    action: 'Edit'
+                    action: 'New'
                 };
             }
 

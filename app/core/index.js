@@ -27,9 +27,12 @@ define(function (require) {
     require('./filters/date');
     require('./filters/truncateNumber');
     require('./services/channel');
+    require('./services/accountRecord');
+    require('./services/industry');
     require('./services/clientSet');
     require('./services/divisionSet');
     require('./services/apiURIGenerator');
+    require('./services/clientDivisions');
     require('./services/clientRecord');
     require('./constants/apiURI');
 });

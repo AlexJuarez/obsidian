@@ -29,7 +29,7 @@ define(function (require) {
 
         $scope.ok = function (errors) {
             $scope.errors = errors;
-            if (ng.equals({}, $scope.errors)) {
+            if (ng.equals({}, $scope.errors) || !$scope.errors) {
                 var onSuccess = function() {
                     originalClient = $scope.client;
                     $modalInstance.dismiss('cancel');
