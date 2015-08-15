@@ -6,20 +6,42 @@ define(function (require) {
 
     app.controller('accountCtrl', ['$scope', '$state', '$modal', 'navbarService', 'campaignModal', function ($scope, $state, $modal, navbar, campaignModal) {
         $scope.openEditAccountModal = openEditAccountModal;
+        $scope.openNewCampaignModal = openNewCampaignModal;
+
         function updateAccountInfo() {
             $scope.account = navbar.all().account;
         }
 
         navbar.observe(updateAccountInfo, $scope);
 
-        $scope.campaignModal = campaignModal.create;
+        var newCampaignModal;
+        function openNewCampaignModal() {
+            if (!newCampaignModal) {
+                newCampaignModal = {
+                    accountId: getAccountId(),
+                    action: 'New'
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/new-edit-campaign.html',
+                controller: 'newEditCampaignCtrl',
+                resolve: {
+                    modalState: function() {
+                        return newCampaignModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
 
         var editAccountModal;
         function openEditAccountModal() {
             if (!editAccountModal) {
                 editAccountModal = {
                     accountId: getAccountId(),
-                    action: 'New'
+                    action: 'Edit'
                 };
             }
 

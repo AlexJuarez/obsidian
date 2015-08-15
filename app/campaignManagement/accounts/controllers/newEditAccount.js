@@ -6,7 +6,7 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'clientDivisionsService', 'accountRecordService', 'industryService', 'modalState', function ($scope, $modalInstance, clientDivisionsService, accountRecordService, industries, modalState) {
+    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', function ($scope, $modalInstance, divisionService, accountRecordService, industries, modalState) {
         $scope.account = modalState.account;
         $scope.action = modalState.action;
 
@@ -35,9 +35,10 @@ define(function (require) {
 
         // Creating a new account under a client
         if (modalState.clientId) {
-            clientDivisionsService.get(modalState.clientId).then(function(divisions) {
-                $scope.divisions = divisions;
-            });
+            var updateDivisions = function() {
+                $scope.divisions = divisionService.filtered();
+            };
+            divisionService.observe(updateDivisions, $scope);
         }
 
         industries.init();

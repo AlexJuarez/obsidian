@@ -3,7 +3,7 @@ define(function (require) {
     'use strict';
 
     require('./../../../core/modal/index');
-    require('./newCampaign');
+    require('./newEditCampaign');
     require('angularMocks');
 
     describe('newCampaignCtrl', function () {
