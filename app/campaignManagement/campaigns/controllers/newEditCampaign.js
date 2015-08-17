@@ -15,25 +15,30 @@ define(function (require) {
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
+        $scope.campaign = modalState.campaign;
+        $scope.action = modalState.action;
 
+
+        var originalCampaign;
 
         if (modalState.campaignId) {
             campaignRecordService.getById(modalState.campaignId).then(function(campaign) {
-                initialCampaignScope = campaign.all();
-                console.log(initialCampaignScope);
+                originalCampaign = campaign.all();
+                originalCampaign.keywordString = originalCampaign.keywords.join(',');
+                originalCampaign.objectives  = [];
                 if (!$scope.campaign || $scope.campaign === {}) {
-                    $scope.campaign = ng.copy(initialCampaignScope);
+                    $scope.campaign = ng.copy(modalState.campaign || originalCampaign);
                 }
             });
         } else {
-            var initialCampaignScope = {
+            originalCampaign = {
                 startDate: (modalState.campaign && modalState.campaign.startDate) || new Date(),
                 endDate: (modalState.campaign && modalState.campaign.endDate) || new Date(),
                 objectives: [],
                 accountId: modalState.accountId
             };
 
-            $scope.campaign = ng.copy(modalState.campaign || initialCampaignScope);
+            $scope.campaign = ng.copy(modalState.campaign || originalCampaign);
         }
 
         $scope.dateOptions = {
@@ -45,7 +50,9 @@ define(function (require) {
         accounts.observe(updateAccounts, $scope);
 
         function updateAccounts() {
-            $scope.accounts = accounts.filtered();
+            if (!modalState.campaignId) {
+                $scope.accounts = accounts.filtered();
+            }
         }
 
         $scope.select = [
@@ -85,7 +92,7 @@ define(function (require) {
         function cancel() {
             if (hasUnsavedChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
-                    $scope.campaign = initialCampaignScope;
+                    $scope.campaign = originalCampaign;
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -94,7 +101,7 @@ define(function (require) {
         }
 
         function hasUnsavedChanges() {
-            return !ng.equals($scope.campaign, initialCampaignScope);
+            return !ng.equals($scope.campaign, originalCampaign);
         }
 
         function ok(errors) {

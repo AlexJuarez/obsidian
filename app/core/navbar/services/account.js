@@ -62,7 +62,7 @@ define(function (require) {
                         output.push(item);
                     }
                 }
-            } else {
+            } else if (divisionId) {
                 if (list.length === divisions.all().length) {
                     return sorted;
                 }

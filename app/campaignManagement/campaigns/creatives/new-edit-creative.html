@@ -1,7 +1,8 @@
 <div class="modal-header">
     <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
     <h2 class="modal-title">
-        <span>{{action}} Campaign</span></h2>
+        <span ng-if="edit">Edit Campaign</span>
+        <span ng-if="!edit">New Campaign</span></h2>
 </div>
 <div class="modal-body">
     <form class="form form-horizontal" role="form" novalidate name="newCampaign">
@@ -164,6 +165,7 @@
     </form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save Campaign</button>
+    <button ng-if="edit" class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save Changes</button>
+    <button ng-if="!edit" class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Add Campaign</button>
     <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
 </div>
