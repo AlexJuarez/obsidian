@@ -34,9 +34,14 @@ define(function (require) {
                 get(uriConfig, true).observe(callback, $scope, preventImmediate);
             }
 
+            function addData(uriConfig, newData, propertyString) {
+                get(uriConfig).addData(newData, propertyString);
+            }
+
             return {
                 get: get,
                 all: all,
+                addData: addData,
                 observe: observe
             };
         };
