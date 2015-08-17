@@ -5,7 +5,7 @@ define(function (require) {
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('newEditCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', function ($scope, $modalInstance, accounts, modalState) {
+    app.controller('newEditCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'campaignRecordService', 'modalState', function ($scope, $modalInstance, accounts, campaignRecordService, modalState) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
@@ -16,14 +16,25 @@ define(function (require) {
         $scope.ok = ok;
         $scope.cancel = cancel;
 
-        var initialCampaignScope = {
-            startDate: (modalState.campaign && modalState.campaign.startDate) || new Date(),
-            endDate: (modalState.campaign && modalState.campaign.endDate) || new Date(),
-            objectives: [],
-            accountId: modalState.accountId
-        };
 
-        $scope.campaign = ng.copy(modalState.campaign || initialCampaignScope);
+        if (modalState.campaignId) {
+            campaignRecordService.getById(modalState.campaignId).then(function(campaign) {
+                initialCampaignScope = campaign.all();
+                console.log(initialCampaignScope);
+                if (!$scope.campaign || $scope.campaign === {}) {
+                    $scope.campaign = ng.copy(initialCampaignScope);
+                }
+            });
+        } else {
+            var initialCampaignScope = {
+                startDate: (modalState.campaign && modalState.campaign.startDate) || new Date(),
+                endDate: (modalState.campaign && modalState.campaign.endDate) || new Date(),
+                objectives: [],
+                accountId: modalState.accountId
+            };
+
+            $scope.campaign = ng.copy(modalState.campaign || initialCampaignScope);
+        }
 
         $scope.dateOptions = {
             formatYear: 'yy',

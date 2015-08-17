@@ -3,12 +3,35 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('campaignCtrl', ['$scope', 'navbarService', function ($scope, navbar) {
+    app.controller('campaignCtrl', ['$scope', '$state', '$modal', 'navbarService', function ($scope, $state, $modal, navbar) {
+        $scope.openEditCampaignModal = openEditCampaignModal;
         function updateCampaignInfo() {
             $scope.campaign = navbar.all().campaign;
         }
 
         navbar.observe(updateCampaignInfo, $scope);
+
+        var editCampaignModal;
+        function openEditCampaignModal() {
+            if (!editCampaignModal) {
+                editCampaignModal = {
+                    campaignId: getCampaignId(),
+                    action: 'Edit'
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/new-edit-campaign.html',
+                controller: 'newEditCampaignCtrl',
+                resolve: {
+                    modalState: function() {
+                        return editCampaignModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
 
         $scope.placements = [
             {
@@ -35,6 +58,14 @@ define(function (require) {
                 }
             }
         ];
+
+        function getCampaignId() {
+            if ($scope.campaign && $scope.campaign.id) {
+                return $scope.campaign.id;
+            } else {
+                return $state.params.campaignId;
+            }
+        }
 
 
     }]);

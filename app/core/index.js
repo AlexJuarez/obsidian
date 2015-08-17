@@ -40,12 +40,14 @@ define(function(require) {
 
     function services() {
         require('./services/channel');
+        require('./services/clientRecord');
+        require('./services/divisionRecord');
         require('./services/accountRecord');
+        require('./services/campaignRecord');
         require('./services/industry');
         require('./services/clientSet');
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
-        require('./services/clientRecord');
     }
 
     require('./constants/apiURI');

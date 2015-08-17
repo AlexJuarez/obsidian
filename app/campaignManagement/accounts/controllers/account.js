@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./../new-edit-account.html');
 
-    app.controller('accountCtrl', ['$scope', '$state', '$modal', 'navbarService', 'campaignModal', function ($scope, $state, $modal, navbar, campaignModal) {
+    app.controller('accountCtrl', ['$scope', '$state', '$modal', 'navbarService', function ($scope, $state, $modal, navbar) {
         $scope.openEditAccountModal = openEditAccountModal;
         $scope.openNewCampaignModal = openNewCampaignModal;
 
