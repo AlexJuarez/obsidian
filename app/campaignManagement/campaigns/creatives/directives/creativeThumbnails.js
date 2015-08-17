@@ -15,9 +15,7 @@ define(function (require) {
             controller: ['$scope', '$window', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $location, $state, $rootScope, $filter, creatives, creativeRecordService) {
 
                 var filter = $state.params.filter;
-
                 var mixpoURL = getStudioUrl($window.location.hostname);
-                var filter = $state.params.filter;
 
                 // For testing purposes
                 $scope.getStudioUrl = getStudioUrl;
