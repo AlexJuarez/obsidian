@@ -53,51 +53,52 @@ define(function(require) {
             });
 
             creativeRecordService.observe(function(newUpdatedRecord) {
-                var creative = getCreative(newUpdatedRecord.id);
+                var existingRecord = getCreative(newUpdatedRecord.id);
 
-                var transformedRecord;
-                if (creative) {
-                    transformedRecord = transformUpdated(newUpdatedRecord, creative);
+                if (!existingRecord) {
+                    // Set up defaults for a new record
+                    existingRecord = {
+                        lastModified: new Date(),
+                        delivering: false,
+                        countPlacements: 0
+                    };
                 }
-
-                function transformUpdated(updatedRecord, existingRecord) {
-                    var addRecord = {
-                         deleted: updatedRecord.deleted,
-                         embedHeight: updatedRecord.embedHeight,
-                         expandedWidth: updatedRecord.expandedWidth,
-                         embedWidth: updatedRecord.embedWidth,
-                         expandedHeight: updatedRecord.expandedHeight,
-                         modifiedDate: existingRecord.lastModified,
-                         name: updatedRecord.name,
-                         id: updatedRecord.id,
-                         thumbnailUrlPrefix:  updatedRecord.thumbnailUrlPrefix,
-                         type: updatedRecord.type,
-                         device: updatedRecord.device,
-                         live: existingRecord.delivering,
-                         countPlacements: existingRecord.countPlacements
-                      };
-                    return addRecord;
-                }
-
-                function getCreative(id) {
-                    var creatives = cache.all( _apiConfig() ).data;
-                    console.log( 'creatives', creatives );
-                    var c;
-                    for (var i=0; creatives.length > i; i++) {
-                        c = creatives[i];
-                        if (c.id === id) {
-                            return c;
-                        }
-                    }
-                    return false;
-                }
-
-                addData([transformedRecord]);
+                var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
+                addData([transformedRecord], 'data');
 
             }, undefined, true);
 
+            function transformCrudRecord(updatedRecord, existingRecord) {
+                return _transformCreative({
+                    deleted: updatedRecord.deleted,
+                    embedHeight: updatedRecord.embedHeight,
+                    expandedWidth: updatedRecord.expandedWidth,
+                    embedWidth: updatedRecord.embedWidth,
+                    expandedHeight: updatedRecord.expandedHeight,
+                    modifiedDate: existingRecord.lastModified,
+                    name: updatedRecord.name,
+                    id: updatedRecord.id,
+                    thumbnailUrlPrefix:  updatedRecord.thumbnailUrlPrefix,
+                    type: updatedRecord.type,
+                    device: updatedRecord.device,
+                    live: existingRecord.delivering,
+                    countPlacements: existingRecord.countPlacements
+                });
+            }
+
+            function getCreative(id) {
+                var creatives = cache.all( _apiConfig() ).data;
+                var c;
+                for (var i=0; creatives.length > i; i++) {
+                    c = creatives[i];
+                    if (c.id === id) {
+                        return c;
+                    }
+                }
+                return false;
+            }
+
             function _transformCreatives(data) {
-                console.log( 'data', data );
                 var creatives = data.creatives;
                 var creative;
                 var transformedTable = {
@@ -109,25 +110,29 @@ define(function(require) {
                 for(var i = 0; i < creatives.length; i ++) {
                     creative = creatives[i];
 
-                    transformedTable.data.push({
-                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
-                        creativeName: creative.name,
-                        delivering: creative.live,
-                        type: typeTransform[creative.type],
-                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        countPlacements: creative.countPlacements,
-                        options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
-
-                        // These properties are needed by thumbnails but aren't
-						// in the table
-                        id: creative.id,
-                        lastModified: creative.modifiedDate,
-                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
-                    });
+                    transformedTable.data.push(_transformCreative(creative));
                 }
-                //console.log( transformedTable );
                 return transformedTable;
+            }
+
+            function _transformCreative(creative) {
+                return {
+                    deleted: creative.deleted || false,
+                    checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                    creativeName: creative.name,
+                    delivering: creative.live,
+                    type: typeTransform[creative.type],
+                    dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                    expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                    countPlacements: creative.countPlacements,
+                    options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
+
+                    // These properties are needed by thumbnails but aren't
+                    // in the table
+                    id: creative.id,
+                    lastModified: creative.modifiedDate,
+                    thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
+                };
             }
 
             function _apiConfig() {
@@ -148,8 +153,8 @@ define(function(require) {
                 return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
             }
 
-            function addData(newData) {
-                cache.addData(_apiConfig(), newData);
+            function addData(newData, propertyString) {
+                cache.addData(_apiConfig(), newData, propertyString);
             }
 
             /**

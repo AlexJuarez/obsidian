@@ -16,23 +16,27 @@ define(function (require) {
 
                 var filter = $state.params.filter;
 
-                var urlPrefix = function() {
-                    if ($location.$$host === 'localhost') {
-                        return 'thorwhal-dev-studio.mixpo.com';
-                    } else {
-                        return $location.$$host;
-                    }
-                };
+                var mixpoURL = getStudioUrl($window.location.hostname);
+                var filter = $state.params.filter;
 
-                $scope.openPreviewPage = function(id, name) {
-                    var n = name.split(' ').join('-');
-                    var previewUrl = '//'+ urlPrefix() + '/videoad/' + id + '/' + n;
-                    $window.open(previewUrl, '_blank');
+                // For testing purposes
+                $scope.getStudioUrl = getStudioUrl;
+                function getStudioUrl(domain) {
+                    if (domain.indexOf('studio') > -1) {
+                        return '//' + domain;
+                    } else if (domain.indexOf('mixpo.com') > -1) {
+                        return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
+                    } else {
+                        return '//studio.mixpo.com';
+                    }
+                }
+
+                $scope.openPreviewPage = function(creative) {
+                    $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
                 };
 
                 $scope.openStudio = function(id) {
-                    var studioUrl = '//'+ urlPrefix() + '/studio?sdf=open&guid=' + id;
-                    $window.open(studioUrl, '_blank');
+                    $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
                 };
 
                 $scope.openSettings = function(id) {
@@ -45,7 +49,7 @@ define(function (require) {
 
                 $scope.copyCreative = function(id) {
                     console.log( 'Copy Creative ' + id );
-                    
+
                     creativeRecordService.getById(id).then(function(creative) {
                         console.log( 'creativeRecordService' );
                         var newCreative = ng.copy(creative);
@@ -58,7 +62,7 @@ define(function (require) {
                         console.log(newCreative.all());
                         creativeRecordService.create( transformCreativeData(newCreative.all()) );
                     });
-                    
+
                     var transformCreativeData = function(data) {
                         var crudCreative =  {
                             expandedWidth: data.expandedWidth,
@@ -81,7 +85,7 @@ define(function (require) {
                         return crudCreative;
                     };
                 };
-                
+
 
 
 

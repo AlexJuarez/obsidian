@@ -32,5 +32,6 @@ define(function (require) {
     require('./services/apiURIGenerator');
     require('./services/clientRecord');
     require('./services/creativeRecord');
+    require('./services/propertyByString');
     require('./constants/apiURI');
 });
