@@ -14,11 +14,13 @@ define(function (require) {
             metrics: [
                 'impressions',
                 'viewRate',
+                'useractionRate',
+                'clickthroughRate',
                 'countPlacements',
-                'countVideo25',
-                'countVideo50',
-                'countVideo75',
-                'countVideo100'
+                'video25',
+                'video50',
+                'video75',
+                'video100'
                 
             ]
         }
@@ -34,7 +36,6 @@ define(function (require) {
 
         var cache = cacheFactory({
             transform: function (data) {
-                //console.log( '-------- campaignModal cache data', data.campaigns );
                 return data.campaigns;
             }
         });
@@ -42,42 +43,33 @@ define(function (require) {
         function filter(config, id) {
             var newConfig = ng.extend({}, config);
             newConfig.queryParams.filters = ['id:eq:' + id];
-            //console.log( 'newConfig', newConfig );
             return newConfig;
         }
 
         function getApiConfig(id) {
-            //console.log( '------- campaignModal getApiConfig' );
             var config = filter(apiConfig, id);
-            //console.log( 'config', config );
             return config;
         }
         function all() {
-            //console.log( '-------- campaignModal all' );
             var datum = cache.all( getApiConfig(campaignID) );
-            //console.log( 'datum', datum );
             var output = {
                 'impressions': 0,
                 'placements': 0
             };
 
             if (datum.length) {
-                //console.log( 'datum loop' );
                 ng.forEach(datum[0].all, function (d, key){
                     output[key] = d;
                 });
             }
-            //console.log( 'output', output );
             return output;
         }
 
         function observe(callback, $scope, preventImmediate) {
-            //console.log( 'observe' );
             return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
         function data(initialize) {
-            //console.log( '------- data' );
             return cache.get(getApiConfig(), initialize);
         }
 
@@ -89,8 +81,6 @@ define(function (require) {
             campaignID = id;
 
             var campaignData = cache.get(getApiConfig(id), true);
-            //console.log( getApiConfig(id) );
-
 
             campaignData.observe(function() {
                 var campaign = campaignData.all();
@@ -103,12 +93,7 @@ define(function (require) {
                     previewModals[id] = {
                         id: id,
                         name: row.campaign.name,
-                        impressions: row.impressions.current,
-                        // _getApiConfig: getApiConfig,
-                        // _apiConfig: apiConfig,
-                        // all: all,
-                        // data: data,
-                        // observe: observe
+                        metrics: campaignMetrics
                     };
                 }
 

@@ -8,12 +8,12 @@
     <div class="ad-types row">
         <div class="col-xs-12 col-sm-4 col-md-3">
             <h4 class="thin-header">In-Banner Video</h4>
-            <p>Placements: {{placements}}</p>
-            <p>Impressions: </p>
-            <p>View Rate: </p>
-            <p>User Action Rate: </p>
-            <p>Clickthrough Rate: </p>
-            <p>Average &#37; Complete: </p>
+            <p>Placements:&nbsp;{{placements}}</p>
+            <p>Impressions:&nbsp;</p>
+            <p>View Rate:&nbsp;<strong>{{viewrate|number:2}}&#37;</strong></p>
+            <p>User Action Rate:&nbsp;{{useractionrate|number:2}}&#37;</p>
+            <p>Clickthrough Rate:&nbsp;{{clickthroughrate|number:2}}&#37;</p>
+            <p>Average &#37; Complete:&nbsp;</p>
             <div quartiles></div>
         </div>
         <div class="col-xs-12 col-sm-4 col-md-3">
