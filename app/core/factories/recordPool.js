@@ -44,6 +44,12 @@ define(function (require) {
                 });
             }
 
+            function _delete(recordId) {
+                return getById(recordId).then(function(record) {
+                    return record.delete(record.all().id);
+                });
+            }
+
             function create(newRecord) {
                 var record = recordFactory(apiConfig);
                 record.observe(function() {
@@ -79,8 +85,10 @@ define(function (require) {
             }
 
             return {
+                _records: records,
                 getById: getById,
                 update: update,
+                delete: _delete,
                 create: create,
                 observe: observe
             };

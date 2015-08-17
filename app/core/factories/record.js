@@ -27,12 +27,27 @@ define(function (require) {
             }
 
             function update(recordId, updatedFields) {
-                return $http.put(url, updatedFields)
+                return $http.put(idUrl(recordId), updatedFields)
                     .success(function() {
                         var newRecord = ng.merge(record.all(), updatedFields);
                         record.setData(newRecord);
                     }
                 );
+            }
+
+            function _delete(recordId) {
+                return $http.put(idUrl(recordId), { deleted: true })
+                    .success(function() {
+                        var newRecord = ng.merge(record.all(), { deleted: true });
+                        record.setData(newRecord);
+                    }
+                );
+            }
+
+            function idUrl(recordId) {
+                var idConfig = ng.copy(apiConfig);
+                idConfig.endpoint += '/' + recordId;
+                return apiUriGenerator(apiConfig);
             }
 
             return {
@@ -41,6 +56,7 @@ define(function (require) {
                 observe: record.observe,
                 all: record.all,
                 create: create,
+                delete: _delete,
                 update: update
             };
         };

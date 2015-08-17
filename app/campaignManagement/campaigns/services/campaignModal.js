@@ -6,9 +6,20 @@ define(function (require) {
     var apiConfig = {
         endpoint: 'campaigns',
         queryParams: {
+            dimensions: [
+                'id',
+                'name',
+                'creatives.type'
+            ],
             metrics: [
                 'impressions',
-                'placements'
+                'viewRate',
+                'countPlacements',
+                'countVideo25',
+                'countVideo50',
+                'countVideo75',
+                'countVideo100'
+                
             ]
         }
     };
@@ -18,94 +29,104 @@ define(function (require) {
     var createModal;
 
     module.service('campaignModal', ['$modal', '$state', 'cacheFactory', function ($modal, $state, cacheFactory) {
-        
+        console.log( 'campaignModal service' );
+
+
         var cache = cacheFactory({
             transform: function (data) {
-                console.log( 'data.campaignModal', data.campaignModal );
-                return data.campaignModal;
+                //console.log( '-------- campaignModal cache data', data.campaigns );
+                return data.campaigns;
             }
         });
 
-        //var campaignId;
-
-        function filter(config) {
-            console.log( '----- filter' );
+        function filter(config, id) {
             var newConfig = ng.extend({}, config);
-            //console.log( '$state.params', $state.params );
-            //if ($state.params.campaignId) {
-                //console.log( 'campaignId', campaignId );
-                newConfig.queryParams.filters = ['status:eq:inFlight'];
-            //}
-            console.log( 'newConfig', newConfig );
+            newConfig.queryParams.filters = ['id:eq:' + id];
+            //console.log( 'newConfig', newConfig );
             return newConfig;
         }
 
-        function getApiConfig() {
-            console.log( '------- getApiConfig' );
-            var config = filter(apiConfig);
-            console.log( 'config', config );
+        function getApiConfig(id) {
+            //console.log( '------- campaignModal getApiConfig' );
+            var config = filter(apiConfig, id);
+            //console.log( 'config', config );
             return config;
         }
         function all() {
-            console.log( '-------- all' );
-            var datum = cache.all(getApiConfig());
-            console.log( 'datum', datum );
+            //console.log( '-------- campaignModal all' );
+            var datum = cache.all( getApiConfig(campaignID) );
+            //console.log( 'datum', datum );
             var output = {
                 'impressions': 0,
                 'placements': 0
             };
 
             if (datum.length) {
-                console.log( 'datum loop' );
+                //console.log( 'datum loop' );
                 ng.forEach(datum[0].all, function (d, key){
                     output[key] = d;
                 });
-                //output.countCampaigns = output.countCampaignsPreFlight + output.countCampaignsInFlight;
             }
-            console.log( 'output', output );
+            //console.log( 'output', output );
             return output;
         }
 
         function observe(callback, $scope, preventImmediate) {
+            //console.log( 'observe' );
             return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
-        /**
-         * Returns underlying dataFactory object for the cache entry
-         * @param {boolean} [initialize=false] should we call init
-         * @returns {{dataFactory}}
-         */
         function data(initialize) {
-            console.log( '------- data' );
+            //console.log( '------- data' );
             return cache.get(getApiConfig(), initialize);
         }
 
+        var campaignID;
+
         function preview(id, row) {
-            console.log( '------- preview ', id, row );
+            console.log( '------- Open Modal ', id );
 
-            //campaignId = id;
+            campaignID = id;
+
+            var campaignData = cache.get(getApiConfig(id), true);
+            //console.log( getApiConfig(id) );
 
 
-            if (!previewModals[id]) {
-                previewModals[id] = {
-                    id: id,
-                    name: row.campaign.name,
-                    impressions: row.impressions.current,
-                    all: all()
-                };
-            }
+            campaignData.observe(function() {
+                var campaign = campaignData.all();
+                console.log( 'campaign', campaign[0] );
 
-            $modal.open({
-                animation: 'true',
-                templateUrl: 'campaignManagement/campaigns/analytics-preview.html',
-                controller: 'analyticsPreviewCtrl',
-                resolve: {
-                    modalState: function() {
-                        return previewModals[id];
-                    }
-                },
-                size: 'lg'
-            });
+                var campaignMetrics = campaign[0].metrics;
+                console.log( 'campaignMetrics', campaignMetrics );
+                
+                if (!previewModals[id]) {
+                    previewModals[id] = {
+                        id: id,
+                        name: row.campaign.name,
+                        impressions: row.impressions.current,
+                        // _getApiConfig: getApiConfig,
+                        // _apiConfig: apiConfig,
+                        // all: all,
+                        // data: data,
+                        // observe: observe
+                    };
+                }
+
+                $modal.open({
+                    animation: 'true',
+                    templateUrl: 'campaignManagement/campaigns/analytics-preview.html',
+                    controller: 'analyticsPreviewCtrl',
+                    resolve: {
+                        modalState: function() {
+                            return previewModals[id];
+                        }
+                    },
+                    size: 'lg'
+                });
+
+            }, undefined, true);
+
+
         }
 
         function settings(id, row) {

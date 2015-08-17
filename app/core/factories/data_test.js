@@ -134,5 +134,11 @@ define(function (require) {
 
             expect(counter).toEqual(2);
         });
+
+        it('should filter by deleted records', function() {
+            var test = data();
+            test.addData([{deleted: true}, {deleted: false}]);
+            expect(test.all()).toEqual([{deleted: false}]);
+        });
     });
 });

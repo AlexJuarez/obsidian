@@ -16,6 +16,7 @@ define(function (require) {
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
+            
             transform: function (data) {
                 return data.clientSet;
             }
@@ -24,6 +25,7 @@ define(function (require) {
         function filter(config) {
             var newConfig = ng.extend({}, config);
             if ($state.params.clientId) {
+                //console.log( $state.params.clientId );
                 newConfig.queryParams.filters = ['id:eq:' + $state.params.clientId];
             }
             return newConfig;
@@ -36,7 +38,6 @@ define(function (require) {
 
         function all() {
             var datum = cache.all(getApiConfig());
-            //console.log( 'datum', datum );
             var output = {
                 'count': 0,
                 'countCampaignsPreFlight': 0,
