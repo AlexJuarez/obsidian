@@ -18,7 +18,6 @@ define(function (require) {
         $scope.campaign = modalState.campaign;
         $scope.action = modalState.action;
 
-
         var originalCampaign;
 
         if (modalState.campaignId) {
@@ -57,23 +56,23 @@ define(function (require) {
 
         $scope.select = [
             {
-                name: 'Uno 1',
+                name: 'First Option',
                 value: '1'
             },
             {
-                name: 'Second',
+                name: 'Second Option',
                 value: '2'
             },
             {
-                name: 'Choice #3',
+                name: 'Third Option',
                 value: '3'
             },
             {
-                name: 'Pick me, pick me, pick me!',
+                name: 'Fourth Option',
                 value: '4'
             },
             {
-                name: 'Sheeple',
+                name: 'Fifth Option',
                 value: '5'
             }
         ];
@@ -106,8 +105,38 @@ define(function (require) {
 
         function ok(errors) {
             $scope.errors = errors;
+            if (ng.equals({}, $scope.errors) || !$scope.errors) {
+                var onSuccess = function() {
+                    originalCampaign = $scope.campaign;
+                    $modalInstance.dismiss('cancel');
+                };
+                if($scope.campaign && $scope.campaign.id) {
+                    var campaignDiff = getDiff($scope.campaign, originalCampaign);
+
+                    if (!ng.equals(campaignDiff, {})) {
+                        campaignRecordService.update($scope.campaign.id, campaignDiff).then(onSuccess);
+                    } else {
+                        $modalInstance.dismiss('cancel');
+                    }
+                } else {
+                    campaignRecordService.create($scope.campaign).then(onSuccess);
+                }
+            }
             $scope.submitted = true;
-            //TODO: do something
+        }
+
+        // Simple diffing function for PUT request
+        function getDiff(changed, original) {
+            var diff = {};
+            for (var index in changed) {
+                if (changed.hasOwnProperty(index)) {
+                    if (original[index] && !ng.equals(changed[index], original[index])) {
+                        diff[index] = changed[index];
+                    }
+                }
+            }
+
+            return diff;
         }
 
         //Before closing the modal save the state;

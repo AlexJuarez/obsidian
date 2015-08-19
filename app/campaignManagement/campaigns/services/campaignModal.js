@@ -28,9 +28,12 @@ define(function (require) {
             });
         }
 
-        function settings(id, row) {
+        function settings(id) {
             if (!settingsModals[id]) {
-                settingsModals[id] = {id: id, name: row.campaign.name};
+                settingsModals[id] = {
+                    campaignId: id,
+                    action: 'Edit'
+                };
             }
 
             $modal.open({

@@ -44,6 +44,8 @@ define(function(require) {
         require('./services/divisionRecord');
         require('./services/accountRecord');
         require('./services/campaignRecord');
+        require('./services/creativeRecord');
+        require('./services/placementRecord');
         require('./services/industry');
         require('./services/clientSet');
         require('./services/divisionSet');
