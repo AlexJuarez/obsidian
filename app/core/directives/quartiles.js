@@ -18,6 +18,10 @@ define(function (require) {
                 var adUnit = attr.quartileData;
                 var quartileController = attr.quartileController;
 
+                scope.video25 = 0;
+                scope.video50 = 0;
+                scope.video75 = 0;
+                scope.video100 = 0;
 
                 scope.$watch(adUnit, function() {
                     
