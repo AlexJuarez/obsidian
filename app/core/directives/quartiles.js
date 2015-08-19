@@ -2,7 +2,7 @@ define(function (require) {
 	'use strict';
 
 	var app = require('./../module');
-	var d3 = require('d3');
+	//var d3 = require('d3');
 	require('tpl!./quartiles.html');
 
 	app.directive('quartiles', ['$timeout', '$controller', function ($controller) {
@@ -14,18 +14,26 @@ define(function (require) {
 			templateUrl: 'core/directives/quartiles.html',
 			link: function (scope, elem, attr) {
 
-                if (attr.quartileController) {
-                    var customController = attr.quartileController;
-                    $controller(customController, { $scope: scope });
-                }
 
-                if (attr.adUnit) {
-                    var viewNum =       scope.adUnit.metrics.view;
-                    scope.video25 =     scope.adUnit.metrics.video25 / viewNum || 0;
-                    scope.video50 =     scope.adUnit.metrics.video50 / viewNum || 0;
-                    scope.video75 =     scope.adUnit.metrics.video75 / viewNum || 0;
-                    scope.video100 =    scope.adUnit.metrics.video100 / viewNum || 0;
-                }
+                var adUnit = attr.adUnit;
+                var quartileController = attr.quartileController;
+
+                scope.$watch(adUnit, function() {
+                    
+                    if (quartileController) {
+                        $controller(quartileController, { $scope: scope });    
+                    }
+
+                    if (adUnit) {
+                        var viewNum =       scope.adUnit.metrics.view;
+                        scope.video25 =     scope.adUnit.metrics.video25 / viewNum || 0;
+                        scope.video50 =     scope.adUnit.metrics.video50 / viewNum || 0;
+                        scope.video75 =     scope.adUnit.metrics.video75 / viewNum || 0;
+                        scope.video100 =    scope.adUnit.metrics.video100 / viewNum || 0;
+                    }
+                       
+                });
+
 
                 console.log( 'directive scope', scope );
 

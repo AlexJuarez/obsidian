@@ -9,11 +9,11 @@
         <div class="col-xs-12 col-sm-4 col-md-3" ng-repeat="adUnit in creativeData">
             <h4 class="thin-header">{{adUnit.type}}</h4>
             <p>Placements:&nbsp;<strong>{{adUnit.metrics.countPlacements|number}}</strong></p>
-            <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|number}}</strong></p>
+            <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|truncateNumber}}</strong></p>
             <p>View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>
             <p>User Action Rate:&nbsp;<strong>{{adUnit.metrics.useractionRate|percentage}}&#37;</strong></p>
             <p>Clickthrough Rate:&nbsp;<strong>{{adUnit.metrics.clickthroughRate|percentage}}&#37;</strong></p>
-            <p>Average &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
+            <p>Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
             <div quartiles quartile-controller="analyticsPreviewCtrl" ad-unit=adUnit></div>
         </div>
 
