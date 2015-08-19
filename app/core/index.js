@@ -27,6 +27,7 @@ define(function (require) {
     require('./filters/errorCount');
     require('./filters/date');
     require('./filters/truncateNumber');
+    require('./filters/percentage');
     require('./services/channel');
     require('./services/clientSet');
     require('./services/divisionSet');

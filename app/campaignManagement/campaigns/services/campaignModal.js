@@ -4,15 +4,16 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
     var apiConfig = {
-        endpoint: 'campaigns',
+        endpoint: 'creativeSet',
         queryParams: {
             dimensions: [
-                'id',
-                'name',
-                'creatives.type'
+                'type'
+                // 'id',
+                // 'creatives.type'
             ],
             metrics: [
                 'impressions',
+                'view',
                 'viewRate',
                 'useractionRate',
                 'clickthroughRate',
@@ -20,7 +21,8 @@ define(function (require) {
                 'video25',
                 'video50',
                 'video75',
-                'video100'
+                'video100',
+                'averagePercentComplete'
                 
             ]
         }
@@ -36,13 +38,13 @@ define(function (require) {
 
         var cache = cacheFactory({
             transform: function (data) {
-                return data.campaigns;
+                return data.creativeSet;
             }
         });
 
         function filter(config, id) {
             var newConfig = ng.extend({}, config);
-            newConfig.queryParams.filters = ['id:eq:' + id];
+            newConfig.queryParams.filters = ['campaign.id:' + id];
             return newConfig;
         }
 
@@ -50,50 +52,23 @@ define(function (require) {
             var config = filter(apiConfig, id);
             return config;
         }
-        function all() {
-            var datum = cache.all( getApiConfig(campaignID) );
-            var output = {
-                'impressions': 0,
-                'placements': 0
-            };
-
-            if (datum.length) {
-                ng.forEach(datum[0].all, function (d, key){
-                    output[key] = d;
-                });
-            }
-            return output;
-        }
-
-        function observe(callback, $scope, preventImmediate) {
-            return cache.observe(getApiConfig(), callback, $scope, preventImmediate);
-        }
-
-        function data(initialize) {
-            return cache.get(getApiConfig(), initialize);
-        }
-
-        var campaignID;
 
         function preview(id, row) {
-            console.log( '------- Open Modal ', id );
+            console.log( '------- Open Modal ', id, row );
 
-            campaignID = id;
+            var creativeSetData = cache.get(getApiConfig(id), true);
 
-            var campaignData = cache.get(getApiConfig(id), true);
+            creativeSetData.observe(function() {
+                var creativeData = creativeSetData.all();
+                console.log( 'creativeData', creativeData );
 
-            campaignData.observe(function() {
-                var campaign = campaignData.all();
-                console.log( 'campaign', campaign[0] );
-
-                var campaignMetrics = campaign[0].metrics;
-                console.log( 'campaignMetrics', campaignMetrics );
                 
                 if (!previewModals[id]) {
                     previewModals[id] = {
                         id: id,
                         name: row.campaign.name,
-                        metrics: campaignMetrics
+                        impressions: row.impressions.current,
+                        creativeData: creativeData
                     };
                 }
 

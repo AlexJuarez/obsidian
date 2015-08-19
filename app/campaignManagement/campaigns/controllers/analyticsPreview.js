@@ -8,13 +8,11 @@ define(function (require) {
 
     app.controller('analyticsPreviewCtrl', ['$scope', '$modalInstance', 'modalState', function ($scope, $modalInstance, modalState) {
         console.log( 'analyticsPreviewCtrl', modalState );
-        $scope.name =           modalState.name;
-        $scope.placements =     modalState.placements;
-        $scope.impressions =    modalState.metrics.impressions;
-        $scope.viewrate =       modalState.metrics.viewRate;
-        $scope.useractionrate = modalState.metrics.useractionRate;
-        $scope.clickthroughrate = modalState.metrics.clickthroughRate;
-        $scope.cancel =         cancel;
+        $scope.name =               modalState.name;
+        $scope.impressions =        modalState.impressions;
+        $scope.creativeData =       modalState.creativeData;
+        $scope.cancel =             cancel;
+
 
         function cancel() {
             $modalInstance.dismiss('cancel');
