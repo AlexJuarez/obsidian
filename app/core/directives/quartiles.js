@@ -9,14 +9,15 @@ define(function (require) {
 		return {
 			restrict: 'A',
             scope: {
-                adUnit: '='
+                quartileData: '='
             },
 			templateUrl: 'core/directives/quartiles.html',
 			link: function (scope, elem, attr) {
 
 
-                var adUnit = attr.adUnit;
+                var adUnit = attr.quartileData;
                 var quartileController = attr.quartileController;
+
 
                 scope.$watch(adUnit, function() {
                     
@@ -25,11 +26,11 @@ define(function (require) {
                     }
 
                     if (adUnit) {
-                        var viewNum =       scope.adUnit.metrics.view;
-                        scope.video25 =     scope.adUnit.metrics.video25 / viewNum || 0;
-                        scope.video50 =     scope.adUnit.metrics.video50 / viewNum || 0;
-                        scope.video75 =     scope.adUnit.metrics.video75 / viewNum || 0;
-                        scope.video100 =    scope.adUnit.metrics.video100 / viewNum || 0;
+                        var viewNum =       scope.quartileData.metrics.view;
+                        scope.video25 =     scope.quartileData.metrics.video25 / viewNum || 0;
+                        scope.video50 =     scope.quartileData.metrics.video50 / viewNum || 0;
+                        scope.video75 =     scope.quartileData.metrics.video75 / viewNum || 0;
+                        scope.video100 =    scope.quartileData.metrics.video100 / viewNum || 0;
                     }
                        
                 });

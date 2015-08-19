@@ -53,13 +53,26 @@ define(function (require) {
             return config;
         }
 
+        var creativeData = [
+            {
+                metrics: {
+                    placements: 0,
+                    impressions: 0,
+                    viewRate: 0,
+                    useractionRate: 0,
+                    clickthroughRate: 0,
+                    averagePercentComplete: 0
+                }
+            }
+        ];
+
         function preview(id, row) {
             console.log( '------- Open Modal ', id, row );
 
             var creativeSetData = cache.get(getApiConfig(id), true);
 
             creativeSetData.observe(function() {
-                var creativeData = creativeSetData.all();
+                creativeData = creativeSetData.all();
                 console.log( 'creativeData', creativeData );
 
                 

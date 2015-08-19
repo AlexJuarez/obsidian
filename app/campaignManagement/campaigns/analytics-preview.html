@@ -10,11 +10,11 @@
             <h4 class="thin-header">{{adUnit.type}}</h4>
             <p>Placements:&nbsp;<strong>{{adUnit.metrics.countPlacements|number}}</strong></p>
             <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|truncateNumber}}</strong></p>
-            <p>View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>
+            <p ng-if="adUnit.type != 'In-Stream' && adUnit.type != 'Display'">View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>
             <p>User Action Rate:&nbsp;<strong>{{adUnit.metrics.useractionRate|percentage}}&#37;</strong></p>
             <p>Clickthrough Rate:&nbsp;<strong>{{adUnit.metrics.clickthroughRate|percentage}}&#37;</strong></p>
-            <p>Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
-            <div quartiles quartile-controller="analyticsPreviewCtrl" ad-unit=adUnit></div>
+            <p ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'">Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
+            <div ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'" quartiles quartile-controller="analyticsPreviewCtrl" quartile-data=adUnit></div>
         </div>
 
     </div>
