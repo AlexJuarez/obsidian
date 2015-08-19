@@ -84,23 +84,8 @@ define(function (require) {
                     };
                 };
 
-
-
-
                 $scope.deleteCreative = function(creative) {
-                    //console.log( 'delete creative ', creative );
                     creativeRecordService.delete( creative.id );
-
-                    // creativeRecordService.getById(creative.id).then(function(creative) {
-                    //     console.log( 'creative', creative.all() );
-
-                    //     var newCreativeObj = transformForDelete(creative.all());
-
-                    //     console.log( 'newCreativeObj', newCreativeObj );
-
-                    //     creativeRecordService.delete( newCreativeObj.id );
-                    // });
-
                 };
 
                 $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {

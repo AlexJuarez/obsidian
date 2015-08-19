@@ -5,7 +5,7 @@ define(function (require) {
 
     var ng = require('angular');
 
-    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'propertyByString', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, propertyByString, apiUriGenerator) {
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
             var data = [];
@@ -23,8 +23,9 @@ define(function (require) {
                 var deferred = $q.defer();
 
                 if (!initialized) {
+                    transform = transform || function (d) { return d; };
+
                     initialized = true;
-                    transform = transform || function(d) { return d; };
 
                     $http.get(url).success(function (d) {
                         data = sortFn(transform.call(this, d));
@@ -43,43 +44,26 @@ define(function (require) {
                 notifyObservers();
             }
 
-            /**
-             * Add records in array newData to the array on data specified by
-             * propertyString
-             *
-             * @param newData {Array<object>} The new data to add
-             * @param propertyString {string} The target array to add data
-             */
-            function addData(newData, propertyString) {
-                var target = propertyByString.get(data, propertyString);
-                if (typeof target === 'undefined') {
-                    console.log('Could not get property ' + propertyString + ' of', data);
-                }
-                var uniqueNewData = {};
+            function addData(d) {
+                var uniqueSet = {};
                 var item, i;
 
-                for (i = 0; i < newData.length; i++) {
-                    item = newData[i];
-                    uniqueNewData[item.id] = true;
+                for (i = 0; i < d.length; i++) {
+                    item = d[i];
+                    uniqueSet[item.id] = true;
                 }
 
-                var uniqueData = [];
+                var temp = [];
 
-                for (i = 0; i < target.length; i++) {
-                    item = target[i];
-                    if (!uniqueNewData[item.id]) {
-                        uniqueData.push(item);
+                for (i = 0; i < data.length; i++) {
+                    item = data[i];
+                    if (!uniqueSet[item.id]) {
+                        temp.push(item);
                     }
                 }
 
-                target = uniqueData.concat(newData);
-                filterDeleted(target);
-                if (propertyString) {
-                    propertyByString.set(data, target, propertyString);
-                } else {
-                    data = target;
-                }
-                data = sortFn(data);
+                data = sortFn(temp.concat(d));
+                filterDeleted();
                 notifyObservers();
             }
 
@@ -87,27 +71,27 @@ define(function (require) {
                 return data;
             }
 
-            function filterDeleted(target) {
-                if (ng.isArray(target)) {
+            function filterDeleted() {
+                if (ng.isArray(data)) {
                     var item;
-                    for(var i = 0; i < target.length; i ++) {
-                        item = target[i];
+                    for(var i = 0; i < data.length; i ++) {
+                        item = data[i];
                         if(item.deleted === true) {
-                            target.splice(i, 1);
+                            data.splice(i, 1);
                         }
                     }
                 }
             }
 
-            function filtered(filterFn){
-                filterFn = filterFn || function () { return true; };
+            function filtered(filterfn){
+                filterfn = filterfn || function () { return true; };
                 var data = all();
                 var output = [];
                 var item;
 
                 for (var i = 0; i < data.length; i++) {
                     item = data[i];
-                    if(filterFn(item)) {
+                    if(filterfn(item)) {
                         output.push(item);
                     }
                 }
