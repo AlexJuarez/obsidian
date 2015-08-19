@@ -33,8 +33,6 @@ define(function (require) {
     var createModal;
 
     module.service('campaignModal', ['$modal', '$state', 'cacheFactory', function ($modal, $state, cacheFactory) {
-        console.log( 'campaignModal service' );
-
 
         var cache = cacheFactory({
             transform: function (data) {
@@ -67,14 +65,10 @@ define(function (require) {
         ];
 
         function preview(id, row) {
-            console.log( '------- Open Modal ', id, row );
-
             var creativeSetData = cache.get(getApiConfig(id), true);
 
             creativeSetData.observe(function() {
                 creativeData = creativeSetData.all();
-                console.log( 'creativeData', creativeData );
-
                 
                 if (!previewModals[id]) {
                     previewModals[id] = {

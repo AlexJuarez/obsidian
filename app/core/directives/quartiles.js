@@ -35,10 +35,7 @@ define(function (require) {
                        
                 });
 
-
-                console.log( 'directive scope', scope );
-
-
+                // TODO: implement this 
                 //console.log( 'quartiles', elem );
                 // var key = attr.pacingChart;
 
