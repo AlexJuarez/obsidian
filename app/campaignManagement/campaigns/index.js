@@ -26,6 +26,8 @@ define(function (require) {
 
     require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');
+    require('./creatives/controllers/newEditCreative');
     require('./creatives/directives/creativeThumbnails');
+    require('./creatives/directives/creativeOptions');
     require('./creatives/services/creatives');
 });

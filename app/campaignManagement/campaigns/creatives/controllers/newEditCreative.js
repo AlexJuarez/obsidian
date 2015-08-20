@@ -1,12 +1,10 @@
 /* globals confirm */
 define(function (require) {
     'use strict';
-
-    var app = require('./../../module');
+    var app = require('./../../../module');
     var ng = require('angular');
 
     app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, creatives, campaigns, creativeRecordService, modalState) {
-
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
         $scope.openPicker = openPicker;
@@ -48,7 +46,8 @@ define(function (require) {
 
         function updateCampaigns() {
             if (!modalState.creativeId) {
-                $scope.campaigns = campaigns.filtered();
+                debugger;
+                $scope.campaigns = campaigns.all();
             }
         }
 
