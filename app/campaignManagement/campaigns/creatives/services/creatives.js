@@ -49,7 +49,9 @@ define(function(require) {
     module.service('creatives', [
         'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
             var cache = cacheFactory({
-                transform: _transformCreatives
+                transform: function(data) {
+                    return data.creatives;
+                }
             });
 
             creativeRecordService.observe(function(newUpdatedRecord) {
@@ -64,12 +66,12 @@ define(function(require) {
                     };
                 }
                 var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
-                addData([transformedRecord], 'data');
+                addData([transformedRecord]);
 
             }, undefined, true);
 
             function transformCrudRecord(updatedRecord, existingRecord) {
-                return _transformCreative({
+                return {
                     deleted: updatedRecord.deleted,
                     embedHeight: updatedRecord.embedHeight,
                     expandedWidth: updatedRecord.expandedWidth,
@@ -83,11 +85,11 @@ define(function(require) {
                     device: updatedRecord.device,
                     live: existingRecord.delivering,
                     countPlacements: existingRecord.countPlacements
-                });
+                };
             }
 
             function getCreative(id) {
-                var creatives = cache.all( _apiConfig() ).data;
+                var creatives = cache.all( _apiConfig() );
                 var c;
                 for (var i=0; creatives.length > i; i++) {
                     c = creatives[i];
@@ -98,8 +100,7 @@ define(function(require) {
                 return false;
             }
 
-            function _transformCreatives(data) {
-                var creatives = data.creatives;
+            function _transformCreatives(creatives) {
                 var creative;
                 var transformedTable = {
                     rules: rules,
@@ -117,7 +118,6 @@ define(function(require) {
 
             function _transformCreative(creative) {
                 return {
-                    deleted: creative.deleted || false,
                     checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                     creativeName: creative.name,
                     delivering: creative.live,
@@ -146,15 +146,15 @@ define(function(require) {
             }
 
             function all() {
-                return cache.all(_apiConfig());
+                return _transformCreatives(cache.all(_apiConfig()));
             }
 
             function observe(callback, $scope, preventImmediate) {
                 return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
             }
 
-            function addData(newData, propertyString) {
-                cache.addData(_apiConfig(), newData, propertyString);
+            function addData(newData) {
+                cache.addData(_apiConfig(), newData);
             }
 
             /**
