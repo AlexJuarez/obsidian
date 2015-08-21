@@ -47,6 +47,7 @@ define(function(require) {
         require('./services/creativeRecord');
         require('./services/placementRecord');
         require('./services/industry');
+        require('./services/enums');
         require('./services/clientSet');
         require('./services/divisionSet');
         require('./services/apiURIGenerator');

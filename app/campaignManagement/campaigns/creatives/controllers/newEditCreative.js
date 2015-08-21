@@ -4,17 +4,84 @@ define(function (require) {
     var app = require('./../../../module');
     var ng = require('angular');
 
-    app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, creatives, campaigns, creativeRecordService, modalState) {
-        //Datepicker functions
-        $scope.format = 'MM/dd/yyyy';
-        $scope.openPicker = openPicker;
-        $scope.datePickers = {};
+    var types = [
+        { id: 'IBV', name: 'In-Banner Video' }
+    ];
+
+    var typeSettings = {
+        'IBV': {
+            environments: [1,2,3,4],
+            dimensions: [1,2,3,4,11,12,13,14],
+            expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+        }
+    };
+
+    var environments = {
+        1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
+        2: { id: 'desktop', name: 'Desktop' },
+        3: { id: 'mobile', name: 'Tablet & Phone' },
+        4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
+    };
+
+    var dimensions = {
+        1: { dimensions: [160, 600], name: '160x600' },
+        2: { dimensions: [180, 150], name: '180x150' },
+        3: { dimensions: [300, 250], name: '300x250' },
+        4: { dimensions: [300, 600], name: '300x600' },
+        5: { dimensions: [728, 90], name: '728x90' },
+        6: { dimensions: [480, 360], name: '480x360 (4:3)' },
+        7: { dimensions: [533, 300], name: '533x300 (16:9)' },
+        8: { dimensions: [640, 360], name: '640x360 (16:9)' },
+        9: { dimensions: [640, 480], name: '640x480 (4:3)' },
+        10: { dimensions: [768, 432], name: '768x432 (16:9)' },
+        11: { dimensions: [728, 90], name: '728x90' },
+        12: { dimensions: [970, 90], name: '970x90' },
+        13: { dimensions: [1, 1], name: 'Interstitial 1x1' },
+        14: { name: 'Custom' }
+    };
+
+    var expandedDimensions = {
+        1: { name: 'Non-Expanding' },
+        2: { name: 'Legacy' },
+        3: { dimensions: [300, 600], name: '300x600' },
+        4: { dimensions: [560, 300], name: '560x300' },
+        5: { dimensions: [600, 250], name: '600x250' },
+        6: { dimensions: [600, 600], name: '600x600' },
+        7: { dimensions: [728, 315], name: '728x315' },
+        8: { dimensions: [970, 250], name: '970x250' },
+        9: { dimensions: [970, 415], name: '970x415' },
+        10: { name: 'Custom' }
+    };
+
+    app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, enums, creatives, campaigns, creativeRecordService, modalState) {
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
         $scope.creative = modalState.creative;
         $scope.action = modalState.action;
+        $scope.environments = [];
+
+        var dimensions, expandedDimensions;
+        $scope.types = types;
+        $scope.$watch('creative.type', function () {
+            if ($scope.creative && $scope.creative.type) {
+                var typeSettings = typeSettings[$scope.creative.type];
+                updateEnvironments(typeSettings.environments);
+            }
+        });
+
+        function updateEnvironments(environments) {
+            var enabledEnvironments = [];
+            var environmentId;
+            var environment;
+            for (var i=0; i<environments.length; i++) {
+                environmentId = environments[i];
+                environment = environments[environmentId];
+                enabledEnvironments.push({ id: environment.id, name: environment.name });
+            }
+            $scope.environments = enabledEnvironments;
+        }
 
         var originalCreative;
 
@@ -36,30 +103,14 @@ define(function (require) {
             $scope.creative = ng.copy(modalState.creative || originalCreative);
         }
 
-        $scope.dateOptions = {
-            formatYear: 'yy',
-            startingDay: 0,
-            maxMode: 'day'
-        };
-
         campaigns.observe(updateCampaigns, $scope);
 
         function updateCampaigns() {
             if (!modalState.creativeId) {
-                debugger;
+
+                // TODO: add render limit so this isn't crazy slow
                 $scope.campaigns = campaigns.all();
             }
-        }
-
-        function openPicker($event, name) {
-            $event.preventDefault();
-            $event.stopPropagation();
-
-            ng.forEach($scope.datePickers, function (value, key) {
-                $scope.datePickers[key] = false;
-            });
-
-            $scope.datePickers[name] = true;
         }
 
         function cancel() {
