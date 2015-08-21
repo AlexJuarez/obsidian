@@ -65,10 +65,25 @@ define(function (require) {
         ];
 
         function preview(id, row) {
+
             var creativeSetData = cache.get(getApiConfig(id), true);
 
             creativeSetData.observe(function() {
                 creativeData = creativeSetData.all();
+
+                var modalSize;
+                if (creativeData.length <= 1) {
+                    console.log( 'modalSize sm' );
+                    modalSize = 'sm';
+                    
+                } else if (creativeData.length <= 2) {
+                    console.log( 'modalSize md' );
+                    modalSize = 'md';
+                    
+                } else {
+                    console.log( 'modalSize lg' );
+                    modalSize = 'lg';
+                }
                 
                 if (!previewModals[id]) {
                     previewModals[id] = {
@@ -88,7 +103,7 @@ define(function (require) {
                             return previewModals[id];
                         }
                     },
-                    size: 'lg'
+                    size: modalSize
                 });
 
             }, undefined, true);

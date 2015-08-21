@@ -1,4 +1,22 @@
 .analytics-preview {
+    
+
+    .ad-types.row {
+        display: flex;
+        .cell {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            .top, .bottom {
+                display: flex;            
+            }
+            .top {
+                flex-grow: 1;
+                flex-direction: column;
+            }
+        }
+    }
+
 
     h3 {
         .font-size(2);
