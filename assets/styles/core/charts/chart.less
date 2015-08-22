@@ -1,0 +1,87 @@
+@import "../mixins";
+.chart-area {
+    position: relative;
+
+    .x-axis, .y-axis {
+        path, line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+    }
+
+    .y-axis .tick {
+        line {
+            stroke: lightgray;
+        }
+
+        &:first-child line {
+            stroke: #000;
+        }
+    }
+
+    .lines {
+        .line, circle {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+
+        circle {
+            fill: #fff;
+        }
+    }
+
+    .overlay {
+        fill: none;
+        pointer-events: all;
+    }
+
+    .tooltip-wrapper {
+        opacity: 1;
+        position: absolute;
+        z-index: 2;
+
+        .tooltip {
+            .title {
+                text-transform: uppercase;
+            }
+
+            .title, .date {
+                font-weight: bold;
+                .font-size(1.4);
+            }
+
+            .date {
+                white-space: nowrap;
+            }
+
+            .value {
+                font-family: 'Oswald', sans-serif;
+                .font-size(2.2);
+            }
+
+            bottom: -100%;
+            transform: translateX(-50%);
+            position: absolute;
+            padding: 8px;
+            color: #fff;
+            background-color: #000;
+            border-radius: 5px;
+            &:before {
+                content: '';
+                width: 0;
+                height: 0;
+                position: absolute;
+                left: ~"calc(50% - 8px)";
+                bottom: -12px;
+                border-left: 8px solid transparent;
+                border-right: 8px solid transparent;
+                border-top: 15px solid #000000;
+
+            }
+        }
+    }
+}
+
+

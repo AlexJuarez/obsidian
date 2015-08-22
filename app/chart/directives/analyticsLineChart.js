@@ -1,0 +1,250 @@
+//jshint ignore: start
+define(function (require) {
+    'use strict';
+
+    var ng = require('angular');
+    var app = require('./../module');
+    var d3 = require('d3');
+    require('tpl!./analyticsLineChart.html');
+    var chartData = JSON.parse(require('text!/fixtures/analytics_data_day.json'));
+
+    var formatDayTooltip = d3.time.format('%b %d, %Y'),
+        formatMonthTooltip = d3.time.format('%b, %Y'),
+        formatDayTick = d3.time.format('%m/%d'),
+        formatDayTickWithYear = d3.time.format('%m/%d/%y'),
+        formatMonthTick = d3.time.format('%b'),
+        formatMonthTickWithYear = d3.time.format('%b-%y'),
+        formatYear = d3.time.format('%Y');
+
+    var margin = {
+        top: 25,
+        right: 40,
+        bottom: 60,
+        left: 60
+    };
+
+    var formatTooltip = function (date, interval) {
+        switch (interval) {
+            case 'day':
+                return formatDayTooltip(date);
+            case 'week': //TODO: Validate this output week tooltip seems wrong
+                return 'Week of ' + formatDayTooltip(date);
+            case 'month':
+                return formatMonthTooltip(date);
+            case 'year':
+                return formatYear(date);
+        }
+    };
+
+    var xTickFormatter = {
+        'day': d3.time.format('%m/%d'),
+        'week': d3.time.format('%m/%d/%y'),
+        'month': d3.time.format('%b-%y'),
+        'year': d3.time.format('%Y')
+    };
+
+    app.directive('anaylticsLineChart', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            transclude: true,
+            scope: {},
+            templateUrl: 'chart/directives/analyticsLineChart.html',
+            controller: ['$scope', '$element', '$filter', '$window', function ($scope, $element, $filter, $window) {
+                $scope.showOptions = [
+                    {name: 'Impressions', value: 'impression'},
+                    {name: 'Views', value: 'view'},
+                    {name: 'Completion Rate', value: 'averagePercentComplete'}
+                ];
+
+                $scope.intervalOptions = [
+                    {name: 'Day', value: 'day'},
+                    {name: 'Week', value: 'weekStarting'},
+                    {name: 'Month', value: 'monthStarting'},
+                    {name: 'Year', value: 'yearStarting'}
+                ];
+
+                $scope.show = 'impression';
+                $scope.interval = 'day';
+
+                $scope.openPicker = openPicker;
+                $scope.startDate = new Date();
+
+                $scope.format = 'MM/dd/yyyy';
+
+                $scope.dateOptions = {
+                    formatYear: 'yy',
+                    startingDay: 0,
+                    maxMode: 'day'
+                };
+
+                function openPicker($event) {
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    $scope.opened = true;
+                }
+
+                function getMetricName(value) {
+                    var name = '';
+                    ng.forEach($scope.showOptions, function (d) {
+                        if (d.value === value) {
+                            name = d.name;
+                        }
+                    });
+
+                    return name;
+                }
+
+                //Chart Creation
+                function createChart(chartArea, data, interval, show) {
+                    var width = chartArea.clientWidth - margin.left - margin.right;
+                    var height = chartArea.clientHeight - margin.top - margin.bottom;
+
+                    var parseDate = d3.time.format('%Y-%m-%d').parse,
+                        bisectDate = d3.bisector(function(d) { return d.date; }).left;
+
+                    data.map(function(d) {
+                        if (typeof d[interval] === 'string') {
+                            d[interval] = parseDate(d[interval]);
+                        }
+                    });
+
+                    var x = d3.time.scale()
+                        .range([0, width]);
+
+                    var y = d3.scale.linear()
+                        .range([height, 0]);
+
+                    var color = d3.scale.category10();
+
+                    var truncateNumber = $filter('truncateNumber');
+
+                    var xAxis = d3.svg.axis()
+                        .scale(x)
+                        .orient('bottom')
+                        .tickFormat(xTickFormatter[interval]);
+
+                    var yAxis = d3.svg.axis()
+                        .scale(y)
+                        .orient('left')
+                        .innerTickSize(-width)
+                        .outerTickSize(0)
+                        .tickFormat(function (d) { return truncateNumber(d); });
+
+                    var line = d3.svg.line()
+                        .interpolate('linear')
+                        .x(function(d) { return x(d.date); })
+                        .y(function(d) { return y(d.datum); });
+
+                    var svg = d3.select(chartArea)
+                        .append('svg')
+                            .attr('width', width + margin.left + margin.right)
+                            .attr('height', height + margin.top + margin.bottom)
+                        .append('g')
+                            .attr('transform', 'translate(' + margin.left + ',' + margin.right + ')');
+
+                    color.domain(['Line 1']);
+
+                    var lineData = color.domain().map(function(name) {
+                        return {
+                            name: name,
+                            values: data.map(function(d) {
+                                return {
+                                    name: name,
+                                    date: d[interval],
+                                    datum: +d.metrics[show],
+                                    metrics: d.metrics
+                                }
+                            })
+                        }
+                    });
+
+                    x.domain(d3.extent(data, function(d) { return d[interval]; }));
+
+                    y.domain([
+                        0,
+                        d3.max(lineData, function (d) {
+                            return d3.max(d.values, function(v) { return v.datum; });
+                        })
+                    ]);
+
+                    //Create the x axis label
+                    svg.append('g')
+                        .attr('class', 'x-axis')
+                        .attr('transform', 'translate(0, ' + height + ')')
+                        .call(xAxis);
+
+                    //Create the y axis label
+                    svg.append('g')
+                        .attr('class', 'y-axis')
+                        .call(yAxis)
+                    .append('text')
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 6)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text(getMetricName(show));
+
+                    var lines = svg.selectAll('.lines')
+                        .data(lineData)
+                        .enter().append('g')
+                            .attr('class', 'lines');
+
+                    //Create the path
+                    lines.append('path')
+                        .attr('class', 'line')
+                        .attr('d', function(d) { return line(d.values); })
+                        .style('stroke', function(d) { return color(d.name) });
+
+                    //Create the circles
+                    lines.selectAll('circle')
+                        .data(function (d) { return d.values; })
+                        .enter().append('circle')
+                            .attr('r', 3.5)
+                            .attr('cx', function(d) { return x(d.date); })
+                            .attr('cy', function(d) { return y(d.datum); })
+                            .style('stroke', function(d) { return color(d.name) });
+
+                    //Create the tooltips for hover
+                    var tooltip = d3.select(chartArea)
+                        .append('div')
+                        .attr('class', 'tooltip-wrapper');
+
+                    svg.append('rect')
+                        .attr('class', 'overlay')
+                        .attr('width', width)
+                        .attr('height', height)
+                        .on('mousemove', mousemove);
+
+                    function mousemove() {
+                        var event = this;
+                        ng.forEach(lineData, function (data){
+                            var x0 = x.invert(d3.mouse(event)[0]),
+                                i = bisectDate(data.values, x0, 1),
+                                d0 = data.values[i -1],
+                                d1 = data.values[i],
+                                //which point on the line is closer
+                                d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+                            tooltip.style('top', y(d.datum) + margin.top + 'px')
+                                .style('left', x(d.date)  + margin.left + 'px');
+                            tooltip.html('<div class="tooltip">' +
+                                '<div class="title">' + getMetricName(show) + '</div>' +
+                                '<div class="value">' + d.datum + '</div>' +
+                                '<div class="date">' + formatTooltip(d.date, interval) + '</div>' +
+                                '</div>');
+                        });
+                    }
+                }
+
+                createChart($element.find('.chart-area')[0], chartData, $scope.interval, $scope.show);
+
+                ng.element($window).on('resize', function() {
+                    $element.find('.chart-area').empty();
+
+                    createChart($element.find('.chart-area')[0], chartData, $scope.interval, $scope.show);
+                });
+
+            }]
+        };
+    }]);
+});

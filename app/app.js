@@ -14,6 +14,7 @@ define(function (require) {
     require('./core/index');
     require('./style-guide/index');
     require('./campaignManagement/index');
+    require('./analytics/index');
 
     return ng.module('app', [
         'ui.bootstrap.datepicker',
@@ -21,6 +22,7 @@ define(function (require) {
         'localytics.directives',
         'app.home',
         'app.campaign-management',
+        'app.analytics',
         'tpl',
         'ui.router'
     ]);

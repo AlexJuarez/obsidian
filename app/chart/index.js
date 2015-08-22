@@ -5,5 +5,6 @@ define(function (require) {
     'use strict';
 
     require('./directives/comparisonChart');
+    require('./directives/analyticsLineChart');
     require('./directives/quartileBarGraph');
 });
