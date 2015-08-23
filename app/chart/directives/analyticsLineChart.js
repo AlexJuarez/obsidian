@@ -6,14 +6,12 @@ define(function (require) {
     var app = require('./../module');
     var d3 = require('d3');
     require('tpl!./analyticsLineChart.html');
+
+    var tooltipTemplate = require('tpl!./analyticsLineChartTooltip.html');
     var chartData = JSON.parse(require('text!/fixtures/analytics_data_day.json'));
 
     var formatDayTooltip = d3.time.format('%b %d, %Y'),
         formatMonthTooltip = d3.time.format('%b, %Y'),
-        formatDayTick = d3.time.format('%m/%d'),
-        formatDayTickWithYear = d3.time.format('%m/%d/%y'),
-        formatMonthTick = d3.time.format('%b'),
-        formatMonthTickWithYear = d3.time.format('%b-%y'),
         formatYear = d3.time.format('%Y');
 
     var margin = {
@@ -50,7 +48,7 @@ define(function (require) {
             transclude: true,
             scope: {},
             templateUrl: 'chart/directives/analyticsLineChart.html',
-            controller: ['$scope', '$element', '$filter', '$window', function ($scope, $element, $filter, $window) {
+            controller: ['$scope', '$element', '$filter', '$window', '$interpolate', function ($scope, $element, $filter, $window, $interpolate) {
                 $scope.showOptions = [
                     {name: 'Impressions', value: 'impression'},
                     {name: 'Views', value: 'view'},
@@ -95,19 +93,20 @@ define(function (require) {
                     return name;
                 }
 
+                function transformData(data, interval) {
+                    var parseDate = d3.time.format('%Y-%m-%d').parse;
+
+                    data.forEach(function(d) {
+                        d[interval] = parseDate(d[interval]);
+                    });
+                }
+
                 //Chart Creation
                 function createChart(chartArea, data, interval, show) {
                     var width = chartArea.clientWidth - margin.left - margin.right;
                     var height = chartArea.clientHeight - margin.top - margin.bottom;
 
-                    var parseDate = d3.time.format('%Y-%m-%d').parse,
-                        bisectDate = d3.bisector(function(d) { return d.date; }).left;
-
-                    data.map(function(d) {
-                        if (typeof d[interval] === 'string') {
-                            d[interval] = parseDate(d[interval]);
-                        }
-                    });
+                    var bisectDate = d3.bisector(function(d) { return d.date; }).left;
 
                     var x = d3.time.scale()
                         .range([0, width]);
@@ -227,16 +226,25 @@ define(function (require) {
                                 d = x0 - d0.date > d1.date - x0 ? d1 : d0;
                             tooltip.style('top', y(d.datum) + margin.top + 'px')
                                 .style('left', x(d.date)  + margin.left + 'px');
-                            tooltip.html('<div class="tooltip">' +
-                                '<div class="title">' + getMetricName(show) + '</div>' +
-                                '<div class="value">' + d.datum + '</div>' +
-                                '<div class="date">' + formatTooltip(d.date, interval) + '</div>' +
-                                '</div>');
+
+                            tooltip.html($interpolate(tooltipTemplate)({
+                                title: getMetricName(show),
+                                value: d.datum,
+                                date: formatTooltip(d.date, interval)
+                            }));
                         });
                     }
                 }
 
+                transformData(chartData, $scope.interval);
+
                 createChart($element.find('.chart-area')[0], chartData, $scope.interval, $scope.show);
+
+                $scope.$watch('show', function(value) {
+                    $element.find('.chart-area').empty();
+
+                    createChart($element.find('.chart-area')[0], chartData, $scope.interval, value);
+                });
 
                 ng.element($window).on('resize', function() {
                     $element.find('.chart-area').empty();
