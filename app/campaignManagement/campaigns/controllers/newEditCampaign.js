@@ -5,7 +5,7 @@ define(function (require) {
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('newEditCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'campaignRecordService', 'modalState', function ($scope, $modalInstance, accounts, campaignRecordService, modalState) {
+    app.controller('newEditCampaignCtrl', ['$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService', 'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', function ($scope, $q, $modalInstance, accounts, accountRecordService, divisionRecordService, clientRecordService, campaignRecordService, modalState) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
@@ -28,6 +28,9 @@ define(function (require) {
                 if (!$scope.campaign || $scope.campaign === {}) {
                     $scope.campaign = ng.copy(modalState.campaign || originalCampaign);
                 }
+                isRepInfoRequired(originalCampaign).then(function(isRequired) {
+                    $scope.isRepInfoRequired = isRequired;
+                });
             });
         } else {
             originalCampaign = {
@@ -52,6 +55,20 @@ define(function (require) {
             if (!modalState.campaignId) {
                 $scope.accounts = accounts.filtered();
             }
+        }
+
+        function isRepInfoRequired(campaign) {
+            var deferred = $q.defer();
+            var accountId, divisionId, clientId;
+            accountRecordService.getById(campaign.accountId).then(function(account) {
+                divisionRecordService.getById(account.all().divisionId).then(function(division) {
+                   clientRecordService.getById(division.all().clientId).then(function(client) {
+                       deferred.resolve(client.all().requireRepInfo);
+                   });
+                });
+            });
+
+            return deferred.promise;
         }
 
         $scope.select = [
