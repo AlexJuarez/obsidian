@@ -13,9 +13,7 @@ define(function (require) {
         $scope.creativeData =       modalState.creativeData;
         $scope.cancel =             cancel;
 
-        console.log( '# ad types', $scope.creativeData.length );
 
-        
         // Adjust bootstrap classes based on # of ad types returned
         if ($scope.creativeData.length <= 1) {
             // set to xs colClasses

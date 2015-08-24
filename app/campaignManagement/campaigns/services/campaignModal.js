@@ -8,8 +8,6 @@ define(function (require) {
         queryParams: {
             dimensions: [
                 'type'
-                // 'id',
-                // 'creatives.type'
             ],
             metrics: [
                 'impressions',
@@ -72,15 +70,12 @@ define(function (require) {
 
                 var modalSize;
                 if (creativeData.length <= 1) {
-                    console.log( 'modalSize sm' );
                     modalSize = 'sm';
                     
                 } else if (creativeData.length <= 2) {
-                    console.log( 'modalSize md' );
                     modalSize = 'md';
                     
                 } else {
-                    console.log( 'modalSize lg' );
                     modalSize = 'lg';
                 }
                 
