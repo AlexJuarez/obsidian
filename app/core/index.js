@@ -1,7 +1,4 @@
-/**
- * Created by Alex on 3/1/2015.
- */
-define(function (require) {
+define(function(require) {
     'use strict';
 
     require('./modal/index');
@@ -46,14 +43,31 @@ define(function (require) {
 
     function services() {
         require('./services/channel');
+// <<<<<<< HEAD
+//         require('./services/clientSet');
+//         require('./services/divisionSet');
+//         require('./services/apiURIGenerator');
+//         require('./services/clientRecord');
+//         require('./services/creativeRecord');
+//         require('./services/propertyByString');
+//     }
+
+//     require('./constants/apiURI');    
+
+// =======
+        require('./services/clientRecord');
+        require('./services/divisionRecord');
+        require('./services/accountRecord');
+        require('./services/campaignRecord');
+        require('./services/creativeRecord');
+        require('./services/placementRecord');
+        require('./services/industry');
+        require('./services/enums');
         require('./services/clientSet');
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
-        require('./services/clientRecord');
-        require('./services/creativeRecord');
-        require('./services/propertyByString');
     }
 
-    require('./constants/apiURI');    
-
+    require('./constants/apiURI');
+//>>>>>>> develop
 });

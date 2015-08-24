@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./account.html');
 
-    app.directive('accountDropdown', ['accountService', '$timeout', 'navbarService', function (accounts, $timeout, navbar) {
+    app.directive('accountDropdown', ['accountService', '$timeout', 'navbarService', 'accountRecordService', function (accounts, $timeout, navbar, accountRecordService) {
         return {
             restrict: 'A',
             scope: true,
@@ -21,8 +21,16 @@ define(function (require) {
                 navbar.observe(update, $scope);
 
                 $scope.$watch('query', function (newValue) {
-                    $scope.results = accounts.search(newValue);
+                    refreshSearch(newValue);
                 });
+
+                accountRecordService.observe(function() {
+                    refreshSearch($scope.query);
+                });
+
+                function refreshSearch(newValue) {
+                    $scope.results = accounts.search(newValue);
+                }
 
                 function updateCurrent() {
                     var info = navbar.all();

@@ -110,8 +110,22 @@ define(function(require) {
 
                 for(var i = 0; i < creatives.length; i ++) {
                     creative = creatives[i];
+                    transformedTable.data.push({
+                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        creativeName: creative.name,
+                        delivering: creative.live,
+                        type: typeTransform[creative.type],
+                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                        numPlacements: creative.numPlacements,
+                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
-                    transformedTable.data.push(_transformCreative(creative));
+                        // These properties are needed by thumbnails but aren't
+						// in the table
+                        id: creative.id,
+                        lastModified: creative.modifiedDate,
+                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
+                    });
                 }
                 return transformedTable;
             }

@@ -3,7 +3,31 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', 'creatives', function($scope, $rootScope, $state, creatives) {
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
+
+        $scope.openNewCreativeModal = openNewCreativeModal;
+
+        var newCreativeModal;
+        function openNewCreativeModal() {
+            if (!newCreativeModal) {
+                newCreativeModal = {
+                    action: 'New'
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
+                controller: 'newEditCreativeCtrl',
+                resolve: {
+                    modalState: function() {
+                        return newCreativeModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
         function updateMeta() {
 
             var allCreatives = creatives.all().data;
