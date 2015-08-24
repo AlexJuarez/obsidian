@@ -7,28 +7,6 @@
     <h3 class="impressions">Total Campaign Impressions: {{impressions|number}}</h3>
     <div class="ad-types row">
         
-<!--         <table>
-            <tr>
-                <td style="vertical-align: top; position: relative;" ng-repeat="adUnit in creativeData | adTypeOrder">
-                    <h4 class="thin-header">{{adUnit.type}}</h4>
-                    <p>Placements:&nbsp;<strong>{{adUnit.metrics.countPlacements|number}}</strong></p>
-                    <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|truncateNumber}}</strong></p>
-                    <p ng-if="adUnit.type != 'In-Stream' && adUnit.type != 'Display'">View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>
-                    <p>User Action Rate:&nbsp;<strong>{{adUnit.metrics.useractionRate|percentage}}&#37;</strong></p>
-                    <p>Clickthrough Rate:&nbsp;<strong>{{adUnit.metrics.clickthroughRate|percentage}}&#37;</strong></p>
-                    <p ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'">Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
-                    <table style="position: absolute; bottom: 0;">
-                        <tr>
-                            <td>
-                                <div ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'" quartiles quartile-controller="analyticsPreviewCtrl" quartile-data=adUnit></div>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
- -->        
-
         <div class="cell" ng-class="colClasses" ng-repeat="adUnit in creativeData | adTypeOrder">
             <div class="top">
                 <h4 class="thin-header">{{adUnit.type}}</h4>
@@ -40,7 +18,6 @@
                 <p ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'">Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
 
             </div>
-            
 
             <div class="bottom" ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'" quartiles quartile-controller="analyticsPreviewCtrl" quartile-data=adUnit></div>
         

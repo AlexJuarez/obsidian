@@ -1,18 +1,38 @@
+.displayFlex {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
 .analytics-preview {
-    
 
     .ad-types.row {
-        display: flex;
+        .displayFlex();
         .cell {
-            display: flex;
+            .displayFlex();
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
             flex-direction: column;
-            flex-grow: 1;
-            .top, .bottom {
-                display: flex;            
-            }
+
+            -webkit-box-flex: 1;
+            -moz-box-flex: 1;
+            -webkit-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
             .top {
-                flex-grow: 1;
+                -webkit-box-flex: 1;
+                -moz-box-flex: 1;
+                -webkit-flex: 1;
+                -ms-flex: 1;
+                flex: 1;
+
+                -webkit-flex-direction: column;
+                -ms-flex-direction: column;
                 flex-direction: column;
+
+                -ms-flex-preferred-size: auto; // Needed for IE10
             }
         }
     }
@@ -40,6 +60,7 @@
     .quartiles {
         
         &.row {
+            width: 100%;
             margin-top: 1rem;
             margin-left: -5px;
             margin-right: -5px;    
@@ -68,6 +89,15 @@
     }
     // Set border for each col on small screens
     @media (max-width: @screen-sm-min) {
+        .ad-types.row {
+            display: inherit;
+            .cell {
+                display: inherit;
+                .top, .bottom {
+                    display: inherit;
+                }
+            }
+        }
         .ad-types .col-xs-12 {
             border: 1px solid @light-gray;
             border-width: 0 0 1px;
