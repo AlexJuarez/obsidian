@@ -11,6 +11,7 @@ define(function (require) {
         $scope.cancel = cancel;
         $scope.creative = modalState.creative;
         $scope.action = modalState.action;
+        $scope.swfAllowedExtensions = ['swf'];
 
         // ---- BEGIN BUSINESS LOGIC CODE ----
 
@@ -159,15 +160,15 @@ define(function (require) {
 
         $scope.$watch('creative.dimensions', function() {
             if ($scope.creative && $scope.creative.dimensions) {
-                $scope.dimensionsAreCustom
-                    = dimensions[$scope.creative.dimensions].name === 'Custom';
+                $scope.dimensionsAreCustom =
+                    dimensions[$scope.creative.dimensions].name === 'Custom';
             }
         });
 
         $scope.$watch('creative.expandedDimensions', function() {
             if ($scope.creative && $scope.creative.expandedDimensions) {
-                $scope.expandedDimensionsAreCustom
-                    = expandedDimensions[$scope.creative.expandedDimensions].name === 'Custom'
+                $scope.expandedDimensionsAreCustom =
+                    expandedDimensions[$scope.creative.expandedDimensions].name === 'Custom';
             }
         });
 

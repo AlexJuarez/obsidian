@@ -181,6 +181,24 @@
             </div>
         </div>
 
+        <div ng-if="creative.type == 'SWF'">
+            <div class="form-group row">
+                <label class="col-sm-3 form-label">Upload SWF</label>
+                <div class="col-sm-9 file-selection-wrapper form-inline">
+                    <div file-picker accept="'application/x-shockwave-flash'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>
+                </div>
+            </div>
+        </div>
+
+        <div ng-if="creative.type == 'IMG'">
+            <div class="form-group row">
+                <label class="col-sm-3 form-label">Upload Image</label>
+                <div class="col-sm-9 file-selection-wrapper form-inline">
+                    <div file-picker ng-model="creative.file"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="form-group row">
             <label for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>
             <div class="col-sm-9">

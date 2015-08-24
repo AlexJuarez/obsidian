@@ -6,7 +6,7 @@ define(function (require) {
     require('./newEditCampaign');
     require('angularMocks');
 
-    describe('newCampaignCtrl', function () {
+    describe('newEditCampaignCtrl', function () {
         var newCampaign, mockAccounts, mockModalInstance, httpBackend, state, scope;
 
         mockAccounts = {
@@ -34,7 +34,7 @@ define(function (require) {
                 httpBackend = $httpBackend;
                 state = $state;
                 scope = $rootScope.$new();
-                newCampaign = $controller('newCampaignCtrl',
+                newCampaign = $controller('newEditCampaignCtrl',
                     {
                         $scope: scope,
                         $modalInstance: mockModalInstance,
