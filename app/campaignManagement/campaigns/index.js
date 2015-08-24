@@ -19,6 +19,8 @@ define(function (require) {
 
     require('./placements/controllers/placementsList');
     require('./placements/controllers/placementsHeader');
+    require('./placements/controllers/newEditPlacement');
+    require('./placements/directives/placementOptions');
     require('./placements/services/placements');
     require('./placements/services/placementsByPublisher');
     require('./placements/services/placementsByCreative');

@@ -1,0 +1,25 @@
+<div class="modal-header">
+    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
+
+    <h2 class="modal-title">
+        <span>{{action}} Placement</span></h2>
+</div>
+<div class="modal-body">
+    <form class="form form-horizontal" role="form" novalidate
+          name="newCreative">
+        <div ng-pluralize ng-show="newCreative.$invalid && submitted"
+             class="alert alert-danger"
+             count="(newCreative.$error | errorCount)"
+             when="{'0': 'There are no errors on this form',
+                    '1': 'There is 1 error on this form.',
+                    'other': 'There are {} errors on this form.'}">
+        </div>
+        test
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save
+        Placement
+    </button>
+    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
+</div>

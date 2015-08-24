@@ -3,8 +3,31 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('placementsHeader', ['$scope', '$rootScope', 'placements', function($scope, $rootScope, placements) {
+    app.controller('placementsHeader', ['$scope', '$modal', '$rootScope', 'placements', function($scope, $modal, $rootScope, placements) {
         function updateMeta() {
+            $scope.openNewPlacementModal = openNewPlacementModal;
+
+            var newPlacementModal;
+            function openNewPlacementModal() {
+                if (!newPlacementModal) {
+                    newPlacementModal = {
+                        action: 'New'
+                    };
+                }
+
+                $modal.open({
+                    animation: 'true',
+                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
+                    controller: 'newEditPlacementCtrl',
+                    resolve: {
+                        modalState: function() {
+                            return newPlacementModal;
+                        }
+                    },
+                    size: 'lg'
+                });
+            }
+
             var allPlacements = placements.all(true).placements;
 
             if (allPlacements) {
