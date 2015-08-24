@@ -5,7 +5,11 @@ define(function (require) {
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('newEditCampaignCtrl', ['$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService', 'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', function ($scope, $q, $modalInstance, accounts, accountRecordService, divisionRecordService, clientRecordService, campaignRecordService, modalState) {
+    app.controller('newEditCampaignCtrl', [
+        '$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService',
+        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState',
+        function ($scope, $q, $modalInstance, accounts, accountRecordService, divisionRecordService,
+                  clientRecordService, campaignRecordService, modalState) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
@@ -59,7 +63,6 @@ define(function (require) {
 
         function isRepInfoRequired(campaign) {
             var deferred = $q.defer();
-            var accountId, divisionId, clientId;
             accountRecordService.getById(campaign.accountId).then(function(account) {
                 divisionRecordService.getById(account.all().divisionId).then(function(division) {
                    clientRecordService.getById(division.all().clientId).then(function(client) {
