@@ -5,6 +5,6 @@ define(function (require) {
     'use strict';
 
     require('./controllers/account');
-    require('./controllers/newAccount');
+    require('./controllers/newEditAccount');
     require('./directives/accountSummary');
 });
