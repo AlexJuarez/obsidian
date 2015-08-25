@@ -69,6 +69,7 @@ define(function (require) {
                 $scope.startDate = new Date();
 
                 $scope.format = 'MM/dd/yyyy';
+                $scope.downloadImage = downloadImage;
 
                 $scope.dateOptions = {
                     formatYear: 'yy',
@@ -137,6 +138,7 @@ define(function (require) {
 
                     var svg = d3.select(chartArea)
                         .append('svg')
+                            .attr('xmlns', 'http://www.w3.org/2000/svg')
                             .attr('width', width + margin.left + margin.right)
                             .attr('height', height + margin.top + margin.bottom)
                         .append('g')
@@ -193,6 +195,7 @@ define(function (require) {
                     lines.append('path')
                         .attr('class', 'line')
                         .attr('d', function(d) { return line(d.values); })
+                        .style('fill', 'none')
                         .style('stroke', function(d) { return color(d.name) });
 
                     //Create the circles
@@ -202,6 +205,7 @@ define(function (require) {
                             .attr('r', 3.5)
                             .attr('cx', function(d) { return x(d.date); })
                             .attr('cy', function(d) { return y(d.datum); })
+                            .style('fill', 'white')
                             .style('stroke', function(d) { return color(d.name) });
 
                     //Create the tooltips for hover
@@ -209,10 +213,9 @@ define(function (require) {
                         .append('div')
                         .attr('class', 'tooltip-wrapper');
 
-                    svg.append('rect')
+                    d3.select(chartArea).append('div')
                         .attr('class', 'overlay')
-                        .attr('width', width)
-                        .attr('height', height)
+                        .attr('style', 'left:' +  margin.left + 'px;top:' + margin.top + 'px;')
                         .on('mousemove', mousemove);
 
                     function mousemove() {
@@ -234,6 +237,22 @@ define(function (require) {
                             }));
                         });
                     }
+                }
+
+                function downloadImage($event) {
+                    var canvas = document.createElement('canvas');
+                    var ctx = canvas.getContext('2d');
+
+                    var img = new Image();
+                    img.onload = function() { console.log('test'); };
+
+                    img.src = "data:image/svg+xml;utf8," + $element.find('.chart-area svg')[0].outerHTML;
+                    document.body.appendChild(img);
+                    //ctx.drawImage(img, 0, 0);
+
+                    var link = $event.currentTarget;
+                    link.href = canvas.toDataURL();
+                    link.download = 'chart.png';
                 }
 
                 transformData(chartData, $scope.interval);
