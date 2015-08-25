@@ -88,7 +88,7 @@ define(function (require) {
                 for(var k=0; k<groupData.group.placements.length; k++) {
                     placement = groupData.group.placements[k];
                     transformedGroup.content.data.push({
-                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        checked: '<label><input class="checkbox checkbox-light" type="checkbox"><span></span></label>',
                         placementName: placement.name,
                         delivering: placement.live,
                         startDate: placement.flightStart,
@@ -103,7 +103,7 @@ define(function (require) {
                             max: placement.budget
                         },
                         creatives: placement.creatives,
-                        options: ''
+                        options: '<div creative-options id="\'' + placement.id + '\'"></div>'
                     });
                 }
 
