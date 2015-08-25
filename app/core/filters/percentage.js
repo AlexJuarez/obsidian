@@ -5,8 +5,14 @@ define(function (require) {
 
     app.filter('percentage', [function () {
         return function (input) {
-            var roundedNum = input * 100;
-            return roundedNum.toFixed(2);
+            
+            if (input < 1) {
+                var roundedNum = input * 100;
+                return roundedNum.toFixed(2);   
+            } else {
+                return input;
+            }
+            
         };
     }]);
 });

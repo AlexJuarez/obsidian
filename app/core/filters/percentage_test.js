@@ -14,31 +14,17 @@ define(function (require) {
             });
         });
 
-        it('should not trunc.', function () {
-            expect(filter(345)).toEqual(345);
-            expect(filter(0)).toEqual(0);
-            expect(filter(15)).toEqual(15);
+        it('should not convert to percentage', function () {
+            expect(filter(3)).toEqual(3);
+            expect(filter(1.45)).toEqual(1.45);
+            expect(filter(3.002364)).toEqual(3.002364);
         });
 
-        // it('should trunc to K', function () {
-        //     expect(filter(345456)).toEqual('345.5K');
-        //     expect(filter(7650)).toEqual('7.7K');
-        //     expect(filter(15345)).toEqual('15.3K');
-        // });
-
-        // it('should trunc to M', function () {
-        //     expect(filter(345456098)).toEqual('345.5M');
-        //     expect(filter(7650098)).toEqual('7.7M');
-        //     expect(filter(15345098)).toEqual('15.3M');
-        // });
-
-        // it('should filter to B', function () {
-        //     expect(filter(15345098000)).toEqual('15.3B');
-        // });
-
-        // it('should return the input if trillions.', function () {
-        //     expect(filter(15345098000000)).toEqual(15345098000000);
-        // });
+        it('should convert to percentage', function () {
+            expect(filter(0.23458)).toEqual('23.46');
+            expect(filter(0)).toEqual('0.00');
+            expect(filter(0.15)).toEqual('15.00');
+        });
 
     });
 });

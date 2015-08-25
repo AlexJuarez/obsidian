@@ -130,25 +130,6 @@ define(function(require) {
                 return transformedTable;
             }
 
-            function _transformCreative(creative) {
-                return {
-                    checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
-                    creativeName: creative.name,
-                    delivering: creative.live,
-                    type: typeTransform[creative.type],
-                    dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                    expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                    countPlacements: creative.countPlacements,
-                    options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
-
-                    // These properties are needed by thumbnails but aren't
-                    // in the table
-                    id: creative.id,
-                    lastModified: creative.modifiedDate,
-                    thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
-                };
-            }
-
             function _apiConfig() {
 
                 var newConfig = ng.copy(apiConfig);
