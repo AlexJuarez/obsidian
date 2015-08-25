@@ -2,7 +2,8 @@ define(function (require) {
     'use strict';
     var app = require('./../module');
 
-    require('tpl!./index.html');
+    require('tpl!./index.content.html');
+    require('tpl!./index.summary.html');
 
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider) {
 
@@ -12,7 +13,10 @@ define(function (require) {
                 url: '/client/:clientId',
                 views: {
                     'summary': {
-                        templateUrl: 'analytics/clients/index.html'
+                        templateUrl: 'analytics/clients/index.summary.html'
+                    },
+                    'content': {
+                        templateUrl: 'analytics/clients/index.content.html'
                     }
                 }
             });

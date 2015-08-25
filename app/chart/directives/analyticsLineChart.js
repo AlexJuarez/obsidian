@@ -7,8 +7,9 @@ define(function (require) {
     var d3 = require('d3');
     require('tpl!./analyticsLineChart.html');
 
+    var css = require('text!./analyticsLineChart.css');
+
     var tooltipTemplate = require('tpl!./analyticsLineChartTooltip.html');
-    var chartData = JSON.parse(require('text!/fixtures/analytics_data_day.json'));
 
     var formatDayTooltip = d3.time.format('%b %d, %Y'),
         formatMonthTooltip = d3.time.format('%b, %Y'),
@@ -17,7 +18,7 @@ define(function (require) {
     var margin = {
         top: 25,
         right: 40,
-        bottom: 60,
+        bottom: 25,
         left: 60
     };
 
@@ -25,11 +26,11 @@ define(function (require) {
         switch (interval) {
             case 'day':
                 return formatDayTooltip(date);
-            case 'week': //TODO: Validate this output week tooltip seems wrong
+            case 'weekStarting': //TODO: Validate this output week tooltip seems wrong
                 return 'Week of ' + formatDayTooltip(date);
-            case 'month':
+            case 'monthStarting':
                 return formatMonthTooltip(date);
-            case 'year':
+            case 'yearStarting':
                 return formatYear(date);
         }
     };
@@ -48,11 +49,11 @@ define(function (require) {
             transclude: true,
             scope: {},
             templateUrl: 'chart/directives/analyticsLineChart.html',
-            controller: ['$scope', '$element', '$filter', '$window', '$interpolate', function ($scope, $element, $filter, $window, $interpolate) {
+            controller: ['$scope', '$element', '$filter', '$window', '$interpolate', 'analyticsChartService', function ($scope, $element, $filter, $window, $interpolate, analyticChartService) {
                 $scope.showOptions = [
-                    {name: 'Impressions', value: 'impression'},
-                    {name: 'Views', value: 'view'},
-                    {name: 'Completion Rate', value: 'averagePercentComplete'}
+                    {name: 'Impressions', value: 'impression'}
+                    //{name: 'Views', value: 'view'},
+                    //{name: 'Completion Rate', value: 'averagePercentComplete'}
                 ];
 
                 $scope.intervalOptions = [
@@ -66,9 +67,9 @@ define(function (require) {
                 $scope.interval = 'day';
 
                 $scope.openPicker = openPicker;
-                $scope.startDate = new Date();
+                $scope.startDate = '';
 
-                $scope.format = 'MM/dd/yyyy';
+                $scope.format = 'yyyy-MM-dd';
                 $scope.downloadImage = downloadImage;
 
                 $scope.dateOptions = {
@@ -105,6 +106,11 @@ define(function (require) {
                 //Chart Creation
                 function createChart(chartArea, data, interval, show) {
                     var width = chartArea.clientWidth - margin.left - margin.right;
+                    var mobile = false;
+                    if (width < 600) { //if width is less than 600 than overflow
+                        width = 1200;
+                        mobile = true;
+                    }
                     var height = chartArea.clientHeight - margin.top - margin.bottom;
 
                     var bisectDate = d3.bisector(function(d) { return d.date; }).left;
@@ -126,8 +132,17 @@ define(function (require) {
 
                     var yAxis = d3.svg.axis()
                         .scale(y)
+                        .ticks(6)
                         .orient('left')
                         .innerTickSize(-width)
+                        .outerTickSize(0)
+                        .tickFormat(function (d) { return ''; });
+
+                    var yAxisExternal = d3.svg.axis()
+                        .scale(y)
+                        .ticks(6)
+                        .orient('left')
+                        .innerTickSize(0)
                         .outerTickSize(0)
                         .tickFormat(function (d) { return truncateNumber(d); });
 
@@ -136,13 +151,20 @@ define(function (require) {
                         .x(function(d) { return x(d.date); })
                         .y(function(d) { return y(d.datum); });
 
-                    var svg = d3.select(chartArea)
-                        .append('svg')
-                            .attr('xmlns', 'http://www.w3.org/2000/svg')
-                            .attr('width', width + margin.left + margin.right)
-                            .attr('height', height + margin.top + margin.bottom)
-                        .append('g')
-                            .attr('transform', 'translate(' + margin.left + ',' + margin.right + ')');
+                    var chartContainer = d3.select(chartArea)
+                        .append('div')
+                            .attr('class', 'chart-container');
+
+                    var svg = chartContainer.append('svg')
+                        .attr('xmlns', 'http://www.w3.org/2000/svg')
+                        .attr('width', width + margin.left + margin.right)
+                        .attr('height', height + margin.top + margin.bottom);
+
+                    svg.append('style')
+                        .text(css);
+
+                    var chart = svg.append('g')
+                            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
                     color.domain(['Line 1']);
 
@@ -170,13 +192,13 @@ define(function (require) {
                     ]);
 
                     //Create the x axis label
-                    svg.append('g')
+                    chart.append('g')
                         .attr('class', 'x-axis')
                         .attr('transform', 'translate(0, ' + height + ')')
                         .call(xAxis);
 
                     //Create the y axis label
-                    svg.append('g')
+                    chart.append('g')
                         .attr('class', 'y-axis')
                         .call(yAxis)
                     .append('text')
@@ -186,7 +208,20 @@ define(function (require) {
                         .style("text-anchor", "end")
                         .text(getMetricName(show));
 
-                    var lines = svg.selectAll('.lines')
+                    var yAxisExternalContainer = d3.select(chartArea)
+                        .append('div')
+                            .attr('class', 'chart-y-axis')
+                        .append('svg')
+                            .attr('xmlns', 'http://www.w3.org/2000/svg')
+                            .attr('width', margin.left + 1)
+                            .attr('height', height + margin.top + 5);
+
+                    yAxisExternalContainer.append('g')
+                        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+                        .attr('class', 'y-axis')
+                        .call(yAxisExternal);
+
+                    var lines = chart.selectAll('.lines')
                         .data(lineData)
                         .enter().append('g')
                             .attr('class', 'lines');
@@ -198,25 +233,35 @@ define(function (require) {
                         .style('fill', 'none')
                         .style('stroke', function(d) { return color(d.name) });
 
-                    //Create the circles
-                    lines.selectAll('circle')
-                        .data(function (d) { return d.values; })
-                        .enter().append('circle')
-                            .attr('r', 3.5)
-                            .attr('cx', function(d) { return x(d.date); })
-                            .attr('cy', function(d) { return y(d.datum); })
-                            .style('fill', 'white')
-                            .style('stroke', function(d) { return color(d.name) });
+                    if (!mobile) {
+                        //Create the circles
+                        lines.selectAll('circle')
+                            .data(function (d) { return d.values; })
+                            .enter().append('circle')
+                                .attr('r', 3.5)
+                                .attr('cx', function(d) { return x(d.date); })
+                                .attr('cy', function(d) { return y(d.datum); })
+                                .style('fill', 'white')
+                                .style('stroke', function(d) { return color(d.name) });
 
-                    //Create the tooltips for hover
-                    var tooltip = d3.select(chartArea)
-                        .append('div')
-                        .attr('class', 'tooltip-wrapper');
 
-                    d3.select(chartArea).append('div')
-                        .attr('class', 'overlay')
-                        .attr('style', 'left:' +  margin.left + 'px;top:' + margin.top + 'px;')
-                        .on('mousemove', mousemove);
+                        var overlay = chartContainer.append('div')
+                            .attr('class', 'overlay')
+                            .attr('style', 'left:' +  margin.left +
+                            'px;top:' + margin.top + 'px; bottom:' + (margin.bottom - 10) + 'px')
+                            .on('mousemove', mousemove)
+                            .on('mouseout', mouseout);
+
+                        //Create the tooltips for hover
+                        var tooltip = overlay
+                            .append('div')
+                            .attr('class', 'tooltip-wrapper');
+                    }
+
+                    function mouseout() {
+                        var event = this;
+                        tooltip.style('opacity', 0);
+                    }
 
                     function mousemove() {
                         var event = this;
@@ -224,51 +269,82 @@ define(function (require) {
                             var x0 = x.invert(d3.mouse(event)[0]),
                                 i = bisectDate(data.values, x0, 1),
                                 d0 = data.values[i -1],
-                                d1 = data.values[i],
-                                //which point on the line is closer
-                                d = x0 - d0.date > d1.date - x0 ? d1 : d0;
-                            tooltip.style('top', y(d.datum) + margin.top + 'px')
-                                .style('left', x(d.date)  + margin.left + 'px');
+                                d1 = data.values[i];
+                            //which point on the line is closer
+                            if(d0 && d1) {
+                                var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+                                tooltip.style('opacity', 1);
+                                tooltip.style('top', (y(d.datum) - 15) + 'px')
+                                    .style('left', x(d.date) + 'px');
 
-                            tooltip.html($interpolate(tooltipTemplate)({
-                                title: getMetricName(show),
-                                value: d.datum,
-                                date: formatTooltip(d.date, interval)
-                            }));
+                                tooltip.html($interpolate(tooltipTemplate)({
+                                    title: getMetricName(show),
+                                    value: d.datum,
+                                    date: formatTooltip(d.date, interval)
+                                }));
+                            }
                         });
                     }
                 }
 
                 function downloadImage($event) {
-                    var canvas = document.createElement('canvas');
-                    var ctx = canvas.getContext('2d');
-
-                    var img = new Image();
-                    img.onload = function() { console.log('test'); };
-
-                    img.src = "data:image/svg+xml;utf8," + $element.find('.chart-area svg')[0].outerHTML;
-                    document.body.appendChild(img);
-                    //ctx.drawImage(img, 0, 0);
+                    var svg = $element.find('.chart-area svg')[0];
 
                     var link = $event.currentTarget;
-                    link.href = canvas.toDataURL();
-                    link.download = 'chart.png';
+                    link.href = "data:image/svg+xml;utf8," + svg.outerHTML;
+                    link.download = 'chart.svg';
                 }
 
-                transformData(chartData, $scope.interval);
+                function setUpChart() {
+                    var chartArea = $element.find('.chart-area');
+                        chartArea.addClass('loading');
+                        chartArea.empty();
 
-                createChart($element.find('.chart-area')[0], chartData, $scope.interval, $scope.show);
+                    if(!analyticChartService.exists($scope.interval, $scope.startDate)) {
+                        analyticChartService.get($scope.interval, $scope.startDate).observe(function() {
+                            var data = analyticChartService.get($scope.interval, $scope.startDate).all();
+                            transformData(data, $scope.interval);
+                            createChart(chartArea[0], data, $scope.interval, $scope.show);
+                            chartArea.removeClass('loading');
+                        }, $scope, true);
+                    } else {
+                        var data = analyticChartService.get($scope.interval, $scope.startDate).all();
 
-                $scope.$watch('show', function(value) {
+                        createChart(chartArea[0], data, $scope.interval, $scope.show);
+                        chartArea.removeClass('loading');
+                    }
+                }
+
+                $element.find('.chart-area').addClass('loading');
+
+                analyticChartService.get($scope.interval, $scope.startDate).observe(function() {
                     $element.find('.chart-area').empty();
+                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
+                    transformData(data, $scope.interval);
+                    createChart($element.find('.chart-area')[0], data, $scope.interval, $scope.show);
+                    $element.find('.chart-area').removeClass('loading');
+                }, $scope, true);
 
-                    createChart($element.find('.chart-area')[0], chartData, $scope.interval, value);
+                $scope.$watch('interval', function() {
+                    setUpChart();
+                });
+
+                $scope.$watch('startDate', function() {
+                    setUpChart();
+                });
+
+                $scope.$watch('show', function(newValue) {
+                    $element.find('.chart-area').empty();
+                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
+
+                    createChart($element.find('.chart-area')[0], data, $scope.interval, newValue);
                 });
 
                 ng.element($window).on('resize', function() {
                     $element.find('.chart-area').empty();
+                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
 
-                    createChart($element.find('.chart-area')[0], chartData, $scope.interval, $scope.show);
+                    createChart($element.find('.chart-area')[0], data, $scope.interval, $scope.show);
                 });
 
             }]
