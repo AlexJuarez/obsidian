@@ -19,7 +19,7 @@
 
             </div>
 
-            <div class="bottom" ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'" quartiles quartile-controller="analyticsPreviewCtrl" quartile-data=adUnit></div>
+            <div quartiles quartile-data=adUnit.metrics class="bottom" ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'"></div>
         
         </div>
 

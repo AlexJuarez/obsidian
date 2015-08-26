@@ -2,72 +2,75 @@ define(function (require) {
 	'use strict';
 
 	var app = require('./../module');
-	//var d3 = require('d3');
+	var d3 = require('d3');
 	require('tpl!./quartiles.html');
 
-	app.directive('quartiles', ['$timeout', '$controller', function ($controller) {
+	app.directive('quartiles', ['$timeout', function ($timeout) {
 		return {
 			restrict: 'A',
             scope: {
                 quartileData: '='
             },
 			templateUrl: 'core/directives/quartiles.html',
-			link: function (scope, elem, attr) {
+			link: function (scope, elem) {
+
+                if (scope.quartileData) {
+                    scope.$watch(scope.quartileData, function() {
+                        
+                        var viewNum =       scope.quartileData.view;
+                        scope.dataArray = [
+                            {
+                                'value': scope.quartileData.video25 / viewNum || 0,
+                                'quartile': '25'
+                            },
+                            {
+                                'value': scope.quartileData.video50 / viewNum || 0,
+                                'quartile': '50'
+                            },
+                            {
+                                'value': scope.quartileData.video75 / viewNum || 0,
+                                'quartile': '75'
+                            },
+                            {
+                                'value': scope.quartileData.video100 / viewNum || 0,
+                                'quartile': '100'
+                            }
+                        ];
+                        
+                        for (var i = 0; i < scope.dataArray.length; i++) {
+                            
+                            var obj = scope.dataArray[i];
+                            setGraph(obj.value, obj.quartile);
+
+                        }
+                    });
+
+                }
 
 
-                var adUnit = attr.quartileData;
-                var quartileController = attr.quartileController;
+                var graphHeight = 50;
 
-                scope.video25 = 0;
-                scope.video50 = 0;
-                scope.video75 = 0;
-                scope.video100 = 0;
-
-                scope.$watch(adUnit, function() {
-                    
-                    if (quartileController) {
-                        $controller(quartileController, { $scope: scope });    
+                function setGraph(value, id) {
+                    if (value === 0) {
+                        return;
                     }
 
-                    if (adUnit) {
-                        var viewNum =       scope.quartileData.metrics.view;
-                        scope.video25 =     scope.quartileData.metrics.video25 / viewNum || 0;
-                        scope.video50 =     scope.quartileData.metrics.video50 / viewNum || 0;
-                        scope.video75 =     scope.quartileData.metrics.video75 / viewNum || 0;
-                        scope.video100 =    scope.quartileData.metrics.video100 / viewNum || 0;
-                    }
-                       
-                });
+                    var percentage = 1*value.toFixed(4);
 
-                // TODO: implement this 
-                //console.log( 'quartiles', elem );
-                // var key = attr.pacingChart;
+                    var h = graphHeight * percentage;
 
-                // scope.$watch(key, function (data) {
-                //     var fill;
+                    var yPos = graphHeight - h;
 
-                //     if (data) {
-                //         scope.max = data.max;
-                //         scope.current = data.current;
-                //         scope.target = data.target;
+                    $timeout(function() {
 
+                        var rect = d3.select( elem.find('#video'+id)[0] );
+                        rect.attr('y', yPos)
+                            .attr('height', h);
 
-                //         if (data.current > data.max) {
-                //             var target = Math.round(data.max/data.current*100);
-                //             scope.target = true;
-                //             fill = d3.select(elem.find('.target > rect')[0]);
-                //             fill.attr('x', target + '%');
-                //         }
+                    });
 
-                //         if (data.max) {
-                //             fill = d3.select(elem.find('.fill > rect')[0]);
-                //             fill.attr('width', Math.min(Math.round(data.current/data.max*100), 100) + '%');
-                //         }
+                }
 
-                //         //var target = d3.select(elem.find('.target > rect')[0]);
-                //         //target.attr('x', '80%');
-                //     }
-                // });
 			}
 		};
 	}]);
