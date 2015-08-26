@@ -1,9 +1,24 @@
-<div class="form-group row">
-    <label for="expandDirection" class="col-sm-3 form-label"><span>Expand Direction</span></label>
-
-    <div class="col-sm-9">
-        <input ng-model="expandDirection" type="text"
-               class="form-control" id="expandDirection"
-               placeholder="Expand Direction"/>
+<div>
+    <div class="form-group row">
+        <div class="col-sm-3 text-right-sm">
+            <span>Expand Direction</span></div>
+        <div class="col-sm-9 single-select-light">
+            <select class="single-select" chosen
+                    disable-search-threshold="10"
+                    ng-options="direction.id as direction.name for direction in expandDirections track by direction.id"
+                    ng-model="expandDirection">
+            </select>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-3 text-right-sm">
+            <span>Expand Anchor</span></div>
+        <div class="col-sm-9 single-select-light">
+            <select class="single-select" chosen
+                    disable-search-threshold="10"
+                    ng-options="anchor for anchor in expandAnchors"
+                    ng-model="expandAnchor">
+            </select>
+        </div>
     </div>
 </div>

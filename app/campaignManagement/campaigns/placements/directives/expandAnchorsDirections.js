@@ -18,18 +18,27 @@ define(function (require) {
                 $scope.expandDirections = [
                     {id: 'left', name: 'Expand to Left'},
                     {id: 'right', name: 'Expand to Right'},
-                    {id: 'up', name: 'Expand Upwards'},
-                    {id: 'down', name: 'Expand Downwards'}
+                    {id: 'top', name: 'Expand Upwards'},
+                    {id: 'bottom', name: 'Expand Downwards'}
                 ];
 
-                $scope.expandAnchors = [
+                var commonAnchors = [
                     'bottomright',
-                    'middleright',
                     'topright',
                     'bottomleft',
-                    'middleleft',
                     'topleft'
                 ];
+
+                var expandAnchorPossibilities = {
+                    left: ['left', 'right'].concat(commonAnchors),
+                    right: ['left', 'right'].concat(commonAnchors),
+                    top: ['top', 'bottom'].concat(commonAnchors),
+                    bottom: ['top', 'bottom'].concat(commonAnchors)
+                };
+
+                $scope.$watch('expandDirection', function() {
+                   $scope.expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
+                });
             }]
         };
     }]);
