@@ -16,11 +16,12 @@ define(function (require) {
             controller: ['$scope', '$modal', function ($scope, $modal) {
                 $scope.openEditPlacementModal = openEditPlacementModal;
 
-                var editPlacementModal;
+                var editPlacementModal, placementId;
                 function openEditPlacementModal() {
-                    if (!editPlacementModal) {
+                    if (!editPlacementModal || placementId !== $scope.id) {
+                        placementId = $scope.id;
                         editPlacementModal = {
-                            placementId: $scope.id,
+                            placementIds: [$scope.id],
                             action: 'Edit'
                         };
                     }

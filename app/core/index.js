@@ -46,6 +46,7 @@ define(function(require) {
         require('./services/campaignRecord');
         require('./services/creativeRecord');
         require('./services/placementRecord');
+        require('./services/publisherRecord');
         require('./services/industry');
         require('./services/enums');
         require('./services/clientSet');

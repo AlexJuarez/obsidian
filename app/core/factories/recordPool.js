@@ -23,7 +23,7 @@ define(function (require) {
                     deferred.resolve(records[recordId]);
                 } else {
                     var newConfig = ng.copy(apiConfig);
-                    newConfig.endpoint += '/' + recordId;
+                    newConfig.endpoint = newConfig.endpoint.replace('{id}', recordId);
                     var record = recordFactory(newConfig);
                     record.init().then(function () {
                         records[recordId] = record;
