@@ -62,6 +62,7 @@ define(function (require) {
                     });
 
                     var transformCreativeData = function(data) {
+                        console.log( 'transformCreativeData' );
                         var crudCreative =  {
                             expandedWidth: data.expandedWidth,
                             deleted: data.deleted,
