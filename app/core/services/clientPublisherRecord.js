@@ -9,7 +9,7 @@ define(function (require) {
     };
 
 
-    module.service('publisherRecordService', ['recordPoolFactory', function (recordPoolFactory) {
+    module.service('clientPublisherRecordService', ['recordPoolFactory', function (recordPoolFactory) {
         return recordPoolFactory(apiConfig);
     }]);
 });

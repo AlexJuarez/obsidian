@@ -16,7 +16,7 @@
         <div class="col-sm-9 single-select-light">
             <select class="single-select" chosen
                     disable-search-threshold="10"
-                    ng-options="anchor for anchor in expandAnchors"
+                    ng-options="anchor as anchor for anchor in expandAnchors"
                     ng-model="expandAnchor">
             </select>
         </div>

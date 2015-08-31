@@ -178,7 +178,7 @@ define(function (require) {
                 if(! modalState.creativeId) {
 
                     // TODO: add render limit so this isn't crazy slow
-                    $scope.campaigns = campaigns.all();
+                    $scope.campaigns = campaigns.all().slice(0, 10);
                 }
             }
 

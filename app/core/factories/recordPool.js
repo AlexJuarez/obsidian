@@ -51,7 +51,9 @@ define(function (require) {
             }
 
             function create(newRecord) {
-                var record = recordFactory(apiConfig);
+                var newConfig = ng.copy(apiConfig);
+                newConfig.endpoint = newConfig.endpoint.replace('{id}', '');
+                var record = recordFactory(newConfig);
                 record.observe(function() {
                     notifyObservers(record.all());
                 }, undefined, true);

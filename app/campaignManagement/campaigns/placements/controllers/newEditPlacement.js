@@ -9,11 +9,11 @@ define(function (require) {
     app.controller('newEditPlacementCtrl', ['$scope', '$q', '$modalInstance', 'placements',
                                             'placementRecordService', 'campaignRecordService',
                                             'accountRecordService', 'divisionRecordService',
-                                            'clientRecordService', 'publisherRecordService', 'modalState',
+                                            'clientRecordService', 'clientPublisherRecordService', 'modalState',
                                             function ($scope, $q, $modalInstance, placements,
                                                       placementRecordService, campaignRecordService,
                                                       accountRecordService, divisionRecordService,
-                                                      clientRecordService, publisherRecordService, modalState) {
+                                                      clientRecordService, clientPublisherRecordService, modalState) {
         $scope.placement = modalState.placement;
         $scope.action = modalState.action;
 
@@ -162,7 +162,7 @@ define(function (require) {
                                     .then(function(division) {
                                         clientRecordService.getById(division.all().clientId)
                                             .then(function(client) {
-                                                publisherRecordService.getById(client.all().id)
+                                                clientPublisherRecordService.getById(client.all().id)
                                                     .then(function(publishers) {
                                                         $scope.publishers = publishers.all();
                                                     });
