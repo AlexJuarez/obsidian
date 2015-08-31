@@ -1,35 +1,57 @@
-/**
- * Created by Alex on 3/1/2015.
- */
-define(function (require) {
+define(function(require) {
     'use strict';
 
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
-    require('./factories/data');
-    require('./factories/cache');
-    require('./factories/pagination');
-    require('./factories/record');
-    require('./factories/recordPool');
-    require('./factories/domainInterceptor');
-    require('./directives/dropdown');
-    require('./directives/limit');
-    require('./directives/tooltip');
-    require('./directives/compile');
-    require('./directives/fallbackSrc');
-    require('./directives/placeholder');
-    require('./directives/filePicker');
-    require('./directives/youWorkOn');
-    require('./filters/safe');
-    require('./filters/interpolate');
-    require('./filters/errorCount');
-    require('./filters/date');
-    require('./filters/truncateNumber');
-    require('./services/channel');
-    require('./services/clientSet');
-    require('./services/divisionSet');
-    require('./services/apiURIGenerator');
-    require('./services/clientRecord');
     require('./constants/apiURI');
+
+    services();
+    filters();
+    directives();
+    factories();
+
+    function factories() {
+        require('./factories/data');
+        require('./factories/cache');
+        require('./factories/pagination');
+        require('./factories/record');
+        require('./factories/recordPool');
+        require('./factories/domainInterceptor');
+    }
+
+    function directives() {
+        require('./directives/dropdown');
+        require('./directives/limit');
+        require('./directives/tooltip');
+        require('./directives/compile');
+        require('./directives/fallbackSrc');
+        require('./directives/placeholder');
+        require('./directives/filePicker');
+        require('./directives/youWorkOn');
+    }
+
+    function filters() {
+        require('./filters/safe');
+        require('./filters/interpolate');
+        require('./filters/errorCount');
+        require('./filters/date');
+        require('./filters/truncateNumber');
+    }
+
+    function services() {
+        require('./services/channel');
+        require('./services/clientRecord');
+        require('./services/divisionRecord');
+        require('./services/accountRecord');
+        require('./services/campaignRecord');
+        require('./services/creativeRecord');
+        require('./services/placementRecord');
+        require('./services/industry');
+        require('./services/enums');
+        require('./services/clientSet');
+        require('./services/divisionSet');
+        require('./services/apiURIGenerator');
+    }
+
 });

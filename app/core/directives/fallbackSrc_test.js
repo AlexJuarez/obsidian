@@ -19,7 +19,7 @@ define(function (require) {
 
         it('should compile', function(){
             var scope = rootScope.$new();
-            compile('<img src="/img.jpg" fallback-src="/realImg.jpg">')(scope);
+            compile('<img src="/imageDoesntExist.jpg" fallback-src="http://placehold.it/350x150">')(scope);
             scope.$digest();
 
             expect(scope).toBeDefined();

@@ -15,7 +15,7 @@ define(function (require) {
     require('tpl!./directives/campaignDetails.html');
     require('tpl!./directives/campaignsByAccount.html');
     require('tpl!./directives/campaignsByStatus.html');
-    require('tpl!./new-campaign.html');
+    require('tpl!./new-edit-campaign.html');
 
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
 

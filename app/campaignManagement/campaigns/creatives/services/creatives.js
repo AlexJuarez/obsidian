@@ -63,7 +63,6 @@ define(function(require) {
 
                 for(var i = 0; i < creatives.length; i ++) {
                     creative = creatives[i];
-
                     transformedTable.data.push({
                         checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                         creativeName: creative.name,
@@ -72,7 +71,7 @@ define(function(require) {
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         numPlacements: creative.numPlacements,
-                        options: '<a style="padding-right:20px;">Edit in Studio</a><span style="font-size:2rem"><a><i class="glyph-icon glyph-settings"></i></a><a><i class="glyph-icon glyph-copy"></i></a><a><i class="glyph-icon glyph-close"></i></a></span>',
+                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
                         // These properties are needed by thumbnails but aren't
 						// in the table

@@ -1,0 +1,287 @@
+<div class="modal-header">
+    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
+
+    <h2 class="modal-title">
+        <span>{{action}} Campaign</span></h2>
+</div>
+<div class="modal-body">
+    <form class="form form-horizontal" role="form" novalidate
+          name="newCampaign">
+        <div ng-pluralize ng-show="newCampaign.$invalid && submitted"
+             class="alert alert-danger"
+             count="(newCampaign.$error | errorCount)"
+             when="{'0': 'There are no errors on this form',
+                    '1': 'There is 1 error on this form.',
+                    'other': 'There are {} errors on this form.'}">
+        </div>
+        <div ng-if="accounts" class="form-group row"
+             ng-class="{'has-error': newCampaign.accountId.$invalid && submitted}">
+            <label
+                class="col-sm-3 form-label required"><span>Account</span></label>
+
+            <div class="col-sm-9 single-select-light">
+                <select name="accounts" class="single-select" chosen
+                        ng-options="account.id as account.name for account in accounts track by account.id"
+                        disable-search-threshold="10"
+                        ng-model="campaign.accountId" required>
+                </select>
+
+                <p ng-show="newCampaign.accountId.$invalid && submitted"
+                   class="help-block">
+                    account is required
+                </p>
+            </div>
+        </div>
+        <div class="form-group row"
+             ng-class="{'has-error': newCampaign.name.$invalid && submitted}">
+            <label for="name" class="col-sm-3 form-label required"><span>Campaign Name</span></label>
+
+            <div class="col-sm-9">
+                <input ng-model="campaign.name" type="text" name="name"
+                       class="form-control" id="name"
+                       placeholder="Campaign Name" required/>
+
+                <p ng-show="newCampaign.name.$invalid && submitted"
+                   class="help-block">
+                    campaign name is required
+                </p>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>
+
+            <div class="col-sm-9">
+                <input ng-model="campaign.keywordString" type="text"
+                       class="form-control" id="campaignKeywords"
+                       placeholder="Campaign Keywords"/>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="clickthroughURL" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>
+
+            <div class="col-sm-9">
+                <input ng-model="campaign.clickthroughUrl" type="text"
+                       class="form-control" id="clickthroughURL"
+                       placeholder="Clickthrough URL"/>
+            </div>
+        </div>
+
+        <div class="form-group row"
+             ng-class="{'has-error': (newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted}">
+            <label
+                class="col-sm-3 form-label required"><span>Flight Dates</span></label>
+
+            <div class="col-sm-9">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                Start Date:
+                            </div>
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <input class="form-control" type="text"
+                                           class="form-control"
+                                           datepicker-popup="{{format}}"
+                                           ng-model="campaign.startDate"
+                                           is-open="datePickers.startDateOpened"
+                                           min-date="minDate"
+                                           datepicker-options="dateOptions"
+                                           date-disabled="false"
+                                           ng-required="true" close-text="Close"
+                                           show-weeks="false"/>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-inline"
+                                                ng-click="openPicker($event, 'startDateOpened')">
+                                            <i class="glyph-calendar"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                End Date:
+                            </div>
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <input class="form-control" type="text"
+                                           class="form-control"
+                                           datepicker-popup="{{format}}"
+                                           ng-model="campaign.endDate"
+                                           is-open="datePickers.endDateOpened"
+                                           min-date="minDate"
+                                           datepicker-options="dateOptions"
+                                           date-disabled="false"
+                                           ng-required="true" close-text="Close"
+                                           show-weeks="false"/>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-inline"
+                                                ng-click="openPicker($event, 'endDateOpened')">
+                                            <i class="glyph-calendar"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p ng-show="(newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted"
+                       class="help-block">
+                        start and end dates are required
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>
+
+            <div class="col-sm-9">
+                <input ng-model="campaign.budget" type="text"
+                       class="form-control" id="budget"
+                       placeholder="Enter your budget"/>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label
+                class="col-sm-3 form-label"><span>Campaign Objective</span></label>
+
+            <div class="col-sm-9 single-select-light">
+                <select class="single-select" chosen
+                        ng-options="item.name for item in select track by item.value"
+                        ng-model="campaign.objectives">
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-3 text-right-sm">Options</div>
+            <div class="col-sm-9">
+                <label>
+                    <input ng-model="campaign.measureReach" type="checkbox"
+                           class="checkbox checkbox-light"/>
+                    <span>Measure Reach &amp; Frequency</span>
+                </label>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-offset-3 col-sm-9">
+                <label>
+                    <input ng-model="campaign.googleAnalyticsParams"
+                           type="checkbox" class="checkbox checkbox-light"/>
+                    <span>Add Google AnalyticsUTM Parameters to URLs</span>
+                </label>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-offset-3 col-sm-9">
+                <label>
+                    <input ng-model="campaign.conversionTracking"
+                           type="checkbox" class="checkbox checkbox-light"/>
+                    <span>Enable Conversion Tracking</span>
+                </label>
+            </div>
+        </div>
+
+        <div ng-if="campaign.conversionTracking">
+            <div class="form-group row">
+                <label for="conversionPageDomain"
+                       class="col-sm-3 form-label"><span>Conversion Page Domain</span></label>
+
+                <div class="col-sm-9">
+                    <input ng-model="campaign.conversionPageDomain" type="text"
+                           class="form-control" id="conversionPageDomain"
+                           placeholder="Conversion Page Domain"/>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="conversionEventName"
+                       class="col-sm-3 form-label"><span>Conversion Event Name</span></label>
+
+                <div class="col-sm-9">
+                    <input ng-model="campaign.conversionEventName" type="text"
+                           class="form-control" id="conversionEventName"
+                           placeholder="Conversion Event Name"/>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-3 text-right-sm">Conversion Embed Snippet</div>
+                <div class="col-sm-9">
+                    <label>
+                        <input ng-model="campaign.conversionEmbedSnippet"
+                               type="checkbox" class="checkbox checkbox-light"/>
+                        <span>Embed on Website using HTTPS Encryption</span>
+                    </label>
+                    <textarea ng-model="campaign.conversionEmbedSnippetText" class="form-control"
+                              placeholder="Enter some text"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-sm-3 text-right-sm">
+                <span>Type of Geotargeting</span></div>
+            <div class="col-sm-9 single-select-light">
+                <select class="single-select" chosen
+                        ng-options="item.name for item in select track by item.value"
+                        ng-model="campaign.geotarget">
+                </select>
+            </div>
+        </div>
+
+        <!-- CSV File Picker goes here -->
+        <div class="form-group row">
+            <label class="col-sm-3 form-label">Upload CSV file</label>
+
+            <div class="col-sm-9 file-selection-wrapper">
+                <div file-picker ng-model="campaign.csv"></div>
+            </div>
+        </div>
+
+        <div class="form-group row"
+             ng-class="{'has-error': newCampaign.repName.$invalid && submitted}">
+            <label for="repName" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Name</span></label>
+
+            <div class="col-sm-9">
+                <input ng-model="campaign.repName" type="text"
+                       class="form-control" name="repName" id="repName"
+                       placeholder="Enter AE/Rep Name" ng-required="isRepInfoRequired"/>
+
+                <p ng-show="newCampaign.repName.$invalid && submitted"
+                   class="help-block">
+                    rep name is required
+                </p>
+            </div>
+        </div>
+        <div class="form-group row"
+             ng-class="{'has-error': newCampaign.repEmail.$invalid && submitted}">
+            <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>
+
+            <div class="col-sm-9">
+                <input ng-model="campaign.repEmail" type="text"
+                       class="form-control" name="repEmail" id="repEmail"
+                       placeholder="Enter AE/Rep Email" ng-required="isRepInfoRequired"/>
+
+                <p ng-show="newCampaign.repEmail.$invalid && submitted"
+                   class="help-block">
+                    rep email is required
+                </p>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 form-label"><span>Description</span></label>
+
+            <div class="col-sm-9">
+                <textarea ng-model="campaign.description" class="form-control"
+                          placeholder="Enter some text"></textarea>
+            </div>
+
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save
+        Campaign
+    </button>
+    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
+</div>

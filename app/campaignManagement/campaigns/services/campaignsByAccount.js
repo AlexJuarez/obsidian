@@ -95,7 +95,7 @@ define(function (require) {
             var accounts = campaignHeader.all();
             var ids = [];
 
-            for (var i = 0; i < accounts.length; i++){
+            for (var i = 0; i < accounts.length; i++) {
                 ids.push(accounts[i].id);
             }
 
