@@ -53,13 +53,18 @@ define(function (require) {
                         var newCreative = ng.copy(creative);
                         console.log( 'newCreative', newCreative );
                         delete newCreative.id;
+                        removeNulls(creative);
                         console.log( 'newCreative no ID', newCreative );
-                        //console.log( transformCreativeData(newCreative) );
-
-
-                        console.log(newCreative.all());
                         creativeRecordService.create( transformCreativeData(newCreative.all()) );
                     });
+
+                    var removeNulls = function(creative) {
+                        for (var prop in creative) {
+                            if (creative.hasOwnProperty(prop) && creative[prop] === null) {
+                                delete creative[prop];
+                            }
+                        }
+                    };
 
                     var transformCreativeData = function(data) {
                         console.log( 'transformCreativeData' );
