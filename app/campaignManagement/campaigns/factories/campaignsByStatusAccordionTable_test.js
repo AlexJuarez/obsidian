@@ -9,7 +9,7 @@ define(function(require) {
     var campaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json'));
     var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
 
-    describe('campaignAccordionTableFactory', function() {
+    describe('campaignByStatusAccordionTableFactory', function() {
         var factory, httpBackend, scope, interpolate, apiGenerator;
 
         var apiConfig = {
@@ -96,6 +96,8 @@ define(function(require) {
                             'name': 'accountName',
                             'id': 'accountId'
                         },
+                        'live': false,
+                        'spend': 0,
                         'startDate': '2015-04-27',
                         'budget': 0
                     }
@@ -119,6 +121,11 @@ define(function(require) {
                     end: '2015-07-14',
                     placements: 22,
                     creatives: 22,
+                    live: false,
+                    budget: {
+                        budget: 0,
+                        spend: 0
+                    },
                     edit: ['campaign.preview', 'campaign.settings']
                 }
             ];
