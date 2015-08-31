@@ -20,7 +20,6 @@ define(function (require) {
     require('./directives/fallbackSrc');
     require('./directives/placeholder');
     require('./directives/filePicker');
-    require('./directives/pacingChart');
     require('./directives/youWorkOn');
     require('./filters/safe');
     require('./filters/interpolate');

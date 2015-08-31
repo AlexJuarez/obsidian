@@ -58,6 +58,11 @@ define(function (require) {
                             max: row.metrics.bookedImpressions,
                             current: row.metrics.impressions
                         },
+                        live: row.live,
+                        budget: {
+                            budget: row.budget,
+                            spend: row.spend
+                        },
                         start: row.startDate,
                         end: row.endDate,
                         placements: row.metrics.countPlacements,
@@ -74,19 +79,23 @@ define(function (require) {
                     account: 'link',
                     campaign: 'link',
                     impressions: 'bullet',
+                    live: 'status',
                     start: 'date',
                     end: 'date',
+                    budget: 'budget',
                     placements: 'number',
                     creatives: 'number',
                     edit: 'icons'
                 };
 
                 var headers = [
-                    {name: 'Campaign', id: 'campaign'},
                     {name: 'Account', id: 'account'},
-                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Campaign', id: 'campaign'},
+                    {name: 'Delivering', id: 'live'},
                     {name: 'Start', id: 'start'},
                     {name: 'End', id: 'end'},
+                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Budget', id: 'budget'},
                     {name: 'Placements', id: 'placements'},
                     {name: 'Creatives', id: 'creatives'},
                     {name: '', id: 'edit'}

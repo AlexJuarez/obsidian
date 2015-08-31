@@ -9,7 +9,7 @@ define(function (require) {
         queryParams: {
             dimensions: [
                 'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
-                'account.name'
+                'account.name', 'live', 'spend'
             ],
             metrics: [
                 'countPlacements', 'countCreatives', 'impressions',
@@ -36,6 +36,8 @@ define(function (require) {
     var rules = {
         'campaign': 'link',
         'status': '',
+        'live': 'status',
+        'budget': 'budget',
         'impressions': 'bullet',
         'start': 'date',
         'end': 'date',
@@ -46,9 +48,11 @@ define(function (require) {
 
     var headers = [
         {name: 'Campaign', id: 'campaign'},
-        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Delivering', id: 'live'},
         {name: 'Start', id: 'start'},
         {name: 'End', id: 'end'},
+        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Budget', id: 'budget'},
         {name: 'Placements', id: 'placements'},
         {name: 'Creatives', id: 'creatives'},
         {name: '', id: 'edit'}
@@ -147,6 +151,11 @@ define(function (require) {
                         impressions: {
                             max: campaign.metrics.bookedImpressions,
                             current: campaign.metrics.impressions
+                        },
+                        live: campaign.live,
+                        budget: {
+                            budget: campaign.budget,
+                            spend: campaign.spend
                         },
                         start: campaign.startDate,
                         end: campaign.endDate,

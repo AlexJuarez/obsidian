@@ -1,5 +1,6 @@
 @import "../mixins";
 @import "./bar-chart";
+@import "./pacing-chart";
 
 .interactive-chart {
     margin-top: 3rem;
@@ -29,10 +30,9 @@
     }
 
     &.loading {
-        background: rgba(0, 0, 0, 0.15);
         &:before {
             content: '';
-            background: url('/images/loader-dark.gif');
+            background: url('/images/loader-light.gif');
             position: absolute;
             top: 50%;
             left: 50%;

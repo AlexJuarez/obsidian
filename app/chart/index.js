@@ -7,5 +7,6 @@ define(function (require) {
     require('./directives/comparisonChart');
     require('./directives/analyticsLineChart');
     require('./directives/quartileBarGraph');
+    require('./directives/pacingChart');
     require('./services/analyticsChart');
 });

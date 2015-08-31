@@ -29,8 +29,10 @@ define(function (require) {
                 }).join(' ');
             case 'date':
                 return date(data);
+            case 'status':
+                return '<span class="glyph-dot" ng-class="\'success\' ? \'pending\': row.' + input + '"></span>';
             case 'bullet':
-                return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
+                return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
             case 'creatives':
