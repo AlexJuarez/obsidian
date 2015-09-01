@@ -52,6 +52,6 @@ define(function(require) {
             observe: creatives.observe,
             all: creatives.all,
             get: get
-        }
+        };
     }]);
 });
