@@ -3,8 +3,7 @@ define(function (require) {
 
     var module = require('./../../module');
     var previewModals = {};
-    var editModals = {};
-    var createModal;
+    var settingsModals = {};
 
     module.service('campaignModal', ['$modal', function ($modal) {
         function preview(id, row) {
@@ -29,36 +28,21 @@ define(function (require) {
             });
         }
 
-        function settings(id, row) {
-            if (!editModals[id]) {
-                editModals[id] = {id: id, name: row.campaign.name};
+        function settings(id) {
+            if (!settingsModals[id]) {
+                settingsModals[id] = {
+                    campaignId: id,
+                    action: 'Edit'
+                };
             }
 
             $modal.open({
                 animation: 'true',
-                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
-                controller: 'editCampaignCtrl',
+                templateUrl: 'campaignManagement/campaigns/new-edit-campaign.html',
+                controller: 'newEditCampaignCtrl',
                 resolve: {
                     modalState: function() {
-                        return editModals[id];
-                    }
-                },
-                size: 'lg'
-            });
-        }
-
-        function create() {
-            if (!createModal) {
-                createModal = {};
-            }
-
-            $modal.open({
-                animation: 'true',
-                templateUrl: 'campaignManagement/campaigns/new-campaign.html',
-                controller: 'newCampaignCtrl',
-                resolve: {
-                    modalState: function() {
-                        return createModal;
+                        return settingsModals[id];
                     }
                 },
                 size: 'lg'
@@ -67,8 +51,7 @@ define(function (require) {
 
         return {
             preview: preview,
-            settings: settings,
-            create: create
+            settings: settings
         };
     }]);
 });

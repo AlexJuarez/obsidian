@@ -21,10 +21,13 @@ define(function(require) {
                     pushUnique(publishers, placement.publisher.id);
                     pushUnique(types, placement.type);
 
-                    for (var k=0; k<placement.creatives.length; k++) {
-                        creative = placement.creatives[k];
+                    if (placement.creatives) {
+                        for(var k = 0; k < placement.creatives.length; k ++) {
+                            creative = placement.creatives[k];
 
-                        pushUnique(creatives, creative.id);
+                            pushUnique(creatives, creative.id);
+
+                        }
                     }
                 }
 

@@ -8,8 +8,7 @@ define(function (require) {
     require('./services/campaignsHeader');
     require('./services/campaignModal');
     require('./factories/campaignsByStatusAccordionTable');
-    require('./controllers/newCampaign');
-    require('./controllers/editCampaign');
+    require('./controllers/newEditCampaign');
     require('./controllers/campaigns');
     require('./controllers/campaign');
     require('./controllers/analyticsPreview');
@@ -27,6 +26,8 @@ define(function (require) {
 
     require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');
+    require('./creatives/controllers/newEditCreative');
     require('./creatives/directives/creativeThumbnails');
+    require('./creatives/directives/creativeOptions');
     require('./creatives/services/creatives');
 });

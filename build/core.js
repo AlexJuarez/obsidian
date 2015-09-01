@@ -60208,7 +60208,7 @@ define('core/filters/errorCount',['require','./../module','angular'],function (r
     }]);
 });
 
-var minute = 360000;
+var minute = 60000;
 var hour = minute * 60;
 var day = hour * 24;
 var month = day * 30;
@@ -60221,6 +60221,9 @@ define('core/filters/date',['require','./../module'],function (require) {
 
     app.filter('dateFormatter', [function () {
         return function (date) {
+            if (date === null) {
+                return 'Never';
+            }
             var then = new Date(date);
             var now = new Date();
             var timePassed = now - then;
@@ -60229,7 +60232,7 @@ define('core/filters/date',['require','./../module'],function (require) {
                 return 'moments ago';
             }
             if (timePassed < hour) {
-                return Math.floor(timePassed / minute) + ' minutes';
+                return Math.floor(timePassed / minute) + ' minutes ago';
             }
             if (timePassed < day) {
                 return Math.floor(timePassed / hour) + ' hours ago';
@@ -60496,8 +60499,8 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
             }
 
             var endpoint = getEndpoint(apiConfig);
-            //console.log(endpoint + expandParams(apiConfig.queryParams || []), apiConfig);
-            return endpoint + expandParams(apiConfig.queryParams || []);
+
+            return endpoint + expandParams(apiConfig.queryParams || {});
         }
 
         function getEndpoint(config) {
@@ -60506,7 +60509,6 @@ define('core/services/apiURIGenerator',['require','./../module','angular'],funct
         }
 
         function expandParams(params) {
-
             var paramsArray = [];
 
             //Convert all arrays into comma-separated strings
@@ -61092,7 +61094,7 @@ define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['
 define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-5">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".({filter: \'\'})">all ({{creativesMeta.all}})</a>\n        <a ui-sref=".({filter: \'IBV\'})">In-Banner ({{creativesMeta.IBV}})</a>\n        <a ui-sref=".({filter: \'IS\'})">In-Stream({{creativesMeta.IS}})</a>\n        <a ui-sref=".({filter: \'RM\'})">Rich Media({{creativesMeta.RM}})</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-5 text-right-lg">\n        <button class="btn btn-default">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay" ng-click="openPreviewPage(creative.id, creative.name)"><span><i class="glyph-view"></i>Preview in Page</span></div>\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<div class="preview-overlay" ng-click="openPreviewPage(creative)"><span><i class="glyph-view"></i>Preview in Page</span></div>\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio">Edit in Studio</a>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative.id)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
 
 define('campaignManagement/campaigns/creatives/routes',['require','./../../module','tpl!./creativesList.html','tpl!./creativesThumbnails.html','tpl!./creativesHeader.html','tpl!./directives/creativeThumbnails.html'],function (require) {
     'use strict';
@@ -63178,22 +63180,23 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
             controller: ['$scope', '$window', '$state', '$rootScope', '$filter', 'creatives', function ($scope, $window, $state, $rootScope, $filter, creatives) {
 
-                var mixpoURL,
-                subDomainSegments = location.hostname.split('-');
+                var mixpoURL = getStudioUrl($window.location.hostname);
                 var filter = $state.params.filter;
 
-                // Get development subdomain segments
-                if (subDomainSegments.length > 1) {
-                    subDomainSegments.pop();
-                    subDomainSegments.join('-');
-                    mixpoURL = '//' + subDomainSegments + '-studio.mixpo.com';
-                } else {
-                    mixpoURL = '//studio.mixpo.com';
+                // For testing purposes
+                $scope.getStudioUrl = getStudioUrl;
+                function getStudioUrl(domain) {
+                    if (domain.indexOf('studio') > -1) {
+                        return '//' + domain;
+                    } else if (domain.indexOf('mixpo.com') > -1) {
+                        return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
+                    } else {
+                        return '//studio.mixpo.com';
+                    }
                 }
 
-                $scope.openPreviewPage = function(id, name) {
-                    console.log( 'thumbnail controller: preview creative ' + id, name );
-                    $window.open(mixpoURL + '/videoad/' + id + '/' + name, '_blank');
+                $scope.openPreviewPage = function(creative) {
+                    $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
                 };
 
                 $scope.openStudio = function(id) {
@@ -63777,7 +63780,7 @@ define('campaignManagement/controllers/index',['require','./../module'],function
             queryParams: {
                 dimensions: [
                     'id', 'name', 'pinned', 'account.id', 'division.id',
-                    'client.id'
+                    'client.id', 'startDate', 'endDate'
                 ]
             }
         });

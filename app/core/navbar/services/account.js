@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', function ($http, dataFactory, divisions, $state) {
+    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', function ($http, dataFactory, divisions, $state, accountRecordService) {
         var accounts = dataFactory(utils.sortByName);
 
         function init(apiConfig) {
@@ -24,6 +24,27 @@ define(function (require) {
         function alphabetMap() {
             return utils.alphabetMap(filtered());
         }
+
+        // Observe for new/updated accounts
+        accountRecordService.observe(function(newUpdatedRecord) {
+            var existingRecord = get(newUpdatedRecord.id);
+            var pinned = false;
+            if (existingRecord) {
+                pinned = existingRecord.pinned;
+            }
+
+            accounts.addData([{
+                id: newUpdatedRecord.id,
+                name: newUpdatedRecord.name,
+                division: {
+                    id: newUpdatedRecord.divisionId
+                },
+                client: {
+                    id: newUpdatedRecord.clientId
+                },
+                pinned: pinned
+            }]);
+        }, undefined, true);
 
         //TODO: grab the current divisionId from campaign
         function filtered() {

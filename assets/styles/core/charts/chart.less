@@ -1,0 +1,132 @@
+@import "../mixins";
+@import "./bar-chart";
+@import "./pacing-chart";
+
+.interactive-chart {
+    margin-top: 3rem;
+    clear: both;
+}
+
+.chart-area {
+    position: relative;
+    .chart-y-axis {
+        position: absolute;
+        top: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+        height: 232px;
+        path, line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+    }
+
+    .chart-container {
+        @media (max-width: 600px) {
+            overflow-x: scroll;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    &.loading {
+        &:before {
+            content: '';
+            background: url('/images/loader-light.gif');
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            height: 24px;
+            width: 24px;
+            margin-top: -12px;
+            margin-left: -12px;
+            display: inline-block;
+        }
+    }
+
+
+    .x-axis, .y-axis {
+        path, line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+    }
+
+    .y-axis .tick {
+        line {
+            stroke: lightgray;
+        }
+
+        &:first-child line {
+            stroke: #000;
+        }
+    }
+
+    .lines {
+        .line, circle {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+
+        circle {
+            fill: #fff;
+        }
+    }
+
+    .overlay {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    .tooltip-wrapper {
+        opacity: 1;
+        position: absolute;
+        z-index: 2;
+
+        .tooltip {
+            .title {
+                text-transform: uppercase;
+            }
+
+            .title, .date {
+                font-weight: bold;
+                .font-size(1.4);
+            }
+
+            .date {
+                white-space: nowrap;
+            }
+
+            .value {
+                font-family: 'Oswald', sans-serif;
+                .font-size(2.2);
+            }
+
+            bottom: -100%;
+            transform: translateX(-50%);
+            position: absolute;
+            padding: 8px;
+            color: #fff;
+            background-color: #000;
+            border-radius: 5px;
+            &:before {
+                content: '';
+                width: 0;
+                height: 0;
+                position: absolute;
+                left: ~"calc(50% - 8px)";
+                bottom: -12px;
+                border-left: 8px solid transparent;
+                border-right: 8px solid transparent;
+                border-top: 15px solid #000000;
+            }
+        }
+    }
+}
+
+

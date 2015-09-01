@@ -20,6 +20,7 @@ define(function (require) {
         $scope.changeGlyph = changeGlyph;
         $scope.scrollTo = scrollTo;
         $scope.navOpen = false;
+        $scope.data = [];
         $scope.user = {
             name: '',
             email: 'invalid@e,'

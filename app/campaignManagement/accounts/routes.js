@@ -1,8 +1,9 @@
 define(function (require) {
     'use strict';
+
     var app = require('./../module');
 
-    require('tpl!./new-account.html');
+    require('tpl!./new-edit-account.html');
     require('tpl!./summary.html');
 
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider) {

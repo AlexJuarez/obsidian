@@ -28,9 +28,8 @@ define(function (require) {
                     initialized = true;
 
                     $http.get(url).success(function (d) {
-                        data = sortFn(transform.call(this, d));
+                        setData(transform.call(this, d));
                         deferred.resolve(data);
-                        notifyObservers();
                     });
                 } else {
                     deferred.resolve(data);
@@ -85,7 +84,6 @@ define(function (require) {
 
             function filtered(filterfn){
                 filterfn = filterfn || function () { return true; };
-                var data = all();
                 var output = [];
                 var item;
 
@@ -115,7 +113,6 @@ define(function (require) {
             }
 
             function notifyObservers(event) {
-
                 for (var x in observers) {
                     observers[x](event);
                 }
@@ -126,6 +123,7 @@ define(function (require) {
             }
 
             return {
+                _observers: observers,
                 init: init,
                 setData: setData,
                 addData: addData,

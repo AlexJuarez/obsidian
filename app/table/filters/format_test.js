@@ -52,7 +52,7 @@ define(function (require) {
 
         // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
         it('should be formatted as a date', function () {
-            expect(filter('test', {'test': '2015-04-01T12:00:00Z'}, {'test': 'date'})).toEqual('April 1, 2015');
+            expect(filter('test', {'test': '2015-04-01T12:00:00Z'}, {'test': 'date'})).toEqual('4/1/2015');
         });
 
         it('should be formatted as a link', function () {

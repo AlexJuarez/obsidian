@@ -1,8 +1,12 @@
+//jshint ignore: start
+
 define(function (require) {
     'use strict';
+
     var app = require('./module');
     require('tpl!./mixpo-icons.html');
     require('tpl!./navigation.html');
+    require('tpl!./charts.html');
     require('tpl!./index.html');
     require('tpl!./typography.html');
     require('tpl!./button.html');

@@ -12,7 +12,9 @@ define(function (require) {
             restrict: 'A',
             require: '?ngModel',
             scope: {
-                preview: '='
+                preview: '=',
+                accept: '=',
+                extensions: '='
             },
             transclude: true,
 
@@ -25,6 +27,9 @@ define(function (require) {
                 previewImg = elem.find('.image-preview')[0],
                 fileName = elem.find('.file-name')[0];
 
+                var allowedExtensions = scope.extensions || ['jpg', 'jpeg', 'png', 'gif'];
+                var accept = scope.accept || 'image/*';
+
                 var uploader = new ss.SimpleUpload({
                     button: elem.find('.btn'),
                     name: 'filename',
@@ -34,8 +39,8 @@ define(function (require) {
                     dragClass: 'drag-over',
                     responseType: 'json',
                     maxSize: 2000,
-                    accept: 'image/*',
-                    allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
+                    accept: accept,
+                    allowedExtensions: allowedExtensions,
                     queue: true,
                     multiple: false,
                     multipart: true,
@@ -54,7 +59,11 @@ define(function (require) {
                                 var oFReader = new FileReader();
                                 oFReader.readAsDataURL(uploader._queue[0].file);
                                 oFReader.onload = function (oFREvent) {
-                                    previewImg.src = oFREvent.target.result;
+                                    if (allowedExtensions.indexOf('jpg') > -1) {
+                                        previewImg.src = oFREvent.target.result;
+                                    } else if (allowedExtensions.indexOf('swf') > -1) {
+                                        previewImg.src = 'https://placeholdit.imgix.net/~text?txtsize=85&bg=FFFFFF&txtclr=555555&txt=SWF&w=300&h=250';
+                                    }
 
                                     fileName.innerHTML = filename;
                                     scope.fileSelected = true;

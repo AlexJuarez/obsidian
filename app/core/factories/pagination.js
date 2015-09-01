@@ -34,7 +34,7 @@ define(function (require) {
                 initialApiConfig = ng.extend({}, apiConfig);
                 transform = transformFn || function (d) { return d; };
                 limit = perPage || 10;
-                data.init(buildConfig(initialApiConfig, limit, offset), transformFn);
+                return data.init(buildConfig(initialApiConfig, limit, offset), transformFn);
             }
 
             function nextPage() {

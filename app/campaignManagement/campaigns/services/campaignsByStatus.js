@@ -9,7 +9,7 @@ define(function (require) {
         queryParams: {
             dimensions: [
                 'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
-                'account.name'
+                'account.name', 'live', 'spend'
             ],
             metrics: [
                 'countPlacements', 'countCreatives', 'impressions',
