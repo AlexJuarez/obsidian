@@ -21,8 +21,14 @@
         },
         "start": "2015-04-27",
         "end": "2015-07-14",
-        "placements": 22,
-        "creatives": 22,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 22
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 22
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -50,8 +56,14 @@
         },
         "start": "2015-02-17",
         "end": "2015-07-14",
-        "placements": 38,
-        "creatives": 38,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 38
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 38
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -79,8 +91,14 @@
         },
         "start": "2015-02-17",
         "end": "2015-07-14",
-        "placements": 31,
-        "creatives": 31,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 31
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 31
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -108,8 +126,14 @@
         },
         "start": "2015-05-20",
         "end": "2015-07-14",
-        "placements": 94,
-        "creatives": 94,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 94
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 94
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -137,8 +161,14 @@
         },
         "start": "2014-10-17",
         "end": "2015-07-14",
-        "placements": 104,
-        "creatives": 104,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 104
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 104
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -166,8 +196,14 @@
         },
         "start": "2015-06-25",
         "end": "2015-07-14",
-        "placements": 22,
-        "creatives": 22,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 22
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 22
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -195,8 +231,14 @@
         },
         "start": "2015-06-28",
         "end": "2015-07-14",
-        "placements": 1,
-        "creatives": 1,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 1
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 1
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -224,8 +266,14 @@
         },
         "start": "2015-04-30",
         "end": "2015-07-14",
-        "placements": 22,
-        "creatives": 22,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 22
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 22
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -253,8 +301,14 @@
         },
         "start": "2015-06-26",
         "end": "2015-07-14",
-        "placements": 6,
-        "creatives": 6,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 6
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 6
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"
@@ -282,8 +336,14 @@
         },
         "start": "2015-04-27",
         "end": "2015-07-14",
-        "placements": 1,
-        "creatives": 1,
+        "placements": {
+            "route": "cm.campaigns.detail.placements({ campaignId: row.id })",
+            "name": 1
+        },
+        "creatives": {
+            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "name": 1
+        },
         "edit": [
             "campaign.preview",
             "campaign.settings"

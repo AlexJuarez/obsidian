@@ -119,8 +119,14 @@ define(function(require) {
                     impressions: {max: 0, current: 5444326},
                     start: '2015-04-27',
                     end: '2015-07-14',
-                    placements: 22,
-                    creatives: 22,
+                    placements: {
+                        route: 'cm.campaigns.detail.placements({ campaignId: row.id })',
+                        name: 22
+                    },
+                    creatives: {
+                        route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                        name: 22
+                    },
                     live: false,
                     budget: {
                         budget: 0,

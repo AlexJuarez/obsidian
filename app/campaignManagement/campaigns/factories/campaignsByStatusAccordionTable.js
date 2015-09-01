@@ -65,8 +65,14 @@ define(function (require) {
                         },
                         start: row.startDate,
                         end: row.endDate,
-                        placements: row.metrics.countPlacements,
-                        creatives: row.metrics.countCreatives,
+                        placements: {
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.id })',
+                            name: row.metrics.countPlacements
+                        },
+                        creatives: {
+                            route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            name: row.metrics.countCreatives
+                        },
                         edit: ['campaign.preview', 'campaign.settings']
                     });
                 }
@@ -83,8 +89,8 @@ define(function (require) {
                     start: 'date',
                     end: 'date',
                     budget: 'budget',
-                    placements: 'number',
-                    creatives: 'number',
+                    placements: 'link',
+                    creatives: 'link',
                     edit: 'icons'
                 };
 

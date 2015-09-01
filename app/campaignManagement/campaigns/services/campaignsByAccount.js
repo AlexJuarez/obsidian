@@ -43,8 +43,8 @@ define(function (require) {
         'impressions': 'bullet',
         'start': 'date',
         'end': 'date',
-        'placements': 'number',
-        'creatives': 'number',
+        'placements': 'link',
+        'creatives': 'link',
         'edit': ''
     };
 
@@ -175,8 +175,14 @@ define(function (require) {
                         type: campaign.type,
                         start: campaign.startDate,
                         end: campaign.endDate,
-                        creatives: campaign.metrics.countCreatives,
-                        placements: campaign.metrics.countPlacements
+                        placements: {
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.id })',
+                            name: campaign.metrics.countPlacements
+                        },
+                        creatives: {
+                            route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            name: campaign.metrics.countCreatives
+                        }
                     });
                 }
 
