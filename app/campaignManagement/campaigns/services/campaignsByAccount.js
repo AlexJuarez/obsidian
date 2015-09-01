@@ -61,14 +61,14 @@ define(function (require) {
         function (cache, accountRecordService, campaignsFilter, $interpolate, dataFactory) {
         var filter = dataFactory();
 
-        accountRecordService.observe(function(newUpdatedRecord) {
-            var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
-            //console.log(newUpdatedRecord, campaignCache);
-            campaignCache.observe(function() {
-                var big = campaignCache.all();
-                debugger;
-            }, undefined, true);
-        }, undefined, true);
+        //accountRecordService.observe(function(newUpdatedRecord) {
+        //    var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
+        //    //console.log(newUpdatedRecord, campaignCache);
+        //    campaignCache.observe(function() {
+        //        var big = campaignCache.all();
+        //        debugger;
+        //    }, undefined, true);
+        //}, undefined, true);
 
         function getHeaderApiConfig() {
             var accountConfig = ng.extend({}, headerApiConfig);
