@@ -4,6 +4,7 @@ define(function(require) {
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
+    require('./constants/apiURI');
 
     services();
     filters();
@@ -27,7 +28,7 @@ define(function(require) {
         require('./directives/fallbackSrc');
         require('./directives/placeholder');
         require('./directives/filePicker');
-        require('./directives/pacingChart');
+        require('./directives/youWorkOn');
     }
 
     function filters() {
@@ -53,5 +54,4 @@ define(function(require) {
         require('./services/apiURIGenerator');
     }
 
-    require('./constants/apiURI');
 });

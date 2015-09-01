@@ -58,10 +58,21 @@ define(function (require) {
                             max: row.metrics.bookedImpressions,
                             current: row.metrics.impressions
                         },
+                        live: row.live,
+                        budget: {
+                            budget: row.budget,
+                            spend: row.spend
+                        },
                         start: row.startDate,
                         end: row.endDate,
-                        placements: row.metrics.countPlacements,
-                        creatives: row.metrics.countCreatives,
+                        placements: {
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.id })',
+                            name: row.metrics.countPlacements
+                        },
+                        creatives: {
+                            route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            name: row.metrics.countCreatives
+                        },
                         edit: ['campaign.preview', 'campaign.settings']
                     });
                 }
@@ -74,19 +85,23 @@ define(function (require) {
                     account: 'link',
                     campaign: 'link',
                     impressions: 'bullet',
+                    live: 'status',
                     start: 'date',
                     end: 'date',
-                    placements: 'number',
-                    creatives: 'number',
+                    budget: 'budget',
+                    placements: 'link',
+                    creatives: 'link',
                     edit: 'icons'
                 };
 
                 var headers = [
-                    {name: 'Campaign', id: 'campaign'},
                     {name: 'Account', id: 'account'},
-                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Campaign', id: 'campaign'},
+                    {name: 'Delivering', id: 'live'},
                     {name: 'Start', id: 'start'},
                     {name: 'End', id: 'end'},
+                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Budget', id: 'budget'},
                     {name: 'Placements', id: 'placements'},
                     {name: 'Creatives', id: 'creatives'},
                     {name: '', id: 'edit'}
