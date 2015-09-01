@@ -10,7 +10,7 @@ define(function (require) {
         }
 
         function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
-            return $filter('date')(input, 'longDate');
+            return $filter('date')(input, 'M/d/yyyy');
         }
 
         return function (input, row, rules) {
