@@ -134,7 +134,7 @@ define(function (require) {
 
             if(clickedPlacement) {
                 toggleSelected(clickedPlacement);
-                placementsData.addData([clickedPlacement]);
+                placementCache.get(getPlacementsApiConfig()).addData([clickedPlacement]);
             }
         }
 
