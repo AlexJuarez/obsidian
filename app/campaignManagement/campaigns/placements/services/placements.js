@@ -120,8 +120,7 @@ define(function (require) {
         }
 
         function selectPlacement(id) {
-            var placementsData = placementCache.get(getPlacementsApiConfig());
-            var placements = placementsData.all();
+            var placements = placementCache.all(getPlacementsApiConfig());
             var clickedPlacement;
             for(var i=0; i<placements.length; i++) {
                 if(placements[i].id === id) {
@@ -170,13 +169,11 @@ define(function (require) {
             return newConfig;
         }
 
-        var initializeCache = true;
         function all(skipTransform) {
 
             // We can do this because someone using this service will be
-						// observing it before they call all()
-            var data = placementCache.get(getPlacementsApiConfig(), initializeCache).all();
-            initializeCache = false;
+			// observing it before they call all()
+            var data = placementCache.all(getPlacementsApiConfig());
 
             if (skipTransform) {
                 return data;
@@ -191,9 +188,6 @@ define(function (require) {
             updateCache();
 
             function updateCache() {
-                placementCache.get(getPlacementsApiConfig(), initializeCache);
-                initializeCache = false;
-
                 placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
             }
         }
