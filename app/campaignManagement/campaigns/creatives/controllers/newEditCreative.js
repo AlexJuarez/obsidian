@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../../module');
     var ng = require('angular');
 
-    app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, enums, creatives, campaigns, creativeRecordService, modalState) {
+    app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState) {
 
         //Modal functions
         $scope.ok = undefined;
@@ -13,83 +13,83 @@ define(function (require) {
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
 
+        var types = [
+            { id: 'IBV', name: 'In-Banner Video' },
+            { id: 'ISV', name: 'In-Stream Video' },
+            { id: 'RM', name: 'Rich Media' },
+            { id: 'SWF', name: 'SWF' },
+            { id: 'IMG', name: 'Image' }
+        ];
+
+        var typeSettings = {
+            IBV: {
+                environments: [1,2,3,4],
+                dimensions: [1,2,3,4,11,12,13,14],
+                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+            },
+            ISV: {
+                environments: [1,2],
+                dimensions: [6,7,8,9,10,14],
+                expandedDimensions: undefined
+            },
+            RM: {
+                environments: [1,2,3,4],
+                dimensions: [1,2,3,4,11,12,13,14],
+                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+            },
+            SWF: {
+                environments: [2],
+                dimensions: undefined,
+                expandedDimensions: undefined
+            },
+            IMG: {
+                environments: [1,2,3,4],
+                dimensions: undefined,
+                expandedDimensions: undefined
+            }
+        };
+
+        var environments = {
+            1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
+            2: { id: 'desktop', name: 'Desktop' },
+            3: { id: 'mobile', name: 'Tablet & Phone' },
+            4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
+        };
+
+        var dimensions = {
+            1: { widthHeight: [160, 600], name: '160x600' },
+            2: { widthHeight: [180, 150], name: '180x150' },
+            3: { widthHeight: [300, 250], name: '300x250' },
+            4: { widthHeight: [300, 600], name: '300x600' },
+            5: { widthHeight: [728, 90], name: '728x90' },
+            6: { widthHeight: [480, 360], name: '480x360 (4:3)' },
+            7: { widthHeight: [533, 300], name: '533x300 (16:9)' },
+            8: { widthHeight: [640, 360], name: '640x360 (16:9)' },
+            9: { widthHeight: [640, 480], name: '640x480 (4:3)' },
+            10: { widthHeight: [768, 432], name: '768x432 (16:9)' },
+            11: { widthHeight: [728, 90], name: '728x90' },
+            12: { widthHeight: [970, 90], name: '970x90' },
+            13: { widthHeight: [1, 1], name: 'Interstitial 1x1' },
+            14: { name: 'Custom' }
+        };
+
+        var expandedDimensions = {
+            1: { name: 'Non-Expanding' },
+            2: { name: 'Legacy' },
+            3: { widthHeight: [300, 600], name: '300x600' },
+            4: { widthHeight: [560, 300], name: '560x300' },
+            5: { widthHeight: [600, 250], name: '600x250' },
+            6: { widthHeight: [600, 600], name: '600x600' },
+            7: { widthHeight: [728, 315], name: '728x315' },
+            8: { widthHeight: [970, 250], name: '970x250' },
+            9: { widthHeight: [970, 415], name: '970x415' },
+            10: { name: 'Custom' }
+        };
+
         setupBusinessLogic();
         setupModalLogic();
 
         function setupBusinessLogic() {
-            var types = [
-                { id: 'IBV', name: 'In-Banner Video' },
-                { id: 'ISV', name: 'In-Stream Video' },
-                { id: 'RM', name: 'Rich Media' },
-                { id: 'SWF', name: 'SWF' },
-                { id: 'IMG', name: 'Image' }
-            ];
-
-            var typeSettings = {
-                IBV: {
-                    environments: [1,2,3,4],
-                    dimensions: [1,2,3,4,11,12,13,14],
-                    expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-                },
-                ISV: {
-                    environments: [1,2],
-                    dimensions: [6,7,8,9,10,14],
-                    expandedDimensions: undefined
-                },
-                RM: {
-                    environments: [1,2,3,4],
-                    dimensions: [1,2,3,4,11,12,13,14],
-                    expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-                },
-                SWF: {
-                    environments: [2],
-                    dimensions: undefined,
-                    expandedDimensions: undefined
-                },
-                IMG: {
-                    environments: [1,2,3,4],
-                    dimensions: undefined,
-                    expandedDimensions: undefined
-                }
-            };
-
-            var environments = {
-                1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
-                2: { id: 'desktop', name: 'Desktop' },
-                3: { id: 'mobile', name: 'Tablet & Phone' },
-                4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
-            };
-
-            var dimensions = {
-                1: { dimensions: [160, 600], name: '160x600' },
-                2: { dimensions: [180, 150], name: '180x150' },
-                3: { dimensions: [300, 250], name: '300x250' },
-                4: { dimensions: [300, 600], name: '300x600' },
-                5: { dimensions: [728, 90], name: '728x90' },
-                6: { dimensions: [480, 360], name: '480x360 (4:3)' },
-                7: { dimensions: [533, 300], name: '533x300 (16:9)' },
-                8: { dimensions: [640, 360], name: '640x360 (16:9)' },
-                9: { dimensions: [640, 480], name: '640x480 (4:3)' },
-                10: { dimensions: [768, 432], name: '768x432 (16:9)' },
-                11: { dimensions: [728, 90], name: '728x90' },
-                12: { dimensions: [970, 90], name: '970x90' },
-                13: { dimensions: [1, 1], name: 'Interstitial 1x1' },
-                14: { name: 'Custom' }
-            };
-
-            var expandedDimensions = {
-                1: { name: 'Non-Expanding' },
-                2: { name: 'Legacy' },
-                3: { dimensions: [300, 600], name: '300x600' },
-                4: { dimensions: [560, 300], name: '560x300' },
-                5: { dimensions: [600, 250], name: '600x250' },
-                6: { dimensions: [600, 600], name: '600x600' },
-                7: { dimensions: [728, 315], name: '728x315' },
-                8: { dimensions: [970, 250], name: '970x250' },
-                9: { dimensions: [970, 415], name: '970x415' },
-                10: { name: 'Custom' }
-            };
-
             // Update available environments, dimensions and expanded dimensions
             // based on creative types and the settings above
             $scope.types = types;
@@ -166,7 +166,7 @@ define(function (require) {
                     startDate: (modalState.creative && modalState.creative.startDate) || new Date(),
                     endDate: (modalState.creative && modalState.creative.endDate) || new Date(),
                     objectives: [],
-                    accountId: modalState.accountId
+                    campaignId: modalState.campaignId
                 };
 
                 $scope.creative = ng.copy(modalState.creative || originalCreative);
@@ -178,7 +178,8 @@ define(function (require) {
                 if(! modalState.creativeId) {
 
                     // TODO: add render limit so this isn't crazy slow
-                    $scope.campaigns = campaigns.all().slice(0, 10);
+                    //$scope.campaigns = campaigns.all().slice(0, 10);
+                    $scope.campaigns = [{id: '1234', name: 'test'}];
                 }
             }
 
@@ -198,6 +199,7 @@ define(function (require) {
             }
 
             $scope.ok = function(errors) {
+                var transformedCreative = transformCreative();
                 $scope.errors = errors;
                 if(ng.equals({}, $scope.errors) || ! $scope.errors) {
                     var onSuccess = function() {
@@ -213,11 +215,58 @@ define(function (require) {
                             $modalInstance.dismiss('cancel');
                         }
                     } else {
-                        creativeRecordService.create($scope.creative).then(onSuccess);
+                        // debugger;
+                        newCreativeService(transformedCreative);//.then()
+                        // TODO: wait for promise from newCreativeService, then do something
+                        //creativeRecordService.create($scope.creative).then(onSuccess);
                     }
                 }
                 $scope.submitted = true;
             };
+
+            function transformCreative() {
+                var creative = $scope.creative;
+                var allDimensions = getDimensions(creative);
+                return {
+                    expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
+                    expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
+                    embedWidth: parseInt(allDimensions.embed.width, 10),
+                    embedHeight: parseInt(allDimensions.embed.height, 10),
+                    clickthroughUrl: creative.clickthroughUrl,
+                    type: creative.type,
+                    environment: environments[creative.environment].id,
+                    name: creative.name
+                };
+            }
+
+            function getDimensions(creative) {
+                var allDimensions = {
+                    embed: {},
+                    expanded: {}
+                };
+
+                var widthHeight = dimensions[creative.dimensions].widthHeight;
+                allDimensions.embed.width = widthHeight && widthHeight[0];
+                allDimensions.embed.height = widthHeight && widthHeight[1];
+
+                allDimensions.embed = {
+                    width: allDimensions.embed.width || creative.customDimensionsWidth,
+                    height: allDimensions.embed.height || creative.customDimensionsHeight
+                };
+
+                if (creative.expandedDimensions) {
+                    widthHeight = expandedDimensions[creative.expandedDimensions].widthHeight;
+                    allDimensions.expanded.width = widthHeight && widthHeight[0];
+                    allDimensions.expanded.height = widthHeight && widthHeight[1];
+
+                    allDimensions.expanded = {
+                        width: allDimensions.expanded.width || creative.customExpandedDimensionsWidth,
+                        height: allDimensions.expanded.height || creative.customExpandedDimensionsHeight
+                    };
+                }
+
+                return allDimensions;
+            }
 
             // Simple diffing function for PUT request
             function getDiff(changed, original) {
