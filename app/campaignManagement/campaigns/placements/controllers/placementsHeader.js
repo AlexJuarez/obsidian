@@ -176,19 +176,14 @@ define(function(require) {
                     placements.forEach(function(placement) {
                         placement = placement.all();
                         var tagTemplate = getPlacementTagTemplate(placement);
-                        console.log(placement);
-                        console.log('tagTemplate', tagTemplate);
                         if (tagTemplate) {
 
                             // Interpolate in "all-or-nothing" mode to avoid missing variables
                             var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
-                            tags += placement.name + '\n--------------------';
+                            tags += placement.name + '\n--------------------\n';
                             tags += adTag(getPlacementInterpolateObject(placement, tagTemplate));
                             tags += '\n\n';
                         }
-
-                        // TODO: remove this when database works
-                        tags += 'WHEN THE DATABASE WORKS THIS WILL TOO!!';
                     });
 
                     download('Ad_Tags.txt', tags);
@@ -196,13 +191,14 @@ define(function(require) {
             }
 
             function getPlacementTagTemplate(placement) {
+                var placementTagTemplate = false;
                 tagTemplates.forEach(function(tagTemplate) {
                    if (tagTemplate.id === placement.adTagId) {
-                       return tagTemplate;
+                       placementTagTemplate = tagTemplate;
                    }
                 });
 
-                return false;
+                return placementTagTemplate;
             }
 
             function getPlacementInterpolateObject(placement, adTagType) {
@@ -212,7 +208,7 @@ define(function(require) {
                     id: placement.targetId, // The creative guid / entry point for multi-creative
                     // TODO: ad real url here
                     prerenderUrl: 'http://www.google.com', // Image to show before load
-                    clickthroughUrl: placement.clickthroughUrl,
+                    clickThroughUrl: placement.clickthroughUrl,
                     // TODO: add real data here
                     version: '1.1.1', // The current build version
                     clicktag: adTagType.attributes.clicktag,
