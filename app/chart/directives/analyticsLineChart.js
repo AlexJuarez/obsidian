@@ -42,7 +42,7 @@ define(function (require) {
         'year': d3.time.format('%Y')
     };
 
-    app.directive('anaylticsLineChart', [function () {
+    app.directive('analyticsLineChart', [function () {
         return {
             restrict: 'A',
             replace: true,
