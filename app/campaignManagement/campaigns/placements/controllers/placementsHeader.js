@@ -161,6 +161,10 @@ define(function(require) {
 
             function pullTags() {
                 var placementIds = placements.getSelectedPlacementIds();
+                if (placementIds.length === 0) {
+                    window.alert('No ad tags to pull!');
+                    return;
+                }
                 var tags = '';
                 var placementPromises = [];
 
