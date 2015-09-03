@@ -49,13 +49,12 @@ define(function (require) {
                     console.log( 'Copy Creative ' + id );
 
                     creativeRecordService.getById(id).then(function(creative) {
-                        console.log( 'creativeRecordService' );
+                        creative = creative.all();
                         var newCreative = ng.copy(creative);
-                        console.log( 'newCreative', newCreative );
                         delete newCreative.id;
-                        removeNulls(creative);
-                        console.log( 'newCreative no ID', newCreative );
-                        creativeRecordService.create( transformCreativeData(newCreative.all()) );
+                        removeNulls(newCreative);
+                        console.log( 'newCreative no ID', transformCreativeData(newCreative) );
+                        creativeRecordService.create( transformCreativeData(newCreative) );
                     });
 
                     var removeNulls = function(creative) {
@@ -67,8 +66,8 @@ define(function (require) {
                     };
 
                     var transformCreativeData = function(data) {
-                        console.log( 'transformCreativeData' );
                         var crudCreative =  {
+                            campaignId: data.campaignId,
                             expandedWidth: data.expandedWidth,
                             deleted: data.deleted,
                             expandedHeight: data.expandedHeight,
@@ -85,7 +84,6 @@ define(function (require) {
                         if (data.expandMode) {
                             crudCreative.expandMode = data.expandMode;
                         }
-                        console.log( 'crudCreative', crudCreative );
                         return crudCreative;
                     };
                 };
