@@ -10,10 +10,7 @@ define(function (require) {
             templateUrl: 'table/directives/tableCreatives.html',
             replace: true,
             scope: {
-                creatives: '=creatives',
-                classes: '@class'
-            },
-            link: function () {
+                creatives: '=tableCreatives'
             }
         };
     }]);

@@ -107,9 +107,24 @@ define(function (require) {
                     {name: '', id: 'edit'}
                 ];
 
+                function findIndex(data) {
+                    var index = -1;
+
+                    for (var i = 0; i < data.length; i++) {
+                        if(data[i].name === 'Account') {
+                            index = i;
+                            break;
+                        }
+                    }
+                    return index;
+                }
+
                 if ($state.params.accountId) {
                     delete rules.account;
-                    headers.splice(1, 1);
+                    var index = findIndex(headers);
+                    if (index >= 0) {
+                        headers.splice(index, 1);
+                    }
                 }
 
                 return {
