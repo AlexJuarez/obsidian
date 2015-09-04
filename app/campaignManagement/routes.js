@@ -78,16 +78,6 @@ define(function (require) {
                     templateUrl: 'campaignManagement/campaigns/index.html'
                 })
                 .state({
-                    name: base + '.campaigns.division',
-                    url: '/dashboard/division/:divisionId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.account',
-                    url: '/dashboard/account/:accountId',
-                    template: '<ui-view />'
-                })
-                .state({
                     name: base + '.campaigns.detail',
                     url: '/campaign/:campaignId',
                     template: '<ui-view />'
