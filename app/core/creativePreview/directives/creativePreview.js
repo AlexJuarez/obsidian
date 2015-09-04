@@ -12,13 +12,39 @@ define(function (require) {
             scope: {
                 id: '@creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document) {
                     var htmlContent = ng.element('<div>' + $element.html() + '</div>');
 
                     $scope.isOpen = false;
+                    $scope.clicked = false;
                     $scope.previewInPage = previewInPage;
                     $scope.openInStudio = openInStudio;
+                    $scope.parent = parentScope;
+
+                    function parentScope() {
+                        return $scope.$parent;
+                    }
+
+                    $element.on('click', function () {
+                        $scope.clicked = true;
+                    });
+
+                    function documentClickHandler() {
+                        if (!$scope.clicked) {
+                            $scope.$apply(function () {
+                                $scope.isOpen = false;
+                            });
+                        } else {
+                            $scope.clicked = false;
+                        }
+                    }
+
+                    $document.on('click', documentClickHandler);
+
+                    $scope.$on('$destroy', function () {
+                        $document.off('click', documentClickHandler);
+                    });
 
                     creativeService.observe(update, $scope);
 
@@ -49,10 +75,7 @@ define(function (require) {
                     $templateRequest('core/creativePreview/directives/wrapper.html').then(function(wrapper) {
 
                         var el = ng.element(wrapper);
-                        var compiledContent = $compile(htmlContent)($scope.$parent);
-
-                        el.html(compiledContent.html());
-
+                        el.html(htmlContent);
                         var compiledEl = $compile(el)($scope);
                         $element.html(compiledEl);
                     });

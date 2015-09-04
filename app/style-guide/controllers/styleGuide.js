@@ -21,6 +21,7 @@ define(function (require) {
         $scope.scrollTo = scrollTo;
         $scope.navOpen = false;
         $scope.data = [];
+        $scope.creativePreview = 'Creative Preview Test';
         $scope.user = {
             name: '',
             email: 'invalid@e,'

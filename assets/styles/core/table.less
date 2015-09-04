@@ -18,6 +18,11 @@ table {
 
 .table-wrapper {
     overflow-y: auto;
+
+    @media(min-width: @screen-sm-min) {
+        overflow-y: visible;
+    }
+
     width: 100%;
     .table {
         margin-bottom: 0;
@@ -26,6 +31,10 @@ table {
 
 .table {
     overflow-y: auto;
+
+    @media(min-width: @screen-sm-min) {
+        overflow-y: visible;
+    }
     width: 100%;
     margin-bottom: 3rem;
     > thead {
@@ -321,6 +330,9 @@ table {
         width: 100%;
         display: none;
         overflow: auto;
+        @media(min-width: @screen-sm-min) {
+            overflow: visible;
+        }
         > .table {
             margin-bottom: 0;
         }
