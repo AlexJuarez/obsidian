@@ -10,9 +10,15 @@ define(function (require) {
         $rootScope.$on('notifications:warn', notificationHandler);
         $rootScope.$on('notifications:error', notificationHandler);
         $rootScope.$on('notifications:info', notificationHandler);
+        $rootScope.$on('notifications:dismissAll', dismissNotifications);
+
 
         function notificationHandler(event, message, options) {
             console.log(event, message, options);
+        }
+
+        function dismissNotifications() {
+            console.log('dismiss all of the notifications');
         }
     }]);
 });

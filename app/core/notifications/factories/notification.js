@@ -20,11 +20,16 @@ define(function (require) {
             $rootScope.$broadcast('notifications:success', message, options);
         }
 
+        function dismissAll() {
+            $rootScope.$broadcast('notifications:dismissAll');
+        }
+
         return {
             error: error,
             warn: warn,
             info: info,
-            success: success
+            success: success,
+            dismissAll: dismissAll
         };
     }]);
 });
