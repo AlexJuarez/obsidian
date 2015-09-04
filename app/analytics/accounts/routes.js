@@ -9,15 +9,15 @@ define(function (require) {
 
         $stateProvider
             .state({
-                name: 'analytics.campaigns.client',
-                url: '/client/:clientId',
+                name: 'analytics.campaigns.account',
+                url: '/account/:accountId',
                 views: {
                     'summary': {
-                        templateUrl: 'analytics/clients/index.summary.html'
+                        templateUrl: 'analytics/accounts/index.summary.html'
                     },
                     'content': {
-                        templateUrl: 'analytics/clients/index.content.html',
-                        controller: 'clientCtrl'
+                        templateUrl: 'analytics/accounts/index.content.html',
+                        controller: 'accountCtrl'
                     }
                 }
             });

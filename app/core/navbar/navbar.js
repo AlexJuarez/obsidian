@@ -33,7 +33,6 @@ define(function (require) {
                     } else {
                         $state.go(area);
                     }
-
                 }
 
                 $rootScope.$on('$stateChangeSuccess', function () {
