@@ -29,7 +29,7 @@ define(function (require) {
                     } else if ($state.params.accountId) {
                         $state.go(area + '.campaigns.account', {accountId: $state.params.accountId});
                     } else if ($state.params.campaignId) {
-                        $state.go(area +'.campaigns.campaign', {campaignId: $state.params.campaignId});
+                        $state.go(area +'.campaigns.detail', {campaignId: $state.params.campaignId});
                     } else {
                         $state.go(area);
                     }
