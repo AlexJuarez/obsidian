@@ -25,6 +25,6 @@ define(function (require) {
             warn: warn,
             info: info,
             success: success
-        }
+        };
     }]);
 });

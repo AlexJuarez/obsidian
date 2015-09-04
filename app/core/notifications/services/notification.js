@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
 
     module.service('notificationService', ['$rootScope', function ($rootScope) {
-        var data = [];
+        //var data = [];
 
         $rootScope.$on('notifications:success', notificationHandler);
         $rootScope.$on('notifications:warn', notificationHandler);
