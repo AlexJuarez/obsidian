@@ -40,8 +40,8 @@ define(function (require) {
                     console.log( 'thumbnail controller: open settings ' + id );
                 };
 
-                $scope.openPlacements = function(id) {
-                    console.log( 'thumbnail controller: open placements ' + id );
+                $scope.gotoPlacements = function(creative) {
+                    $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
                 };
 
                 $scope.copyCreative = function(id) {
