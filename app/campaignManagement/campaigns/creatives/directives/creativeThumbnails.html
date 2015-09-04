@@ -1,5 +1,5 @@
 <div class="thumbnail-view row ng-scope">
-	<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">
+	<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-init="row = creative" ng-repeat="creative in creatives track by $index">
 		<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">
 			<div class="ratio-box">
 				<div class="preview-overlay" ng-click="openPreviewPage(creative)"><span><i class="glyph-view"></i>Preview in Page</span></div>
@@ -13,8 +13,8 @@
 		<div class="creative-info">
 			<span class="title">{{creative.creativeName}}</span>
 			<div class="data">
-				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">Placements: </a>
-				<a ng-click="openPlacements(creative.id)" title="View Creative Placements">{{creative.numPlacements}}</a>
+				<a ui-sref="{{creative.numPlacements.route}}" title="View Creative Placements">Placements: </a>
+				<a ui-sref="{{creative.numPlacements.route}}" title="View Creative Placements">{{creative.numPlacements.name}}</a>
 			</div>
 			<div class="data">
 				<span>Ad Type:</span>

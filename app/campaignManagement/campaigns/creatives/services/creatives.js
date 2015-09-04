@@ -72,7 +72,7 @@ define(function(require) {
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         campaignId: creative.campaign.id,
                         numPlacements: {
-                            name: creative.countPlacements,
+                            name: creative.countPlacements || 0,
                             route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
                         },
                         options: '<div creative-options id="\'' + creative.id + '\'"></div>',
