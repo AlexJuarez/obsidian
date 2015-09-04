@@ -78,7 +78,8 @@ define(function(require) {
                         expandedHeight: '250',
                         numPlacements: 5,
                         lastModified: '2015-12-05',
-                        thumbnail: 'http://www.placecage.com/600/225'
+                        thumbnail: 'http://www.placecage.com/600/225',
+                        campaign: { id: 'test'}
                     }
                 ]
             };
