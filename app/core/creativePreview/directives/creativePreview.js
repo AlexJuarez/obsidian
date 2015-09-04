@@ -10,12 +10,13 @@ define(function (require) {
         return {
             restrict: 'A',
             scope: {
-                id: '=creativePreview'
+                id: '@creativePreview'
             },
             controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window',
                 function($scope, $element, $compile, $templateRequest, creativeService, $window) {
-                    var htmlContent = $element.html();
+                    var htmlContent = ng.element('<div>' + $element.html() + '</div>');
 
+                    $scope.isOpen = false;
                     $scope.previewInPage = previewInPage;
                     $scope.openInStudio = openInStudio;
 
@@ -46,9 +47,11 @@ define(function (require) {
                     }
 
                     $templateRequest('core/creativePreview/directives/wrapper.html').then(function(wrapper) {
-                        var el = ng.element(wrapper);
 
-                        el.append(htmlContent);
+                        var el = ng.element(wrapper);
+                        var compiledContent = $compile(htmlContent)($scope.$parent);
+
+                        el.html(compiledContent.html());
 
                         var compiledEl = $compile(el)($scope);
                         $element.html(compiledEl);
