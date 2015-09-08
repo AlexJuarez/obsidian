@@ -64,25 +64,21 @@ define(function(require) {
         //});
 
         it('should transform creatives properly', function() {
-            var input = {
-                creatives: [
-                    {
-                        id: 3,
-                        name: 'Hallow\'s Eve Pumpkin Supply',
-                        live: true,
-                        type: 'RM',
-                        device: 'Desktop',
-                        embedWidth: '300',
-                        embedHeight: '250',
-                        expandedWidth: '600',
-                        expandedHeight: '250',
-                        numPlacements: 5,
-                        lastModified: '2015-12-05',
-                        thumbnail: 'http://www.placecage.com/600/225',
-                        campaign: { id: 'test'}
-                    }
-                ]
-            };
+            var input = [{
+                id: 3,
+                name: 'Hallow\'s Eve Pumpkin Supply',
+                live: true,
+                type: 'RM',
+                device: 'Desktop',
+                embedWidth: '300',
+                embedHeight: '250',
+                expandedWidth: '600',
+                expandedHeight: '250',
+                numPlacements: 5,
+                lastModified: '2015-12-05',
+                thumbnail: 'http://www.placecage.com/600/225',
+                campaign: { id: 'test'}
+            }];
 
             var output = creativesService._transformCreatives(input);
 

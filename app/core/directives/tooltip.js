@@ -21,9 +21,10 @@ define(function (require) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
                 scope.calculateDims = calculateDims;
-                scope.isOpen = false;
                 scope.main = elem.html();
+                scope.isOpen = false;
                 scope.toggleOpen = toggleOpen;
+
                 //parse the value within the current scope and set it = to the scope for main
                 scope.tooltipScope = attr.tooltipScope && $parse(attr.tooltipScope)(scope) || scope;
 
@@ -41,6 +42,10 @@ define(function (require) {
                     } else {
                         isBasicTooltip = false;
 
+                        if (scope.creativeData) {
+                            scope.name = scope.creativeData.name;
+                        }
+
                         if (attr.tooltipController) {
                             var customController = attr.tooltipController;
                             $controller(customController, { $scope: scope });
@@ -53,25 +58,21 @@ define(function (require) {
 
                 function close() {
                     scope.isOpen = false;
-                }
 
+                }
                 scope.close = close;
 
-                $rootScope.$on('tooltip:open', function(id) {
-                    if(id !== scope.$id) {
-                        close();
-                    }
-                });
-
                 function toggleOpen() {
-                    if(!scope.isOpen) {
+                    if (!scope.isOpen) {
                         $rootScope.$broadcast('tooltip:open', scope.$id);
+                        $timeout(function() {
+                            $document.on('click', documentClickHandler);
+                        }, 500);
+
                     }
 
                     scope.isOpen = !scope.isOpen;
                 }
-
-
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {

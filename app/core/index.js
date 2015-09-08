@@ -39,6 +39,8 @@ define(function(require) {
         require('./filters/errorCount');
         require('./filters/date');
         require('./filters/truncateNumber');
+        require('./filters/percentage');
+        require('./filters/adTypeOrder');
     }
 
     function services() {

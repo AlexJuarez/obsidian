@@ -1,31 +1,46 @@
-.vertical-bar-graph-wrapper {
-  width: 60px;
-  span {
-    width: 100%;
-    display: block;
-    &.percentage {
-      line-height: 3rem;
-      font-size: 2rem;
-      font-family: 'Oswald';
+.quartiles {
+    &.row {
+      p {
+        padding: 0 5px;
+      }
     }
-    &.quartile {
-      font-size: 1rem;
-      line-height: 1rem;
-      margin-bottom: 15px;
-    }
-  }
-  .bar-graph {
-    width: 100%;
-    height: 50px;
-    .achieved {
-      fill: @brand-color;
-      -webkit-transition: width 0.5s ease;
-      transition: width 0.5s ease;
+    .vertical-bar-graph-wrapper {
+      .percentage {
+        font-family: 'Oswald';
+        width: 100%;
+        height: 3rem;
+      }
+      svg {
+          height: 100%;
+          font-family: 'Oswald';
+          text {
+            fill: @dark-gray;
+          }
+      }
+      span {
+        width: 100%;
+        display: block;
+        &.percentage {
+          font-family: 'Oswald';
+        }
+        &.quartile {
+          font-size: 1rem;
+        }
+      }
+      .bar-graph {
+        width: 100%;
+        height: 50px;
+        .achieved {
+          fill: @brand-color;
+          -webkit-transition: width 0.5s ease;
+          transition: width 0.5s ease;
+
+        }
+        .bg {
+          fill: @light-gray;
+        }    
+      }
 
     }
-    .bg {
-      fill: @light-gray;
-    }    
-  }
-
+  
 }
