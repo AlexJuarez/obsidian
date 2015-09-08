@@ -40,7 +40,7 @@ define(function (require) {
         });
 
         $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            if (window.Router) {
+            if (window.Router && toState.name === 'analytics.campaigns.detail') {
                 window.Router.handleURL($location.url());
             }
         });

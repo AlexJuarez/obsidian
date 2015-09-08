@@ -1,0 +1,13 @@
+.x-axis path, .x-axis line, .y-axis path, .y-axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: chrispEdges;
+}
+
+.y-axis .tick line {
+    stroke: lightgray;
+}
+
+.y-axis .tick line:first-child line {
+    stroke: #000;
+}

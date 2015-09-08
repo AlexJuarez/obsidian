@@ -12,7 +12,8 @@
             name      : "Style Guide",
             script    : "app.js",
             env_production : {
-                NODE_ENV: "production"
+                NODE_ENV: "production",
+                PROXY: "https://thorwhal-dev-api.mixpo.com/"
             }
         }
     ],

@@ -82,7 +82,29 @@ textarea.form-control {
     .form-group.right {
         float: right;
     }
+    .form-label {
+        display: inline-block;
+        > span {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+    }
     @media (min-width: @screen-sm-min) {
+        .form-label {
+            vertical-align: middle;
+        }
+
+        .input-group {
+            display: inline-table;
+            vertical-align: middle;
+
+            .input-group-addon,
+            .input-group-btn,
+            .form-control {
+                width: auto;
+            }
+        }
+
         .form-group {
             display: inline-block;
             margin-bottom: 0;

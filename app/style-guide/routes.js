@@ -1,8 +1,12 @@
+//jshint ignore: start
+
 define(function (require) {
     'use strict';
+
     var app = require('./module');
     require('tpl!./mixpo-icons.html');
     require('tpl!./navigation.html');
+    require('tpl!./charts.html');
     require('tpl!./index.html');
     require('tpl!./typography.html');
     require('tpl!./button.html');
@@ -29,6 +33,7 @@ define(function (require) {
     require('tpl!./file-picker.html');
     require('tpl!./creative-thumbnail-view.html');
     require('tpl!./creative-preview.html');
+    require('tpl!./notification.html');
 
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.when('/style-guide', '/style-guide/tab1' );

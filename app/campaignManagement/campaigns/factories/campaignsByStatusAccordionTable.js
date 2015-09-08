@@ -3,6 +3,7 @@ define(function (require) {
 
     var module = require('./../../module');
     var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
+    var ng = require('angular');
 
     module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
         return function() {
@@ -12,6 +13,13 @@ define(function (require) {
             var title;
             var options = {
                 more: rows.nextPage
+            };
+
+            var displayTypeMap = {
+                anyPlacementsDisplay: 'D',
+                anyPlacementsInBanner: 'IBV',
+                anyPlacementsRichmedia: 'RM',
+                anyPlacementsInStream: 'ISV'
             };
 
             function sortRows(transformedRows) {
@@ -36,10 +44,23 @@ define(function (require) {
                 }
             }
 
+            function getTypes(row) {
+                var output = [];
+
+                ng.forEach(displayTypeMap, function(v, k) {
+                    if(row[k]) {
+                        output.push(v);
+                    }
+                });
+
+                return output;
+            }
+
             function _transformRows(data) {
                 var rows = data.campaigns;
                 var newRows = [];
                 var row;
+                var base = $state.includes('analytics') ? 'analytics' : 'cm';
 
                 for(var i=0; i<rows.length; i++) {
                     row = rows[i];
@@ -47,21 +68,33 @@ define(function (require) {
                         id: row.id,
                         account: {
                             id: row.account.id,
-                            route: 'cm.campaigns.account({ accountId: row.account.id })',
+                            route: base + '.campaigns.account({ accountId: row.account.id })',
                             name: row.account.name
                         },
                         campaign: {
-                            route: 'cm.campaigns.detail({ campaignId: row.id })',
+                            route: base + '.campaigns.detail({ campaignId: row.id })',
                             name: row.name
                         },
                         impressions: {
                             max: row.metrics.bookedImpressions,
                             current: row.metrics.impressions
                         },
+                        live: row.live,
+                        budget: {
+                            budget: row.budget,
+                            spend: row.spend
+                        },
+                        type: getTypes(row).join(', '),
                         start: row.startDate,
                         end: row.endDate,
-                        placements: row.metrics.countPlacements,
-                        creatives: row.metrics.countCreatives,
+                        placements: {
+                            route: base + '.campaigns.detail.placements({ campaignId: row.id })',
+                            name: row.metrics.countPlacements
+                        },
+                        creatives: {
+                            route: base + '.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            name: row.metrics.countCreatives
+                        },
                         edit: ['campaign.preview', 'campaign.settings']
                     });
                 }
@@ -70,32 +103,59 @@ define(function (require) {
             }
 
             function getTable(filter) {
+                var index;
                 var rules = {
                     account: 'link',
                     campaign: 'link',
                     impressions: 'bullet',
+                    live: 'status',
                     start: 'date',
                     end: 'date',
-                    placements: 'number',
-                    creatives: 'number',
-                    edit: 'icons'
+                    budget: 'budget',
+                    placements: 'link',
+                    creatives: 'link',
+                    edit: 'icons',
+                    type: ''
                 };
 
                 var headers = [
-                    {name: 'Campaign', id: 'campaign'},
                     {name: 'Account', id: 'account'},
-                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Campaign', id: 'campaign'},
+                    {name: 'Delivering', id: 'live'},
                     {name: 'Start', id: 'start'},
                     {name: 'End', id: 'end'},
+                    {name: 'Impressions & Pacing', id: 'impressions'},
+                    {name: 'Budget', id: 'budget'},
                     {name: 'Placements', id: 'placements'},
                     {name: 'Creatives', id: 'creatives'},
                     {name: '', id: 'edit'}
                 ];
 
-                if ($state.params.accountId) {
-                    delete rules.account;
-                    headers.splice(1, 1);
+                function findIndex(data, name) {
+                    var index = -1;
+
+                    for (var i = 0; i < data.length; i++) {
+                        if(data[i].name === name) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    return index;
                 }
+
+                if ($state.params.accountId) {
+                    index = findIndex(headers, 'Account');
+                    if (index >= 0) {
+                        headers.splice(index, 1);
+                    }
+                }
+
+                if ($state.includes('analytics')) {
+                    index = findIndex(headers, 'End');
+                    headers.splice(index + 1, 0, {name: 'Type', id: 'type'});
+                }
+
+
 
                 return {
                     header: _getTableHeader(header.all()),

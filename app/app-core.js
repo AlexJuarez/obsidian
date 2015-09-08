@@ -10,11 +10,13 @@ define(function (require) {
     require('./table/index');
     require('./chart/index');
     require('./campaignManagement/index');
+    require('./analytics/index');
 
     return ng.module('app', [
         'ui.bootstrap.datepicker',
         'perfect_scrollbar',
         'app.campaign-management',
+        'app.analytics',
         'localytics.directives',
         'tpl',
         'app.core',

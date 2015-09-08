@@ -5,6 +5,7 @@ define(function (require) {
     'use strict';
 
     var ng = require('angular');
+    require('./../core/index');
 
-    return ng.module('app.charts', []);
+    return ng.module('app.charts', ['app.core']);
 });

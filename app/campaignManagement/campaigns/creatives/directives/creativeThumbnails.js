@@ -41,8 +41,8 @@ define(function (require) {
                     console.log( 'thumbnail directive: open settings ' + id );
                 };
 
-                $scope.openPlacements = function(id) {
-                    console.log( 'thumbnail directive: open placements ' + id );
+                $scope.gotoPlacements = function(creative) {
+                    $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
                 };
 
                 $scope.copyCreative = function(id) {

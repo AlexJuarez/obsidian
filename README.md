@@ -1,5 +1,7 @@
 #![Obsidian](http://obsidian.mixpo.com/images/obsidian-iconx32.png)Obsidian Style Guide / Frontend UI
 
+http://obsidian.mixpo.com
+
 The client code lives in app
 
 the compiled version is in dist

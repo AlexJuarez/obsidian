@@ -30,4 +30,5 @@ define(function (require) {
     require('./creatives/directives/creativeThumbnails');
     require('./creatives/directives/creativeOptions');
     require('./creatives/services/creatives');
+    require('./creatives/services/creative');
 });

@@ -12,7 +12,7 @@ define(function(require) {
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight',
                 'countPlacements',
-                'live', 'modifiedDate', 'thumbnailUrlPrefix'
+                'live', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ]
         }
     };
@@ -24,7 +24,7 @@ define(function(require) {
         type: '',
         dimensions: '',
         expandedDimensions: '',
-        countPlacements: '',
+        numPlacements: 'link',
         options: ''
     };
 
@@ -117,7 +117,11 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        numPlacements: creative.numPlacements,
+                        campaignId: creative.campaign.id,
+                        numPlacements: {
+                            name: creative.countPlacements || 0,
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                        },
                         options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
                         // These properties are needed by thumbnails but aren't
