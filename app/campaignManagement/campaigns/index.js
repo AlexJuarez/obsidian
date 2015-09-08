@@ -1,21 +1,36 @@
 define(function (require) {
     'use strict';
 
-    require('./services/campaignCache');
-    require('./services/campaignsByAccount');
-    require('./services/campaignsByStatus');
-    require('./services/campaignsFilter');
-    require('./services/campaignsHeader');
-    require('./services/campaignModal');
-    require('./factories/campaignsByStatusAccordionTable');
-    require('./controllers/newEditCampaign');
-    require('./controllers/campaigns');
-    require('./controllers/campaign');
-    require('./controllers/analyticsPreview');
+    services();
+    controllers();
+    directives();
+    factories();
 
-    require('./directives/campaignDetails');
-    require('./directives/campaignsByAccount');
-    require('./directives/campaignsByStatus');
+    function services() {
+        require('./services/campaignCache');
+        require('./services/campaignsByAccount');
+        require('./services/campaignsByStatus');
+        require('./services/campaignsFilter');
+        require('./services/campaignsHeader');
+        require('./services/campaignModal');
+    }
+
+    function controllers() {
+        require('./controllers/newEditCampaign');
+        require('./controllers/campaigns');
+        require('./controllers/campaign');
+        require('./controllers/analyticsPreview');
+    }
+
+    function directives() {
+        require('./directives/campaignDetails');
+        require('./directives/campaignsByAccount');
+        require('./directives/campaignsByStatus');
+    }
+
+    function factories() {
+        require('./factories/campaignsByStatusAccordionTable');
+    }
 
     require('./placements/controllers/placementsList');
     require('./placements/controllers/placementsHeader');

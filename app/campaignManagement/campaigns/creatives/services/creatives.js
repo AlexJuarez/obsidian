@@ -118,7 +118,7 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaign.id,
+                        campaignId: creative.campaignId,
                         numPlacements: {
                             name: creative.countPlacements || 0,
                             route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
