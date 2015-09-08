@@ -29,6 +29,10 @@ define(function (require) {
             httpBackend.verifyNoOutstandingRequest();
         });
 
+        // function setupTests(apiConfig) {
+
+        // }
+
         it('should be an instance of recordPool', function () {
             expect(recordPool).not.toEqual(null);
         });

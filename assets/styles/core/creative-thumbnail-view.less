@@ -13,17 +13,17 @@
         left: 0;
         bottom: 0;
         right: 0;
-        //overflow: hidden;
+        overflow: hidden;
         img {
             max-width: 100%;
             max-height: 100%;
             display: block;
             position: absolute;
             top: 49.25%;
-            left: 50%;
+            left: 49.25%;
             z-index: 800;
-            -webkit-transform: translate(-50%, -49.25%);
-            transform: translate(-50%, -49.25%);
+            -webkit-transform: translate(-49.25%, -49.25%);
+            transform: translate(-49.25%, -49.25%);
         }
         .preview-overlay {
             display: none;
@@ -106,15 +106,26 @@
                 a:first-child, span:first-child {
                     float: left;
                     margin-right: 1rem;
+                    .glyph-icon {
+                        float: left;
+                        margin: 0 0.5rem 0 0;
+                        //display: inline-block;
+                        position: relative;
+                        &.glyph-view:before {
+                            top: 2px;
+                            position: relative;
+                        }
+                    }
                 }
                 a:last-child, span:last-child {
                     float: right;
                 }
                 .glyph-icon {
                     float: right;
-                    margin-left: 1.2rem;
-                    display: inline-block;
+                    margin: 0 0 0 1.2rem;
+                    //display: inline-block;
                 }
+
            }
         }
     }

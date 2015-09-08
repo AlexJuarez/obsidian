@@ -2,18 +2,52 @@ define(function (require) {
     'use strict';
 
     var module = require('./../../module');
-    var previewModals = {};
+    var ng = require('angular');
+    var apiConfig = {
+        endpoint: 'creativeSet',
+        queryParams: {
+            dimensions: [
+                'type'
+            ],
+            metrics: [
+                'impressions',
+                'view',
+                'viewRate',
+                'useractionRate',
+                'clickthroughRate',
+                'countPlacements',
+                'video25',
+                'video50',
+                'video75',
+                'video100',
+                'averagePercentComplete'
+
+            ]
+        }
+    };
+
     var settingsModals = {};
 
-    module.service('campaignModal', ['$modal', function ($modal) {
-        function preview(id, row) {
-            if (!previewModals[id]) {
-                previewModals[id] = {
-                    id: id,
-                    name: row.campaign.name,
-                    impressions: row.impressions.current
-                };
+    module.service('campaignModal', ['$modal', '$state', 'cacheFactory', function ($modal, $state, cacheFactory) {
+
+        var cache = cacheFactory({
+            transform: function (data) {
+                return data.creativeSet;
             }
+        });
+
+        function filter(config, id) {
+            var newConfig = ng.extend({}, config);
+            newConfig.queryParams.filters = ['campaign.id:' + id];
+            return newConfig;
+        }
+
+        function getApiConfig(id) {
+            var config = filter(apiConfig, id);
+            return config;
+        }
+
+        function preview(id, row) {
 
             $modal.open({
                 animation: 'true',
@@ -21,11 +55,17 @@ define(function (require) {
                 controller: 'analyticsPreviewCtrl',
                 resolve: {
                     modalState: function() {
-                        return previewModals[id];
+                        return {
+                            id: id,
+                            name: row.campaign.name,
+                            impressions: row.impressions.current,
+                            data: cache.get(getApiConfig(id), true)
+                        };
                     }
                 },
                 size: 'lg'
             });
+
         }
 
         function settings(id) {

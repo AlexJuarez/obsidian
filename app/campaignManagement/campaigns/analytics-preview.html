@@ -3,23 +3,28 @@
     <h2 class="modal-title">{{name}}</h2>
 </div>
 <div class="modal-body analytics-preview">
-    <div class="row">
-        <div class="col-lg-3 col-md-6 col-xs-12">
-            <h3>Summary</h3>
-            <div class="thin-header">Impressions</div>
-            <div class="impressions">{{impressions|number}}</div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-xs-12">
+
+    <h3 class="impressions">Total Campaign Impressions: {{impressions|number}}</h3>
+    <div class="ad-types row">
+
+        <div class="cell" ng-class="colClasses" ng-repeat="adUnit in creativeData | adTypeOrder">
+            <div class="top">
+                <h4 class="thin-header">{{adUnit.type}}</h4>
+                <p>Placements:&nbsp;<strong>{{adUnit.metrics.countPlacements|number}}</strong></p>
+                <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|truncateNumber}}</strong></p>
+                <p ng-if="adUnit.type != 'In-Stream' && adUnit.type != 'Display'">View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>
+                <p>User Action Rate:&nbsp;<strong>{{adUnit.metrics.useractionRate|percentage}}&#37;</strong></p>
+                <p>Clickthrough Rate:&nbsp;<strong>{{adUnit.metrics.clickthroughRate|percentage}}&#37;</strong></p>
+                <p ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'">Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>
+
+            </div>
+
+            <div quartiles quartile-data=adUnit.metrics class="bottom" ng-if="adUnit.type != 'Rich Media' && adUnit.type != 'Display'"></div>
 
         </div>
-        <div class="col-lg-3 col-md-6 col-xs-12">
 
-        </div>
-        <div class="col-lg-3 col-md-6 col-xs-12">
-
-        </div>
     </div>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-default left">View Complete Analytics</button>
+    <button class="btn btn-primary solid left"><i class="glyph-icon glyph-preview"></i>View Complete Analytics</button>
 </div>

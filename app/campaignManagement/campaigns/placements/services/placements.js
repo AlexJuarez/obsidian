@@ -11,7 +11,7 @@ define(function (require) {
         queryParams: {
             dimensions: [
                 'id', 'name', 'live', 'flightStart', 'flightEnd',
-                'bookedImpressions', 'creatives.id', 'creatives.name', 'publisher.id',
+                'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'publisher.id',
                 'publisher.name', 'type', 'budget', 'spend'
             ],
             metrics: ['impressions']
@@ -115,7 +115,6 @@ define(function (require) {
 
                 transformedGroups.push(transformedGroup);
             }
-
             return transformedGroups;
         }
 

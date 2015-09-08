@@ -33,6 +33,7 @@ define(function (require) {
     require('tpl!./file-picker.html');
     require('tpl!./creative-thumbnail-view.html');
     require('tpl!./creative-preview.html');
+    require('tpl!./notification.html');
 
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.when('/style-guide', '/style-guide/tab1' );

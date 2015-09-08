@@ -25,7 +25,7 @@ define(function(require) {
         type: '',
         dimensions: '',
         expandedDimensions: '',
-        numPlacements: '',
+        numPlacements: 'link',
         options: ''
     };
 
@@ -48,13 +48,60 @@ define(function(require) {
     };
 
     module.service('creatives', [
-        'cacheFactory', '$state', function(cacheFactory, $state) {
+        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
             var cache = cacheFactory({
-                transform: _transformCreatives
+                transform: function(data) {
+                    return data.creatives;
+                }
             });
 
-            function _transformCreatives(data) {
-                var creatives = data.creatives;
+            creativeRecordService.observe(function(newUpdatedRecord) {
+                var existingRecord = getCreative(newUpdatedRecord.id);
+
+                if (!existingRecord) {
+                    // Set up defaults for a new record
+                    existingRecord = {
+                        lastModified: new Date(),
+                        delivering: false,
+                        countPlacements: 0
+                    };
+                }
+                var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
+                addData([transformedRecord]);
+
+            }, undefined, true);
+
+            function transformCrudRecord(updatedRecord, existingRecord) {
+                return {
+                    deleted: updatedRecord.deleted,
+                    embedHeight: updatedRecord.embedHeight,
+                    expandedWidth: updatedRecord.expandedWidth,
+                    embedWidth: updatedRecord.embedWidth,
+                    expandedHeight: updatedRecord.expandedHeight,
+                    modifiedDate: existingRecord.lastModified,
+                    name: updatedRecord.name,
+                    id: updatedRecord.id,
+                    thumbnailUrlPrefix:  updatedRecord.thumbnailUrlPrefix,
+                    type: updatedRecord.type,
+                    device: updatedRecord.device,
+                    live: existingRecord.delivering,
+                    countPlacements: existingRecord.countPlacements
+                };
+            }
+
+            function getCreative(id) {
+                var creatives = cache.all( _apiConfig() );
+                var c;
+                for (var i=0; creatives.length > i; i++) {
+                    c = creatives[i];
+                    if (c.id === id) {
+                        return c;
+                    }
+                }
+                return false;
+            }
+
+            function _transformCreatives(creatives) {
                 var creative;
                 var transformedTable = {
                     rules: rules,
@@ -71,7 +118,11 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        numPlacements: creative.numPlacements,
+                        campaignId: creative.campaign.id,
+                        numPlacements: {
+                            name: creative.countPlacements || 0,
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                        },
                         options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
                         // These properties are needed by thumbnails but aren't
@@ -81,7 +132,6 @@ define(function(require) {
                         thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
                     });
                 }
-
                 return transformedTable;
             }
 
@@ -96,11 +146,15 @@ define(function(require) {
             }
 
             function all() {
-                return cache.all(_apiConfig());
+                return _transformCreatives(cache.all(_apiConfig()));
             }
 
             function observe(callback, $scope, preventImmediate) {
                 return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
+            }
+
+            function addData(newData) {
+                cache.addData(_apiConfig(), newData);
             }
 
             /**
@@ -117,6 +171,7 @@ define(function(require) {
                 _apiConfig: _apiConfig,
                 all: all,
                 data: data,
+                addData: addData,
                 observe: observe
             };
         }

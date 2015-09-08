@@ -34,4 +34,5 @@ define(function (require) {
     require('./creatives/directives/creativeOptions');
     require('./creatives/services/creatives');
     require('./creatives/services/newCreative');
+    require('./creatives/services/creative');
 });

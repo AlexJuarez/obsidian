@@ -12,8 +12,8 @@ define(function (require) {
     var app = require('./../module');
     var ng = require('angular');
 
-    app.controller('styleGuideCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'clientService', 'divisionService', 'campaignService', '$modal',
-    function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, clients, divisions, campaigns, $modal) {
+    app.controller('styleGuideCtrl', ['$scope', '$state', '$http', '$timeout', '$window', '$location', '$anchorScroll', 'clientService', 'divisionService', 'campaignService', '$modal', 'notification',
+    function ($scope, $state, $http, $timeout, $window, $location, $anchorScroll, clients, divisions, campaigns, $modal, notification) {
         $scope.navigation = [];
         $scope.state = '';
         $scope.sort = sort;
@@ -21,10 +21,13 @@ define(function (require) {
         $scope.scrollTo = scrollTo;
         $scope.navOpen = false;
         $scope.data = [];
+        $scope.creativePreview = 'Creative Preview Test';
         $scope.user = {
             name: '',
             email: 'invalid@e,'
         };
+
+        notification.warn('test', {});
 
         $scope.pacing = {
             max: 65600,

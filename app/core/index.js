@@ -5,6 +5,8 @@ define(function(require) {
     require('./datepicker/index');
     require('./navbar/index');
     require('./constants/apiURI');
+    require('./creativePreview/index');
+    require('./notifications/index');
 
     services();
     filters();
@@ -37,6 +39,8 @@ define(function(require) {
         require('./filters/errorCount');
         require('./filters/date');
         require('./filters/truncateNumber');
+        require('./filters/percentage');
+        require('./filters/adTypeOrder');
     }
 
     function services() {
