@@ -71,7 +71,7 @@ define(function (require) {
                             expandedWidth: data.expandedWidth,
                             deleted: data.deleted,
                             expandedHeight: data.expandedHeight,
-                            name: data.name,
+                            name: data.name + ' (copy)',
                             type: data.type,
                             keywords: data.keywords.join(','),
                             embedHeight: data.embedHeight,
