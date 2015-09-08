@@ -28,6 +28,7 @@ define(function (require) {
 
                     $element.on('click', function () {
                         $scope.clicked = true;
+                        creativeService.get($scope.id);
                     });
 
                     function documentClickHandler() {
@@ -46,7 +47,7 @@ define(function (require) {
                         $document.off('click', documentClickHandler);
                     });
 
-                    creativeService.observe(update, $scope);
+                    creativeService.observe(update, $scope, true);
 
                     var mixpoURL = getStudioUrl($window.location.hostname);
 
@@ -60,8 +61,10 @@ define(function (require) {
                         }
                     }
 
-                    function update() {
-                        $scope.creative = creativeService.get($scope.id);
+                    function update(id) {
+                        if(id === $scope.id) {
+                            $scope.creative = creativeService.get($scope.id);
+                        }
                     }
 
                     function previewInPage() {

@@ -44,7 +44,7 @@ define(function (require) {
                 notifyObservers();
             }
 
-            function addData(d) {
+            function addData(d, event) {
                 var uniqueSet = {};
                 var item, i;
 
@@ -64,7 +64,7 @@ define(function (require) {
 
                 data = sortFn(temp.concat(d));
                 filterDeleted();
-                notifyObservers();
+                notifyObservers(event);
             }
 
             function all() {
