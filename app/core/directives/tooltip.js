@@ -65,10 +65,6 @@ define(function (require) {
                 function toggleOpen() {
                     if (!scope.isOpen) {
                         $rootScope.$broadcast('tooltip:open', scope.$id);
-                        $timeout(function() {
-                            $document.on('click', documentClickHandler);
-                        }, 500);
-
                     }
 
                     scope.isOpen = !scope.isOpen;
