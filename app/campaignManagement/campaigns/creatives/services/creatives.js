@@ -13,7 +13,8 @@ define(function(require) {
                 'embedHeight', 'expandedWidth', 'expandedHeight',
                 'countPlacements',
                 'live', 'modifiedDate', 'thumbnailUrlPrefix'
-            ]
+            ],
+            limit: 500
         }
     };
 
