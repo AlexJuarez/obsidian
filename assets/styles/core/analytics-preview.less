@@ -1,15 +1,110 @@
+.displayFlex {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
 .analytics-preview {
-    div > h3 {
+
+    .ad-types.row {
+        .displayFlex();
+        .cell {
+            .displayFlex();
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+
+            -webkit-box-flex: 1;
+            -moz-box-flex: 1;
+            -webkit-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
+            .top {
+                -webkit-box-flex: 1;
+                -moz-box-flex: 1;
+                -webkit-flex: 1;
+                -ms-flex: 1;
+                flex: 1;
+
+                -webkit-flex-direction: column;
+                -ms-flex-direction: column;
+                flex-direction: column;
+
+                -ms-flex-preferred-size: auto; // Needed for IE10
+            }
+        }
+    }
+
+
+    h3 {
+        .font-size(2);
+        font-weight: normal;
+        font-family: 'Oswald', sans-serif;
+        margin-bottom: 1rem;
         margin-top: 0;
     }
-
-    .thin-header {
-        font-family: 'Lato', sans-serif;
+    h4 {
         .font-size(1.8);
+        font-family: 'Oswald', sans-serif;
+        color: @brand-color;
+        margin-bottom: 1rem;
+        margin-top: 0;
+
+    }
+    p {
+        margin-bottom: .5rem;
     }
 
-    .impressions {
-        font-family: 'Oswald', sans-serif;
-        font-size: 2.5rem;
+    .quartiles {
+        
+        &.row {
+            width: 100%;
+            margin-top: 1rem;
+            margin-left: -5px;
+            margin-right: -5px;    
+            .col-xs-3 {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+        }
+        
     }
+
+    // Clear every 5th col for desktop
+    @media (min-width: @screen-md-min) {
+        .col-md-4:nth-child(4n+1) {
+            clear: left;
+        }
+    }
+    // Clear every 4th col for medium screens
+    @media (max-width: @screen-md-min) {
+        .col-sm-4 {
+            margin-bottom: 2rem;
+        }
+        .col-sm-4:nth-child(3n+1) {
+            clear: left;
+        }
+    }
+    // Set border for each col on small screens
+    @media (max-width: @screen-sm-min) {
+        .ad-types.row {
+            display: inherit;
+            .cell {
+                display: inherit;
+                .top, .bottom {
+                    display: inherit;
+                }
+            }
+        }
+        .ad-types .col-xs-12 {
+            border: 1px solid @light-gray;
+            border-width: 0 0 1px;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+    }
+
+
 }

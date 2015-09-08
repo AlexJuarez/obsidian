@@ -1,0 +1,30 @@
+<h1 id="notifications">Notifications</h1>
+<hr />
+<p>
+    A notifications api exists, the module is named <code>notification</code> and provides the following functions.
+</p>
+<ul>
+    <li><code>warn(message, options)</code> - which broadcast notifications:warn</li>
+    <li><code>info(message, options)</code> - which broadcast notifications:info</li>
+    <li><code>success(message, options)</code> - which broadcast notifications:success</li>
+    <li><code>error(message, options)</code> - which broadcast notifications:error</li>
+    <li><code>dismissAll()</code> - which broadcast notifications:dismissAll</li>
+</ul>
+<h3>Options</h3>
+<p>All of the options have defaults, and do not need to be passed in</p>
+<div class="highlight" highlight>
+<pre><code class="javascript">
+{
+    timeout: 10, //a value in seconds - optional default 10
+    scope: $rootScope, //a scope to use in the notification, message will be on the scope
+    templateUrl: 'test.html', //an optional template to render
+    resolve: {
+        test: ['$q', function($q) {
+            var defer = $q.defer;
+            return defer.promise;
+        }]
+    }, //members that will be resolved and passed to the controller as locals
+    controller: 'testCtrl' //optional controller (a string or controller function)
+}
+</code></pre>
+</div>

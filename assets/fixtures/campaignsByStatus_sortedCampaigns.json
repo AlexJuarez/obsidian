@@ -19,6 +19,7 @@
             "budget": 0,
             "spend": 0
         },
+        "type": "",
         "start": "2015-04-27",
         "end": "2015-07-14",
         "placements": {
@@ -49,6 +50,7 @@
             "max": 0,
             "current": 1452404
         },
+        "type": "",
         "live": false,
         "budget": {
             "budget": 0,
@@ -85,6 +87,7 @@
             "current": 4437528
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -120,6 +123,7 @@
             "current": 2208215
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -155,6 +159,7 @@
             "current": 5239564
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -190,6 +195,7 @@
             "current": 3567814
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -225,6 +231,7 @@
             "current": 527867
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -260,6 +267,7 @@
             "current": 2074979
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -295,6 +303,7 @@
             "current": 1055740
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0
@@ -330,6 +339,7 @@
             "current": 471804
         },
         "live": false,
+        "type": "",
         "budget": {
             "budget": 0,
             "spend": 0

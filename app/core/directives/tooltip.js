@@ -14,15 +14,9 @@ define(function (require) {
 
     require('tpl!./tooltip.html');
 
-    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller) {
+    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', '$parse', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller, $parse) {
         return {
             restrict: 'A',
-            scope: {
-                isOpen: '=',
-                creativeData: '=',
-                current: '=tooltip',
-                calculateClass: '@'
-            },
             link: function (scope, elem, attr) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
@@ -30,9 +24,9 @@ define(function (require) {
                 scope.main = elem.html();
                 scope.isOpen = false;
                 scope.toggleOpen = toggleOpen;
-                scope.removeDocHandler = removeDocHandler;
 
-                
+                //parse the value within the current scope and set it = to the scope for main
+                scope.tooltipScope = attr.tooltipScope && $parse(attr.tooltipScope)(scope) || scope;
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
@@ -49,9 +43,9 @@ define(function (require) {
                         isBasicTooltip = false;
 
                         if (scope.creativeData) {
-                            scope.name = scope.creativeData.name;    
+                            scope.name = scope.creativeData.name;
                         }
-                        
+
                         if (attr.tooltipController) {
                             var customController = attr.tooltipController;
                             $controller(customController, { $scope: scope });
@@ -64,23 +58,9 @@ define(function (require) {
 
                 function close() {
                     scope.isOpen = false;
-                    scope.removeDocHandler();
-                    
+
                 }
                 scope.close = close;
-
-                function removeDocHandler() {
-                    $document.off('click', documentClickHandler);
-                }
-
-                function documentClickHandler(e) {
-                    if (elem !== e.target && !elem[0].contains(e.target) && scope.isOpen) {
-                        scope.$apply(function() {
-                            scope.isOpen = false;
-                            scope.removeDocHandler();
-                        });
-                    }
-                }
 
                 function toggleOpen() {
                     if (!scope.isOpen) {
@@ -88,17 +68,11 @@ define(function (require) {
                         $timeout(function() {
                             $document.on('click', documentClickHandler);
                         }, 500);
-                        
+
                     }
 
                     scope.isOpen = !scope.isOpen;
                 }
-
-                $rootScope.$on('tooltip:open', function(id) {
-                    if (id !== scope.$id) {
-                        close();
-                    }
-                });
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {

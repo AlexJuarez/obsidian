@@ -16,7 +16,8 @@ define(function (require) {
                         templateUrl: 'analytics/clients/index.summary.html'
                     },
                     'content': {
-                        templateUrl: 'analytics/clients/index.content.html'
+                        templateUrl: 'analytics/clients/index.content.html',
+                        controller: 'clientCtrl'
                     }
                 }
             });
