@@ -21,12 +21,11 @@ define(function (require) {
                 'video75',
                 'video100',
                 'averagePercentComplete'
-                
+
             ]
         }
     };
 
-    var previewModals = {};
     var settingsModals = {};
 
     module.service('campaignModal', ['$modal', '$state', 'cacheFactory', function ($modal, $state, cacheFactory) {
@@ -48,60 +47,24 @@ define(function (require) {
             return config;
         }
 
-        var creativeData = [
-            {
-                metrics: {
-                    placements: 0,
-                    impressions: 0,
-                    viewRate: 0,
-                    useractionRate: 0,
-                    clickthroughRate: 0,
-                    averagePercentComplete: 0
-                }
-            }
-        ];
-
         function preview(id, row) {
 
-            var creativeSetData = cache.get(getApiConfig(id), true);
-
-            creativeSetData.observe(function() {
-                creativeData = creativeSetData.all();
-
-                var modalSize;
-                if (creativeData.length <= 1) {
-                    modalSize = 'sm';
-                    
-                } else if (creativeData.length <= 2) {
-                    modalSize = 'md';
-                    
-                } else {
-                    modalSize = 'lg';
-                }
-                
-                if (!previewModals[id]) {
-                    previewModals[id] = {
-                        id: id,
-                        name: row.campaign.name,
-                        impressions: row.impressions.current,
-                        creativeData: creativeData
-                    };
-                }
-
-                $modal.open({
-                    animation: 'true',
-                    templateUrl: 'campaignManagement/campaigns/analytics-preview.html',
-                    controller: 'analyticsPreviewCtrl',
-                    resolve: {
-                        modalState: function() {
-                            return previewModals[id];
-                        }
-                    },
-                    size: modalSize
-                });
-
-            }, undefined, true);
-
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/analytics-preview.html',
+                controller: 'analyticsPreviewCtrl',
+                resolve: {
+                    modalState: function() {
+                        return {
+                            id: id,
+                            name: row.campaign.name,
+                            impressions: row.impressions.current,
+                            data: cache.get(getApiConfig(id), true)
+                        };
+                    }
+                },
+                size: 'lg'
+            });
 
         }
 

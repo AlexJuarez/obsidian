@@ -5,12 +5,16 @@ define(function (require) {
     require('tpl!./../analytics-preview.html');
 
     app.controller('analyticsPreviewCtrl', ['$scope', '$modalInstance', '$timeout', 'modalState', function ($scope, $modalInstance, $timeout, modalState) {
-        
+
         $scope.name =               modalState.name;
         $scope.impressions =        modalState.impressions;
-        $scope.creativeData =       modalState.creativeData;
         $scope.cancel =             cancel;
 
+        modalState.data.observe(update, $scope);
+
+        function update(){
+            $scope.creativeData = modalState.data.all();
+        }
 
         // Adjust bootstrap classes based on # of ad types returned
         if ($scope.creativeData.length <= 1) {
@@ -24,7 +28,7 @@ define(function (require) {
             $scope.colClasses = 'col-xs-12 col-sm-6 col-md-4';
         } else {
             // set to x-large colClasses
-            $scope.colClasses = 'col-xs-12 col-sm-6 col-md-3';    
+            $scope.colClasses = 'col-xs-12 col-sm-6 col-md-3';
         }
 
 
