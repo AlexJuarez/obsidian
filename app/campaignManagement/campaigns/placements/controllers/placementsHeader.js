@@ -175,18 +175,13 @@ define(function(require) {
                 $q.all(placementPromises).then(function(placements) {
                     placements.forEach(function(placement) {
                         placement = placement.all();
-                        var tagTemplate = getPlacementTagTemplate(placement);
-                        if (tagTemplate) {
-
-                            // Interpolate in "all-or-nothing" mode to avoid missing variables
-                            var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
-                            tags += placement.name + '\n--------------------\n';
-                            tags += adTag(getPlacementInterpolateObject(placement, tagTemplate));
-                            tags += '\n\n';
-                        }
+                        tags += getPlacementTagText(placement);
                     });
 
-                    download('Ad_Tags.txt', tags);
+                    if (placements.length > 0) {
+                        var firstPlacementName = placements[0].all().name;
+                        download(firstPlacementName + '_tags.txt', tags);
+                    }
                 });
             }
 
@@ -214,6 +209,27 @@ define(function(require) {
                     clicktag: adTagType.attributes.clicktag,
                     folder: placement.targetId.slice(0, 2) // The first 2 letters of the id
                 };
+            }
+
+            function getPlacementTagText(placement) {
+                var tagTemplate = getPlacementTagTemplate(placement);
+                if (tagTemplate) {
+                    // Interpolate in "all-or-nothing" mode to avoid missing variables
+                    var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
+                    var tag = '';
+
+                    tag += 'Title: ' + placement.name + '\n';
+                    tag += 'Identifier: ' + placement.id + '\n';
+                    tag += 'Primary URL: ' + placement.clickthroughUrl + '\n';
+                    tag += 'Play Mode: ' + placement.playMode + '\n';
+                    tag += 'Ad Tag: \n';
+                    tag += adTag(getPlacementInterpolateObject(placement, tagTemplate));
+                    tag += '\n\n---\n\n';
+
+                    return tag;
+                } else {
+                    return '';
+                }
             }
 
             function download(filename, text) {

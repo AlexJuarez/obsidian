@@ -17,8 +17,7 @@ define(function (require) {
             function init(config, transform) {
                 var url = apiUriGenerator(config);
                 if (!url) {
-                    throw new Error('Malformed API URI object')
-                        ;
+                    throw new Error('Malformed API URI object');
                 }
 
                 var deferred = $q.defer();
