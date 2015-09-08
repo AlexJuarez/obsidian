@@ -10,7 +10,7 @@ define(function (require) {
         }
 
         function date(input) { // input: 2015-04-01T12:00:00Z -> Longdate: April 1, 2015
-            return $filter('date')(input, 'longDate');
+            return $filter('date')(input, 'M/d/yyyy');
         }
 
         return function (input, row, rules) {
@@ -29,8 +29,10 @@ define(function (require) {
                 }).join(' ');
             case 'date':
                 return date(data);
+            case 'status':
+                return '<span class="glyph-dot" ng-class="\'success\' ? \'pending\': row.' + input + '"></span>';
             case 'bullet':
-                return '<div pacing-chart="row.' + input + '" class="meter-wrapper meter-sm"></div>';
+                return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
             case 'creatives':

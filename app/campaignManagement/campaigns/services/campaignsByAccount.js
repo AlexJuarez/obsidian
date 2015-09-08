@@ -9,7 +9,9 @@ define(function (require) {
         queryParams: {
             dimensions: [
                 'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
-                'account.name'
+                'account.name', 'live', 'spend', 'anyPlacementsInBanner',
+                'anyPlacementsDisplay', 'anyPlacementsInStream',
+                'anyPlacementsRichMedia'
             ],
             metrics: [
                 'countPlacements', 'countCreatives', 'impressions',
@@ -36,19 +38,23 @@ define(function (require) {
     var rules = {
         'campaign': 'link',
         'status': '',
+        'live': 'status',
+        'budget': 'budget',
         'impressions': 'bullet',
         'start': 'date',
         'end': 'date',
-        'placements': 'number',
-        'creatives': 'number',
+        'placements': 'link',
+        'creatives': 'link',
         'edit': ''
     };
 
     var headers = [
         {name: 'Campaign', id: 'campaign'},
-        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Delivering', id: 'live'},
         {name: 'Start', id: 'start'},
         {name: 'End', id: 'end'},
+        {name: 'Impressions & Pacing', id: 'impressions'},
+        {name: 'Budget', id: 'budget'},
         {name: 'Placements', id: 'placements'},
         {name: 'Creatives', id: 'creatives'},
         {name: '', id: 'edit'}
@@ -71,7 +77,7 @@ define(function (require) {
         //}, undefined, true);
 
         function getHeaderApiConfig() {
-            var accountConfig = ng.extend({}, headerApiConfig);
+            var accountConfig = ng.copy(headerApiConfig);
             accountConfig.queryParams.filters = campaignsFilter();
             return accountConfig;
         }
@@ -84,7 +90,7 @@ define(function (require) {
                 opt = 'account.id:eq:' + accountIds.join(':eq:');
             }
 
-            var filteredConfig = ng.extend({}, campaignsApiConfig);
+            var filteredConfig = ng.copy(campaignsApiConfig);
             filteredConfig.queryParams.filters = campaignsFilter(opt);
             return filteredConfig;
         }
@@ -100,6 +106,7 @@ define(function (require) {
         function getAccountIds() {
             var campaignHeader = cache.get(getHeaderApiConfig(), headerTransform);
             var accounts = campaignHeader.all();
+
             var ids = [];
 
             for (var i = 0; i < accounts.length; i++) {
@@ -109,12 +116,24 @@ define(function (require) {
             return ids;
         }
 
-        function groupByAccount() {
-            var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
+        function filtered(result) {
+            if (filter.all().length) {
+                var filters = filter.all()[0];
+                if(filters._type === 'campaign') {
+                    return result.id === filters.id;
+                } else {
+                    return result.account.id === filters.id;
+                }
+            }
 
+            return true;
+        }
+
+        function groupByAccount() {
+            var settings = getCampaignsApiConfig();
+            var campaignCache = cache.get(settings, campaignTransform);
             var accounts = {};
             var campaigns = campaignCache.filtered(filtered);
-
 
             for (var i = 0; i < campaigns.length; i++) {
                 var campaign = campaigns[i];
@@ -149,7 +168,7 @@ define(function (require) {
                 for (var i = 0; i < campaigns.length && i < limit; i++) {
                     campaign = campaigns[i];
 
-                    output.push(ng.extend({
+                    output.push({
                         campaign: {
                             id: campaign.id,
                             route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
@@ -159,28 +178,27 @@ define(function (require) {
                             max: campaign.metrics.bookedImpressions,
                             current: campaign.metrics.impressions
                         },
+                        live: campaign.live,
+                        budget: {
+                            budget: campaign.budget,
+                            spend: campaign.spend
+                        },
+                        type: campaign.type,
                         start: campaign.startDate,
                         end: campaign.endDate,
-                        creatives: campaign.metrics.countCreatives,
-                        placements: campaign.metrics.countPlacements
-                    }));
+                        placements: {
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.id })',
+                            name: campaign.metrics.countPlacements
+                        },
+                        creatives: {
+                            route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            name: campaign.metrics.countCreatives
+                        }
+                    });
                 }
 
                 return output;
             }
-        }
-
-        function filtered(result) {
-            if (filter.all().length) {
-                var filters = filter.all()[0];
-                if(filters._type === 'campaign') {
-                    return result.id === filters.id;
-                } else {
-                    return result.account.id === filters.id;
-                }
-            }
-
-            return true;
         }
 
         function setFilter(result) {
@@ -203,10 +221,21 @@ define(function (require) {
             };
         }
 
-        function all() {
+        function all(options) {
+            options = options || {};
             var accountInfo = cache.get(getHeaderApiConfig(), headerTransform).all();
             var accounts = groupByAccount();
             var output = [];
+            var headerConf = ng.copy(headers);
+            var ruleConf = ng.copy(rules);
+
+            if (options.type) {
+                headerConf.push({
+                    name: 'Type',
+                    id: 'type'
+                });
+                ruleConf.type = '';
+            }
 
             for (var i = 0; i < accountInfo.length; i++) {
                 var account = accountInfo[i];
@@ -216,8 +245,8 @@ define(function (require) {
                         more: showMore(account.id)
                     },
                     content: {
-                        rules: rules,
-                        headers: headers,
+                        rules: ruleConf,
+                        headers: headerConf,
                         data: transformRows(accounts[account.id], account.id)
                     }
                 });
@@ -233,8 +262,8 @@ define(function (require) {
             campaignHeader.observe(callback, $scope, preventImmediate);
             campaignHeader.observe(function() {
                 var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
-                campaignCache.observe(callback, $scope);
-            }, $scope, true);
+                campaignCache.observe(callback, $scope, true);
+            }, $scope, preventImmediate);
         }
 
         return {

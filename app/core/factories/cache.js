@@ -30,6 +30,11 @@ define(function (require) {
                 return get(uriConfig, true).all();
             }
 
+            function exists(uriConfig) {
+                var url = apiUriGenerator(uriConfig);
+                return typeof cache[url] !== 'undefined';
+            }
+
             function observe(uriConfig, callback, $scope, preventImmediate) {
                 get(uriConfig, true).observe(callback, $scope, preventImmediate);
             }
@@ -37,6 +42,7 @@ define(function (require) {
             return {
                 get: get,
                 all: all,
+                exists: exists,
                 observe: observe
             };
         };

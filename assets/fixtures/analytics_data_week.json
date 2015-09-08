@@ -1,0 +1,178 @@
+[
+    {
+        "metrics": {
+            "userAction": 727,
+            "view": 53210,
+            "videoSeconds": 1354104,
+            "impression": 258248,
+            "clickthrough": 562,
+            "averagePercentComplete": 0.78387521142642360459
+        },
+        "weekStarting": "2015-04-27"
+    },
+    {
+        "metrics": {
+            "userAction": 1921,
+            "view": 149062,
+            "videoSeconds": 3531829,
+            "impression": 225397,
+            "clickthrough": 693,
+            "averagePercentComplete": 0.68756624760166910413
+        },
+        "weekStarting": "2015-05-04"
+    },
+    {
+        "metrics": {
+            "userAction": 1907,
+            "view": 146681,
+            "videoSeconds": 3327288,
+            "impression": 234975,
+            "clickthrough": 817,
+            "averagePercentComplete": 0.64803212413332333431
+        },
+        "weekStarting": "2015-05-11"
+    },
+    {
+        "metrics": {
+            "userAction": 1862,
+            "view": 141511,
+            "videoSeconds": 3240708,
+            "impression": 264930,
+            "clickthrough": 609,
+            "averagePercentComplete": 0.61588145091194324116
+        },
+        "weekStarting": "2015-05-18"
+    },
+    {
+        "metrics": {
+            "userAction": 1515,
+            "view": 165415,
+            "videoSeconds": 3740035,
+            "impression": 361607,
+            "clickthrough": 725,
+            "averagePercentComplete": 0.61657044403470060152
+        },
+        "weekStarting": "2015-05-25"
+    },
+    {
+        "metrics": {
+            "userAction": 1260,
+            "view": 89617,
+            "videoSeconds": 1148560,
+            "impression": 252869,
+            "clickthrough": 413,
+            "averagePercentComplete": 0.31177120412421750338
+        },
+        "weekStarting": "2015-06-01"
+    },
+    {
+        "metrics": {
+            "userAction": 1558,
+            "view": 62564,
+            "videoSeconds": 1225876,
+            "impression": 214743,
+            "clickthrough": 506,
+            "averagePercentComplete": 0.54793491464740106131
+        },
+        "weekStarting": "2015-06-08"
+    },
+    {
+        "metrics": {
+            "userAction": 1797,
+            "view": 83032,
+            "videoSeconds": 1659006,
+            "impression": 111941,
+            "clickthrough": 470,
+            "averagePercentComplete": 0.57321273725792465555
+        },
+        "weekStarting": "2015-06-15"
+    },
+    {
+        "metrics": {
+            "userAction": 2377,
+            "view": 105323,
+            "videoSeconds": 1533024,
+            "impression": 681627,
+            "clickthrough": 1235,
+            "averagePercentComplete": 0.44080590184480123050
+        },
+        "weekStarting": "2015-06-22"
+    },
+    {
+        "metrics": {
+            "userAction": 4664,
+            "view": 90832,
+            "videoSeconds": 2072915,
+            "impression": 606519,
+            "clickthrough": 3077,
+            "averagePercentComplete": 0.68397701250660560155
+        },
+        "weekStarting": "2015-06-29"
+    },
+    {
+        "metrics": {
+            "userAction": 3536,
+            "view": 97361,
+            "videoSeconds": 2267033,
+            "impression": 156742,
+            "clickthrough": 2204,
+            "averagePercentComplete": 0.69686013907005885313
+        },
+        "weekStarting": "2015-07-06"
+    },
+    {
+        "metrics": {
+            "userAction": 5526,
+            "view": 93142,
+            "videoSeconds": 2133362,
+            "impression": 308966,
+            "clickthrough": 1945,
+            "averagePercentComplete": 0.67676236284382985119
+        },
+        "weekStarting": "2015-07-13"
+    },
+    {
+        "metrics": {
+            "userAction": 5754,
+            "view": 112156,
+            "videoSeconds": 2479860,
+            "impression": 573729,
+            "clickthrough": 2174,
+            "averagePercentComplete": 0.64972894896394307928
+        },
+        "weekStarting": "2015-07-20"
+    },
+    {
+        "metrics": {
+            "userAction": 11286,
+            "view": 202249,
+            "videoSeconds": 4806803,
+            "impression": 562182,
+            "clickthrough": 5788,
+            "averagePercentComplete": 0.68591686485470879955
+        },
+        "weekStarting": "2015-07-27"
+    },
+    {
+        "metrics": {
+            "userAction": 5537,
+            "view": 3667,
+            "videoSeconds": 38201,
+            "impression": 407636,
+            "clickthrough": 880,
+            "averagePercentComplete": 0.29370057267521134442
+        },
+        "weekStarting": "2015-08-03"
+    },
+    {
+        "metrics": {
+            "userAction": 2306,
+            "view": 1729,
+            "videoSeconds": 20223,
+            "impression": 119821,
+            "clickthrough": 411,
+            "averagePercentComplete": 0.30017351069982648930
+        },
+        "weekStarting": "2015-08-10"
+    }
+]

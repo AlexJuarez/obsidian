@@ -8,7 +8,7 @@ define(function (require) {
 	app.directive('pacingChart', ['$timeout', function () {
 		return {
 			restrict: 'A',
-			templateUrl: 'core/directives/pacingChart.html',
+			templateUrl: 'chart/directives/pacingChart.html',
 			link: function (scope, elem, attr) {
                 var key = attr.pacingChart;
 
