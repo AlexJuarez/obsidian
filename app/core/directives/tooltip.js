@@ -14,7 +14,7 @@ define(function (require) {
 
     require('tpl!./tooltip.html');
 
-    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$timeout', '$controller', '$parse', function ($templateCache, $rootScope, $compile, $timeout, $controller, $parse) {
+    app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', '$parse', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller, $parse) {
         return {
             restrict: 'A',
             link: function (scope, elem, attr) {
