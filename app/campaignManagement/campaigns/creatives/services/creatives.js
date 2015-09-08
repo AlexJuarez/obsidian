@@ -35,7 +35,7 @@ define(function(require) {
         {name: 'Type', id: 'type'},
         {name: 'Dimensions', id: 'dimensions'},
         {name: 'Expandable', id: 'expandedDimensions'},
-        {name: 'No. Placements', id: 'countPlacements'},
+        {name: 'No. Placements', id: 'numPlacements'},
         {name: '', id: 'options'}
     ];
 

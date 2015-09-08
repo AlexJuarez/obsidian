@@ -25,11 +25,8 @@ define(function (require) {
                 scope.isOpen = false;
                 scope.toggleOpen = toggleOpen;
 
-                scope.removeDocHandler = removeDocHandler;
-
                 //parse the value within the current scope and set it = to the scope for main
                 scope.tooltipScope = attr.tooltipScope && $parse(attr.tooltipScope)(scope) || scope;
-
 
                 var tooltip = attr.tooltip;
                 var overflow = attr.tooltipOverflow;
@@ -61,23 +58,9 @@ define(function (require) {
 
                 function close() {
                     scope.isOpen = false;
-                    scope.removeDocHandler();
 
                 }
                 scope.close = close;
-
-                function removeDocHandler() {
-                    $document.off('click', documentClickHandler);
-                }
-
-                function documentClickHandler(e) {
-                    if (elem !== e.target && !elem[0].contains(e.target) && scope.isOpen) {
-                        scope.$apply(function() {
-                            scope.isOpen = false;
-                            scope.removeDocHandler();
-                        });
-                    }
-                }
 
                 function toggleOpen() {
                     if (!scope.isOpen) {
@@ -90,12 +73,6 @@ define(function (require) {
 
                     scope.isOpen = !scope.isOpen;
                 }
-
-                $rootScope.$on('tooltip:open', function(id) {
-                    if (id !== scope.$id) {
-                        close();
-                    }
-                });
 
                 function calculateClass(dims) {
                     ng.forEach(directionClasses, function (c) {
