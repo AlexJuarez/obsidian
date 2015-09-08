@@ -15,6 +15,11 @@ define(function (require) {
         $scope.format = 'MM/dd/yyyy';
         $scope.openPicker = openPicker;
         $scope.datePickers = {};
+        $scope.dateOptions = {
+            formatYear: 'yy',
+            startingDay: 0,
+            maxMode: 'day'
+        };
 
         //Modal functions
         $scope.ok = ok;
@@ -46,12 +51,6 @@ define(function (require) {
 
             $scope.campaign = ng.copy(modalState.campaign || originalCampaign);
         }
-
-        $scope.dateOptions = {
-            formatYear: 'yy',
-            startingDay: 0,
-            maxMode: 'day'
-        };
 
         accounts.observe(updateAccounts, $scope);
 

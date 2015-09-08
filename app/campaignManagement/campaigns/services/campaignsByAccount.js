@@ -62,8 +62,19 @@ define(function (require) {
 
     var limits = {};
 
-    module.service('campaignsByAccount', ['campaignCache', 'campaignsFilter', '$interpolate', 'dataFactory', function (cache, campaignsFilter, $interpolate, dataFactory) {
+    module.service('campaignsByAccount', [
+        'campaignCache', 'accountRecordService', 'campaignsFilter', '$interpolate', 'dataFactory',
+        function (cache, accountRecordService, campaignsFilter, $interpolate, dataFactory) {
         var filter = dataFactory();
+
+        //accountRecordService.observe(function(newUpdatedRecord) {
+        //    var campaignCache = cache.get(getCampaignsApiConfig(), campaignTransform);
+        //    //console.log(newUpdatedRecord, campaignCache);
+        //    campaignCache.observe(function() {
+        //        var big = campaignCache.all();
+        //        debugger;
+        //    }, undefined, true);
+        //}, undefined, true);
 
         function getHeaderApiConfig() {
             var accountConfig = ng.copy(headerApiConfig);

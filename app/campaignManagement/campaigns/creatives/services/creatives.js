@@ -12,9 +12,9 @@ define(function(require) {
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight',
                 'countPlacements',
-                'live', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
+                'live', 'modifiedDate', 'thumbnailUrlPrefix'
             ],
-            limit: 100
+            limit: 500
         }
     };
 
@@ -118,7 +118,7 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaign.id,
+                        campaignId: creative.campaignId,
                         numPlacements: {
                             name: creative.countPlacements || 0,
                             route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
