@@ -19,7 +19,6 @@ define(function (require) {
             expect(newCreative).not.toEqual(null);
         });
 
-
         it ('should test receive the fulfilled promise', function() {
             var creative = {
                 type: 'IMG',
@@ -37,7 +36,6 @@ define(function (require) {
             scope.$digest();
             expect(handler).toHaveBeenCalledWith(calledUrl);
         });
-
     });
 });
 

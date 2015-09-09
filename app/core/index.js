@@ -8,6 +8,7 @@ define(function(require) {
     require('./creativePreview/index');
     require('./notifications/index');
 
+    utilities();
     services();
     filters();
     directives();
@@ -60,4 +61,7 @@ define(function(require) {
         require('./services/apiURIGenerator');
     }
 
+    function utilities() {
+        require('./utils/getStudioPath');
+    }
 });

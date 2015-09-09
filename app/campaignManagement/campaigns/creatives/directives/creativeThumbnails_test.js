@@ -69,19 +69,6 @@ define(function (require) {
 
                 expect(scope.creatives).toEqual(expected);
             });
-
-            it('should return the proper studio URL', function() {
-                var thumbnails = createThumbnails();
-                var hostname;
-                hostname = 'thorwhal-studio.mixpo.com';
-                expect(thumbnails.getStudioUrl(hostname)).toEqual('//thorwhal-studio.mixpo.com');
-                hostname = 'thorwhal.mixpo.com';
-                expect(thumbnails.getStudioUrl(hostname)).toEqual('//thorwhal-studio.mixpo.com');
-                hostname = 'studio.mixpo.com';
-                expect(thumbnails.getStudioUrl(hostname)).toEqual('//studio.mixpo.com');
-                hostname = 'other.com';
-                expect(thumbnails.getStudioUrl(hostname)).toEqual('//studio.mixpo.com');
-            });
         });
     });
 });

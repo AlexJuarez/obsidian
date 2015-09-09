@@ -14,10 +14,6 @@ define(function (require) {
             });
         });
 
-        afterEach(function () {
-            sdAdapter = null;
-        });
-
         it('should be an instance of sdAdapter', function () {
             expect(sdAdapter).not.toEqual(null);
         });
