@@ -12,8 +12,8 @@ define(function (require) {
             scope: {
                 id: '@creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioUrl',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioUrl) {
                     var htmlContent = ng.element('<div>' + $element.html() + '</div>');
 
                     $scope.isOpen = false;
@@ -49,17 +49,7 @@ define(function (require) {
 
                     creativeService.observe(update, $scope, true);
 
-                    var mixpoURL = getStudioUrl($window.location.hostname);
-
-                    function getStudioUrl(domain) {
-                        if (domain.indexOf('studio') > -1) {
-                            return '//' + domain;
-                        } else if (domain.indexOf('mixpo.com') > -1) {
-                            return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
-                        } else {
-                            return '//studio.mixpo.com';
-                        }
-                    }
+                    var mixpoURL = studioUrl();
 
                     function update(id) {
                         if(id === $scope.id) {

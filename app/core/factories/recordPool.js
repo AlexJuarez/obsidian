@@ -76,7 +76,6 @@ define(function (require) {
             }
 
             function notifyObservers(event) {
-
                 for (var x in observers) {
                     observers[x](event);
                 }
@@ -89,6 +88,7 @@ define(function (require) {
             return {
                 _records: records,
                 getById: getById,
+                notifyObservers: notifyObservers,
                 update: update,
                 delete: _delete,
                 create: create,

@@ -58,6 +58,7 @@ define(function(require) {
         require('./services/clientSet');
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
+        require('./services/studioUrl');
     }
 
 });

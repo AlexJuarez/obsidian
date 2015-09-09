@@ -35,8 +35,8 @@ define(function (require) {
                 return typeof cache[url] !== 'undefined';
             }
 
-            function observe(uriConfig, callback, $scope, preventImmediate) {
-                get(uriConfig, true).observe(callback, $scope, preventImmediate);
+            function observe(uriConfig, callback, $scope, preventImmediate, preventInit) {
+                get(uriConfig, !preventInit).observe(callback, $scope, preventImmediate);
             }
 
             function addData(uriConfig, newData) {
