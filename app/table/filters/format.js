@@ -22,7 +22,7 @@ define(function (require) {
             case 'percent':
                 return percent(data);
             case 'icons':
-                return '<div data-id="row.id" data-object="row" table-icons="row.' + input + '"></div>';
+                return '<div class="nowrap" data-id="row.id" data-object="row" table-icons="row.' + input + '"></div>';
             case 'quartile':
                 return data.map(function (d) {
                     return percent(d);
@@ -30,7 +30,7 @@ define(function (require) {
             case 'date':
                 return date(data);
             case 'status':
-                return '<span class="glyph-dot" ng-class="\'success\' ? \'pending\': row.' + input + '"></span>';
+                return '<span class="glyph-dot" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':
                 return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
