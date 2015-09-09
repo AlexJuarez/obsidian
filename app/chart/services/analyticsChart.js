@@ -48,6 +48,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: _apiConfig,
             get: get,
             exists: exists
         };
