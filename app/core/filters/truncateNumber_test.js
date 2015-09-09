@@ -14,6 +14,11 @@ define(function (require) {
             });
         });
 
+        it('should return zero if non-number.', function () {
+            expect(filter(true)).toEqual(0);
+            expect(filter({})).toEqual(0);
+        });
+
         it('should not trunc.', function () {
             expect(filter(345)).toEqual(345);
             expect(filter(0)).toEqual(0);
