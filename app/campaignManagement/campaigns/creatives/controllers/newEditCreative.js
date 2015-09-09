@@ -4,7 +4,9 @@ define(function (require) {
     var app = require('./../../../module');
     var ng = require('angular');
 
-    app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState) {
+    app.controller('newEditCreativeCtrl',
+        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
+            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
 
         //Modal functions
         $scope.ok = undefined;
@@ -215,10 +217,11 @@ define(function (require) {
                             $modalInstance.dismiss('cancel');
                         }
                     } else {
-                        // debugger;
-                        newCreativeService(transformedCreative);//.then()
-                        // TODO: wait for promise from newCreativeService, then do something
-                        //creativeRecordService.create($scope.creative).then(onSuccess);
+                        newCreativeService(transformedCreative)
+                            .then(function(url) {
+                                onSuccess();
+                                $window.open(url, '_blank');
+                            });
                     }
                 }
                 $scope.submitted = true;
