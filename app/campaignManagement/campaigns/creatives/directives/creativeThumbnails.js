@@ -12,9 +12,10 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $location, $state, $rootScope, $filter, creatives, creativeRecordService) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService) {
 
                 var filter = $state.params.filter;
+                var editCreativeModals = {};
                 var mixpoURL = getStudioUrl($window.location.hostname);
 
                 // For testing purposes
@@ -38,7 +39,24 @@ define(function (require) {
                 };
 
                 $scope.openSettings = function(id) {
-                    console.log( 'thumbnail directive: open settings ' + id );
+                    if (!editCreativeModals[id]) {
+                        editCreativeModals[id] = {
+                            creativeId: id,
+                            action: 'Edit'
+                        };
+                    }
+
+                    $modal.open({
+                        animation: 'true',
+                        templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
+                        controller: 'newEditCreativeCtrl',
+                        resolve: {
+                            modalState: function() {
+                                return editCreativeModals[id];
+                            }
+                        },
+                        size: 'lg'
+                    });
                 };
 
                 $scope.gotoPlacements = function(creative) {

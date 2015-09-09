@@ -5,11 +5,11 @@ define(function (require) {
 
     var apiConfig = {
         version: 'crud',
-        endpoint: 'accounts'
+        endpoint: 'accounts/{id}'
     };
 
 
-    module.service('accountRecordService', ['recordPoolFactory', '$q', function (recordPoolFactory) {
+    module.service('accountRecordService', ['recordPoolFactory', function (recordPoolFactory) {
         return recordPoolFactory(apiConfig);
     }]);
 });
