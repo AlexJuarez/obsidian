@@ -52,7 +52,7 @@ define(function(require) {
         });
 
         function setUpTests() {
-            var apiConfigWithPagination = ng.extend({}, apiConfig);
+            var apiConfigWithPagination = ng.copy(apiConfig);
             apiConfigWithPagination.queryParams.offset = 0;
             apiConfigWithPagination.queryParams.limit = 10;
 

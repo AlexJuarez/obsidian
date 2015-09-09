@@ -17,7 +17,7 @@ define(function (require) {
         };
 
         function getPaginatedApiConfig(config) {
-            var newConfig = ng.extend({}, config);
+            var newConfig = ng.copy(config);
             newConfig.queryParams.offset = 0;
             newConfig.queryParams.limit = 10;
 
@@ -53,7 +53,7 @@ define(function (require) {
 
             expect(pg._buildConfig(apiConfig, limit, offset)).toEqual(getPaginatedApiConfig(apiConfig));
 
-            var newApiConfig = ng.extend({}, apiConfig);
+            var newApiConfig = ng.copy(apiConfig);
             newApiConfig.dimensions = ['different', 'dimensions'];
 
             expect(pg._buildConfig(newApiConfig, limit, offset)).toEqual(getPaginatedApiConfig(newApiConfig));
@@ -88,7 +88,7 @@ define(function (require) {
 
             it('should return with the new limit', function () {
                 var pg = pagination();
-                var newLimitConfig = ng.extend({}, apiConfig);
+                var newLimitConfig = ng.copy(apiConfig);
                 newLimitConfig.queryParams.limit = 20;
                 newLimitConfig.queryParams.offset = 0;
                 httpBackend.when('GET', apiGenerator(newLimitConfig))
@@ -105,7 +105,7 @@ define(function (require) {
             httpBackend.when('GET', getPaginatedApiUri(apiConfig))
                 .respond([]);
 
-            var nextPageConfig = ng.extend({}, apiConfig);
+            var nextPageConfig = ng.copy(apiConfig);
             nextPageConfig.queryParams.offset = 10;
             httpBackend.when('GET', apiGenerator(nextPageConfig))
                 .respond([1]);

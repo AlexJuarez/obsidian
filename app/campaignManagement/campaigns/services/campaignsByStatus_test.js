@@ -52,7 +52,7 @@ define(function (require) {
         }
 
         function getPaginatedApiConfig(config, filter) {
-            var newConfig = ng.extend({}, config);
+            var newConfig = ng.copy(config);
             newConfig.queryParams.limit = 10;
             newConfig.queryParams.offset = 0;
             newConfig.queryParams.filters = [filter];

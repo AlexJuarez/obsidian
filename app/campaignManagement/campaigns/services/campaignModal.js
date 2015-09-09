@@ -37,7 +37,7 @@ define(function (require) {
         });
 
         function filter(config, id) {
-            var newConfig = ng.extend({}, config);
+            var newConfig = ng.copy(config);
             newConfig.queryParams.filters = ['campaign.id:' + id];
             return newConfig;
         }
