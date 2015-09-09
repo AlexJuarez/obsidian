@@ -13,19 +13,27 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', function($httpParamSerializer, $q, studioDirectAdapter) {
-        function getStudioDirectUrl(protocol, subdomain, params) {
-            return protocol + '//' + subdomain + '-studio.mixpo.com/studio?' + $httpParamSerializer(params);
+    module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', '$location', function($httpParamSerializer, $q, studioDirectAdapter, $location) {
+        // For testing purposes
+        function getStudioUrl(domain) {
+            if (domain.indexOf('studio') > -1) {
+                return '//' + domain;
+            } else if (domain.indexOf('mixpo.com') > -1) {
+                return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
+            } else {
+                return '//studio.mixpo.com';
+            }
+        }
+
+        function createStudioDirectUrl(creative) {
+            var studioDirectUrl = getStudioUrl($location.absUrl()) + '/studio';
+            var params = studioDirectAdapter(creative);
+            return studioDirectUrl + '?' + $httpParamSerializer(params);
         }
 
         return function(creative) {
             var deferred = $q.defer();
-
-            var protocol = 'https:'; // Todo: get protocol for studio
-            var subdomain = 'staging'; // Todo: get environment subdomain
-            var params = studioDirectAdapter(creative);
-            var url = getStudioDirectUrl(protocol, subdomain, params);
-
+            var url = createStudioDirectUrl(creative);
             deferred.resolve(url);
             return deferred.promise;
         };
