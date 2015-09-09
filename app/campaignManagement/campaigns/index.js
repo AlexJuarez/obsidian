@@ -5,6 +5,7 @@ define(function (require) {
     controllers();
     directives();
     factories();
+    filters();
 
     function services() {
         require('./services/campaignCache');
@@ -13,6 +14,7 @@ define(function (require) {
         require('./services/campaignsFilter');
         require('./services/campaignsHeader');
         require('./services/campaignModal');
+        require('./services/campaignDetails');
     }
 
     function controllers() {
@@ -30,6 +32,10 @@ define(function (require) {
 
     function factories() {
         require('./factories/campaignsByStatusAccordionTable');
+    }
+
+    function filters() {
+        require('./filters/campaignStatus');
     }
 
     require('./placements/controllers/placementsList');

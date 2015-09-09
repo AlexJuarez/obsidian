@@ -2,21 +2,21 @@
     <ul class="list">
         <li>
             <span>status</span>
-            <span class="status"><i class="glyph-dot small" ng-class="{'success': isLive}"></i> {{campaignStatus}}</span>
+            <span class="status"><i class="glyph-dot small" ng-class="{'success': details.live}"></i> {{details.status|campaignStatus}}</span>
         </li>
     </ul>
     <ul class="list">
-        <li>
+        <li ng-if="details.startDate">
             <span>flight dates</span>
             <span>{{details.startDate|date:'MMM d, yy'}} - {{details.endDate|date:'MMM d, yy'}}</span>
         </li>
     </ul>
     <ul class="list">
-        <li ng-if="showImpressions">
+        <li ng-if="details.metrics.impressions">
             <span>total impressions</span>
             <span>{{details.metrics.impressions|truncateNumber}}</span>
         </li>
-        <li ng-if="showImpressions">
+        <li ng-if="details.metrics.bookedImpressions">
             <span>booked impressions</span>
             <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>
         </li>

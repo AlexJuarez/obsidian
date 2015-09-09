@@ -20,6 +20,12 @@ define(function(require) {
         var creatives = dataFactory();
         var pendingRequest = {};
 
+        function getApiConfig(id) {
+            var config = ng.copy(apiConfig);
+            config.queryParams.filters = ['id:eq:' + id];
+            return config;
+        }
+
         function find(id, data) {
             var output;
 
@@ -38,9 +44,8 @@ define(function(require) {
 
             if (!item && !pendingRequest[id]) {
                 pendingRequest[id] = true;
-                var config = ng.copy(apiConfig);
-                config.queryParams.filters = ['id:eq:' + id];
-                var url = apiUriGenerator(config);
+
+                var url = apiUriGenerator(getApiConfig(id));
 
                 $http.get(url).success(function (d) {
                     creatives.addData(d.creatives, id);
@@ -52,6 +57,8 @@ define(function(require) {
 
         return {
             observe: creatives.observe,
+            _getApiConfig: getApiConfig,
+            _find: find,
             all: creatives.all,
             get: get
         };
