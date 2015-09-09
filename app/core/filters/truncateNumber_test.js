@@ -43,6 +43,7 @@ define(function (require) {
         });
 
         it('should return the input if trillions.', function () {
+            expect(filter(999999999999)).toEqual(999999999999);
             expect(filter(1000000000000)).toEqual(1000000000000);
             expect(filter(15345098000000)).toEqual(15345098000000);
         });
