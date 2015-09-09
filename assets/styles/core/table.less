@@ -18,10 +18,11 @@ table {
 
 .table-wrapper {
     overflow-y: auto;
+    overflow-x: auto;
 
     @media(min-width: @screen-sm-min) {
         overflow-y: visible;
-        overflow-x: auto;
+        overflow-x: visible;
     }
 
     width: 100%;
@@ -33,10 +34,11 @@ table {
 .table {
 
     overflow-y: auto;
+    overflow-x: auto;
 
     @media(min-width: @screen-sm-min) {
         overflow-y: visible;
-        overflow-x: auto;
+        overflow-x: visible;
     }
 
     width: 100%;
@@ -78,6 +80,13 @@ table {
             > td {
                 vertical-align: middle;
                 padding: 1.2rem 2rem 1.2rem 2rem;
+                max-width: 200px;
+                span {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    display: block;
+                }
                 &.table-number {
                     display: none;
                 }
@@ -255,6 +264,7 @@ table {
                         display: block;
                         text-align: right;
                         clear: both;
+                        max-width: 80%;
 
                         a {
                             overflow: hidden;
