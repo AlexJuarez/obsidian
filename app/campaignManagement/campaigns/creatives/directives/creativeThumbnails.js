@@ -52,17 +52,19 @@ define(function (require) {
                         creative = creative.all();
                         var newCreative = ng.copy(creative);
                         delete newCreative.id;
-                        removeNulls(newCreative);
+                        newCreative = removeNulls(newCreative);
                         console.log( 'newCreative no ID', transformCreativeData(newCreative) );
                         creativeRecordService.create( transformCreativeData(newCreative) );
                     });
 
                     var removeNulls = function(creative) {
+                        var newCreative = {};
                         for (var prop in creative) {
-                            if (creative.hasOwnProperty(prop) && creative[prop] === null) {
-                                delete creative[prop];
+                            if (creative.hasOwnProperty(prop) && (creative[prop] !== null && typeof creative[prop] !== 'undefined')) {
+                                newCreative[prop] = creative[prop];
                             }
                         }
+                        return newCreative;
                     };
 
                     var transformCreativeData = function(data) {
@@ -75,11 +77,21 @@ define(function (require) {
                             type: data.type,
                             keywords: data.keywords.join(','),
                             embedHeight: data.embedHeight,
-                            expandAnchor: data.expandAnchor,
                             device: data.device,
-                            embedWidth: data.embedWidth,
-                            expandDirection: data.expandDirection
+                            embedWidth: data.embedWidth
                         };
+
+                        if (data.expandAnchor) {
+                            crudCreative.expandAnchor = data.expandAnchor;
+                        } else {
+                            crudCreative.expandAnchor = 'topright';
+                        }
+
+                        if (data.expandDirection) {
+                            crudCreative.expandDirection = data.expandDirection;
+                        } else {
+                            crudCreative.expandDirection = 'bottomleft';
+                        }
 
                         if (data.expandMode) {
                             crudCreative.expandMode = data.expandMode;
