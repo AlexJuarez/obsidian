@@ -78,7 +78,8 @@ define(function (require) {
                             keywords: data.keywords.join(','),
                             embedHeight: data.embedHeight,
                             device: data.device,
-                            embedWidth: data.embedWidth
+                            embedWidth: data.embedWidth,
+                            clickthroughUrl: data.clickthroughUrl
                         };
 
                         if (data.expandAnchor) {
@@ -90,7 +91,7 @@ define(function (require) {
                         if (data.expandDirection) {
                             crudCreative.expandDirection = data.expandDirection;
                         } else {
-                            crudCreative.expandDirection = 'bottomleft';
+                            crudCreative.expandDirection = 'left';
                         }
 
                         if (data.expandMode) {
