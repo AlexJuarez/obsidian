@@ -12,22 +12,22 @@ define(function (require) {
     module.factory('recordFactory', ['$http', '$q', '$rootScope', '$timeout', 'dataFactory', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, dataFactory, apiUriGenerator) {
         return function (apiConfig) {
             var record = dataFactory();
-            var url = apiUriGenerator(apiConfig);
+            var idUrl = apiUriGenerator(apiConfig.update);
 
             function init() {
-                return record.init(apiConfig);
+                return record.init(apiConfig.update);
             }
 
             function create(newRecord) {
-                return $http.post(url, newRecord)
+                return $http.post(apiUriGenerator(apiConfig.create), newRecord)
                     .success(function(newRecord) {
                         record.setData(newRecord);
                     }
                 );
             }
 
-            function update(recordId, updatedFields) {
-                return $http.put(idUrl(recordId), updatedFields)
+            function update(updatedFields) {
+                return $http.put(idUrl, updatedFields)
                     .success(function() {
                         var newRecord = ng.merge(record.all(), updatedFields);
                         record.setData(newRecord);
@@ -35,19 +35,13 @@ define(function (require) {
                 );
             }
 
-            function _delete(recordId) {
-                return $http.put(idUrl(recordId), { deleted: true })
+            function _delete() {
+                return $http.put(idUrl, { deleted: true })
                     .success(function() {
                         var newRecord = ng.merge(record.all(), { deleted: true });
                         record.setData(newRecord);
                     }
                 );
-            }
-
-            function idUrl(recordId) {
-                var idConfig = ng.copy(apiConfig);
-                idConfig.endpoint += '/' + recordId;
-                return apiUriGenerator(apiConfig);
             }
 
             return {
