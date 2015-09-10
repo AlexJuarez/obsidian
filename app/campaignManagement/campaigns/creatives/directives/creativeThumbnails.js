@@ -12,12 +12,23 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'getStudioPath',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, getStudioPath) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService) {
 
                 var filter = $state.params.filter;
                 var editCreativeModals = {};
-                var mixpoURL = getStudioPath($window.location.hostname);
+                var mixpoURL = getStudioUrl($window.location.hostname);
+
+                // For testing purposes
+                $scope.getStudioUrl = getStudioUrl;
+                function getStudioUrl(domain) {
+                    if (domain.indexOf('studio') > -1) {
+                        return '//' + domain;
+                    } else if (domain.indexOf('mixpo.com') > -1) {
+                        return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
+                    } else {
+                        return '//studio.mixpo.com';
+                    }
+                }
 
                 $scope.openPreviewPage = function(creative) {
                     $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');

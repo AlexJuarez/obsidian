@@ -13,9 +13,9 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', 'getStudioPath', function($httpParamSerializer, $q, studioDirectAdapter, getStudioPath) {
+    module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', 'studioLocation', function($httpParamSerializer, $q, studioDirectAdapter, studioLocation) {
        function createStudioDirectUrl(creative) {
-            var studioDirectUrl = getStudioPath() + '/studio';
+            var studioDirectUrl = studioLocation.path() + '/studio';
             var params = studioDirectAdapter(creative);
             return studioDirectUrl + '?' + $httpParamSerializer(params);
         }
