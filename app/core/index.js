@@ -59,5 +59,6 @@ define(function(require) {
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
         require('./services/studioLocation');
+        require('./services/studioUrl');
     }
 });
