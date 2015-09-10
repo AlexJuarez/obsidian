@@ -64,12 +64,8 @@ define(function (require) {
         }
 
         function transformPlacements(data) {
-            if (data) {
-                var groups = _getPlacementGroups(data.sort(sortPlacements));
-                return _transformPlacementGroups(groups);
-            } else {
-                return [];
-            }
+            var groups = _getPlacementGroups(data.sort(sortPlacements));
+            return _transformPlacementGroups(groups);
         }
 
         function _transformPlacementGroups(groups) {
@@ -119,13 +115,7 @@ define(function (require) {
         }
 
         function selectPlacement(id) {
-            var placements = placementCache.all(getPlacementsApiConfig());
-            var clickedPlacement;
-            for(var i=0; i<placements.length; i++) {
-                if(placements[i].id === id) {
-                    clickedPlacement = placements[i];
-                }
-            }
+            var clickedPlacement = placementCache.get(getApiConfig()).getById(id);
 
             var toggleSelected = function(placement) {
                 placement.selected = ! (!!placement.selected);
@@ -133,7 +123,7 @@ define(function (require) {
 
             if(clickedPlacement) {
                 toggleSelected(clickedPlacement);
-                placementCache.get(getPlacementsApiConfig()).addData([clickedPlacement]);
+                placementCache.get(getApiConfig()).addData([clickedPlacement]);
             }
         }
 
@@ -159,8 +149,7 @@ define(function (require) {
             }
         }
 
-        function getPlacementsApiConfig() {
-
+        function getApiConfig() {
             var newConfig = ng.copy(apiConfig);
             if ($state.params.campaignId) {
                 newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
@@ -172,28 +161,23 @@ define(function (require) {
 
             // We can do this because someone using this service will be
 			// observing it before they call all()
-            var data = placementCache.all(getPlacementsApiConfig());
+            var data = placementCache.all(getApiConfig());
 
             if (skipTransform) {
                 return data;
             }
 
-            var placements = transformPlacements(data);
-            return placements;
+            return transformPlacements(data);
         }
 
         function observe(callback, $scope, preventImmediate) {
-
-            updateCache();
-
-            function updateCache() {
-                placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
-            }
+            placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
         return {
             _transformPlacementGroups: _transformPlacementGroups,
             _getPlacementGroups: _getPlacementGroups,
+            _getApiConfig: getApiConfig,
             getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
             observe: observe

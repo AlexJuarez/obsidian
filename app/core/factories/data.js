@@ -122,11 +122,20 @@ define(function (require) {
                 });
             }
 
+            function getById(id) {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].id === id) {
+                        return data[i];
+                    }
+                }
+            }
+
             return {
                 _observers: observers,
                 init: init,
                 setData: setData,
                 addData: addData,
+                getById: getById,
                 all: all,
                 filtered: filtered,
                 observe: observe,

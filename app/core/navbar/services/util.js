@@ -117,21 +117,11 @@ define(function () {
         return output;
     }
 
-    function get(items, id) {
-        var length = items.length;
-        for (var i = 0; i < length; i++) {
-            if (items[i].id === id) {
-                return items[i];
-            }
-        }
-    }
-
     return {
         sortByName: sortByName,
         search: search,
         alphabetMap: alphabetMap,
         pinned: pinned,
-        get: get,
         getYearQuarter: getYearQuarter
     };
 });

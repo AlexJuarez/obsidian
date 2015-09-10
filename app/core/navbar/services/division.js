@@ -79,7 +79,7 @@ define(function (require) {
         }
 
         function get(id) {
-            return utils.get(all(), id);
+            return divisions.getById(id);
         }
 
         return {
