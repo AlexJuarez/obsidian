@@ -230,6 +230,14 @@ define(function (require) {
             function transformCreative() {
                 var creative = $scope.creative;
                 var allDimensions = getDimensions(creative);
+                var getEnvironment = function(id) {
+                    for (var i=0; i<$scope.environments.length; i++) {
+                        if ($scope.environments[i].id === id) {
+                            return $scope.environments[i];
+                        }
+                    }
+                    return null;
+                };
                 return {
                     expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
                     expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
@@ -237,7 +245,7 @@ define(function (require) {
                     embedHeight: parseInt(allDimensions.embed.height, 10),
                     clickthroughUrl: creative.clickthroughUrl,
                     type: creative.type,
-                    environment: environments[creative.environment].id,
+                    environment: getEnvironment(creative.environment),
                     name: creative.name
                 };
             }
