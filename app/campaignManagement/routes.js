@@ -27,7 +27,7 @@ define(function (require) {
             .state('analytics', {
                 url: '/analytics',
                 parent: 'index',
-                template: '<header><div navbar></div></header>'
+                templateUrl: 'campaignManagement/index.html'
             })
             .state('index', {
                 template: '<ui-view />',
@@ -74,30 +74,12 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.campaigns',
-                    template: '<ui-view/>'
-                })
-                .state({
-                    name: base + '.campaigns.client',
-                    url: '/dashboard/client/:clientId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.division',
-                    url: '/dashboard/division/:divisionId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.account',
-                    url: '/dashboard/account/:accountId',
-                    template: '<ui-view />'
+                    url: '?viewBy',
+                    templateUrl: 'campaignManagement/campaigns/index.html'
                 })
                 .state({
                     name: base + '.campaigns.detail',
                     url: '/campaign/:campaignId',
-                    template: '<ui-view />'
-                })
-                .state(base + '.catch', {
-                    url: '/*path',
                     template: '<ui-view />'
                 });
         }

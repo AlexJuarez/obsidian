@@ -12,41 +12,34 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', function ($scope, $window, $location, $state, $rootScope, $filter, creatives, creativeRecordService) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation) {
 
-                var filter = $state.params.filter;
-                var mixpoURL = getStudioUrl($window.location.hostname);
+                    var editCreativeModals = {};
+                    var mixpoURL = studioLocation.host();
 
-                // For testing purposes
-                $scope.getStudioUrl = getStudioUrl;
-                function getStudioUrl(domain) {
-                    if (domain.indexOf('studio') > -1) {
-                        return '//' + domain;
-                    } else if (domain.indexOf('mixpo.com') > -1) {
-                        return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
-                    } else {
-                        return '//studio.mixpo.com';
+                    $scope.filter = $state.params.filter;
+                    $scope.openPreviewPage = openPreviewPage;
+                    $scope.openStudio = openStudio;
+                    $scope.openSettings = openSettings;
+                    $scope.gotoPlacements = gotoPlacements;
+                    $scope.copyCreative = copyCreative;
+                    $scope.deleteCreative = deleteCreative;
+                    $scope.transformCreativeData = transformCreativeData;
+
+                    creatives.observe(updateCreatives, $scope);
+
+                    $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+                        $scope.filter = toParams.filter;
+                    });
+
+                    function openPreviewPage(creative) {
+                        $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
                     }
-                }
 
-                $scope.openPreviewPage = function(creative) {
-                    $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
-                };
-
-                $scope.openStudio = function(id) {
-                    $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
-                };
-
-                $scope.openSettings = function(id) {
-                    console.log( 'thumbnail directive: open settings ' + id );
-                };
-
-                $scope.openPlacements = function(id) {
-                    console.log( 'thumbnail directive: open placements ' + id );
-                };
-
-                $scope.copyCreative = function(id) {
-                    console.log( 'Copy Creative ' + id );
+                    function openStudio(id) {
+                        $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
+                    }
 
                     creativeRecordService.getById(id).then(function(creative) {
                         creative = creative.all();
@@ -66,8 +59,33 @@ define(function (require) {
                         }
                         return newCreative;
                     };
+                    
+                    function openSettings(id) {
+                        if (!editCreativeModals[id]) {
+                            editCreativeModals[id] = {
+                                creativeId: id,
+                                action: 'Edit'
+                            };
+                        }
 
-                    var transformCreativeData = function(data) {
+                        $modal.open({
+                            animation: 'true',
+                            templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
+                            controller: 'newEditCreativeCtrl',
+                            resolve: {
+                                modalState: function() {
+                                    return editCreativeModals[id];
+                                }
+                            },
+                            size: 'lg'
+                        });
+                    }
+
+                    function gotoPlacements(creative) {
+                        $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
+                    }
+
+                    function transformCreativeData(data) {
                         var crudCreative =  {
                             campaignId: data.campaignId,
                             expandedWidth: data.expandedWidth,
@@ -98,35 +116,32 @@ define(function (require) {
                             crudCreative.expandMode = data.expandMode;
                         }
                         return crudCreative;
-                    };
-                };
-
-                $scope.deleteCreative = function(creative) {
-                    creativeRecordService.delete( creative.id );
-                };
-
-                $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-                    filter = toParams.filter;
-                });
-
-                function updateCreatives() {
-                    var allCreatives = creatives.all();
-                    var duplicateCreatives = [];
-
-                    if (filter) {
-                        duplicateCreatives = $filter('filter')(allCreatives.data, {type: filter});
-                    } else {
-                        duplicateCreatives = allCreatives.data;
                     }
 
-                    $scope.creatives = duplicateCreatives;
+                    function copyCreative(id) {
+                        creativeRecordService.getById(id).then(function(creative) {
+                            var newCreative = ng.copy(creative.all());
+                            delete newCreative.id;
+                            creativeRecordService.create(transformCreativeData(newCreative));
+                        });
+                    }
 
-                    //console.log('allCreatives', allCreatives );
-                    //console.log('$scope.creatives', $scope.creatives );
-                }
+                    function deleteCreative(creative) {
+                        creativeRecordService.delete( creative.id );
+                    }
 
-                creatives.observe(updateCreatives, $scope);
+                    function updateCreatives() {
+                        var allCreatives = creatives.all();
+                        var duplicateCreatives = [];
 
+                        if ($scope.filter) {
+                            duplicateCreatives = $filter('filter')(allCreatives.data, {type: $scope.filter});
+                        } else {
+                            duplicateCreatives = allCreatives.data;
+                        }
+
+                        $scope.creatives = duplicateCreatives;
+                    }
 
             }]
         };

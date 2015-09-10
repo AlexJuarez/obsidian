@@ -15,12 +15,19 @@ define(function (require) {
         $scope.format = 'MM/dd/yyyy';
         $scope.openPicker = openPicker;
         $scope.datePickers = {};
+        $scope.dateOptions = {
+            formatYear: 'yy',
+            startingDay: 0,
+            maxMode: 'day'
+        };
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
         $scope.campaign = modalState.campaign;
         $scope.action = modalState.action;
+
+        accounts.observe(updateAccounts, $scope);
 
         var originalCampaign;
 
@@ -47,14 +54,6 @@ define(function (require) {
             $scope.campaign = ng.copy(modalState.campaign || originalCampaign);
         }
 
-        $scope.dateOptions = {
-            formatYear: 'yy',
-            startingDay: 0,
-            maxMode: 'day'
-        };
-
-        accounts.observe(updateAccounts, $scope);
-
         function updateAccounts() {
             if (!modalState.campaignId) {
                 $scope.accounts = accounts.filtered();
@@ -70,32 +69,8 @@ define(function (require) {
                    });
                 });
             });
-
             return deferred.promise;
         }
-
-        $scope.select = [
-            {
-                name: 'First Option',
-                value: '1'
-            },
-            {
-                name: 'Second Option',
-                value: '2'
-            },
-            {
-                name: 'Third Option',
-                value: '3'
-            },
-            {
-                name: 'Fourth Option',
-                value: '4'
-            },
-            {
-                name: 'Fifth Option',
-                value: '5'
-            }
-        ];
 
         function openPicker($event, name) {
             $event.preventDefault();
@@ -150,7 +125,7 @@ define(function (require) {
             var diff = {};
             for (var index in changed) {
                 if (changed.hasOwnProperty(index)) {
-                    if (original[index] && !ng.equals(changed[index], original[index])) {
+                    if (!ng.equals(changed[index], original[index])) {
                         diff[index] = changed[index];
                     }
                 }

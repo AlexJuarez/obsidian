@@ -62,5 +62,45 @@ define(function (require) {
 
             expect(utils.get(data, '')).toEqual();
         });
+
+        it('January should be Q1', function () {
+            var date = new Date('2015-01-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q1');
+        });
+
+        it('March should be Q1', function () {
+            var date = new Date('2015-03-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q1');
+        });
+
+        it('April should be Q2', function () {
+            var date = new Date('2015-04-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q2');
+        });
+
+        it('June should be Q2', function () {
+            var date = new Date('2015-06-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q2');
+        });
+
+        it('July should be Q3', function () {
+            var date = new Date('2015-07-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q3');
+        });
+
+        it('September should be Q3', function () {
+            var date = new Date('2015-09-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q3');
+        });
+
+        it('October should be Q4', function () {
+            var date = new Date('2015-10-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q4');
+        });
+
+        it('December should be Q4', function () {
+            var date = new Date('2015-12-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q4');
+        });
     });
 });

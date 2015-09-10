@@ -5,31 +5,18 @@ define(function(require) {
     require('angularMocks');
 
     describe('creatives', function() {
-        var creativesService, httpBackend, state;
-
-        var creativesJSON = require('text!/base/assets/fixtures/creatives/creatives.json');
-        var mockCacheFactory = function() {
-            return {
-                get: function() {
-                    return {};
-                },
-                all: function() {
-                    return creativesJSON;
-                },
-                observe: function(url, callback) {
-                    callback();
-                }
-            };
-        };
+        var creativesService, httpBackend, state, apiGenerator, scope, records;
 
         beforeEach(function() {
-            module('app.campaign-management', function($provide) {
-                $provide.value('cacheFactory', mockCacheFactory);
-            });
-            inject(function(creatives, $httpBackend, $state) {
+            module('app.campaign-management');
+
+            inject(function(creatives, $httpBackend, $state, apiUriGenerator, $rootScope, creativeRecordService) {
                 creativesService = creatives;
                 httpBackend = $httpBackend;
                 state = $state;
+                apiGenerator = apiUriGenerator;
+                scope = $rootScope.$new();
+                records = creativeRecordService;
             });
         });
 
@@ -48,44 +35,84 @@ define(function(require) {
             expect(typeof creativesService.observe).toEqual('function');
         });
 
-        it('should observe the cache on observe', function() {
+        it('should observe the cache', function() {
             var callback = function() {
-                expect(true).toBe(true); // The callback was called
+                expect(creativesService.data().all()).toEqual([]);
             };
-            creativesService.observe(callback);
+
+            httpBackend.when('GET', apiGenerator(creativesService._apiConfig())).respond({
+                creatives: []
+            });
+
+            creativesService.observe(callback, scope, true);
+            creativesService.data(true);
+
+            httpBackend.flush();
         });
 
-        //TODO: re-enable this test once we turn on the actual API
-        //it('should create filters correctly', function() {
-        //    state.params.campaignId = '1234';
-        //    expect(creativesService._filter()).toEqual('&filters=campaign.id:eq:1234');
-        //    state.params.campaignId = undefined;
-        //    expect(creativesService._filter()).toEqual('');
-        //});
-
         it('should transform creatives properly', function() {
-            var input = [
-                {
-                    id: 3,
-                    name: 'Hallow\'s Eve Pumpkin Supply',
-                    live: true,
-                    type: 'RM',
-                    device: 'Desktop',
-                    embedWidth: '300',
-                    embedHeight: '250',
-                    expandedWidth: '600',
-                    expandedHeight: '250',
-                    numPlacements: 5,
-                    lastModified: '2015-12-05',
-                    thumbnail: 'http://www.placecage.com/600/225'
-                }
-            ];
+            var data = [{
+                id: 3,
+                name: 'Hallow\'s Eve Pumpkin Supply',
+                live: true,
+                type: 'RM',
+                device: 'Desktop',
+                embedWidth: '300',
+                embedHeight: '250',
+                expandedWidth: '600',
+                expandedHeight: '250',
+                numPlacements: 5,
+                lastModified: '2015-12-05',
+                thumbnail: 'http://www.placecage.com/600/225',
+                campaign: { id: 'test' }
+            }];
 
-            var output = creativesService._transformCreatives(input);
+            var callback = function() {
+                var output = creativesService.all();
+                expect(output.rules).toExist();
+                expect(output.headers).toExist();
+                expect(output.data.length).toEqual(1);
+            };
 
-            expect(output.rules).toExist();
-            expect(output.headers).toExist();
-            expect(output.data.length).toEqual(1);
+            httpBackend.when('GET', apiGenerator(creativesService._apiConfig())).respond({
+                creatives: data
+            });
+
+            creativesService.observe(callback, scope, true);
+            creativesService.data(true);
+
+            httpBackend.flush();
+        });
+
+        it('should handle state parameters correctly', function () {
+            state.params.campaignId = 1;
+
+            expect(creativesService._apiConfig().queryParams.filters).toEqual(['campaign.id:eq:1']);
+        });
+
+        it('should addData', function () {
+            var data = [{ id: 1 }];
+
+            var callback = function() {
+                expect(creativesService.data().all()).toEqual(data);
+            };
+
+            creativesService.observe(callback, scope, true, true);
+            creativesService.addData(data);
+        });
+
+        it('should observe creativeRecordService', function () {
+            var data = [];
+
+            httpBackend.when('GET', apiGenerator(creativesService._apiConfig())).respond({
+                creatives: data
+            });
+
+            records.notifyObservers({ id: 1 });
+            httpBackend.flush();
+            records.notifyObservers({ id: 1 });
+
+            expect(creativesService._getCreative(1)).toEqual(jasmine.objectContaining({ id: 1 }));
         });
     });
 });

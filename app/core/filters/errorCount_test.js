@@ -33,6 +33,10 @@ define(function (require) {
             expect(filter({password: 'test', email: 'test', name: 'error'})).toEqual(3);
         });
 
+        it('should be four for the variable and compound value', function () {
+            expect(filter({password: 'test', email: 'test', compound: ['error', 'another error']})).toEqual(4);
+        });
+
         it('should be 4 for the variable', function () {
             expect(filter({password: 'test', email: 'test', name: 'error', wow: 'another error'})).toEqual(4);
         });

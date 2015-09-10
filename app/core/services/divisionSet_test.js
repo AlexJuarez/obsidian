@@ -39,7 +39,7 @@ define(function (require) {
             it('should return a _getApiConfig with a filter', function () {
                 state.params.divisionId = 'division0';
 
-                var newConfig = ng.extend({}, metrics._apiConfig);
+                var newConfig = ng.copy(metrics._apiConfig);
                 newConfig.queryParams.filters = ['id:eq:division0'];
                 expect(metrics._getApiConfig()).toEqual(newConfig);
             });

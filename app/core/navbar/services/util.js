@@ -15,6 +15,13 @@ define(function () {
         return data;
     }
 
+    function getYearQuarter(date) {
+        date = new Date(date);
+        var quarter = Math.floor(date.getMonth() / 3) + 1;
+        var year = date.getUTCFullYear();
+        return year + ' ' + 'Q' + quarter;
+    }
+
     function checkName(item, query) {
         return item.name && item.name.toLowerCase().indexOf(query) > -1;
     }
@@ -124,6 +131,7 @@ define(function () {
         search: search,
         alphabetMap: alphabetMap,
         pinned: pinned,
-        get: get
+        get: get,
+        getYearQuarter: getYearQuarter
     };
 });

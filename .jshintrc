@@ -27,6 +27,8 @@
         "afterEach": false,
         "it": false,
         "expect": false,
-        "inject": false
+        "inject": false,
+        "jasmine": false,
+        "spyOn": false
     }
 }

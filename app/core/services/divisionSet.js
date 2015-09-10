@@ -23,8 +23,7 @@ define(function (require) {
         });
 
         function getApiConfig() {
-            var newApiConfig = {};
-            ng.extend(newApiConfig, apiConfig);
+            var newApiConfig = ng.copy(apiConfig);
             if ($state.params.divisionId) {
                 ng.extend(newApiConfig.queryParams, {
                     filters: ['id:eq:' + $state.params.divisionId]

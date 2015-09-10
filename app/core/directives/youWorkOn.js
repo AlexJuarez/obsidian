@@ -1,7 +1,7 @@
 define(function (require) {
     'use strict';
 
-    var app = require('./../../module');
+    var app = require('./../module');
     require('tpl!./youWorkOn.html');
 
     app.directive('youWorkOn', [function () {
@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             replace: true,
             scope: true,
-            templateUrl: 'campaignManagement/divisions/directives/youWorkOn.html',
+            templateUrl: 'core/directives/youWorkOn.html',
             controller: ['$scope', '$state', 'clientSet', 'divisionSet', function ($scope, $state, clientSet, divisionSet) {
                 function updateSummaryClientSet() {
                     $scope.summary = clientSet.all();

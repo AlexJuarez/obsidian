@@ -30,8 +30,13 @@ define(function (require) {
                 return get(uriConfig, true).all();
             }
 
-            function observe(uriConfig, callback, $scope, preventImmediate) {
-                get(uriConfig, true).observe(callback, $scope, preventImmediate);
+            function exists(uriConfig) {
+                var url = apiUriGenerator(uriConfig);
+                return typeof cache[url] !== 'undefined';
+            }
+
+            function observe(uriConfig, callback, $scope, preventImmediate, preventInit) {
+                get(uriConfig, !preventInit).observe(callback, $scope, preventImmediate);
             }
 
             function addData(uriConfig, newData) {
@@ -42,6 +47,7 @@ define(function (require) {
                 get: get,
                 all: all,
                 addData: addData,
+                exists: exists,
                 observe: observe
             };
         };

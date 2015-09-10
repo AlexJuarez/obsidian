@@ -4,6 +4,9 @@ define(function(require) {
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
+    require('./constants/apiURI');
+    require('./creativePreview/index');
+    require('./notifications/index');
 
     services();
     filters();
@@ -27,8 +30,7 @@ define(function(require) {
         require('./directives/fallbackSrc');
         require('./directives/placeholder');
         require('./directives/filePicker');
-        require('./directives/pacingChart');
-        require('./directives/quartiles');
+        require('./directives/youWorkOn');
     }
 
     function filters() {
@@ -43,31 +45,19 @@ define(function(require) {
 
     function services() {
         require('./services/channel');
-// <<<<<<< HEAD
-//         require('./services/clientSet');
-//         require('./services/divisionSet');
-//         require('./services/apiURIGenerator');
-//         require('./services/clientRecord');
-//         require('./services/creativeRecord');
-//         require('./services/propertyByString');
-//     }
-
-//     require('./constants/apiURI');    
-
-// =======
         require('./services/clientRecord');
         require('./services/divisionRecord');
         require('./services/accountRecord');
         require('./services/campaignRecord');
         require('./services/creativeRecord');
         require('./services/placementRecord');
+        require('./services/clientPublisherRecord');
         require('./services/industry');
+        require('./services/adTag');
         require('./services/enums');
         require('./services/clientSet');
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
+        require('./services/studioLocation');
     }
-
-    require('./constants/apiURI');
-//>>>>>>> develop
 });

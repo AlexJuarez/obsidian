@@ -53,15 +53,19 @@ define(function (require) {
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
                                   function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
-        var placementCache = cache();
+        var placementCache = cache({
+            transform: function(data) {
+                return data.placements;
+            }
+        });
 
         function sortPlacements(a, b) {
             return a.name.localeCompare(b.name);
         }
 
         function transformPlacements(data) {
-            if (data && data.placements) {
-                var groups = _getPlacementGroups(data.placements.sort(sortPlacements));
+            if (data) {
+                var groups = _getPlacementGroups(data.sort(sortPlacements));
                 return _transformPlacementGroups(groups);
             } else {
                 return [];
@@ -88,7 +92,9 @@ define(function (require) {
                 for(var k=0; k<groupData.group.placements.length; k++) {
                     placement = groupData.group.placements[k];
                     transformedGroup.content.data.push({
-                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        id: placement.id,
+                        checked: '<label><input ng-click="row.selectPlacement(row.id)" class="checkbox checkbox-light" type="checkbox"><span></span></label>',
+                        selectPlacement: selectPlacement,
                         placementName: placement.name,
                         delivering: placement.live,
                         startDate: placement.flightStart,
@@ -103,13 +109,43 @@ define(function (require) {
                             max: placement.budget
                         },
                         creatives: placement.creatives,
-                        options: ''
+                        options: '<div placement-options id="\'' + placement.id + '\'"></div>'
                     });
                 }
 
                 transformedGroups.push(transformedGroup);
             }
             return transformedGroups;
+        }
+
+        function selectPlacement(id) {
+            var placements = placementCache.all(getPlacementsApiConfig());
+            var clickedPlacement;
+            for(var i=0; i<placements.length; i++) {
+                if(placements[i].id === id) {
+                    clickedPlacement = placements[i];
+                }
+            }
+
+            var toggleSelected = function(placement) {
+                placement.selected = ! (!!placement.selected);
+            };
+
+            if(clickedPlacement) {
+                toggleSelected(clickedPlacement);
+                placementCache.get(getPlacementsApiConfig()).addData([clickedPlacement]);
+            }
+        }
+
+        function getSelectedPlacementIds() {
+            var placements = all(true);
+            var selectedPlacements = [];
+            for(var i=0; i<placements.length; i++) {
+                if(placements[i].selected) {
+                    selectedPlacements.push(placements[i].id);
+                }
+            }
+            return selectedPlacements;
         }
 
         function _getPlacementGroups(placements) {
@@ -132,13 +168,11 @@ define(function (require) {
             return newConfig;
         }
 
-        var initializeCache = true;
         function all(skipTransform) {
 
-            // We can do this because someone using this service will be observing it
-            // before they call all()
-            var data = placementCache.get(getPlacementsApiConfig(), initializeCache).all();
-            initializeCache = false;
+            // We can do this because someone using this service will be
+			// observing it before they call all()
+            var data = placementCache.all(getPlacementsApiConfig());
 
             if (skipTransform) {
                 return data;
@@ -153,9 +187,6 @@ define(function (require) {
             updateCache();
 
             function updateCache() {
-                placementCache.get(getPlacementsApiConfig(), initializeCache);
-                initializeCache = false;
-
                 placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
             }
         }
@@ -163,6 +194,7 @@ define(function (require) {
         return {
             _transformPlacementGroups: _transformPlacementGroups,
             _getPlacementGroups: _getPlacementGroups,
+            getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
             observe: observe
         };

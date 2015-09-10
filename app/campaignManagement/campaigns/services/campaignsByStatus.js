@@ -9,7 +9,9 @@ define(function (require) {
         queryParams: {
             dimensions: [
                 'id', 'name', 'startDate', 'endDate', 'budget', 'account.id',
-                'account.name'
+                'account.name', 'live', 'spend', 'anyPlacementsInBanner',
+                'anyPlacementsDisplay', 'anyPlacementsInStream',
+                'anyPlacementsRichMedia'
             ],
             metrics: [
                 'countPlacements', 'countCreatives', 'impressions',
@@ -28,11 +30,12 @@ define(function (require) {
         'archived': 'Archived'
     };
 
+
     module.service('campaignsByStatus', ['campaignsHeader', 'campaignAccordionTableFactory', 'campaignsFilter', 'dataFactory', function (campaignsHeader, campaignAccordionTableFactory, campaignsFilter, dataFactory) {
         var filter = dataFactory();
 
         function tableConfig(status) {
-            var config = ng.extend({}, apiConfig);
+            var config = ng.copy(apiConfig);
             config.queryParams.filters = campaignsFilter('status:eq:' + status);
             return config;
         }

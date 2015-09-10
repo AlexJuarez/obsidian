@@ -14,12 +14,12 @@ define(function(require) {
                 get: function() {
                     return {
                         all: function() {
-                            return placementsJSON;
+                            return placementsJSON.placements;
                         }
                     };
                 },
                 all: function() {
-                    return placementsJSON;
+                    return placementsJSON.placements;
                 },
                 observe: function(url, callback) {
                     callback();
@@ -74,8 +74,7 @@ define(function(require) {
                             id: '1',
                             name: 'Shark Week Terror'
                         }
-                    ],
-                    options: ''
+                    ]
                 }), jasmine.objectContaining({
                     placementName: 'AnimalLover.com',
                     delivering: true,
@@ -89,8 +88,7 @@ define(function(require) {
                             id: '1',
                             name: 'Shark Week Terror'
                         }, {id: '2', name: 'Blastoise Rocks'}
-                    ],
-                    options: ''
+                    ]
                 })
             ];
 
@@ -108,8 +106,7 @@ define(function(require) {
                             id: '2',
                             name: 'Blastoise Rocks'
                         }
-                    ],
-                    options: ''
+                    ]
                 })
             ];
 

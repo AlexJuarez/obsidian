@@ -11,7 +11,7 @@ define(function (require) {
 
         var apiConfig = {
             version: 'test',
-            endpoint: 'endpoint'
+            endpoint: 'endpoint/{id}'
         };
 
         beforeEach(function () {
@@ -42,7 +42,7 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint += '/id';
+            idConfig.endpoint = idConfig.endpoint.replace('{id}', 'id');
 
             httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
 
@@ -62,7 +62,7 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint += '/id';
+            idConfig.endpoint = idConfig.endpoint.replace('{id}', 'id');
 
             httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
             httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 });
@@ -86,7 +86,9 @@ define(function (require) {
             var record = { success: true };
             var records = recordPool(apiConfig);
 
-            httpBackend.when('POST', apiGenerator(apiConfig)).respond(record);
+            var postConfig = ng.copy(apiConfig);
+            postConfig.endpoint = postConfig.endpoint.replace('{id}', '');
+            httpBackend.when('POST', apiGenerator(postConfig)).respond(record);
 
             records.create({ success: false }).then(function(createdRecord) {
                 expect(createdRecord.data).toEqual(record);
@@ -104,7 +106,7 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint += '/id';
+            idConfig.endpoint = idConfig.endpoint.replace('{id}', 'id');
 
             httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
             httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 });
