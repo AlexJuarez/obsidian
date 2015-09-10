@@ -23,7 +23,7 @@ define(function (require) {
                     deferred.resolve(records[recordId]);
                 } else {
                     var newConfig = ng.copy(apiConfig);
-                    newConfig.endpoint = newConfig.endpoint.replace('{id}', recordId);
+                    newConfig.update.endpoint = newConfig.update.endpoint.replace('{id}', recordId);
                     var record = recordFactory(newConfig);
                     record.init().then(function () {
                         records[recordId] = record;
@@ -40,20 +40,18 @@ define(function (require) {
 
             function update(recordId, updatedFields) {
                 return getById(recordId).then(function(record) {
-                    return record.update(record.all().id, updatedFields);
+                    return record.update(updatedFields);
                 });
             }
 
             function _delete(recordId) {
                 return getById(recordId).then(function(record) {
-                    return record.delete(record.all().id);
+                    return record.delete();
                 });
             }
 
             function create(newRecord) {
-                var newConfig = ng.copy(apiConfig);
-                newConfig.endpoint = newConfig.endpoint.replace('{id}', '');
-                var record = recordFactory(newConfig);
+                var record = recordFactory(apiConfig);
                 record.observe(function() {
                     notifyObservers(record.all());
                 }, undefined, true);

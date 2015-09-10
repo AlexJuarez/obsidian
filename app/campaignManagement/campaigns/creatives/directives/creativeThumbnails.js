@@ -41,6 +41,16 @@ define(function (require) {
                         $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
                     }
 
+                    var removeNulls = function(creative) {
+                        var newCreative = {};
+                        for (var prop in creative) {
+                            if (creative.hasOwnProperty(prop) && (creative[prop] !== null && typeof creative[prop] !== 'undefined')) {
+                                newCreative[prop] = creative[prop];
+                            }
+                        }
+                        return newCreative;
+                    };
+
                     function openSettings(id) {
                         if (!editCreativeModals[id]) {
                             editCreativeModals[id] = {
@@ -68,18 +78,30 @@ define(function (require) {
 
                     function transformCreativeData(data) {
                         var crudCreative =  {
+                            campaignId: data.campaignId,
                             expandedWidth: data.expandedWidth,
                             deleted: data.deleted,
                             expandedHeight: data.expandedHeight,
-                            name: data.name,
+                            name: data.name + ' (copy)',
                             type: data.type,
                             keywords: data.keywords.join(','),
                             embedHeight: data.embedHeight,
-                            expandAnchor: data.expandAnchor,
                             device: data.device,
                             embedWidth: data.embedWidth,
-                            expandDirection: data.expandDirection
+                            clickthroughUrl: data.clickthroughUrl
                         };
+
+                        if (data.expandAnchor) {
+                            crudCreative.expandAnchor = data.expandAnchor;
+                        } else {
+                            crudCreative.expandAnchor = 'topright';
+                        }
+
+                        if (data.expandDirection) {
+                            crudCreative.expandDirection = data.expandDirection;
+                        } else {
+                            crudCreative.expandDirection = 'left';
+                        }
 
                         if (data.expandMode) {
                             crudCreative.expandMode = data.expandMode;
@@ -89,9 +111,11 @@ define(function (require) {
 
                     function copyCreative(id) {
                         creativeRecordService.getById(id).then(function(creative) {
-                            var newCreative = ng.copy(creative.all());
+                            creative = creative.all();
+                            var newCreative = ng.copy(creative);
                             delete newCreative.id;
-                            creativeRecordService.create(transformCreativeData(newCreative));
+                            newCreative = removeNulls(newCreative);
+                            creativeRecordService.create( transformCreativeData(newCreative) );
                         });
                     }
 

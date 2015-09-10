@@ -10,8 +10,14 @@ define(function (require) {
         var record, httpBackend, apiGenerator;
 
         var apiConfig = {
-            version: 'test',
-            endpoint: 'endpoint'
+            update: {
+                version: 'test',
+                endpoint: 'endpoint'
+            },
+            create: {
+                version: 'test',
+                endpoint: 'endpoint'
+            }
         };
 
         beforeEach(function () {
@@ -58,12 +64,12 @@ define(function (require) {
 
         it('should update an existing record', function() {
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint += '/id';
+            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
             var myRecord = record(idConfig);
 
-            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ success: false });
+            httpBackend.when('PUT', apiGenerator(idConfig.update)).respond({ success: false });
             myRecord._record.setData({ id: 'id', success: true });
-            myRecord.update('id', { success: false });
+            myRecord.update({ success: false });
 
             httpBackend.flush();
             myRecord.observe(function() {
@@ -74,12 +80,12 @@ define(function (require) {
 
         it('should delete an existing record', function() {
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint += '/id';
+            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
             var myRecord = record(idConfig);
 
-            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ deleted: true });
+            httpBackend.when('PUT', apiGenerator(idConfig.update)).respond({ deleted: true });
             myRecord._record.setData({ id: 'id', deleted: false });
-            myRecord.delete('id');
+            myRecord.delete();
 
             httpBackend.flush();
             myRecord.observe(function() {

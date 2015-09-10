@@ -201,9 +201,9 @@ define(function (require) {
             }
 
             $scope.ok = function(errors) {
-                var transformedCreative = transformCreative();
                 $scope.errors = errors;
                 if(ng.equals({}, $scope.errors) || ! $scope.errors) {
+                    var transformedCreative = transformCreative();
                     var onSuccess = function() {
                         originalCreative = $scope.creative;
                         $modalInstance.dismiss('cancel');
