@@ -15,7 +15,7 @@ define(function(require) {
      */
     module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', 'studioLocation', function($httpParamSerializer, $q, studioDirectAdapter, studioLocation) {
        function createStudioDirectUrl(creative) {
-            var studioDirectUrl = studioLocation.path() + '/studio';
+            var studioDirectUrl = studioLocation.host() + '/studio';
             var params = studioDirectAdapter(creative);
             return studioDirectUrl + '?' + $httpParamSerializer(params);
         }

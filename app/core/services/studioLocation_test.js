@@ -5,70 +5,62 @@ define(function (require) {
     require('angularMocks');
 
     describe('studioLocation', function () {
-        var _studioLocation, _$location_;
+        var service, location, hostname;
 
         beforeEach(function () {
-            _$location_ = {
-                path: function() {
-                    return 'foo-studio.bar.com';
+            hostname = '';
+            location = {
+                host: function() {
+                    return hostname;
                 }
             };
             module(function($provide) {
-                $provide.value('$location', _$location_);
+                $provide.value('$location', location);
             });
             module('app.core');
             inject(function (studioLocation) {
-                _studioLocation = studioLocation;
+                service = studioLocation;
             });
         });
 
         it('should be injectable', function () {
-            expect(_studioLocation).not.toEqual(null);
+            expect(service).not.toEqual(null);
         });
 
-        it('path should return non null value', function () {
-            console.log(_studioLocation);
-
-            var result = _studioLocation.path();
+        it('host path should return non null value', function () {
+            var result = service.host();
 
             expect(result).not.toEqual(null);
         });
 
-        it('should return expected value from $location.path() when no argument used', function () {
+        it('host path should return unaltered production studio url', function () {
+            hostname = 'studio.mixpo.com';
 
-            var result = _studioLocation.path();
-
-            expect(result).toEqual('//foo-studio.bar.com');
-        });
-
-        it('path should return unaltered production studio url', function () {
-            var hostname = 'studio.mixpo.com';
-
-            var result = _studioLocation.path(hostname);
+            var result = service.host();
 
             expect(result).toEqual('//studio.mixpo.com');
         });
 
-        it('should return expected value when path is provided', function () {
-            var hostname = 'thorwhal-studio.mixpo.com';
+        it('host path should return unaltered environment studio url', function () {
+            hostname = 'thorwhal-studio.mixpo.com';
 
-            var result = _studioLocation.path(hostname);
+            var result = service.host();
 
             expect(result).toEqual('//thorwhal-studio.mixpo.com');
         });
 
-        it('should return mixpo url with username with -studio appended in path', function () {
-            var hostname = 'username.mixpo.com';
+        it('host should return mixpo url with username with -studio appended in path', function () {
+            hostname = 'username.mixpo.com';
 
-            var result = _studioLocation.path(hostname);
+            var result = service.host();
 
             expect(result).toEqual('//username-studio.mixpo.com');
         });
 
-        it('should return //studio.mixpo.com path for unmatchable path', function () {
-            var hostname = 'other.com';
+        it('host should return //studio.mixpo.com path for unmatchable path', function () {
+            hostname = 'other.com';
 
-            var result = _studioLocation.path(hostname);
+            var result = service.host();
 
             expect(result).toEqual('//studio.mixpo.com');
         });

@@ -13,16 +13,12 @@ define(function(require) {
      */
     module.service('studioLocation', ['$location', function($location) {
         /**
-         * Gets the studio path, 'path' is used to match API of $location
+         * Gets the studio host, 'host' is used to match API of $location
          *
-         * @param source hostname, otherwise $location.path() will be used
          * @returns {string} path to studio
          */
-        function path(hostname) {
-            if(!!!hostname) {
-                hostname = $location.path();
-            }
-
+        function host() {
+            var hostname = $location.host();
             if (hostname.indexOf('studio') > -1) {
                 return '//' + hostname;
             } else if (hostname.indexOf('mixpo.com') > -1) {
@@ -33,7 +29,7 @@ define(function(require) {
         }
 
         return {
-            path: path
+            host: host
         };
     }]);
 });
