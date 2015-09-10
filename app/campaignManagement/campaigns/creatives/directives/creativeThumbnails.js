@@ -41,15 +41,6 @@ define(function (require) {
                         $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
                     }
 
-                    creativeRecordService.getById(id).then(function(creative) {
-                        creative = creative.all();
-                        var newCreative = ng.copy(creative);
-                        delete newCreative.id;
-                        newCreative = removeNulls(newCreative);
-                        console.log( 'newCreative no ID', transformCreativeData(newCreative) );
-                        creativeRecordService.create( transformCreativeData(newCreative) );
-                    });
-
                     var removeNulls = function(creative) {
                         var newCreative = {};
                         for (var prop in creative) {
@@ -59,7 +50,7 @@ define(function (require) {
                         }
                         return newCreative;
                     };
-                    
+
                     function openSettings(id) {
                         if (!editCreativeModals[id]) {
                             editCreativeModals[id] = {
@@ -120,9 +111,11 @@ define(function (require) {
 
                     function copyCreative(id) {
                         creativeRecordService.getById(id).then(function(creative) {
-                            var newCreative = ng.copy(creative.all());
+                            creative = creative.all();
+                            var newCreative = ng.copy(creative);
                             delete newCreative.id;
-                            creativeRecordService.create(transformCreativeData(newCreative));
+                            newCreative = removeNulls(newCreative);
+                            creativeRecordService.create( transformCreativeData(newCreative) );
                         });
                     }
 
