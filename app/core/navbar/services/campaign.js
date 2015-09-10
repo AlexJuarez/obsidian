@@ -5,7 +5,7 @@ define(function (require) {
     var utils = require('./util');
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
-        var campaigns = dataFactory(sortByStartDate);
+        var campaigns = dataFactory(sortByStartDateDescending);
 
         function init(apiConfig) {
             return campaigns.init(apiConfig, function (data) {
@@ -17,19 +17,12 @@ define(function (require) {
             return utils.search(filtered(), query);
         }
 
-        function sortByStartDate(data) {
+        function sortByStartDateDescending(data) {
             data.sort(function (a, b) {
                 return new Date(b.startDate) - new Date(a.startDate);
             });
 
             return data;
-        }
-
-        function getYearQuarter(date) {
-            date = new Date(date);
-            var quarter = Math.ceil((date.getUTCMonth() + 1) / 4);
-            var year = date.getUTCFullYear();
-            return year + ' ' + 'Q' + quarter;
         }
 
         function quarterMap() {
@@ -39,7 +32,7 @@ define(function (require) {
 
             for (var i = 0; i < sorted.length; i++) {
                 item = sorted[i];
-                key = getYearQuarter(item.startDate);
+                key = utils.getYearQuarter(item.startDate);
                 if (typeof map[key] === 'undefined') {
                     map[key] = [item];
                 } else {
@@ -79,16 +72,16 @@ define(function (require) {
                     return sorted;
                 }
 
-                var idSet = {};
+                var accountIdSet = {};
 
                 for (i = 0; i < list.length; i++) {
                     item = list[i];
-                    idSet[item.id] = true;
+                    accountIdSet[item.id] = true;
                 }
 
                 for (i = 0; i < sorted.length; i++) {
                     item = sorted[i];
-                    if (idSet[item.account.id]) {
+                    if (accountIdSet[item.account.id]) {
                         output.push(item);
                     }
                 }
