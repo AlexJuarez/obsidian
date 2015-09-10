@@ -69,7 +69,6 @@ define(function (require) {
                    });
                 });
             });
-
             return deferred.promise;
         }
 

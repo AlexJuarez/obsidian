@@ -12,11 +12,11 @@ define(function (require) {
             replace: true,
             scope: true,
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioUrl',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioUrl) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation) {
 
                     var editCreativeModals = {};
-                    var mixpoURL = studioUrl();
+                    var mixpoURL = studioLocation.host();
 
                     $scope.filter = $state.params.filter;
                     $scope.openPreviewPage = openPreviewPage;

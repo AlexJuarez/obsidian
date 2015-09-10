@@ -12,8 +12,8 @@ define(function (require) {
             scope: {
                 id: '@creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioUrl',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioUrl) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation) {
                     var htmlContent = ng.element('<div>' + $element.html() + '</div>');
 
                     $scope.isOpen = false;
@@ -49,7 +49,7 @@ define(function (require) {
 
                     creativeService.observe(update, $scope, true);
 
-                    var mixpoURL = studioUrl();
+                    var mixpoURL = studioLocation.host();
 
                     function update(id) {
                         if(id === $scope.id) {
