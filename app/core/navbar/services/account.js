@@ -101,7 +101,7 @@ define(function (require) {
         }
 
         function get(id) {
-            return utils.get(all(), id);
+            return accounts.getById(id);
         }
 
         return {

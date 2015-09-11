@@ -121,6 +121,14 @@ define(function (require) {
             expect(account.filtered()[0]).toEqual(account.get('accountId0'));
         });
 
+        it('should filter by account id', function () {
+            account.setData(accounts);
+
+            state.params.divisionId = '';
+            state.params.accountId = 'accountId0';
+            expect(account.filtered()[0]).toEqual(account.get('accountId0'));
+        });
+
         it('should return all with matching divisonId', function () {
             account.setData(accounts);
             state.params.divisionId = 'divisionId1';

@@ -4,12 +4,18 @@ define(function (require) {
     var module = require('./../module');
 
     var apiConfig = {
-        version: 'crud',
-        endpoint: 'divisions'
+        update: {
+            version: 'crud',
+            endpoint: 'divisions/{id}'
+        },
+        delete: {
+            version: 'crud',
+            endpoint: 'divisions'
+        }
     };
 
 
-    module.service('divisionRecordService', ['recordPoolFactory', '$q', function (recordPoolFactory) {
+    module.service('divisionRecordService', ['recordPoolFactory', function (recordPoolFactory) {
         return recordPoolFactory(apiConfig);
     }]);
 });

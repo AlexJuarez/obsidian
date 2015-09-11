@@ -20,18 +20,18 @@ define(function (require) {
                 scope.$state = $state;
 
                 function transition(area){
-                    if ($state.includes(area)){
-                        $state.go(area);
-                    } else if ($state.params.clientId) {
-                        $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
-                    } else if ($state.params.divisionId) {
-                        $state.go(area + '.campaigns.division', {divisionId: $state.params.divisionId});
-                    } else if ($state.params.accountId) {
-                        $state.go(area + '.campaigns.account', {accountId: $state.params.accountId});
-                    } else if ($state.params.campaignId) {
-                        $state.go(area +'.campaigns.detail', {campaignId: $state.params.campaignId});
-                    } else {
-                        $state.go(area);
+                    if (!$state.includes(area)){
+                        if ($state.params.clientId) {
+                            $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
+                        } else if ($state.params.divisionId) {
+                            $state.go(area + '.campaigns.division', {divisionId: $state.params.divisionId});
+                        } else if ($state.params.accountId) {
+                            $state.go(area + '.campaigns.account', {accountId: $state.params.accountId});
+                        } else if ($state.params.campaignId) {
+                            $state.go(area +'.campaigns.detail', {campaignId: $state.params.campaignId});
+                        } else {
+                            $state.go(area);
+                        }
                     }
                 }
 

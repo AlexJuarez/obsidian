@@ -17,7 +17,7 @@ define(function (require) {
         }
     };
 
-    module.service('analyticsChartService', ['cacheFactory', '$state', function(cacheFactory, $state) {
+    module.service('analyticsChartService', ['cacheFactory', '$state', '$filter', function(cacheFactory, $state, $filter) {
         var cache = cacheFactory();
 
         function _apiConfig(interval, startDate) {
@@ -29,7 +29,7 @@ define(function (require) {
             });
 
             if (startDate) {
-                newConfig.queryParams.startDate = startDate;
+                newConfig.queryParams.startDate = $filter('date')(startDate, 'yyyy-MM-dd');
             }
 
             if ($state.params.clientId) {
@@ -48,6 +48,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: _apiConfig,
             get: get,
             exists: exists
         };

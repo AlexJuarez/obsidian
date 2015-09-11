@@ -51,11 +51,13 @@ define(function(require) {
         require('./services/campaignRecord');
         require('./services/creativeRecord');
         require('./services/placementRecord');
+        require('./services/clientPublisherRecord');
         require('./services/industry');
+        require('./services/adTag');
         require('./services/enums');
         require('./services/clientSet');
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
+        require('./services/studioLocation');
     }
-
 });

@@ -6,14 +6,15 @@ define(function (require) {
     var data = require('text!/base/assets/fixtures/clientSet.json');
 
     describe('clientSet', function () {
-        var metrics, httpBackend, state, scope, apiGenerator;
+        var metrics, httpBackend, scope, apiGenerator, state;
 
         beforeEach(function () {
             module('app.core');
-            inject(function (clientSet, $httpBackend, $state, $rootScope, apiUriGenerator) {
+
+            inject(function (clientSet, $httpBackend, $rootScope, apiUriGenerator, $state) {
+                state = $state;
                 metrics = clientSet;
                 httpBackend = $httpBackend;
-                state = $state;
                 scope = $rootScope.$new();
                 apiGenerator = apiUriGenerator;
             });

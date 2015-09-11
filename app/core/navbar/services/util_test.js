@@ -57,10 +57,44 @@ define(function (require) {
             expect(utils.alphabetMap(data)[1].key).toEqual('d');
         });
 
-        it('should get the item by id', function () {
-            var data = utils.sortByName([{'id':'divisionId0','name':'_0','pinned':true,'client':{'id':'clientId0'}},{'id':'divisionId1','name':null,'client':{'id':'clientId0'}},{'id':'divisionId1','name':'-1','client':{'id':'clientId0'}},{'id':'divisionId2','name':'Division 2','client':{'id':'clientId0'}},{'id':'divisionId3','name':'Division 3','client':{'id':'clientId0'}},{'id':'divisionId4','name':'Division 4','client':{'id':'clientId0'}}]);
+        it('January should be Q1', function () {
+            var date = new Date('2015-01-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q1');
+        });
 
-            expect(utils.get(data, '')).toEqual();
+        it('March should be Q1', function () {
+            var date = new Date('2015-03-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q1');
+        });
+
+        it('April should be Q2', function () {
+            var date = new Date('2015-04-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q2');
+        });
+
+        it('June should be Q2', function () {
+            var date = new Date('2015-06-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q2');
+        });
+
+        it('July should be Q3', function () {
+            var date = new Date('2015-07-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q3');
+        });
+
+        it('September should be Q3', function () {
+            var date = new Date('2015-09-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q3');
+        });
+
+        it('October should be Q4', function () {
+            var date = new Date('2015-10-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q4');
+        });
+
+        it('December should be Q4', function () {
+            var date = new Date('2015-12-20');
+            expect( utils.getYearQuarter(date)).toEqual('2015 Q4');
         });
     });
 });

@@ -6,7 +6,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('creativesListCtrl', function () {
-        var list, mockCreatives, httpBackend, state, scope;
+        var list, mockCreatives, httpBackend, state, scope, rootScope;
 
         mockCreatives = {
             all: function() {
@@ -36,6 +36,7 @@ define(function (require) {
                 state = $state;
                 state.params.filter = 'IBV';
                 scope = $rootScope.$new();
+                rootScope = $rootScope;
                 list = $controller('creativesListCtrl', {$scope: scope, creatives: mockCreatives});
             });
         });
@@ -64,6 +65,12 @@ define(function (require) {
             };
 
             expect(scope.creatives).toEqual(expected);
+        });
+
+        it('should update the filter', function() {
+            rootScope.$broadcast('$stateChangeSuccess', 'newState', { filter: 'test' });
+
+            expect(scope.filter).toEqual('test');
         });
 
     });

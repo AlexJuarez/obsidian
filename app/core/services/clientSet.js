@@ -16,24 +16,22 @@ define(function (require) {
 
     module.service('clientSet', ['cacheFactory', '$state', function (cacheFactory, $state) {
         var cache = cacheFactory({
-            
+
             transform: function (data) {
                 return data.clientSet;
             }
         });
 
         function filter(config) {
-            var newConfig = ng.extend({}, config);
+            var newConfig = ng.copy(config);
             if ($state.params.clientId) {
-                //console.log( $state.params.clientId );
                 newConfig.queryParams.filters = ['id:eq:' + $state.params.clientId];
             }
             return newConfig;
         }
 
         function getApiConfig() {
-            var config = filter(apiConfig);
-            return config;
+            return filter(apiConfig);
         }
 
         function all() {

@@ -11,9 +11,9 @@ define(function(require) {
             dimensions: [
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight',
-                'countPlacements',
-                'live', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
-            ]
+                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix'
+            ],
+            limit: 500
         }
     };
 
@@ -117,7 +117,7 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaign.id,
+                        campaignId: creative.campaignId,
                         numPlacements: {
                             name: creative.countPlacements || 0,
                             route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
@@ -148,8 +148,8 @@ define(function(require) {
                 return _transformCreatives(cache.all(_apiConfig()));
             }
 
-            function observe(callback, $scope, preventImmediate) {
-                return cache.observe(_apiConfig(), callback, $scope, preventImmediate);
+            function observe(callback, $scope, preventImmediate, preventInit) {
+                return cache.observe(_apiConfig(), callback, $scope, preventImmediate, preventInit);
             }
 
             function addData(newData) {
@@ -168,6 +168,7 @@ define(function(require) {
             return {
                 _transformCreatives: _transformCreatives,
                 _apiConfig: _apiConfig,
+                _getCreative: getCreative,
                 all: all,
                 data: data,
                 addData: addData,

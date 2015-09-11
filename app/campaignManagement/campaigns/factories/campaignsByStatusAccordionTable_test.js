@@ -10,7 +10,7 @@ define(function(require) {
     var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
 
     describe('campaignByStatusAccordionTableFactory', function() {
-        var factory, httpBackend, scope, interpolate, apiGenerator;
+        var factory, httpBackend, scope, interpolate, apiGenerator, state;
 
         var apiConfig = {
             endpoint: 'test',
@@ -37,12 +37,13 @@ define(function(require) {
         beforeEach(function() {
             module('app.campaign-management');
 
-            inject(function(campaignAccordionTableFactory, $httpBackend, $rootScope, $interpolate, apiUriGenerator) {
+            inject(function(campaignAccordionTableFactory, $httpBackend, $rootScope, $interpolate, apiUriGenerator, $state) {
                 factory = campaignAccordionTableFactory;
                 httpBackend = $httpBackend;
                 scope = $rootScope.$new();
                 interpolate = $interpolate;
                 apiGenerator = apiUriGenerator;
+                state = $state;
             });
         });
 
@@ -52,7 +53,7 @@ define(function(require) {
         });
 
         function setUpTests() {
-            var apiConfigWithPagination = ng.extend({}, apiConfig);
+            var apiConfigWithPagination = ng.copy(apiConfig);
             apiConfigWithPagination.queryParams.offset = 0;
             apiConfigWithPagination.queryParams.limit = 10;
 
@@ -60,11 +61,11 @@ define(function(require) {
                 .respond(campaignJSON);
         }
 
-        it('should be an instance of campaignAccordionTableFactory', function() {
+        it('should be an instance of campaignAccordionTableFactory', function () {
             expect(factory).not.toEqual(null);
         });
 
-        it('should init and return some data', function() {
+        it('should init and return some data', function () {
             setUpTests();
 
             var test = factory();
@@ -78,7 +79,7 @@ define(function(require) {
             httpBackend.flush();
         });
 
-        it('should transform rows correctly', function() {
+        it('should transform rows correctly', function () {
             setUpTests();
             var given = {
                 'campaigns': [
@@ -142,7 +143,7 @@ define(function(require) {
             expect(result).toEqual(expected);
         });
 
-        it('should get headers given the correct status', function() {
+        it('should get headers given the correct status', function () {
             setUpTests();
             var test = factory();
             test.init({
@@ -165,7 +166,7 @@ define(function(require) {
             expect($.trim(test._getTableHeader(given))).toEqual(expected);
         });
 
-        it('should get default headers given no status', function() {
+        it('should get default headers given no status', function () {
             setUpTests();
             var test = factory();
             test.init({
@@ -181,16 +182,33 @@ define(function(require) {
             expect($.trim(test._getTableHeader(given))).toEqual(expected);
         });
 
-        it('should sort rows correctly', function() {
+        it('should sort rows correctly', function () {
             setUpTests();
             var test = factory();
             test.init(defaultData);
-            test.observe(function() {
+            test.observe(function () {
                 var tableData = test.all();
                 if(tableData.content.data.length > 0) {
                     expect(tableData.content.data).toEqual(sortedCampaignJSON);
                 }
             }, scope, true);
+            httpBackend.flush();
+        });
+
+        it('should remove the Account Header', function () {
+            state.params.accountId = 1;
+            spyOn(state, 'includes').and.callFake(function () {
+                return true;
+            });
+
+            setUpTests();
+            var test = factory();
+            test.init(defaultData);
+            test.observe(function () {
+                var tableData = test.all();
+                expect(test._findIndex(tableData.content.headers, 'Account')).toEqual(-1);
+                expect(test._findIndex(tableData.content.headers, 'Type')).toEqual(4);
+            });
             httpBackend.flush();
         });
     });

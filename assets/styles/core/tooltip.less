@@ -49,12 +49,12 @@
 
 .tooltip-dark .wrapper {
     background: @tool-tip-dark-bg;
-    border: 1px solid #fff;
+    border: none;
     color: @tool-tip-light-bg;
-    &:before, &:after {
+    &:before {
         content: '';
         position: absolute;
-        border: solid transparent;
+        border: solid rgba(60, 60, 60, 0);
         width: 0;
         height: 0;
         pointer-events: none;
@@ -144,34 +144,21 @@
     // Dark arrow colors
     &[class*="top"].tooltip-dark .wrapper {
         &:before {
-            border-top-color: #fff;
-            //border-top-color: @tool-tip-dark-bg;
-        }
-        &:after {
             border-top-color: @tool-tip-dark-bg;
         }
     }
     &[class*="bottom"].tooltip-dark .wrapper {
         &:before {
-            border-bottom-color: #fff;
-        }
-        &:after {
             border-bottom-color: @tool-tip-dark-bg;
         }
     }
     &[class*="middle-left"].tooltip-dark .wrapper {
         &:before {
-            border-left-color: #fff;
-        }
-        &:after {
             border-left-color: @tool-tip-dark-bg;
         }
     }
     &[class*="middle-right"].tooltip-dark .wrapper {
         &:before {
-            border-right-color: #fff;
-        }
-        &:after {
             border-right-color: @tool-tip-dark-bg;
         }
     }

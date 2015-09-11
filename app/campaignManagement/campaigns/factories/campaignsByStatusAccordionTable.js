@@ -102,6 +102,18 @@ define(function (require) {
                 return newRows;
             }
 
+            function findIndex(data, name) {
+                var index = -1;
+
+                for (var i = 0; i < data.length; i++) {
+                    if(data[i].name === name) {
+                        index = i;
+                        break;
+                    }
+                }
+                return index;
+            }
+
             function getTable(filter) {
                 var index;
                 var rules = {
@@ -130,18 +142,6 @@ define(function (require) {
                     {name: 'Creatives', id: 'creatives'},
                     {name: '', id: 'edit'}
                 ];
-
-                function findIndex(data, name) {
-                    var index = -1;
-
-                    for (var i = 0; i < data.length; i++) {
-                        if(data[i].name === name) {
-                            index = i;
-                            break;
-                        }
-                    }
-                    return index;
-                }
 
                 if ($state.params.accountId) {
                     index = findIndex(headers, 'Account');
@@ -208,6 +208,7 @@ define(function (require) {
                 observe: observe,
                 all: getTable,
                 notifyObservers: notifyObservers,
+                _findIndex: findIndex,
                 _transformRows: _transformRows,
                 _getTableHeader: _getTableHeader
             };

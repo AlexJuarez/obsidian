@@ -103,6 +103,9 @@
   padding: 0 .5rem;
   z-index: 9999;
 }
+.container {
+  padding-bottom: 6rem;
+}
 .style-guide .side-nav {
   position: fixed;
   top: 20px;

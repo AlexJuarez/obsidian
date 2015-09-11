@@ -17,8 +17,7 @@ define(function (require) {
             function init(config, transform) {
                 var url = apiUriGenerator(config);
                 if (!url) {
-                    throw new Error('Malformed API URI object')
-                        ;
+                    throw new Error('Malformed API URI object');
                 }
 
                 var deferred = $q.defer();
@@ -44,7 +43,7 @@ define(function (require) {
                 notifyObservers();
             }
 
-            function addData(d) {
+            function addData(d, event) {
                 var uniqueSet = {};
                 var item, i;
 
@@ -64,7 +63,7 @@ define(function (require) {
 
                 data = sortFn(temp.concat(d));
                 filterDeleted();
-                notifyObservers();
+                notifyObservers(event);
             }
 
             function all() {
@@ -123,11 +122,20 @@ define(function (require) {
                 });
             }
 
+            function getById(id) {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].id === id) {
+                        return data[i];
+                    }
+                }
+            }
+
             return {
                 _observers: observers,
                 init: init,
                 setData: setData,
                 addData: addData,
+                getById: getById,
                 all: all,
                 filtered: filtered,
                 observe: observe,

@@ -35,7 +35,7 @@ define(function (require) {
         var filter = dataFactory();
 
         function tableConfig(status) {
-            var config = ng.extend({}, apiConfig);
+            var config = ng.copy(apiConfig);
             config.queryParams.filters = campaignsFilter('status:eq:' + status);
             return config;
         }

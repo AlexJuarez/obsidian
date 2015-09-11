@@ -12,8 +12,8 @@ define(function (require) {
             scope: {
                 id: '@creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation) {
                     var htmlContent = ng.element('<div>' + $element.html() + '</div>');
 
                     $scope.isOpen = false;
@@ -28,6 +28,7 @@ define(function (require) {
 
                     $element.on('click', function () {
                         $scope.clicked = true;
+                        creativeService.get($scope.id);
                     });
 
                     function documentClickHandler() {
@@ -46,22 +47,14 @@ define(function (require) {
                         $document.off('click', documentClickHandler);
                     });
 
-                    creativeService.observe(update, $scope);
+                    creativeService.observe(update, $scope, true);
 
-                    var mixpoURL = getStudioUrl($window.location.hostname);
+                    var mixpoURL = studioLocation.host();
 
-                    function getStudioUrl(domain) {
-                        if (domain.indexOf('studio') > -1) {
-                            return '//' + domain;
-                        } else if (domain.indexOf('mixpo.com') > -1) {
-                            return '//' + domain.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
-                        } else {
-                            return '//studio.mixpo.com';
+                    function update(id) {
+                        if(id === $scope.id) {
+                            $scope.creative = creativeService.get($scope.id);
                         }
-                    }
-
-                    function update() {
-                        $scope.creative = creativeService.get($scope.id);
                     }
 
                     function previewInPage() {

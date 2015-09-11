@@ -4,9 +4,10 @@ define(function(require) {
     var app = require('./../../../module');
 
     app.controller('creativesListCtrl', ['$scope', '$rootScope', '$state', '$filter', 'creatives', function($scope, $rootScope, $state, $filter, creatives) {
-        var filter = $state.params.filter;
-        $rootScope.$on('$stateChangeSuccess', function () {
-            filter = $state.params.filter;
+        $scope.filter = $state.params.filter;
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+            $scope.filter = toParams.filter;
         });
 
         function updateCreatives() {
@@ -17,7 +18,7 @@ define(function(require) {
                 data: []
             };
 
-            duplicateCreatives.data = $filter('filter')(allCreatives.data, {type: filter});
+            duplicateCreatives.data = $filter('filter')(allCreatives.data, {type: $scope.filter});
             $scope.creatives = duplicateCreatives;
         }
 

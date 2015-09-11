@@ -71,7 +71,7 @@ define(function(require) {
         });
 
         it('should unpin a client', function() {
-            var pinConfig = ng.extend({}, client._apiPinConfig);
+            var pinConfig = ng.copy(client._apiPinConfig);
             pinConfig.endpoint += clients[0].id;
 
             httpBackend.expect('GET', apiGenerator(pinConfig))

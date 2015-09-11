@@ -29,7 +29,7 @@ define(function (require) {
         });
 
         function getPaginatedApiUri(config) {
-            var newConfig = ng.extend({}, config);
+            var newConfig = ng.copy(config);
             newConfig.queryParams.limit = 10;
             newConfig.queryParams.offset = 0;
 

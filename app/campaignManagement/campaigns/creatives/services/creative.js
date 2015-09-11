@@ -18,6 +18,13 @@ define(function(require) {
 
     module.service('creativeService', ['$http', 'dataFactory', 'apiUriGenerator', function($http, dataFactory, apiUriGenerator) {
         var creatives = dataFactory();
+        var pendingRequest = {};
+
+        function getApiConfig(id) {
+            var config = ng.copy(apiConfig);
+            config.queryParams.filters = ['id:eq:' + id];
+            return config;
+        }
 
         function find(id, data) {
             var output;
@@ -35,13 +42,13 @@ define(function(require) {
         function get(id){
             var item = find(id, creatives.all());
 
-            if (!item) {
-                var config = ng.copy(apiConfig);
-                config.queryParams.filters = ['id:eq:' + id];
-                var url = apiUriGenerator(config);
+            if (!item && !pendingRequest[id]) {
+                pendingRequest[id] = true;
+
+                var url = apiUriGenerator(getApiConfig(id));
 
                 $http.get(url).success(function (d) {
-                    creatives.addData(d.creatives);
+                    creatives.addData(d.creatives, id);
                 });
             }
 
@@ -50,6 +57,8 @@ define(function(require) {
 
         return {
             observe: creatives.observe,
+            _getApiConfig: getApiConfig,
+            _find: find,
             all: creatives.all,
             get: get
         };

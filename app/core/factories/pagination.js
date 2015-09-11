@@ -31,7 +31,7 @@ define(function (require) {
             var initialApiConfig;
 
             function init(apiConfig, transformFn, perPage) {
-                initialApiConfig = ng.extend({}, apiConfig);
+                initialApiConfig = ng.copy(apiConfig);
                 transform = transformFn || function (d) { return d; };
                 limit = perPage || 10;
                 return data.init(buildConfig(initialApiConfig, limit, offset), transformFn);
