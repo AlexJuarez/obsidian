@@ -1,0 +1,17 @@
+<div ng-if="summary.countCampaigns < 1">
+	<div class="no-content">
+	    <div class="glyph-benchmarks"></div>
+	    	<h3>You currently have no campaigns!</h3>
+	        <p>Please add a campaign in order to proceed.</p>
+	    	<button class="btn btn-default solid" ng-click="openNewCampaignModal()">Add New Campaign</button>
+	</div>
+</div>
+
+<div ng-if="summary.countAccounts < 1">
+	<div class="no-content">
+	    <div class="glyph-benchmarks"></div>
+	    	<h3>You currently have no accounts!</h3>
+	        <p>Please add an account in order to proceed.</p>
+	    	<button class="btn btn-default solid" ng-click="openNewAccountModal()">Add New Account</button>
+	</div>
+</div>
