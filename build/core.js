@@ -61869,6 +61869,88 @@ define('chart/directives/pacingChart',['require','./../module','d3','tpl!./pacin
 
 });
 
+
+define('tpl!chart/directives/quartiles.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'chart/directives/quartiles.html', '<div class="quartiles row">\n    <p>Quartiles</p>\n    <div class="vertical-bar-graph-wrapper col-xs-3" ng-repeat="item in dataArray track by $index">\n        <div class="percentage">\n            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" viewbox="0 0 58 20">\n                <text x="0" y="15">{{item.value|percentage}}&#37;</text>\n            </svg>\n        </div>\n        <svg class="bar-graph" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0">\n          <rect class="bg" x="0" y="0" width="100%" height="100%"/>\n          <rect id="video{{item.quartile}}" class="achieved" x="0" width="100%"/>\n        </svg>\n        <span class="quartile">{{item.quartile}}&#37;</span>\n    </div>\n</div>\n'); });
+
+define('chart/directives/quartiles',['require','./../module','d3','tpl!./quartiles.html'],function (require) {
+	'use strict';
+
+	var app = require('./../module');
+	var d3 = require('d3');
+	require('tpl!./quartiles.html');
+
+	app.directive('quartiles', ['$timeout', function ($timeout) {
+		return {
+			restrict: 'A',
+            scope: {
+                quartileData: '='
+            },
+			templateUrl: 'chart/directives/quartiles.html',
+			link: function (scope, elem) {
+
+                if (scope.quartileData) {
+                    scope.$watch(scope.quartileData, function() {
+
+                        var viewNum =       scope.quartileData.view;
+                        scope.dataArray = [
+                            {
+                                'value': scope.quartileData.video25 / viewNum || 0,
+                                'quartile': '25'
+                            },
+                            {
+                                'value': scope.quartileData.video50 / viewNum || 0,
+                                'quartile': '50'
+                            },
+                            {
+                                'value': scope.quartileData.video75 / viewNum || 0,
+                                'quartile': '75'
+                            },
+                            {
+                                'value': scope.quartileData.video100 / viewNum || 0,
+                                'quartile': '100'
+                            }
+                        ];
+
+                        for (var i = 0; i < scope.dataArray.length; i++) {
+
+                            var obj = scope.dataArray[i];
+                            setGraph(obj.value, obj.quartile);
+
+                        }
+                    });
+
+                }
+
+
+                var graphHeight = 50;
+
+                function setGraph(value, id) {
+                    if (value === 0) {
+                        return;
+                    }
+
+                    var percentage = 1*value.toFixed(4);
+
+                    var h = graphHeight * percentage;
+
+                    var yPos = graphHeight - h;
+
+                    $timeout(function() {
+
+                        var rect = d3.select( elem.find('#video'+id)[0] );
+                        rect.attr('y', yPos)
+                            .attr('height', h);
+
+                    });
+
+                }
+
+			}
+		};
+	}]);
+
+});
+
 define('chart/services/analyticsChart',['require','./../module','angular'],function (require) {
    'use strict';
 
@@ -61930,13 +62012,14 @@ define('chart/services/analyticsChart',['require','./../module','angular'],funct
 /**
  * Created by Alex on 3/1/2015.
  */
-define('chart/index',['require','./directives/comparisonChart','./directives/analyticsLineChart','./directives/quartileBarGraph','./directives/pacingChart','./services/analyticsChart'],function (require) {
+define('chart/index',['require','./directives/comparisonChart','./directives/analyticsLineChart','./directives/quartileBarGraph','./directives/pacingChart','./directives/quartiles','./services/analyticsChart'],function (require) {
     'use strict';
 
     require('./directives/comparisonChart');
     require('./directives/analyticsLineChart');
     require('./directives/quartileBarGraph');
     require('./directives/pacingChart');
+    require('./directives/quartiles');
     require('./services/analyticsChart');
 });
 
