@@ -4,6 +4,7 @@ define(function (require) {
 
     require('tpl!./placementsList.html');
     require('tpl!./placementsHeader.html');
+    require('tpl!./new-edit-placement.html');
     require('tpl!./services/placementTableHeader.html');
 
     return app.config(['$stateProvider', function ($stateProvider) {
