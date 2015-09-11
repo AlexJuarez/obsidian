@@ -51,8 +51,11 @@ define(function(require) {
                     return 'tabletphone';
                 case 'mraid':
                     return 'inappmraid';
-                default: // desktop
-                    return env;
+                case 'desktop':
+                    return 'desktop';
+                default:
+                    // unknown
+                    return null;
             }
         }
 
@@ -79,15 +82,36 @@ define(function(require) {
             }
         }
 
+        function validate(creative) {
+            if(!!!creative) {
+                return false;
+            }
+            if(getAdType(creative.type, creative.expandedWidth, creative.expandedHeight)===null) {
+                return false;
+            }
+            if(getAdEnvironment(creative.environment)===null) {
+                return false;
+            }
+            if(creative.clickthroughUrl===null) {
+                return false;
+            }
+            if(creative.name===null) {
+                return false;
+            }
+            return true;
+        }
+
         return function(creative) {
+            if(!validate(creative)) {
+                return null;
+            }
             var params = {};
             params.sdf = 'new';
             params.ad = getAdType(creative.type, creative.expandedWidth, creative.expandedHeight);
             params.env = getAdEnvironment(creative.environment);
             params.url = creative.clickthroughUrl;
             params.title = creative.name;
-            setDimensions(params, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight );
-
+            setDimensions(params, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
             return params;
         };
     }]);
