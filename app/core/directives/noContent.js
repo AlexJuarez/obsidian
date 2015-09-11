@@ -1,4 +1,4 @@
-define(function (require) {
+ define(function (require) {
     'use strict';
 
     var app = require('./../module');
@@ -15,7 +15,7 @@ define(function (require) {
             // },
             controller: ['$scope', '$state', 'clientSet', 'divisionSet', 'accountRecordService', 'creativeRecordService', 'creativeService', function ($scope, $state, clientSet, divisionSet, accountRecordService, creativeRecordService, creativeService) {
                 console.log('$state.params', $state );
-                
+
                 //console.log( creativeService.all() );
 
                 // $scope.noAccounts = true;
@@ -32,7 +32,7 @@ define(function (require) {
                     // if ($scope.summary.countAccounts >= 1) {
                     //     $scope.noAccounts = false;
                     // }
-                    
+
                 }
 
                 function updateSummaryDivisionSet() {
@@ -51,26 +51,26 @@ define(function (require) {
                 // }
 
                 if ($state.params.campaignId) {
-                    
+
                     console.log( 'we are at campaign', $scope.summary );
                     //creativeRecordService.observe(updateSummaryCreativeSet, $scope);
-                
+
                 } else if ($state.params.accountId) {
-                    
+
                     console.log( 'we are at account' );
                     clientSet.observe(updateSummaryClientSet, $scope);
                     //accountRecordService.observe(updateSummaryAccountSet, $scope);
-                
+
                 } else if ($state.params.divisionId) {
-                    
+
                     console.log( 'we are at division' );
                     divisionSet.observe(updateSummaryDivisionSet, $scope);
-                
+
                 } else {
-                    
+
                     console.log( 'we are at client' );
                     clientSet.observe(updateSummaryClientSet, $scope);
-                
+
                 }
 
 
