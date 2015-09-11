@@ -1,13 +1,13 @@
 define(function (require) {
     'use strict';
 
-    require('./creatives/controllers/creativesHeader');
-    require('./creatives/controllers/creativesList');
-    require('./creatives/controllers/newEditCreative');
-    require('./creatives/directives/creativeThumbnails');
-    require('./creatives/directives/creativeOptions');
-    require('./creatives/services/creatives');
-    require('./creatives/services/studioDirectAdapter');
-    require('./creatives/services/newCreative');
-    require('./creatives/services/creative');
+    require('./controllers/creativesHeader');
+    require('./controllers/creativesList');
+    require('./controllers/newEditCreative');
+    require('./directives/creativeThumbnails');
+    require('./directives/creativeOptions');
+    require('./services/creatives');
+    require('./services/studioDirectAdapter');
+    require('./services/newCreative');
+    require('./services/creative');
 });

@@ -1,13 +1,13 @@
 define(function (require) {
     'use strict';
 
-    require('./placements/controllers/placementsList');
-    require('./placements/controllers/placementsHeader');
-    require('./placements/controllers/newEditPlacement');
-    require('./placements/directives/placementOptions');
-    require('./placements/directives/expandAnchorsDirections');
-    require('./placements/services/placements');
-    require('./placements/services/placementsByPublisher');
-    require('./placements/services/placementsByCreative');
-    require('./placements/services/placementsByAdType');
+    require('./controllers/placementsList');
+    require('./controllers/placementsHeader');
+    require('./controllers/newEditPlacement');
+    require('./directives/placementOptions');
+    require('./directives/expandAnchorsDirections');
+    require('./services/placements');
+    require('./services/placementsByPublisher');
+    require('./services/placementsByCreative');
+    require('./services/placementsByAdType');
 });
