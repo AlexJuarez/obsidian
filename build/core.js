@@ -62375,6 +62375,2046 @@ define('campaignManagement/divisions/index',['require','./controllers/division']
     require('./controllers/division');
 });
 
+
+
+define('campaignManagement/campaigns/placements/controllers/placementsList',['require','./../../../module'],function (require) {
+    var app = require('./../../../module');
+
+    app.controller('placementsListCtrl', ['$scope', '$state', 'placements', function ($scope, $state, placements) {
+        $scope.placements = [];
+        $scope.params = $state.params;
+        $scope.placementTypes = [
+            {
+                name: 'Add Manually',
+                value: '1'
+            },
+            {
+                name: 'Upload Media Plan',
+                value: '2'
+            }
+        ];
+
+        placements.observe(updatePlacements, $scope);
+        function updatePlacements() {
+            $scope.placements = placements.all();
+        }
+    }]);
+});
+
+
+
+define('campaignManagement/campaigns/placements/controllers/placementsHeader',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('placementsHeader', [
+        '$scope', '$modal', '$rootScope', '$q', '$interpolate', 'placements', 'adTagService', 'placementRecordService',
+        function($scope, $modal, $rootScope, $q, $interpolate, placements, adTagService, placementRecordService) {
+
+            $scope.openNewPlacementModal = openNewPlacementModal;
+            $scope.editPlacements = editPlacements;
+            $scope.pullTags = pullTags;
+            $scope.selectedPlacements = [];
+
+            var newPlacementModal;
+
+            function openNewPlacementModal() {
+                if(! newPlacementModal) {
+                    newPlacementModal = {
+                        action: 'New'
+                    };
+                }
+
+                $modal.open({
+                    animation: 'true',
+                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
+                    controller: 'newEditPlacementCtrl',
+                    resolve: {
+                        modalState: function() {
+                            return newPlacementModal;
+                        }
+                    },
+                    size: 'lg'
+                });
+            }
+
+            function update() {
+                updateMeta();
+                updateSelected();
+            }
+
+            function updateMeta() {
+                var allPlacements = placements.all(true);
+
+                if(allPlacements) {
+                    var placement;
+                    var creative;
+
+                    var publishers = [];
+                    var creatives = [];
+                    var types = [];
+
+                    for(var i = 0; i < allPlacements.length; i ++) {
+                        placement = allPlacements[i];
+
+                        pushUnique(publishers, placement.publisher.id);
+                        pushUnique(types, placement.type);
+
+                        if(placement.creatives) {
+                            for(var k = 0; k < placement.creatives.length; k ++) {
+                                creative = placement.creatives[k];
+
+                                pushUnique(creatives, creative.id);
+
+                            }
+                        }
+                    }
+
+                    $scope.placementsMeta = {
+                        publishers: publishers.length,
+                        creatives: creatives.length,
+                        types: types.length
+                    };
+                }
+            }
+
+            function updateSelected() {
+                $scope.selectedPlacements = placements.getSelectedPlacementIds();
+            }
+
+            updateMeta();
+            placements.observe(update, $scope, true);
+
+            // Edit Placements
+            var editPlacementsModal, selectedPlacements;
+
+            function editPlacements() {
+                if(! editPlacementsModal || selectedPlacementsChanged()) {
+                    selectedPlacements = $scope.selectedPlacements;
+                    editPlacementsModal = {
+                        placementIds: $scope.selectedPlacements,
+                        action: 'Edit'
+                    };
+                }
+
+                $modal.open({
+                    animation: 'true',
+                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
+                    controller: 'newEditPlacementCtrl',
+                    resolve: {
+                        modalState: function() {
+                            return editPlacementsModal;
+                        }
+                    },
+                    size: 'lg'
+                });
+            }
+
+            function selectedPlacementsChanged() {
+                return arraysAreDifferent(selectedPlacements, $scope.selectedPlacements);
+            }
+
+            /**
+             * Push an item to an array if the item isn't already in the array
+             * @param array
+             * @param item
+             */
+            function pushUnique(array, item) {
+                if(! inArray(item, array)) {
+                    array.push(item);
+                }
+            }
+
+            function inArray(needle, haystack) {
+                return haystack.indexOf(needle) > - 1;
+            }
+
+            /**
+             * Returns true if two arrays are different
+             *
+             * @param a {Array<number>}
+             * @param b {Array<number>}
+             *
+             * @returns {boolean}
+             */
+            function arraysAreDifferent(a, b) {
+                return ! isSubsetOf(a, b) || ! isSubsetOf(b, a);
+            }
+
+            /**
+             * Returns true if b is a subset of a
+             *
+             * @param a {Array<number>}
+             * @param b {Array<number>}
+             *
+             * @returns {boolean}
+             */
+            function isSubsetOf(a, b) {
+                var difference = a.filter(function(i) {
+                    return b.indexOf(i) < 0;
+                });
+
+                return difference.length === 0;
+            }
+
+            var tagTemplates = [];
+            adTagService.init();
+            adTagService.observe(function() {
+                tagTemplates = adTagService.all();
+            });
+
+            function pullTags() {
+                var placementIds = placements.getSelectedPlacementIds();
+                if (placementIds.length === 0) {
+                    window.alert('No ad tags to pull!');
+                    return;
+                }
+                var tags = '';
+                var placementPromises = [];
+
+                placementIds.forEach(function(placementId) {
+                    placementPromises.push(placementRecordService.getById(placementId));
+                });
+
+                $q.all(placementPromises).then(function(placements) {
+                    placements.forEach(function(placement) {
+                        placement = placement.all();
+                        tags += getPlacementTagText(placement);
+                    });
+
+                    if (placements.length > 0) {
+                        var firstPlacementName = placements[0].all().name;
+                        download(firstPlacementName + '_tags.txt', tags);
+                    }
+                });
+            }
+
+            function getPlacementTagTemplate(placement) {
+                var placementTagTemplate = false;
+                tagTemplates.forEach(function(tagTemplate) {
+                   if (tagTemplate.id === placement.adTagId) {
+                       placementTagTemplate = tagTemplate;
+                   }
+                });
+
+                return placementTagTemplate;
+            }
+
+            function getPlacementInterpolateObject(placement, adTagType) {
+                return {
+                    width: placement.embedWidth,
+                    height: placement.embedHeight,
+                    id: placement.targetId, // The creative guid / entry point for multi-creative
+                    // TODO: ad real url here
+                    prerenderUrl: 'http://www.google.com', // Image to show before load
+                    clickThroughUrl: placement.clickthroughUrl,
+                    // TODO: add real data here
+                    version: '1.1.1', // The current build version
+                    clicktag: adTagType.attributes.clicktag,
+                    folder: placement.targetId.slice(0, 2) // The first 2 letters of the id
+                };
+            }
+
+            function getPlacementTagText(placement) {
+                var tagTemplate = getPlacementTagTemplate(placement);
+                if (tagTemplate) {
+                    // Interpolate in "all-or-nothing" mode to avoid missing variables
+                    var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
+                    var tag = '';
+
+                    tag += 'Title: ' + placement.name + '\n';
+                    tag += 'Identifier: ' + placement.id + '\n';
+                    tag += 'Primary URL: ' + placement.clickthroughUrl + '\n';
+                    tag += 'Play Mode: ' + placement.playMode + '\n';
+                    tag += 'Ad Tag: \n';
+                    tag += adTag(getPlacementInterpolateObject(placement, tagTemplate));
+                    tag += '\n\n---\n\n';
+
+                    return tag;
+                } else {
+                    return '';
+                }
+            }
+
+            function download(filename, text) {
+                var pom = document.createElement('a');
+                pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                pom.setAttribute('download', filename);
+
+                if(document.createEvent) {
+                    var event = document.createEvent('MouseEvents');
+                    event.initEvent('click', true, true);
+                    pom.dispatchEvent(event);
+                }
+                else {
+                    pom.click();
+                }
+            }
+        }
+    ]);
+});
+
+/* globals confirm */
+define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['require','./../../../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+
+    var ng = require('angular');
+
+    app.controller('newEditPlacementCtrl', ['$scope', '$q', '$modalInstance', 'placements',
+                                            'placementRecordService', 'campaignRecordService',
+                                            'accountRecordService', 'divisionRecordService',
+                                            'clientRecordService', 'clientPublisherRecordService', 'modalState',
+                                            function ($scope, $q, $modalInstance, placements,
+                                                      placementRecordService, campaignRecordService,
+                                                      accountRecordService, divisionRecordService,
+                                                      clientRecordService, clientPublisherRecordService, modalState) {
+        $scope.placement = modalState.placement;
+        $scope.action = modalState.action;
+
+        setupDatePickers();
+        setupRateTypes();
+        setupModal();
+
+        function setupDatePickers() {
+            var openPicker = function($event, name) {
+                $event.preventDefault();
+                $event.stopPropagation();
+
+                ng.forEach($scope.datePickers, function (value, key) {
+                    $scope.datePickers[key] = false;
+                });
+
+                $scope.datePickers[name] = true;
+            };
+
+            $scope.format = 'MM/dd/yyyy';
+            $scope.openPicker = openPicker;
+            $scope.datePickers = {};
+            $scope.dateOptions = {
+                formatYear: 'yy',
+                startingDay: 0,
+                maxMode: 'day'
+            };
+        }
+
+        function setupRateTypes() {
+            $scope.rateTypes = [
+                {id: 'CPM', name: 'CPM'},
+                {id: 'CPC', name: 'CPC'},
+                {id: 'CPV', name: 'CPV'},
+                {id: 'CPCV', name: 'CPCV'},
+                {id: 'FIXED', name: 'Fixed Fee'},
+                {id: 'ADDEDV', name: 'Added Value'}
+            ];
+
+            $scope.rateTypeFields = {
+                CPM: { showCostPer: true, showTotalCost: true },
+                CPC: { showCostPer: true, showTotalCost: true },
+                CPV: { showCostPer: true, showTotalCost: true },
+                CPCV: { showCostPer: true, showTotalCost: true },
+                FIXED: { showCostPer: false, showTotalCost: true },
+                ADDEDV: { showCostPer: false, showTotalCost: false }
+            };
+
+            $scope.$watch('placement.rateType', function() {
+                var rateType = $scope.placement && $scope.placement.rateType;
+                if (rateType) {
+                    var fields = $scope.rateTypeFields[rateType];
+                    if(fields) {
+                        $scope.showCostPer = fields.showCostPer;
+                        $scope.showTotalCost = fields.showTotalCost;
+                    }
+                }
+            });
+        }
+
+        function setupModal() {
+            var originalPlacement;
+            var placementPromises = [];
+
+            // Editing placement(s)
+            if (modalState.placementIds) {
+                $scope.multiplePlacements = modalState.placementIds.length > 1;
+
+                for (var i=0; i<modalState.placementIds.length; i++) {
+                    placementPromises.push(
+                        placementRecordService.getById(modalState.placementIds[i])
+                    );
+                }
+
+                $q.all(placementPromises).then(function(placements) {
+                    updatePublishers(placements[0].all().campaignId);
+                    originalPlacement = getSameProperties(placements);
+                    addDefaults(originalPlacement);
+                    if (!$scope.placement || $scope.placement === {}) {
+                        $scope.placement = ng.copy(originalPlacement);
+                    }
+                });
+            }
+
+            // Creating a new placement under a campaign
+            if (modalState.campaignId) {
+
+                updatePublishers(modalState.campaignId);
+
+                if (!originalPlacement) {
+                    originalPlacement = addDefaults({});
+                }
+
+                if (!$scope.placement) {
+                    $scope.placement = originalPlacement;
+                }
+
+                $scope.placement.campaignId = originalPlacement.campaignId = modalState.campaignId;
+            }
+
+            /**
+             * Returns an object filled with the equal properties of all the objects
+             * in the placements array
+             *
+             * @param placements {Array<Object>}
+             */
+            function getSameProperties(placements) {
+
+                if (placements.length === 1) {
+                    return placements[0].all();
+                }
+
+                var sameProperties = placements.pop().all();
+                var tmpSameProperties;
+                var currentPlacement;
+
+                for (var i=0; i<placements.length; i++) {
+                    currentPlacement = placements[i].all();
+                    tmpSameProperties = {};
+                    for (var index in currentPlacement) {
+                        if (currentPlacement.hasOwnProperty(index)) {
+                            if (ng.equals(sameProperties[index], currentPlacement[index])) {
+                                tmpSameProperties[index] = sameProperties[index];
+                            }
+                        }
+                    }
+                    sameProperties = tmpSameProperties;
+                }
+
+                return sameProperties;
+            }
+
+            function addDefaults(placement) {
+                ng.extend(placement, {
+                    flightStart: placement.flightStart || new Date(),
+                    flightEnd: placement.flightEnd || new Date()
+                });
+            }
+
+            function updatePublishers(campaignId) {
+                campaignRecordService.getById(campaignId)
+                    .then(function(campaign) {
+                        accountRecordService.getById(campaign.all().accountId)
+                            .then(function(account) {
+                                divisionRecordService.getById(account.all().divisionId)
+                                    .then(function(division) {
+                                        clientRecordService.getById(division.all().clientId)
+                                            .then(function(client) {
+                                                clientPublisherRecordService.getById(client.all().id)
+                                                    .then(function(publishers) {
+                                                        $scope.publishers = publishers.all();
+                                                    });
+                                            });
+                                    });
+                            });
+                    });
+            }
+
+            $scope.ok = function (errors) {
+                $scope.errors = errors;
+                if (ng.equals({}, $scope.errors) || !$scope.errors) {
+                    var onSuccess = function() {
+                        originalPlacement = $scope.placement;
+                        $modalInstance.dismiss('cancel');
+                    };
+                    if($scope.placement && $scope.placement.id) {
+                        var placementDiff = getDiff($scope.placement, originalPlacement);
+
+                        if (!ng.equals(placementDiff, {})) {
+                            placementRecordService.update($scope.placement.id, placementDiff).then(onSuccess);
+                        } else {
+                            $modalInstance.dismiss('cancel');
+                        }
+                    } else {
+                        placementRecordService.create($scope.placement).then(onSuccess);
+                    }
+                }
+                $scope.submitted = true;
+            };
+
+            // Simple diffing function for PUT request
+            function getDiff(changed, original) {
+                var diff = {};
+                for (var index in changed) {
+                    if (changed.hasOwnProperty(index)) {
+                        if (original[index] && !ng.equals(changed[index], original[index])) {
+                            diff[index] = changed[index];
+                        }
+                    }
+                }
+
+                return diff;
+            }
+
+            $scope.cancel = function () {
+                if (hasUnsavedChanges()) {
+                    if (confirm('You have unsaved changes. Really close?')) {
+                        $scope.placement = ng.copy(originalPlacement);
+                        $modalInstance.dismiss('cancel');
+                    }
+                } else {
+                    $modalInstance.dismiss('cancel');
+                }
+            };
+
+            function hasUnsavedChanges() {
+                return !ng.equals(originalPlacement, $scope.placement);
+            }
+
+            $scope.$on('$destroy', function() {
+                modalState.placement = $scope.placement;
+            });
+        }
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/placements/directives/placementOptions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/placementOptions.html', '<span>\n    <a ng-click="openEditPlacementModal()"><i\n        class="glyph-icon glyph-settings"></i></a>\n    <a><i class="glyph-icon glyph-copy"></i></a>\n    <a><i class="glyph-icon glyph-close"></i></a>\n</span>\n'); });
+
+define('campaignManagement/campaigns/placements/directives/placementOptions',['require','./../../../module','tpl!./placementOptions.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+
+    require('tpl!./placementOptions.html');
+
+    app.directive('placementOptions', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: {
+                id: '='
+            },
+            templateUrl: 'campaignManagement/campaigns/placements/directives/placementOptions.html',
+            controller: ['$scope', '$modal', function ($scope, $modal) {
+                $scope.openEditPlacementModal = openEditPlacementModal;
+
+                var editPlacementModal, placementId;
+                function openEditPlacementModal() {
+                    if (!editPlacementModal || placementId !== $scope.id) {
+                        placementId = $scope.id;
+                        editPlacementModal = {
+                            placementIds: [$scope.id],
+                            action: 'Edit'
+                        };
+                    }
+
+                    $modal.open({
+                        animation: 'true',
+                        templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
+                        controller: 'newEditPlacementCtrl',
+                        resolve: {
+                            modalState: function() {
+                                return editPlacementModal;
+                            }
+                        },
+                        size: 'lg'
+                    });
+                }
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', '<div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Direction</span></div>\n        <div class="col-sm-9 single-select-light">\n            <select class="single-select" chosen\n                    disable-search-threshold="10"\n                    ng-options="direction.id as direction.name for direction in expandDirections track by direction.id"\n                    ng-model="expandDirection">\n            </select>\n        </div>\n    </div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Anchor</span></div>\n        <div class="col-sm-9 single-select-light">\n            <select class="single-select" chosen\n                    disable-search-threshold="10"\n                    ng-options="anchor as anchor for anchor in expandAnchors"\n                    ng-model="expandAnchor">\n            </select>\n        </div>\n    </div>\n</div>\n'); });
+
+define('campaignManagement/campaigns/placements/directives/expandAnchorsDirections',['require','./../../../module','tpl!./expandAnchorsDirections.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+
+    require('tpl!./expandAnchorsDirections.html');
+
+    app.directive('expandAnchorsDirections', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: {
+                expandAnchor: '=',
+                expandDirection: '='
+            },
+            templateUrl: 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html',
+            controller: ['$scope', function ($scope) {
+                $scope.expandDirections = [
+                    {id: 'left', name: 'Expand to Left'},
+                    {id: 'right', name: 'Expand to Right'},
+                    {id: 'top', name: 'Expand Upwards'},
+                    {id: 'bottom', name: 'Expand Downwards'}
+                ];
+
+                var commonAnchors = [
+                    'bottomright',
+                    'topright',
+                    'bottomleft',
+                    'topleft'
+                ];
+
+                var expandAnchorPossibilities = {
+                    left: ['left', 'right'].concat(commonAnchors),
+                    right: ['left', 'right'].concat(commonAnchors),
+                    top: ['top', 'bottom'].concat(commonAnchors),
+                    bottom: ['top', 'bottom'].concat(commonAnchors)
+                };
+
+                $scope.$watch('expandDirection', function() {
+                   $scope.expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
+                });
+            }]
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placements',['require','./../../../module','tpl!./placementTableHeader.html','angular'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+    var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
+
+    var ng = require('angular');
+
+    var apiConfig = {
+        endpoint: 'placements',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'live', 'flightStart', 'flightEnd',
+                'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'publisher.id',
+                'publisher.name', 'type', 'budget', 'spend'
+            ],
+            metrics: ['impressions']
+        }
+    };
+
+    var rules = {
+        checked: '',
+        placementName: '',
+        delivering: 'delivering',
+        startDate: 'date',
+        endDate: 'date',
+        type: '',
+        pacing: 'bullet',
+        spend: 'bullet',
+        creatives: 'creatives',
+        options: ''
+    };
+
+    var headers = [
+        {name: '', id: 'checked'},
+        {name: 'Placement Name', id: 'placementName'},
+        {name: 'Delivering', id: 'delivering'},
+        {name: 'Start Date', id: 'startDate'},
+        {name: 'End Date', id: 'endDate'},
+        {name: 'Type', id: 'type'},
+        {name: 'Impressions & Pacing', id: 'pacing'},
+        {name: 'Spend & Budget', id: 'spend'},
+        {name: 'Creatives', id: 'creatives'},
+        {name: '', id: 'options'}
+    ];
+
+    var typeTransform = {
+        'In-Banner': 'IBV',
+        'In-Stream': 'IS',
+        'Rich Media': 'RM',
+        'Display': 'DISPLAY'
+    };
+
+    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
+                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+        var placementCache = cache({
+            transform: function(data) {
+                return data.placements;
+            }
+        });
+
+        function sortPlacements(a, b) {
+            return a.name.localeCompare(b.name);
+        }
+
+        function transformPlacements(data) {
+            var groups = _getPlacementGroups(data.sort(sortPlacements));
+            return _transformPlacementGroups(groups);
+        }
+
+        function _transformPlacementGroups(groups) {
+            var transformedGroups = [];
+            var groupData;
+            var transformedGroup;
+            var placement;
+
+            for(var i=0; i<groups.length; i++) {
+                groupData = groups[i];
+                transformedGroup = {
+                    header: $interpolate(tableHeaderTemplate)(groupData),
+                    content: {
+                        rules: rules,
+                        headers: headers,
+                        data: []
+                    }
+                };
+
+                for(var k=0; k<groupData.group.placements.length; k++) {
+                    placement = groupData.group.placements[k];
+                    transformedGroup.content.data.push({
+                        id: placement.id,
+                        checked: '<label><input ng-click="row.selectPlacement(row.id)" class="checkbox checkbox-light" type="checkbox"><span></span></label>',
+                        selectPlacement: selectPlacement,
+                        placementName: placement.name,
+                        delivering: placement.live,
+                        startDate: placement.flightStart,
+                        endDate: placement.flightEnd,
+                        type: typeTransform[placement.type],
+                        pacing: {
+                            current: placement.metrics.impressions,
+                            max: placement.bookedImpressions
+                        },
+                        spend: {
+                            current: placement.spend,
+                            max: placement.budget
+                        },
+                        creatives: placement.creatives,
+                        options: '<div placement-options id="\'' + placement.id + '\'"></div>'
+                    });
+                }
+
+                transformedGroups.push(transformedGroup);
+            }
+            return transformedGroups;
+        }
+
+        function selectPlacement(id) {
+            var clickedPlacement = placementCache.get(getApiConfig()).getById(id);
+
+            var toggleSelected = function(placement) {
+                placement.selected = ! (!!placement.selected);
+            };
+
+            if(clickedPlacement) {
+                toggleSelected(clickedPlacement);
+                placementCache.get(getApiConfig()).addData([clickedPlacement]);
+            }
+        }
+
+        function getSelectedPlacementIds() {
+            var placements = all(true);
+            var selectedPlacements = [];
+            for(var i=0; i<placements.length; i++) {
+                if(placements[i].selected) {
+                    selectedPlacements.push(placements[i].id);
+                }
+            }
+            return selectedPlacements;
+        }
+
+        function _getPlacementGroups(placements) {
+            var viewBy = $state.params.viewBy;
+            if (viewBy === 'creative') {
+                return placementsByCreative(placements);
+            } else if(viewBy === 'ad-type') {
+                return placementsByAdType(placements);
+            } else {
+                return placementsByPublisher(placements);
+            }
+        }
+
+        function getApiConfig() {
+            var newConfig = ng.copy(apiConfig);
+            if ($state.params.campaignId) {
+                newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
+            }
+            return newConfig;
+        }
+
+        function all(skipTransform) {
+
+            // We can do this because someone using this service will be
+			// observing it before they call all()
+            var data = placementCache.all(getApiConfig());
+
+            if (skipTransform) {
+                return data;
+            }
+
+            return transformPlacements(data);
+        }
+
+        function observe(callback, $scope, preventImmediate) {
+            placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
+        }
+
+        return {
+            _transformPlacementGroups: _transformPlacementGroups,
+            _getPlacementGroups: _getPlacementGroups,
+            _getApiConfig: getApiConfig,
+            getSelectedPlacementIds: getSelectedPlacementIds,
+            all: all,
+            observe: observe
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByPublisher',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByPublisher', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var publisher;
+
+
+            // Throw placements into a hash map that's indexed by publisher
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                publisher = placement.publisher;
+
+                if (!groups[publisher.id]) {
+                    groups[publisher.id] = {
+                        name: publisher.name,
+                        placements: [placement]
+                    };
+                } else {
+                    groups[publisher.id].placements.push(placement);
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (var publisherId in groups) {
+                group = groups[publisherId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by publisher name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortGroups);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortGroups(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByCreative',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByCreative', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var creatives;
+            var creativeId;
+
+            // Throw placements into a hash map that's indexed by creative id
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                creatives = placement.creatives;
+
+                for(var k= 0; k<creatives.length; k++) {
+                    creativeId = creatives[k].id;
+                    if (!groups[creativeId]) {
+                        groups[creativeId] = {
+                            name: creatives[k].name,
+                            placements: [placement]
+                        };
+                    } else {
+                        groups[creativeId].placements.push(placement);
+                    }
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (creativeId in groups) {
+                group = groups[creativeId];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by creative name
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortFn);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortFn(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/services/placementsByAdType',['require','./../../../module'],function (require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    module.service('placementsByAdType', [function () {
+        return function(placements) {
+            var groups = {};
+            placements = [].concat(placements);
+            var placement;
+            var adType;
+
+            // Throw placements into a hash map that's indexed by publisher
+            for(var i=0; i<placements.length; i++) {
+                placement = placements[i];
+                adType = placement.type;
+
+                if (!groups[adType]) {
+                    groups[adType] = {
+                        name: adType,
+                        placements: [placement]
+                    };
+                } else {
+                    groups[adType].placements.push(placement);
+                }
+            }
+
+            // Get metadata about each group
+            var group;
+            for (adType in groups) {
+                group = groups[adType];
+                group.meta = getMeta(group.placements);
+            }
+
+            function getMeta(placements) {
+                var placement;
+                var numDelivering = 0;
+                var bookedImpressions = 0;
+                var impressions = 0;
+
+                for (var i=0; i<placements.length; i++) {
+                    placement = placements[i];
+                    if (placement.live) {
+                        numDelivering++;
+                    }
+                    bookedImpressions += placement.bookedImpressions;
+                    impressions += placement.metrics.impressions;
+                }
+
+                return {
+                    count: placements.length,
+                    numDelivering: numDelivering,
+                    bookedImpressions: bookedImpressions,
+                    impressions: impressions
+                };
+            }
+
+            // Throw groups into an array and sort by ad type
+            var groupArray = groupsToArray(groups);
+            groupArray.sort(sortFn);
+
+            function groupsToArray(groupObject) {
+                var groupArray = [];
+                for (var group in groupObject) {
+                    groupArray.push({
+                        id: group,
+                        group: groupObject[group]
+                    });
+                }
+
+                return groupArray;
+            }
+
+            function sortFn(a, b) {
+                if (a.group.name && b.group.name) {
+                    return a.group.name.localeCompare(b.group.name);
+                } else {
+                    return 0;
+                }
+            }
+
+            return groupArray;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/placements/index',['require','./controllers/placementsList','./controllers/placementsHeader','./controllers/newEditPlacement','./directives/placementOptions','./directives/expandAnchorsDirections','./services/placements','./services/placementsByPublisher','./services/placementsByCreative','./services/placementsByAdType'],function (require) {
+    'use strict';
+
+    require('./controllers/placementsList');
+    require('./controllers/placementsHeader');
+    require('./controllers/newEditPlacement');
+    require('./directives/placementOptions');
+    require('./directives/expandAnchorsDirections');
+    require('./services/placements');
+    require('./services/placementsByPublisher');
+    require('./services/placementsByCreative');
+    require('./services/placementsByAdType');
+});
+
+
+
+define('campaignManagement/campaigns/creatives/controllers/creativesHeader',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
+
+        $scope.openNewCreativeModal = openNewCreativeModal;
+
+        var newCreativeModal;
+        function openNewCreativeModal() {
+            if (!newCreativeModal) {
+                newCreativeModal = {
+                    action: 'New'
+                };
+            }
+
+            $modal.open({
+                animation: 'true',
+                templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
+                controller: 'newEditCreativeCtrl',
+                resolve: {
+                    modalState: function() {
+                        return newCreativeModal;
+                    }
+                },
+                size: 'lg'
+            });
+        }
+
+        function updateMeta() {
+
+            var allCreatives = creatives.all().data;
+
+            if (allCreatives) {
+                var creative = 0;
+
+                var meta = {
+                    all: 0,
+                    'IBV': 0,
+                    'RM': 0,
+                    'IS': 0
+                };
+
+                for(var i = 0; i < allCreatives.length; i ++) {
+                    creative = allCreatives[i];
+
+                    meta.all ++;
+                    if(creative.type) {
+                        meta[creative.type]++;
+                    }
+                }
+                $scope.creativesMeta = meta;
+            }
+        }
+        updateMeta();
+        creatives.observe(updateMeta, $scope, true);
+    }
+    ]);
+});
+
+
+
+define('campaignManagement/campaigns/creatives/controllers/creativesList',['require','./../../../module'],function(require) {
+    var app = require('./../../../module');
+
+    app.controller('creativesListCtrl', ['$scope', '$rootScope', '$state', '$filter', 'creatives', function($scope, $rootScope, $state, $filter, creatives) {
+        $scope.filter = $state.params.filter;
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+            $scope.filter = toParams.filter;
+        });
+
+        function updateCreatives() {
+            var allCreatives = creatives.all();
+            var duplicateCreatives = {
+                rules: allCreatives.rules,
+                headers: allCreatives.headers,
+                data: []
+            };
+
+            duplicateCreatives.data = $filter('filter')(allCreatives.data, {type: $scope.filter});
+            $scope.creatives = duplicateCreatives;
+        }
+
+        creatives.observe(updateCreatives, $scope);
+    }]);
+});
+
+/* globals confirm */
+define('campaignManagement/campaigns/creatives/controllers/newEditCreative',['require','./../../../module','angular'],function (require) {
+    'use strict';
+    var app = require('./../../../module');
+    var ng = require('angular');
+
+    app.controller('newEditCreativeCtrl',
+        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
+            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
+
+        //Modal functions
+        $scope.ok = undefined;
+        $scope.cancel = undefined;
+        $scope.creative = modalState.creative;
+        $scope.action = modalState.action;
+        $scope.swfAllowedExtensions = ['swf'];
+
+        var types = [
+            { id: 'IBV', name: 'In-Banner Video' },
+            { id: 'ISV', name: 'In-Stream Video' },
+            { id: 'RM', name: 'Rich Media' },
+            { id: 'SWF', name: 'SWF' },
+            { id: 'IMG', name: 'Image' }
+        ];
+
+        var typeSettings = {
+            IBV: {
+                environments: [1,2,3,4],
+                dimensions: [1,2,3,4,11,12,13,14],
+                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+            },
+            ISV: {
+                environments: [1,2],
+                dimensions: [6,7,8,9,10,14],
+                expandedDimensions: undefined
+            },
+            RM: {
+                environments: [1,2,3,4],
+                dimensions: [1,2,3,4,11,12,13,14],
+                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+            },
+            SWF: {
+                environments: [2],
+                dimensions: undefined,
+                expandedDimensions: undefined
+            },
+            IMG: {
+                environments: [1,2,3,4],
+                dimensions: undefined,
+                expandedDimensions: undefined
+            }
+        };
+
+        var environments = {
+            1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
+            2: { id: 'desktop', name: 'Desktop' },
+            3: { id: 'mobile', name: 'Tablet & Phone' },
+            4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
+        };
+
+        var dimensions = {
+            1: { widthHeight: [160, 600], name: '160x600' },
+            2: { widthHeight: [180, 150], name: '180x150' },
+            3: { widthHeight: [300, 250], name: '300x250' },
+            4: { widthHeight: [300, 600], name: '300x600' },
+            5: { widthHeight: [728, 90], name: '728x90' },
+            6: { widthHeight: [480, 360], name: '480x360 (4:3)' },
+            7: { widthHeight: [533, 300], name: '533x300 (16:9)' },
+            8: { widthHeight: [640, 360], name: '640x360 (16:9)' },
+            9: { widthHeight: [640, 480], name: '640x480 (4:3)' },
+            10: { widthHeight: [768, 432], name: '768x432 (16:9)' },
+            11: { widthHeight: [728, 90], name: '728x90' },
+            12: { widthHeight: [970, 90], name: '970x90' },
+            13: { widthHeight: [1, 1], name: 'Interstitial 1x1' },
+            14: { name: 'Custom' }
+        };
+
+        var expandedDimensions = {
+            1: { name: 'Non-Expanding' },
+            2: { name: 'Legacy' },
+            3: { widthHeight: [300, 600], name: '300x600' },
+            4: { widthHeight: [560, 300], name: '560x300' },
+            5: { widthHeight: [600, 250], name: '600x250' },
+            6: { widthHeight: [600, 600], name: '600x600' },
+            7: { widthHeight: [728, 315], name: '728x315' },
+            8: { widthHeight: [970, 250], name: '970x250' },
+            9: { widthHeight: [970, 415], name: '970x415' },
+            10: { name: 'Custom' }
+        };
+
+        setupBusinessLogic();
+        setupModalLogic();
+
+        function setupBusinessLogic() {
+            // Update available environments, dimensions and expanded dimensions
+            // based on creative types and the settings above
+            $scope.types = types;
+            $scope.$watch('creative.type', updateType);
+
+            function updateType() {
+                if ($scope.creative && typeSettings[$scope.creative.type]) {
+                    var settings = typeSettings[$scope.creative.type];
+                    updateEnvironments(settings.environments);
+                    updateDimensions(settings.dimensions);
+                    updateExpandedDimensions(settings.expandedDimensions);
+                }
+            }
+
+            function updateEnvironments(enabledEnvironmentIds) {
+                $scope.environments = filterById(environments, enabledEnvironmentIds);
+            }
+
+            function updateDimensions(enabledDimensionIds) {
+                $scope.dimensions = filterById(dimensions, enabledDimensionIds);
+            }
+
+            function updateExpandedDimensions(enabledExpandedDimensionIds) {
+                $scope.expandedDimensions = filterById(expandedDimensions, enabledExpandedDimensionIds);
+            }
+
+            function filterById(options, idArray) {
+                if (typeof idArray === 'undefined') {
+                    return undefined;
+                } else {
+                    var filtered = [];
+                    var currentId;
+                    var current;
+                    for(var i = 0; i < idArray.length; i ++) {
+                        currentId = idArray[i];
+                        current = options[currentId];
+                        filtered.push({
+                            id: currentId,
+                            name: current.name
+                        });
+                    }
+
+                    return filtered;
+                }
+            }
+
+            $scope.$watch('creative.dimensions', function() {
+                if ($scope.creative && $scope.creative.dimensions) {
+                    $scope.dimensionsAreCustom =
+                        dimensions[$scope.creative.dimensions].name === 'Custom';
+                }
+            });
+
+            $scope.$watch('creative.expandedDimensions', function() {
+                if ($scope.creative && $scope.creative.expandedDimensions) {
+                    $scope.expandedDimensionsAreCustom =
+                        expandedDimensions[$scope.creative.expandedDimensions].name === 'Custom';
+                }
+            });
+        }
+
+        function setupModalLogic() {
+            var originalCreative;
+
+            if(modalState.creativeId) {
+                creativeRecordService.getById(modalState.creativeId).then(function(creative) {
+                    originalCreative = creative.all();
+                    if(! $scope.creative || $scope.creative === {}) {
+                        $scope.creative = ng.copy(modalState.creative || originalCreative);
+                    }
+                });
+            } else {
+                originalCreative = {
+                    startDate: (modalState.creative && modalState.creative.startDate) || new Date(),
+                    endDate: (modalState.creative && modalState.creative.endDate) || new Date(),
+                    objectives: [],
+                    campaignId: modalState.campaignId
+                };
+
+                $scope.creative = ng.copy(modalState.creative || originalCreative);
+            }
+
+            campaigns.observe(updateCampaigns, $scope);
+
+            function updateCampaigns() {
+                if(! modalState.creativeId) {
+
+                    // TODO: add render limit so this isn't crazy slow
+                    //$scope.campaigns = campaigns.all().slice(0, 10);
+                    $scope.campaigns = [{id: '1234', name: 'test'}];
+                }
+            }
+
+            $scope.cancel = function() {
+                if(hasUnsavedChanges()) {
+                    if(confirm('You have unsaved changes. Really close?')) {
+                        $scope.creative = originalCreative;
+                        $modalInstance.dismiss('cancel');
+                    }
+                } else {
+                    $modalInstance.dismiss('cancel');
+                }
+            };
+
+            function hasUnsavedChanges() {
+                return ! ng.equals($scope.creative, originalCreative);
+            }
+
+            $scope.ok = function(errors) {
+                $scope.errors = errors;
+                if(ng.equals({}, $scope.errors) || ! $scope.errors) {
+                    var transformedCreative = transformCreative();
+                    var onSuccess = function() {
+                        originalCreative = $scope.creative;
+                        $modalInstance.dismiss('cancel');
+                    };
+                    if($scope.creative && $scope.creative.id) {
+                        var creativeDiff = getDiff($scope.creative, originalCreative);
+
+                        if(! ng.equals(creativeDiff, {})) {
+                            creativeRecordService.update($scope.creative.id, creativeDiff).then(onSuccess);
+                        } else {
+                            $modalInstance.dismiss('cancel');
+                        }
+                    } else {
+                        newCreativeService(transformedCreative)
+                            .then(function(url) {
+                                onSuccess();
+                                $window.open(url, '_blank');
+                            });
+                    }
+                }
+                $scope.submitted = true;
+            };
+
+            function transformCreative() {
+                var creative = $scope.creative;
+                var allDimensions = getDimensions(creative);
+                var getEnvironment = function(id) {
+                    for (var i=0; i<$scope.environments.length; i++) {
+                        if ($scope.environments[i].id === id) {
+                            return $scope.environments[i];
+                        }
+                    }
+                    return null;
+                };
+                return {
+                    expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
+                    expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
+                    embedWidth: parseInt(allDimensions.embed.width, 10),
+                    embedHeight: parseInt(allDimensions.embed.height, 10),
+                    clickthroughUrl: creative.clickthroughUrl,
+                    type: creative.type,
+                    environment: getEnvironment(creative.environment),
+                    name: creative.name
+                };
+            }
+
+            function getDimensions(creative) {
+                var allDimensions = {
+                    embed: {},
+                    expanded: {}
+                };
+
+                var widthHeight = dimensions[creative.dimensions].widthHeight;
+                allDimensions.embed.width = widthHeight && widthHeight[0];
+                allDimensions.embed.height = widthHeight && widthHeight[1];
+
+                allDimensions.embed = {
+                    width: allDimensions.embed.width || creative.customDimensionsWidth,
+                    height: allDimensions.embed.height || creative.customDimensionsHeight
+                };
+
+                if (creative.expandedDimensions) {
+                    widthHeight = expandedDimensions[creative.expandedDimensions].widthHeight;
+                    allDimensions.expanded.width = widthHeight && widthHeight[0];
+                    allDimensions.expanded.height = widthHeight && widthHeight[1];
+
+                    allDimensions.expanded = {
+                        width: allDimensions.expanded.width || creative.customExpandedDimensionsWidth,
+                        height: allDimensions.expanded.height || creative.customExpandedDimensionsHeight
+                    };
+                }
+
+                return allDimensions;
+            }
+
+            // Simple diffing function for PUT request
+            function getDiff(changed, original) {
+                var diff = {};
+                for(var index in changed) {
+                    if(changed.hasOwnProperty(index)) {
+                        if(original[index] && ! ng.equals(changed[index], original[index])) {
+                            diff[index] = changed[index];
+                        }
+                    }
+                }
+
+                return diff;
+            }
+
+            //Before closing the modal save the state;
+            $scope.$on('$destroy', function() {
+                modalState.creative = $scope.creative;
+            });
+        }
+    }]);
+});
+
+define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['require','./../../../module','angular','tpl!./creativeThumbnails.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+    var ng = require('angular');
+
+    require('tpl!./creativeThumbnails.html');
+
+    app.directive('creativeThumbnails', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation) {
+
+                    var editCreativeModals = {};
+                    var mixpoURL = studioLocation.host();
+
+                    $scope.filter = $state.params.filter;
+                    $scope.openPreviewPage = openPreviewPage;
+                    $scope.openStudio = openStudio;
+                    $scope.openSettings = openSettings;
+                    $scope.gotoPlacements = gotoPlacements;
+                    $scope.copyCreative = copyCreative;
+                    $scope.deleteCreative = deleteCreative;
+                    $scope.transformCreativeData = transformCreativeData;
+
+                    creatives.observe(updateCreatives, $scope);
+
+                    $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+                        $scope.filter = toParams.filter;
+                    });
+
+                    function openPreviewPage(creative) {
+                        $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
+                    }
+
+                    function openStudio(id) {
+                        $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
+                    }
+
+                    var removeNulls = function(creative) {
+                        var newCreative = {};
+                        for (var prop in creative) {
+                            if (creative.hasOwnProperty(prop) && (creative[prop] !== null && typeof creative[prop] !== 'undefined')) {
+                                newCreative[prop] = creative[prop];
+                            }
+                        }
+                        return newCreative;
+                    };
+
+                    function openSettings(id) {
+                        if (!editCreativeModals[id]) {
+                            editCreativeModals[id] = {
+                                creativeId: id,
+                                action: 'Edit'
+                            };
+                        }
+
+                        $modal.open({
+                            animation: 'true',
+                            templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
+                            controller: 'newEditCreativeCtrl',
+                            resolve: {
+                                modalState: function() {
+                                    return editCreativeModals[id];
+                                }
+                            },
+                            size: 'lg'
+                        });
+                    }
+
+                    function gotoPlacements(creative) {
+                        $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
+                    }
+
+                    function transformCreativeData(data) {
+                        var crudCreative =  {
+                            campaignId: data.campaignId,
+                            expandedWidth: data.expandedWidth,
+                            deleted: data.deleted,
+                            expandedHeight: data.expandedHeight,
+                            name: data.name + ' (copy)',
+                            type: data.type,
+                            keywords: data.keywords.join(','),
+                            embedHeight: data.embedHeight,
+                            device: data.device,
+                            embedWidth: data.embedWidth,
+                            clickthroughUrl: data.clickthroughUrl
+                        };
+
+                        if (data.expandAnchor) {
+                            crudCreative.expandAnchor = data.expandAnchor;
+                        } else {
+                            crudCreative.expandAnchor = 'topright';
+                        }
+
+                        if (data.expandDirection) {
+                            crudCreative.expandDirection = data.expandDirection;
+                        } else {
+                            crudCreative.expandDirection = 'left';
+                        }
+
+                        if (data.expandMode) {
+                            crudCreative.expandMode = data.expandMode;
+                        }
+                        return crudCreative;
+                    }
+
+                    function copyCreative(id) {
+                        creativeRecordService.getById(id).then(function(creative) {
+                            creative = creative.all();
+                            var newCreative = ng.copy(creative);
+                            delete newCreative.id;
+                            newCreative = removeNulls(newCreative);
+                            creativeRecordService.create( transformCreativeData(newCreative) );
+                        });
+                    }
+
+                    function deleteCreative(creative) {
+                        creativeRecordService.delete( creative.id );
+                    }
+
+                    function updateCreatives() {
+                        var allCreatives = creatives.all();
+                        var duplicateCreatives = [];
+
+                        if ($scope.filter) {
+                            duplicateCreatives = $filter('filter')(allCreatives.data, {type: $scope.filter});
+                        } else {
+                            duplicateCreatives = allCreatives.data;
+                        }
+
+                        $scope.creatives = duplicateCreatives;
+                    }
+
+            }]
+        };
+    }]);
+});
+
+
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeOptions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeOptions.html', '<span>\n<a>Edit in Studio</a>\n<span>\n    <a title="Creative Settings" ng-click="openEditCreativeModal()"><i\n        class="glyph-icon glyph-settings"></i></a>\n    <a title="Copy Creative"><i class="glyph-icon glyph-copy"></i></a>\n    <a title="Delete Creative"><i class="glyph-icon glyph-close"></i></a>\n</span>\n</span>\n'); });
+
+define('campaignManagement/campaigns/creatives/directives/creativeOptions',['require','./../../../module','tpl!./creativeOptions.html'],function (require) {
+    'use strict';
+
+    var app = require('./../../../module');
+
+    require('tpl!./creativeOptions.html');
+
+    app.directive('creativeOptions', [function () {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: {
+                id: '='
+            },
+            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeOptions.html',
+            controller: ['$scope', '$modal', function ($scope, $modal) {
+                $scope.openEditCreativeModal = openEditCreativeModal;
+
+                var editCreativeModal;
+                function openEditCreativeModal() {
+                    if (!editCreativeModal) {
+                        editCreativeModal = {
+                            creativeId: $scope.id,
+                            action: 'Edit'
+                        };
+                    }
+
+                    $modal.open({
+                        animation: 'true',
+                        templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
+                        controller: 'newEditCreativeCtrl',
+                        resolve: {
+                            modalState: function() {
+                                return editCreativeModal;
+                            }
+                        },
+                        size: 'lg'
+                    });
+                }
+            }]
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/creatives/services/creatives',['require','./../../../module','angular'],function(require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    var ng = require('angular');
+
+    var apiConfig = {
+        endpoint: 'creatives',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'live', 'type', 'device', 'embedWidth',
+                'embedHeight', 'expandedWidth', 'expandedHeight',
+                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix'
+            ],
+            limit: 500
+        }
+    };
+
+    var rules = {
+        checked: '',
+        creativeName: '',
+        delivering: 'delivering',
+        type: '',
+        dimensions: '',
+        expandedDimensions: '',
+        numPlacements: 'link',
+        options: ''
+    };
+
+    var headers = [
+        {name: '', id: 'checked'},
+        {name: 'Creative Name', id: 'creativeName'},
+        {name: 'Delivering', id: 'delivering'},
+        {name: 'Type', id: 'type'},
+        {name: 'Dimensions', id: 'dimensions'},
+        {name: 'Expandable', id: 'expandedDimensions'},
+        {name: 'No. Placements', id: 'numPlacements'},
+        {name: '', id: 'options'}
+    ];
+
+    var typeTransform = {
+        'In-Banner': 'IBV',
+        'In-Stream': 'IS',
+        'Rich Media': 'RM',
+        'Display': 'DISPLAY'
+    };
+
+    module.service('creatives', [
+        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
+            var cache = cacheFactory({
+                transform: function(data) {
+                    return data.creatives;
+                }
+            });
+
+            creativeRecordService.observe(function(newUpdatedRecord) {
+                var existingRecord = getCreative(newUpdatedRecord.id);
+
+                if (!existingRecord) {
+                    // Set up defaults for a new record
+                    existingRecord = {
+                        lastModified: new Date(),
+                        delivering: false,
+                        countPlacements: 0
+                    };
+                }
+                var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
+                addData([transformedRecord]);
+
+            }, undefined, true);
+
+            function transformCrudRecord(updatedRecord, existingRecord) {
+                return {
+                    deleted: updatedRecord.deleted,
+                    embedHeight: updatedRecord.embedHeight,
+                    expandedWidth: updatedRecord.expandedWidth,
+                    embedWidth: updatedRecord.embedWidth,
+                    expandedHeight: updatedRecord.expandedHeight,
+                    modifiedDate: existingRecord.lastModified,
+                    name: updatedRecord.name,
+                    id: updatedRecord.id,
+                    thumbnailUrlPrefix:  updatedRecord.thumbnailUrlPrefix,
+                    type: updatedRecord.type,
+                    device: updatedRecord.device,
+                    live: existingRecord.delivering,
+                    countPlacements: existingRecord.countPlacements
+                };
+            }
+
+            function getCreative(id) {
+                var creatives = cache.all( _apiConfig() );
+                var c;
+                for (var i=0; creatives.length > i; i++) {
+                    c = creatives[i];
+                    if (c.id === id) {
+                        return c;
+                    }
+                }
+                return false;
+            }
+
+            function _transformCreatives(creatives) {
+                var creative;
+                var transformedTable = {
+                    rules: rules,
+                    headers: headers,
+                    data: []
+                };
+
+                for(var i = 0; i < creatives.length; i ++) {
+                    creative = creatives[i];
+                    transformedTable.data.push({
+                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        creativeName: creative.name,
+                        delivering: creative.live,
+                        type: typeTransform[creative.type],
+                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                        campaignId: creative.campaignId,
+                        numPlacements: {
+                            name: creative.countPlacements || 0,
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                        },
+                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
+
+                        // These properties are needed by thumbnails but aren't
+						// in the table
+                        id: creative.id,
+                        lastModified: creative.modifiedDate,
+                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
+                    });
+                }
+                return transformedTable;
+            }
+
+            function _apiConfig() {
+
+                var newConfig = ng.copy(apiConfig);
+                if ($state.params.campaignId) {
+                    newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
+                }
+
+                return newConfig;
+            }
+
+            function all() {
+                return _transformCreatives(cache.all(_apiConfig()));
+            }
+
+            function observe(callback, $scope, preventImmediate, preventInit) {
+                return cache.observe(_apiConfig(), callback, $scope, preventImmediate, preventInit);
+            }
+
+            function addData(newData) {
+                cache.addData(_apiConfig(), newData);
+            }
+
+            /**
+             * Returns underlying dataFactory object for the cache entry
+             * @param {boolean} [initialize=false] should we call init
+             * @returns {{dataFactory}}
+             */
+            function data(initialize) {
+                return cache.get(_apiConfig(), initialize);
+            }
+
+            return {
+                _transformCreatives: _transformCreatives,
+                _apiConfig: _apiConfig,
+                _getCreative: getCreative,
+                all: all,
+                data: data,
+                addData: addData,
+                observe: observe
+            };
+        }
+    ]);
+});
+
+define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['require','./../../../module'],function(require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    /**
+     * The studioDirectAdapter adapt the newEditCreative.js params object to
+     * Studio Direct's params API.
+     *
+     * @memberof app
+     * @ngdoc service
+     * @name studioDirectAdapter
+     * @ngInject
+     */
+    module.service('studioDirectAdapter', [function () {
+        function getAdType(type, expandedWidth, expandedHeight) {
+            if(type === 'IMG') {
+                // Image
+                return 'IMG';
+            } else if(type === 'SWF') {
+                // SWF
+                return 'SWF';
+            }  else if(type === 'ISV') {
+                // In-Stream Video
+                return 'IS';
+            } else if(type === 'RM') {
+                // 'Rich Media' AKA 'Interactive-Display'
+                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                    return 'IDRM';
+                } else {
+                    return 'ID';
+                }
+            } else if(type === 'IBV') {
+                // 'In-Banner Video' AKA 'MLQ'
+                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                    return 'IDMLQ';
+                } else {
+                    return 'MLQ';
+                }
+            } else {
+                // unknown
+                return null;
+            }
+        }
+
+        function getAdEnvironment(env) {
+            switch(env) {
+                case 'multi-screen':
+                    return 'multiscreen';
+                case 'mobile':
+                    return 'tabletphone';
+                case 'mraid':
+                    return 'inappmraid';
+                default: // desktop
+                    return env;
+            }
+        }
+
+        function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
+            if(type === 'IBV') {
+                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                    // IDMLQ
+                    params.idw = embedWidth;
+                    params.idh = embedHeight;
+                    params.tcw = expandedWidth;
+                    params.tch = expandedHeight;
+                } else {
+                    // MLQ
+                    params.tcw = embedWidth;
+                    params.tch = embedHeight;
+                }
+            } else {
+                params.idw = embedWidth;
+                params.idh = embedHeight;
+                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                    params.tcw = expandedWidth;
+                    params.tch = expandedHeight;
+                }
+            }
+        }
+
+        return function(creative) {
+            var params = {};
+            params.sdf = 'new';
+            params.ad = getAdType(creative.type, creative.expandedWidth, creative.expandedHeight);
+            params.env = getAdEnvironment(creative.environment);
+            params.url = creative.clickthroughUrl;
+            params.title = creative.name;
+            setDimensions(params, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight );
+
+            return params;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/creatives/services/newCreative',['require','./../../../module'],function(require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    /**
+     * The newCreativeService returns a promise that creates a new Ad
+     * from the settings handed to the service and returns the URL
+     * to be opened in a new.
+     *
+     * @memberof app
+     * @ngdoc service
+     * @name newCreativeService
+     * @ngInject
+     */
+    module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', 'studioLocation', function($httpParamSerializer, $q, studioDirectAdapter, studioLocation) {
+       function createStudioDirectUrl(creative) {
+            var studioDirectUrl = studioLocation.host() + '/studio';
+            var params = studioDirectAdapter(creative);
+            return studioDirectUrl + '?' + $httpParamSerializer(params);
+        }
+
+        return function(creative) {
+            var deferred = $q.defer();
+            var url = createStudioDirectUrl(creative);
+            deferred.resolve(url);
+            return deferred.promise;
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/creatives/services/creative',['require','./../../../module','angular'],function(require) {
+    'use strict';
+
+    var module = require('./../../../module');
+    var ng = require('angular');
+
+    var apiConfig = {
+        endpoint: 'creatives',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'live', 'type', 'device', 'embedWidth',
+                'embedHeight', 'expandedWidth', 'expandedHeight',
+                'countPlacements',
+                'live', 'modifiedDate', 'thumbnailUrlPrefix'
+            ]
+        }
+    };
+
+    module.service('creativeService', ['$http', 'dataFactory', 'apiUriGenerator', function($http, dataFactory, apiUriGenerator) {
+        var creatives = dataFactory();
+        var pendingRequest = {};
+
+        function getApiConfig(id) {
+            var config = ng.copy(apiConfig);
+            config.queryParams.filters = ['id:eq:' + id];
+            return config;
+        }
+
+        function find(id, data) {
+            var output;
+
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].id === id) {
+                    output = data[i];
+                    break;
+                }
+            }
+
+            return output;
+        }
+
+        function get(id){
+            var item = find(id, creatives.all());
+
+            if (!item && !pendingRequest[id]) {
+                pendingRequest[id] = true;
+
+                var url = apiUriGenerator(getApiConfig(id));
+
+                $http.get(url).success(function (d) {
+                    creatives.addData(d.creatives, id);
+                });
+            }
+
+            return item;
+        }
+
+        return {
+            observe: creatives.observe,
+            _getApiConfig: getApiConfig,
+            _find: find,
+            all: creatives.all,
+            get: get
+        };
+    }]);
+});
+
+define('campaignManagement/campaigns/creatives/index',['require','./controllers/creativesHeader','./controllers/creativesList','./controllers/newEditCreative','./directives/creativeThumbnails','./directives/creativeOptions','./services/creatives','./services/studioDirectAdapter','./services/newCreative','./services/creative'],function (require) {
+    'use strict';
+
+    require('./controllers/creativesHeader');
+    require('./controllers/creativesList');
+    require('./controllers/newEditCreative');
+    require('./directives/creativeThumbnails');
+    require('./directives/creativeOptions');
+    require('./services/creatives');
+    require('./services/studioDirectAdapter');
+    require('./services/newCreative');
+    require('./services/creative');
+});
+
 define('campaignManagement/campaigns/services/campaignCache',['require','./../../module'],function (require) {
     'use strict';
 
@@ -63720,2020 +65760,11 @@ define('campaignManagement/campaigns/filters/campaignStatus',['require','./../..
     }]);
 });
 
-
-
-define('campaignManagement/campaigns/placements/controllers/placementsList',['require','./../../../module'],function (require) {
-    var app = require('./../../../module');
-
-    app.controller('placementsListCtrl', ['$scope', '$state', 'placements', function ($scope, $state, placements) {
-        $scope.placements = [];
-        $scope.params = $state.params;
-        $scope.placementTypes = [
-            {
-                name: 'Add Manually',
-                value: '1'
-            },
-            {
-                name: 'Upload Media Plan',
-                value: '2'
-            }
-        ];
-
-        placements.observe(updatePlacements, $scope);
-        function updatePlacements() {
-            $scope.placements = placements.all();
-        }
-    }]);
-});
-
-
-
-define('campaignManagement/campaigns/placements/controllers/placementsHeader',['require','./../../../module'],function(require) {
-    var app = require('./../../../module');
-
-    app.controller('placementsHeader', [
-        '$scope', '$modal', '$rootScope', '$q', '$interpolate', 'placements', 'adTagService', 'placementRecordService',
-        function($scope, $modal, $rootScope, $q, $interpolate, placements, adTagService, placementRecordService) {
-
-            $scope.openNewPlacementModal = openNewPlacementModal;
-            $scope.editPlacements = editPlacements;
-            $scope.pullTags = pullTags;
-            $scope.selectedPlacements = [];
-
-            var newPlacementModal;
-
-            function openNewPlacementModal() {
-                if(! newPlacementModal) {
-                    newPlacementModal = {
-                        action: 'New'
-                    };
-                }
-
-                $modal.open({
-                    animation: 'true',
-                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
-                    controller: 'newEditPlacementCtrl',
-                    resolve: {
-                        modalState: function() {
-                            return newPlacementModal;
-                        }
-                    },
-                    size: 'lg'
-                });
-            }
-
-            function update() {
-                updateMeta();
-                updateSelected();
-            }
-
-            function updateMeta() {
-                var allPlacements = placements.all(true);
-
-                if(allPlacements) {
-                    var placement;
-                    var creative;
-
-                    var publishers = [];
-                    var creatives = [];
-                    var types = [];
-
-                    for(var i = 0; i < allPlacements.length; i ++) {
-                        placement = allPlacements[i];
-
-                        pushUnique(publishers, placement.publisher.id);
-                        pushUnique(types, placement.type);
-
-                        if(placement.creatives) {
-                            for(var k = 0; k < placement.creatives.length; k ++) {
-                                creative = placement.creatives[k];
-
-                                pushUnique(creatives, creative.id);
-
-                            }
-                        }
-                    }
-
-                    $scope.placementsMeta = {
-                        publishers: publishers.length,
-                        creatives: creatives.length,
-                        types: types.length
-                    };
-                }
-            }
-
-            function updateSelected() {
-                $scope.selectedPlacements = placements.getSelectedPlacementIds();
-            }
-
-            updateMeta();
-            placements.observe(update, $scope, true);
-
-            // Edit Placements
-            var editPlacementsModal, selectedPlacements;
-
-            function editPlacements() {
-                if(! editPlacementsModal || selectedPlacementsChanged()) {
-                    selectedPlacements = $scope.selectedPlacements;
-                    editPlacementsModal = {
-                        placementIds: $scope.selectedPlacements,
-                        action: 'Edit'
-                    };
-                }
-
-                $modal.open({
-                    animation: 'true',
-                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
-                    controller: 'newEditPlacementCtrl',
-                    resolve: {
-                        modalState: function() {
-                            return editPlacementsModal;
-                        }
-                    },
-                    size: 'lg'
-                });
-            }
-
-            function selectedPlacementsChanged() {
-                return arraysAreDifferent(selectedPlacements, $scope.selectedPlacements);
-            }
-
-            /**
-             * Push an item to an array if the item isn't already in the array
-             * @param array
-             * @param item
-             */
-            function pushUnique(array, item) {
-                if(! inArray(item, array)) {
-                    array.push(item);
-                }
-            }
-
-            function inArray(needle, haystack) {
-                return haystack.indexOf(needle) > - 1;
-            }
-
-            /**
-             * Returns true if two arrays are different
-             *
-             * @param a {Array<number>}
-             * @param b {Array<number>}
-             *
-             * @returns {boolean}
-             */
-            function arraysAreDifferent(a, b) {
-                return ! isSubsetOf(a, b) || ! isSubsetOf(b, a);
-            }
-
-            /**
-             * Returns true if b is a subset of a
-             *
-             * @param a {Array<number>}
-             * @param b {Array<number>}
-             *
-             * @returns {boolean}
-             */
-            function isSubsetOf(a, b) {
-                var difference = a.filter(function(i) {
-                    return b.indexOf(i) < 0;
-                });
-
-                return difference.length === 0;
-            }
-
-            var tagTemplates = [];
-            adTagService.init();
-            adTagService.observe(function() {
-                tagTemplates = adTagService.all();
-            });
-
-            function pullTags() {
-                var placementIds = placements.getSelectedPlacementIds();
-                if (placementIds.length === 0) {
-                    window.alert('No ad tags to pull!');
-                    return;
-                }
-                var tags = '';
-                var placementPromises = [];
-
-                placementIds.forEach(function(placementId) {
-                    placementPromises.push(placementRecordService.getById(placementId));
-                });
-
-                $q.all(placementPromises).then(function(placements) {
-                    placements.forEach(function(placement) {
-                        placement = placement.all();
-                        tags += getPlacementTagText(placement);
-                    });
-
-                    if (placements.length > 0) {
-                        var firstPlacementName = placements[0].all().name;
-                        download(firstPlacementName + '_tags.txt', tags);
-                    }
-                });
-            }
-
-            function getPlacementTagTemplate(placement) {
-                var placementTagTemplate = false;
-                tagTemplates.forEach(function(tagTemplate) {
-                   if (tagTemplate.id === placement.adTagId) {
-                       placementTagTemplate = tagTemplate;
-                   }
-                });
-
-                return placementTagTemplate;
-            }
-
-            function getPlacementInterpolateObject(placement, adTagType) {
-                return {
-                    width: placement.embedWidth,
-                    height: placement.embedHeight,
-                    id: placement.targetId, // The creative guid / entry point for multi-creative
-                    // TODO: ad real url here
-                    prerenderUrl: 'http://www.google.com', // Image to show before load
-                    clickThroughUrl: placement.clickthroughUrl,
-                    // TODO: add real data here
-                    version: '1.1.1', // The current build version
-                    clicktag: adTagType.attributes.clicktag,
-                    folder: placement.targetId.slice(0, 2) // The first 2 letters of the id
-                };
-            }
-
-            function getPlacementTagText(placement) {
-                var tagTemplate = getPlacementTagTemplate(placement);
-                if (tagTemplate) {
-                    // Interpolate in "all-or-nothing" mode to avoid missing variables
-                    var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
-                    var tag = '';
-
-                    tag += 'Title: ' + placement.name + '\n';
-                    tag += 'Identifier: ' + placement.id + '\n';
-                    tag += 'Primary URL: ' + placement.clickthroughUrl + '\n';
-                    tag += 'Play Mode: ' + placement.playMode + '\n';
-                    tag += 'Ad Tag: \n';
-                    tag += adTag(getPlacementInterpolateObject(placement, tagTemplate));
-                    tag += '\n\n---\n\n';
-
-                    return tag;
-                } else {
-                    return '';
-                }
-            }
-
-            function download(filename, text) {
-                var pom = document.createElement('a');
-                pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-                pom.setAttribute('download', filename);
-
-                if(document.createEvent) {
-                    var event = document.createEvent('MouseEvents');
-                    event.initEvent('click', true, true);
-                    pom.dispatchEvent(event);
-                }
-                else {
-                    pom.click();
-                }
-            }
-        }
-    ]);
-});
-
-/* globals confirm */
-define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['require','./../../../module','angular'],function (require) {
+define('campaignManagement/campaigns/index',['require','./placements/index','./creatives/index','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./services/campaignDetails','./controllers/newEditCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./factories/campaignsByStatusAccordionTable','./filters/campaignStatus','./creatives/controllers/creativesHeader','./creatives/controllers/creativesList','./creatives/controllers/newEditCreative','./creatives/directives/creativeThumbnails','./creatives/directives/creativeOptions','./creatives/services/creatives','./creatives/services/studioDirectAdapter','./creatives/services/newCreative','./creatives/services/creative'],function (require) {
     'use strict';
 
-    var app = require('./../../../module');
-
-    var ng = require('angular');
-
-    app.controller('newEditPlacementCtrl', ['$scope', '$q', '$modalInstance', 'placements',
-                                            'placementRecordService', 'campaignRecordService',
-                                            'accountRecordService', 'divisionRecordService',
-                                            'clientRecordService', 'clientPublisherRecordService', 'modalState',
-                                            function ($scope, $q, $modalInstance, placements,
-                                                      placementRecordService, campaignRecordService,
-                                                      accountRecordService, divisionRecordService,
-                                                      clientRecordService, clientPublisherRecordService, modalState) {
-        $scope.placement = modalState.placement;
-        $scope.action = modalState.action;
-
-        setupDatePickers();
-        setupRateTypes();
-        setupModal();
-
-        function setupDatePickers() {
-            var openPicker = function($event, name) {
-                $event.preventDefault();
-                $event.stopPropagation();
-
-                ng.forEach($scope.datePickers, function (value, key) {
-                    $scope.datePickers[key] = false;
-                });
-
-                $scope.datePickers[name] = true;
-            };
-
-            $scope.format = 'MM/dd/yyyy';
-            $scope.openPicker = openPicker;
-            $scope.datePickers = {};
-            $scope.dateOptions = {
-                formatYear: 'yy',
-                startingDay: 0,
-                maxMode: 'day'
-            };
-        }
-
-        function setupRateTypes() {
-            $scope.rateTypes = [
-                {id: 'CPM', name: 'CPM'},
-                {id: 'CPC', name: 'CPC'},
-                {id: 'CPV', name: 'CPV'},
-                {id: 'CPCV', name: 'CPCV'},
-                {id: 'FIXED', name: 'Fixed Fee'},
-                {id: 'ADDEDV', name: 'Added Value'}
-            ];
-
-            $scope.rateTypeFields = {
-                CPM: { showCostPer: true, showTotalCost: true },
-                CPC: { showCostPer: true, showTotalCost: true },
-                CPV: { showCostPer: true, showTotalCost: true },
-                CPCV: { showCostPer: true, showTotalCost: true },
-                FIXED: { showCostPer: false, showTotalCost: true },
-                ADDEDV: { showCostPer: false, showTotalCost: false }
-            };
-
-            $scope.$watch('placement.rateType', function() {
-                var rateType = $scope.placement && $scope.placement.rateType;
-                if (rateType) {
-                    var fields = $scope.rateTypeFields[rateType];
-                    if(fields) {
-                        $scope.showCostPer = fields.showCostPer;
-                        $scope.showTotalCost = fields.showTotalCost;
-                    }
-                }
-            });
-        }
-
-        function setupModal() {
-            var originalPlacement;
-            var placementPromises = [];
-
-            // Editing placement(s)
-            if (modalState.placementIds) {
-                $scope.multiplePlacements = modalState.placementIds.length > 1;
-
-                for (var i=0; i<modalState.placementIds.length; i++) {
-                    placementPromises.push(
-                        placementRecordService.getById(modalState.placementIds[i])
-                    );
-                }
-
-                $q.all(placementPromises).then(function(placements) {
-                    updatePublishers(placements[0].all().campaignId);
-                    originalPlacement = getSameProperties(placements);
-                    addDefaults(originalPlacement);
-                    if (!$scope.placement || $scope.placement === {}) {
-                        $scope.placement = ng.copy(originalPlacement);
-                    }
-                });
-            }
-
-            // Creating a new placement under a campaign
-            if (modalState.campaignId) {
-
-                updatePublishers(modalState.campaignId);
-
-                if (!originalPlacement) {
-                    originalPlacement = addDefaults({});
-                }
-
-                if (!$scope.placement) {
-                    $scope.placement = originalPlacement;
-                }
-
-                $scope.placement.campaignId = originalPlacement.campaignId = modalState.campaignId;
-            }
-
-            /**
-             * Returns an object filled with the equal properties of all the objects
-             * in the placements array
-             *
-             * @param placements {Array<Object>}
-             */
-            function getSameProperties(placements) {
-
-                if (placements.length === 1) {
-                    return placements[0].all();
-                }
-
-                var sameProperties = placements.pop().all();
-                var tmpSameProperties;
-                var currentPlacement;
-
-                for (var i=0; i<placements.length; i++) {
-                    currentPlacement = placements[i].all();
-                    tmpSameProperties = {};
-                    for (var index in currentPlacement) {
-                        if (currentPlacement.hasOwnProperty(index)) {
-                            if (ng.equals(sameProperties[index], currentPlacement[index])) {
-                                tmpSameProperties[index] = sameProperties[index];
-                            }
-                        }
-                    }
-                    sameProperties = tmpSameProperties;
-                }
-
-                return sameProperties;
-            }
-
-            function addDefaults(placement) {
-                ng.extend(placement, {
-                    flightStart: placement.flightStart || new Date(),
-                    flightEnd: placement.flightEnd || new Date()
-                });
-            }
-
-            function updatePublishers(campaignId) {
-                campaignRecordService.getById(campaignId)
-                    .then(function(campaign) {
-                        accountRecordService.getById(campaign.all().accountId)
-                            .then(function(account) {
-                                divisionRecordService.getById(account.all().divisionId)
-                                    .then(function(division) {
-                                        clientRecordService.getById(division.all().clientId)
-                                            .then(function(client) {
-                                                clientPublisherRecordService.getById(client.all().id)
-                                                    .then(function(publishers) {
-                                                        $scope.publishers = publishers.all();
-                                                    });
-                                            });
-                                    });
-                            });
-                    });
-            }
-
-            $scope.ok = function (errors) {
-                $scope.errors = errors;
-                if (ng.equals({}, $scope.errors) || !$scope.errors) {
-                    var onSuccess = function() {
-                        originalPlacement = $scope.placement;
-                        $modalInstance.dismiss('cancel');
-                    };
-                    if($scope.placement && $scope.placement.id) {
-                        var placementDiff = getDiff($scope.placement, originalPlacement);
-
-                        if (!ng.equals(placementDiff, {})) {
-                            placementRecordService.update($scope.placement.id, placementDiff).then(onSuccess);
-                        } else {
-                            $modalInstance.dismiss('cancel');
-                        }
-                    } else {
-                        placementRecordService.create($scope.placement).then(onSuccess);
-                    }
-                }
-                $scope.submitted = true;
-            };
-
-            // Simple diffing function for PUT request
-            function getDiff(changed, original) {
-                var diff = {};
-                for (var index in changed) {
-                    if (changed.hasOwnProperty(index)) {
-                        if (original[index] && !ng.equals(changed[index], original[index])) {
-                            diff[index] = changed[index];
-                        }
-                    }
-                }
-
-                return diff;
-            }
-
-            $scope.cancel = function () {
-                if (hasUnsavedChanges()) {
-                    if (confirm('You have unsaved changes. Really close?')) {
-                        $scope.placement = ng.copy(originalPlacement);
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
-                    $modalInstance.dismiss('cancel');
-                }
-            };
-
-            function hasUnsavedChanges() {
-                return !ng.equals(originalPlacement, $scope.placement);
-            }
-
-            $scope.$on('$destroy', function() {
-                modalState.placement = $scope.placement;
-            });
-        }
-    }]);
-});
-
-
-define('tpl!campaignManagement/campaigns/placements/directives/placementOptions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/placementOptions.html', '<span>\n    <a ng-click="openEditPlacementModal()"><i\n        class="glyph-icon glyph-settings"></i></a>\n    <a><i class="glyph-icon glyph-copy"></i></a>\n    <a><i class="glyph-icon glyph-close"></i></a>\n</span>\n'); });
-
-define('campaignManagement/campaigns/placements/directives/placementOptions',['require','./../../../module','tpl!./placementOptions.html'],function (require) {
-    'use strict';
-
-    var app = require('./../../../module');
-
-    require('tpl!./placementOptions.html');
-
-    app.directive('placementOptions', [function () {
-        return {
-            restrict: 'A',
-            replace: true,
-            scope: {
-                id: '='
-            },
-            templateUrl: 'campaignManagement/campaigns/placements/directives/placementOptions.html',
-            controller: ['$scope', '$modal', function ($scope, $modal) {
-                $scope.openEditPlacementModal = openEditPlacementModal;
-
-                var editPlacementModal, placementId;
-                function openEditPlacementModal() {
-                    if (!editPlacementModal || placementId !== $scope.id) {
-                        placementId = $scope.id;
-                        editPlacementModal = {
-                            placementIds: [$scope.id],
-                            action: 'Edit'
-                        };
-                    }
-
-                    $modal.open({
-                        animation: 'true',
-                        templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
-                        controller: 'newEditPlacementCtrl',
-                        resolve: {
-                            modalState: function() {
-                                return editPlacementModal;
-                            }
-                        },
-                        size: 'lg'
-                    });
-                }
-            }]
-        };
-    }]);
-});
-
-
-define('tpl!campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', '<div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Direction</span></div>\n        <div class="col-sm-9 single-select-light">\n            <select class="single-select" chosen\n                    disable-search-threshold="10"\n                    ng-options="direction.id as direction.name for direction in expandDirections track by direction.id"\n                    ng-model="expandDirection">\n            </select>\n        </div>\n    </div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Anchor</span></div>\n        <div class="col-sm-9 single-select-light">\n            <select class="single-select" chosen\n                    disable-search-threshold="10"\n                    ng-options="anchor as anchor for anchor in expandAnchors"\n                    ng-model="expandAnchor">\n            </select>\n        </div>\n    </div>\n</div>\n'); });
-
-define('campaignManagement/campaigns/placements/directives/expandAnchorsDirections',['require','./../../../module','tpl!./expandAnchorsDirections.html'],function (require) {
-    'use strict';
-
-    var app = require('./../../../module');
-
-    require('tpl!./expandAnchorsDirections.html');
-
-    app.directive('expandAnchorsDirections', [function () {
-        return {
-            restrict: 'A',
-            replace: true,
-            scope: {
-                expandAnchor: '=',
-                expandDirection: '='
-            },
-            templateUrl: 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html',
-            controller: ['$scope', function ($scope) {
-                $scope.expandDirections = [
-                    {id: 'left', name: 'Expand to Left'},
-                    {id: 'right', name: 'Expand to Right'},
-                    {id: 'top', name: 'Expand Upwards'},
-                    {id: 'bottom', name: 'Expand Downwards'}
-                ];
-
-                var commonAnchors = [
-                    'bottomright',
-                    'topright',
-                    'bottomleft',
-                    'topleft'
-                ];
-
-                var expandAnchorPossibilities = {
-                    left: ['left', 'right'].concat(commonAnchors),
-                    right: ['left', 'right'].concat(commonAnchors),
-                    top: ['top', 'bottom'].concat(commonAnchors),
-                    bottom: ['top', 'bottom'].concat(commonAnchors)
-                };
-
-                $scope.$watch('expandDirection', function() {
-                   $scope.expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
-                });
-            }]
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/placements/services/placements',['require','./../../../module','tpl!./placementTableHeader.html','angular'],function (require) {
-    'use strict';
-
-    var module = require('./../../../module');
-    var tableHeaderTemplate = require('tpl!./placementTableHeader.html');
-
-    var ng = require('angular');
-
-    var apiConfig = {
-        endpoint: 'placements',
-        queryParams: {
-            dimensions: [
-                'id', 'name', 'live', 'flightStart', 'flightEnd',
-                'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'publisher.id',
-                'publisher.name', 'type', 'budget', 'spend'
-            ],
-            metrics: ['impressions']
-        }
-    };
-
-    var rules = {
-        checked: '',
-        placementName: '',
-        delivering: 'delivering',
-        startDate: 'date',
-        endDate: 'date',
-        type: '',
-        pacing: 'bullet',
-        spend: 'bullet',
-        creatives: 'creatives',
-        options: ''
-    };
-
-    var headers = [
-        {name: '', id: 'checked'},
-        {name: 'Placement Name', id: 'placementName'},
-        {name: 'Delivering', id: 'delivering'},
-        {name: 'Start Date', id: 'startDate'},
-        {name: 'End Date', id: 'endDate'},
-        {name: 'Type', id: 'type'},
-        {name: 'Impressions & Pacing', id: 'pacing'},
-        {name: 'Spend & Budget', id: 'spend'},
-        {name: 'Creatives', id: 'creatives'},
-        {name: '', id: 'options'}
-    ];
-
-    var typeTransform = {
-        'In-Banner': 'IBV',
-        'In-Stream': 'IS',
-        'Rich Media': 'RM',
-        'Display': 'DISPLAY'
-    };
-
-    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
-                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
-        var placementCache = cache({
-            transform: function(data) {
-                return data.placements;
-            }
-        });
-
-        function sortPlacements(a, b) {
-            return a.name.localeCompare(b.name);
-        }
-
-        function transformPlacements(data) {
-            var groups = _getPlacementGroups(data.sort(sortPlacements));
-            return _transformPlacementGroups(groups);
-        }
-
-        function _transformPlacementGroups(groups) {
-            var transformedGroups = [];
-            var groupData;
-            var transformedGroup;
-            var placement;
-
-            for(var i=0; i<groups.length; i++) {
-                groupData = groups[i];
-                transformedGroup = {
-                    header: $interpolate(tableHeaderTemplate)(groupData),
-                    content: {
-                        rules: rules,
-                        headers: headers,
-                        data: []
-                    }
-                };
-
-                for(var k=0; k<groupData.group.placements.length; k++) {
-                    placement = groupData.group.placements[k];
-                    transformedGroup.content.data.push({
-                        id: placement.id,
-                        checked: '<label><input ng-click="row.selectPlacement(row.id)" class="checkbox checkbox-light" type="checkbox"><span></span></label>',
-                        selectPlacement: selectPlacement,
-                        placementName: placement.name,
-                        delivering: placement.live,
-                        startDate: placement.flightStart,
-                        endDate: placement.flightEnd,
-                        type: typeTransform[placement.type],
-                        pacing: {
-                            current: placement.metrics.impressions,
-                            max: placement.bookedImpressions
-                        },
-                        spend: {
-                            current: placement.spend,
-                            max: placement.budget
-                        },
-                        creatives: placement.creatives,
-                        options: '<div placement-options id="\'' + placement.id + '\'"></div>'
-                    });
-                }
-
-                transformedGroups.push(transformedGroup);
-            }
-            return transformedGroups;
-        }
-
-        function selectPlacement(id) {
-            var clickedPlacement = placementCache.get(getApiConfig()).getById(id);
-
-            var toggleSelected = function(placement) {
-                placement.selected = ! (!!placement.selected);
-            };
-
-            if(clickedPlacement) {
-                toggleSelected(clickedPlacement);
-                placementCache.get(getApiConfig()).addData([clickedPlacement]);
-            }
-        }
-
-        function getSelectedPlacementIds() {
-            var placements = all(true);
-            var selectedPlacements = [];
-            for(var i=0; i<placements.length; i++) {
-                if(placements[i].selected) {
-                    selectedPlacements.push(placements[i].id);
-                }
-            }
-            return selectedPlacements;
-        }
-
-        function _getPlacementGroups(placements) {
-            var viewBy = $state.params.viewBy;
-            if (viewBy === 'creative') {
-                return placementsByCreative(placements);
-            } else if(viewBy === 'ad-type') {
-                return placementsByAdType(placements);
-            } else {
-                return placementsByPublisher(placements);
-            }
-        }
-
-        function getApiConfig() {
-            var newConfig = ng.copy(apiConfig);
-            if ($state.params.campaignId) {
-                newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
-            }
-            return newConfig;
-        }
-
-        function all(skipTransform) {
-
-            // We can do this because someone using this service will be
-			// observing it before they call all()
-            var data = placementCache.all(getApiConfig());
-
-            if (skipTransform) {
-                return data;
-            }
-
-            return transformPlacements(data);
-        }
-
-        function observe(callback, $scope, preventImmediate) {
-            placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
-        }
-
-        return {
-            _transformPlacementGroups: _transformPlacementGroups,
-            _getPlacementGroups: _getPlacementGroups,
-            _getApiConfig: getApiConfig,
-            getSelectedPlacementIds: getSelectedPlacementIds,
-            all: all,
-            observe: observe
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/placements/services/placementsByPublisher',['require','./../../../module'],function (require) {
-    'use strict';
-
-    var module = require('./../../../module');
-
-    module.service('placementsByPublisher', [function () {
-        return function(placements) {
-            var groups = {};
-            placements = [].concat(placements);
-            var placement;
-            var publisher;
-
-
-            // Throw placements into a hash map that's indexed by publisher
-            for(var i=0; i<placements.length; i++) {
-                placement = placements[i];
-                publisher = placement.publisher;
-
-                if (!groups[publisher.id]) {
-                    groups[publisher.id] = {
-                        name: publisher.name,
-                        placements: [placement]
-                    };
-                } else {
-                    groups[publisher.id].placements.push(placement);
-                }
-            }
-
-            // Get metadata about each group
-            var group;
-            for (var publisherId in groups) {
-                group = groups[publisherId];
-                group.meta = getMeta(group.placements);
-            }
-
-            function getMeta(placements) {
-                var placement;
-                var numDelivering = 0;
-                var bookedImpressions = 0;
-                var impressions = 0;
-
-                for (var i=0; i<placements.length; i++) {
-                    placement = placements[i];
-                    if (placement.live) {
-                        numDelivering++;
-                    }
-                    bookedImpressions += placement.bookedImpressions;
-                    impressions += placement.metrics.impressions;
-                }
-
-                return {
-                    count: placements.length,
-                    numDelivering: numDelivering,
-                    bookedImpressions: bookedImpressions,
-                    impressions: impressions
-                };
-            }
-
-            // Throw groups into an array and sort by publisher name
-            var groupArray = groupsToArray(groups);
-            groupArray.sort(sortGroups);
-
-            function groupsToArray(groupObject) {
-                var groupArray = [];
-                for (var group in groupObject) {
-                    groupArray.push({
-                        id: group,
-                        group: groupObject[group]
-                    });
-                }
-
-                return groupArray;
-            }
-
-            function sortGroups(a, b) {
-                if (a.group.name && b.group.name) {
-                    return a.group.name.localeCompare(b.group.name);
-                } else {
-                    return 0;
-                }
-            }
-
-            return groupArray;
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/placements/services/placementsByCreative',['require','./../../../module'],function (require) {
-    'use strict';
-
-    var module = require('./../../../module');
-
-    module.service('placementsByCreative', [function () {
-        return function(placements) {
-            var groups = {};
-            placements = [].concat(placements);
-            var placement;
-            var creatives;
-            var creativeId;
-
-            // Throw placements into a hash map that's indexed by creative id
-            for(var i=0; i<placements.length; i++) {
-                placement = placements[i];
-                creatives = placement.creatives;
-
-                for(var k= 0; k<creatives.length; k++) {
-                    creativeId = creatives[k].id;
-                    if (!groups[creativeId]) {
-                        groups[creativeId] = {
-                            name: creatives[k].name,
-                            placements: [placement]
-                        };
-                    } else {
-                        groups[creativeId].placements.push(placement);
-                    }
-                }
-            }
-
-            // Get metadata about each group
-            var group;
-            for (creativeId in groups) {
-                group = groups[creativeId];
-                group.meta = getMeta(group.placements);
-            }
-
-            function getMeta(placements) {
-                var placement;
-                var numDelivering = 0;
-                var bookedImpressions = 0;
-                var impressions = 0;
-
-                for (var i=0; i<placements.length; i++) {
-                    placement = placements[i];
-                    if (placement.live) {
-                        numDelivering++;
-                    }
-                    bookedImpressions += placement.bookedImpressions;
-                    impressions += placement.metrics.impressions;
-                }
-
-                return {
-                    count: placements.length,
-                    numDelivering: numDelivering,
-                    bookedImpressions: bookedImpressions,
-                    impressions: impressions
-                };
-            }
-
-            // Throw groups into an array and sort by creative name
-            var groupArray = groupsToArray(groups);
-            groupArray.sort(sortFn);
-
-            function groupsToArray(groupObject) {
-                var groupArray = [];
-                for (var group in groupObject) {
-                    groupArray.push({
-                        id: group,
-                        group: groupObject[group]
-                    });
-                }
-
-                return groupArray;
-            }
-
-            function sortFn(a, b) {
-                if (a.group.name && b.group.name) {
-                    return a.group.name.localeCompare(b.group.name);
-                } else {
-                    return 0;
-                }
-            }
-
-            return groupArray;
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/placements/services/placementsByAdType',['require','./../../../module'],function (require) {
-    'use strict';
-
-    var module = require('./../../../module');
-
-    module.service('placementsByAdType', [function () {
-        return function(placements) {
-            var groups = {};
-            placements = [].concat(placements);
-            var placement;
-            var adType;
-
-            // Throw placements into a hash map that's indexed by publisher
-            for(var i=0; i<placements.length; i++) {
-                placement = placements[i];
-                adType = placement.type;
-
-                if (!groups[adType]) {
-                    groups[adType] = {
-                        name: adType,
-                        placements: [placement]
-                    };
-                } else {
-                    groups[adType].placements.push(placement);
-                }
-            }
-
-            // Get metadata about each group
-            var group;
-            for (adType in groups) {
-                group = groups[adType];
-                group.meta = getMeta(group.placements);
-            }
-
-            function getMeta(placements) {
-                var placement;
-                var numDelivering = 0;
-                var bookedImpressions = 0;
-                var impressions = 0;
-
-                for (var i=0; i<placements.length; i++) {
-                    placement = placements[i];
-                    if (placement.live) {
-                        numDelivering++;
-                    }
-                    bookedImpressions += placement.bookedImpressions;
-                    impressions += placement.metrics.impressions;
-                }
-
-                return {
-                    count: placements.length,
-                    numDelivering: numDelivering,
-                    bookedImpressions: bookedImpressions,
-                    impressions: impressions
-                };
-            }
-
-            // Throw groups into an array and sort by ad type
-            var groupArray = groupsToArray(groups);
-            groupArray.sort(sortFn);
-
-            function groupsToArray(groupObject) {
-                var groupArray = [];
-                for (var group in groupObject) {
-                    groupArray.push({
-                        id: group,
-                        group: groupObject[group]
-                    });
-                }
-
-                return groupArray;
-            }
-
-            function sortFn(a, b) {
-                if (a.group.name && b.group.name) {
-                    return a.group.name.localeCompare(b.group.name);
-                } else {
-                    return 0;
-                }
-            }
-
-            return groupArray;
-        };
-    }]);
-});
-
-
-
-define('campaignManagement/campaigns/creatives/controllers/creativesHeader',['require','./../../../module'],function(require) {
-    var app = require('./../../../module');
-
-    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
-
-        $scope.openNewCreativeModal = openNewCreativeModal;
-
-        var newCreativeModal;
-        function openNewCreativeModal() {
-            if (!newCreativeModal) {
-                newCreativeModal = {
-                    action: 'New'
-                };
-            }
-
-            $modal.open({
-                animation: 'true',
-                templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
-                controller: 'newEditCreativeCtrl',
-                resolve: {
-                    modalState: function() {
-                        return newCreativeModal;
-                    }
-                },
-                size: 'lg'
-            });
-        }
-
-        function updateMeta() {
-
-            var allCreatives = creatives.all().data;
-
-            if (allCreatives) {
-                var creative = 0;
-
-                var meta = {
-                    all: 0,
-                    'IBV': 0,
-                    'RM': 0,
-                    'IS': 0
-                };
-
-                for(var i = 0; i < allCreatives.length; i ++) {
-                    creative = allCreatives[i];
-
-                    meta.all ++;
-                    if(creative.type) {
-                        meta[creative.type]++;
-                    }
-                }
-                $scope.creativesMeta = meta;
-            }
-        }
-        updateMeta();
-        creatives.observe(updateMeta, $scope, true);
-    }
-    ]);
-});
-
-
-
-define('campaignManagement/campaigns/creatives/controllers/creativesList',['require','./../../../module'],function(require) {
-    var app = require('./../../../module');
-
-    app.controller('creativesListCtrl', ['$scope', '$rootScope', '$state', '$filter', 'creatives', function($scope, $rootScope, $state, $filter, creatives) {
-        $scope.filter = $state.params.filter;
-
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-            $scope.filter = toParams.filter;
-        });
-
-        function updateCreatives() {
-            var allCreatives = creatives.all();
-            var duplicateCreatives = {
-                rules: allCreatives.rules,
-                headers: allCreatives.headers,
-                data: []
-            };
-
-            duplicateCreatives.data = $filter('filter')(allCreatives.data, {type: $scope.filter});
-            $scope.creatives = duplicateCreatives;
-        }
-
-        creatives.observe(updateCreatives, $scope);
-    }]);
-});
-
-/* globals confirm */
-define('campaignManagement/campaigns/creatives/controllers/newEditCreative',['require','./../../../module','angular'],function (require) {
-    'use strict';
-    var app = require('./../../../module');
-    var ng = require('angular');
-
-    app.controller('newEditCreativeCtrl',
-        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
-            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
-
-        //Modal functions
-        $scope.ok = undefined;
-        $scope.cancel = undefined;
-        $scope.creative = modalState.creative;
-        $scope.action = modalState.action;
-        $scope.swfAllowedExtensions = ['swf'];
-
-        var types = [
-            { id: 'IBV', name: 'In-Banner Video' },
-            { id: 'ISV', name: 'In-Stream Video' },
-            { id: 'RM', name: 'Rich Media' },
-            { id: 'SWF', name: 'SWF' },
-            { id: 'IMG', name: 'Image' }
-        ];
-
-        var typeSettings = {
-            IBV: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-            },
-            ISV: {
-                environments: [1,2],
-                dimensions: [6,7,8,9,10,14],
-                expandedDimensions: undefined
-            },
-            RM: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-            },
-            SWF: {
-                environments: [2],
-                dimensions: undefined,
-                expandedDimensions: undefined
-            },
-            IMG: {
-                environments: [1,2,3,4],
-                dimensions: undefined,
-                expandedDimensions: undefined
-            }
-        };
-
-        var environments = {
-            1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
-            2: { id: 'desktop', name: 'Desktop' },
-            3: { id: 'mobile', name: 'Tablet & Phone' },
-            4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
-        };
-
-        var dimensions = {
-            1: { widthHeight: [160, 600], name: '160x600' },
-            2: { widthHeight: [180, 150], name: '180x150' },
-            3: { widthHeight: [300, 250], name: '300x250' },
-            4: { widthHeight: [300, 600], name: '300x600' },
-            5: { widthHeight: [728, 90], name: '728x90' },
-            6: { widthHeight: [480, 360], name: '480x360 (4:3)' },
-            7: { widthHeight: [533, 300], name: '533x300 (16:9)' },
-            8: { widthHeight: [640, 360], name: '640x360 (16:9)' },
-            9: { widthHeight: [640, 480], name: '640x480 (4:3)' },
-            10: { widthHeight: [768, 432], name: '768x432 (16:9)' },
-            11: { widthHeight: [728, 90], name: '728x90' },
-            12: { widthHeight: [970, 90], name: '970x90' },
-            13: { widthHeight: [1, 1], name: 'Interstitial 1x1' },
-            14: { name: 'Custom' }
-        };
-
-        var expandedDimensions = {
-            1: { name: 'Non-Expanding' },
-            2: { name: 'Legacy' },
-            3: { widthHeight: [300, 600], name: '300x600' },
-            4: { widthHeight: [560, 300], name: '560x300' },
-            5: { widthHeight: [600, 250], name: '600x250' },
-            6: { widthHeight: [600, 600], name: '600x600' },
-            7: { widthHeight: [728, 315], name: '728x315' },
-            8: { widthHeight: [970, 250], name: '970x250' },
-            9: { widthHeight: [970, 415], name: '970x415' },
-            10: { name: 'Custom' }
-        };
-
-        setupBusinessLogic();
-        setupModalLogic();
-
-        function setupBusinessLogic() {
-            // Update available environments, dimensions and expanded dimensions
-            // based on creative types and the settings above
-            $scope.types = types;
-            $scope.$watch('creative.type', updateType);
-
-            function updateType() {
-                if ($scope.creative && typeSettings[$scope.creative.type]) {
-                    var settings = typeSettings[$scope.creative.type];
-                    updateEnvironments(settings.environments);
-                    updateDimensions(settings.dimensions);
-                    updateExpandedDimensions(settings.expandedDimensions);
-                }
-            }
-
-            function updateEnvironments(enabledEnvironmentIds) {
-                $scope.environments = filterById(environments, enabledEnvironmentIds);
-            }
-
-            function updateDimensions(enabledDimensionIds) {
-                $scope.dimensions = filterById(dimensions, enabledDimensionIds);
-            }
-
-            function updateExpandedDimensions(enabledExpandedDimensionIds) {
-                $scope.expandedDimensions = filterById(expandedDimensions, enabledExpandedDimensionIds);
-            }
-
-            function filterById(options, idArray) {
-                if (typeof idArray === 'undefined') {
-                    return undefined;
-                } else {
-                    var filtered = [];
-                    var currentId;
-                    var current;
-                    for(var i = 0; i < idArray.length; i ++) {
-                        currentId = idArray[i];
-                        current = options[currentId];
-                        filtered.push({
-                            id: currentId,
-                            name: current.name
-                        });
-                    }
-
-                    return filtered;
-                }
-            }
-
-            $scope.$watch('creative.dimensions', function() {
-                if ($scope.creative && $scope.creative.dimensions) {
-                    $scope.dimensionsAreCustom =
-                        dimensions[$scope.creative.dimensions].name === 'Custom';
-                }
-            });
-
-            $scope.$watch('creative.expandedDimensions', function() {
-                if ($scope.creative && $scope.creative.expandedDimensions) {
-                    $scope.expandedDimensionsAreCustom =
-                        expandedDimensions[$scope.creative.expandedDimensions].name === 'Custom';
-                }
-            });
-        }
-
-        function setupModalLogic() {
-            var originalCreative;
-
-            if(modalState.creativeId) {
-                creativeRecordService.getById(modalState.creativeId).then(function(creative) {
-                    originalCreative = creative.all();
-                    if(! $scope.creative || $scope.creative === {}) {
-                        $scope.creative = ng.copy(modalState.creative || originalCreative);
-                    }
-                });
-            } else {
-                originalCreative = {
-                    startDate: (modalState.creative && modalState.creative.startDate) || new Date(),
-                    endDate: (modalState.creative && modalState.creative.endDate) || new Date(),
-                    objectives: [],
-                    campaignId: modalState.campaignId
-                };
-
-                $scope.creative = ng.copy(modalState.creative || originalCreative);
-            }
-
-            campaigns.observe(updateCampaigns, $scope);
-
-            function updateCampaigns() {
-                if(! modalState.creativeId) {
-
-                    // TODO: add render limit so this isn't crazy slow
-                    //$scope.campaigns = campaigns.all().slice(0, 10);
-                    $scope.campaigns = [{id: '1234', name: 'test'}];
-                }
-            }
-
-            $scope.cancel = function() {
-                if(hasUnsavedChanges()) {
-                    if(confirm('You have unsaved changes. Really close?')) {
-                        $scope.creative = originalCreative;
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
-                    $modalInstance.dismiss('cancel');
-                }
-            };
-
-            function hasUnsavedChanges() {
-                return ! ng.equals($scope.creative, originalCreative);
-            }
-
-            $scope.ok = function(errors) {
-                $scope.errors = errors;
-                if(ng.equals({}, $scope.errors) || ! $scope.errors) {
-                    var transformedCreative = transformCreative();
-                    var onSuccess = function() {
-                        originalCreative = $scope.creative;
-                        $modalInstance.dismiss('cancel');
-                    };
-                    if($scope.creative && $scope.creative.id) {
-                        var creativeDiff = getDiff($scope.creative, originalCreative);
-
-                        if(! ng.equals(creativeDiff, {})) {
-                            creativeRecordService.update($scope.creative.id, creativeDiff).then(onSuccess);
-                        } else {
-                            $modalInstance.dismiss('cancel');
-                        }
-                    } else {
-                        newCreativeService(transformedCreative)
-                            .then(function(url) {
-                                onSuccess();
-                                $window.open(url, '_blank');
-                            });
-                    }
-                }
-                $scope.submitted = true;
-            };
-
-            function transformCreative() {
-                var creative = $scope.creative;
-                var allDimensions = getDimensions(creative);
-                var getEnvironment = function(id) {
-                    for (var i=0; i<$scope.environments.length; i++) {
-                        if ($scope.environments[i].id === id) {
-                            return $scope.environments[i];
-                        }
-                    }
-                    return null;
-                };
-                return {
-                    expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
-                    expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
-                    embedWidth: parseInt(allDimensions.embed.width, 10),
-                    embedHeight: parseInt(allDimensions.embed.height, 10),
-                    clickthroughUrl: creative.clickthroughUrl,
-                    type: creative.type,
-                    environment: getEnvironment(creative.environment),
-                    name: creative.name
-                };
-            }
-
-            function getDimensions(creative) {
-                var allDimensions = {
-                    embed: {},
-                    expanded: {}
-                };
-
-                var widthHeight = dimensions[creative.dimensions].widthHeight;
-                allDimensions.embed.width = widthHeight && widthHeight[0];
-                allDimensions.embed.height = widthHeight && widthHeight[1];
-
-                allDimensions.embed = {
-                    width: allDimensions.embed.width || creative.customDimensionsWidth,
-                    height: allDimensions.embed.height || creative.customDimensionsHeight
-                };
-
-                if (creative.expandedDimensions) {
-                    widthHeight = expandedDimensions[creative.expandedDimensions].widthHeight;
-                    allDimensions.expanded.width = widthHeight && widthHeight[0];
-                    allDimensions.expanded.height = widthHeight && widthHeight[1];
-
-                    allDimensions.expanded = {
-                        width: allDimensions.expanded.width || creative.customExpandedDimensionsWidth,
-                        height: allDimensions.expanded.height || creative.customExpandedDimensionsHeight
-                    };
-                }
-
-                return allDimensions;
-            }
-
-            // Simple diffing function for PUT request
-            function getDiff(changed, original) {
-                var diff = {};
-                for(var index in changed) {
-                    if(changed.hasOwnProperty(index)) {
-                        if(original[index] && ! ng.equals(changed[index], original[index])) {
-                            diff[index] = changed[index];
-                        }
-                    }
-                }
-
-                return diff;
-            }
-
-            //Before closing the modal save the state;
-            $scope.$on('$destroy', function() {
-                modalState.creative = $scope.creative;
-            });
-        }
-    }]);
-});
-
-define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['require','./../../../module','angular','tpl!./creativeThumbnails.html'],function (require) {
-    'use strict';
-
-    var app = require('./../../../module');
-    var ng = require('angular');
-
-    require('tpl!./creativeThumbnails.html');
-
-    app.directive('creativeThumbnails', [function () {
-        return {
-            restrict: 'A',
-            replace: true,
-            scope: true,
-            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation) {
-
-                    var editCreativeModals = {};
-                    var mixpoURL = studioLocation.host();
-
-                    $scope.filter = $state.params.filter;
-                    $scope.openPreviewPage = openPreviewPage;
-                    $scope.openStudio = openStudio;
-                    $scope.openSettings = openSettings;
-                    $scope.gotoPlacements = gotoPlacements;
-                    $scope.copyCreative = copyCreative;
-                    $scope.deleteCreative = deleteCreative;
-                    $scope.transformCreativeData = transformCreativeData;
-
-                    creatives.observe(updateCreatives, $scope);
-
-                    $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-                        $scope.filter = toParams.filter;
-                    });
-
-                    function openPreviewPage(creative) {
-                        $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
-                    }
-
-                    function openStudio(id) {
-                        $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
-                    }
-
-                    var removeNulls = function(creative) {
-                        var newCreative = {};
-                        for (var prop in creative) {
-                            if (creative.hasOwnProperty(prop) && (creative[prop] !== null && typeof creative[prop] !== 'undefined')) {
-                                newCreative[prop] = creative[prop];
-                            }
-                        }
-                        return newCreative;
-                    };
-
-                    function openSettings(id) {
-                        if (!editCreativeModals[id]) {
-                            editCreativeModals[id] = {
-                                creativeId: id,
-                                action: 'Edit'
-                            };
-                        }
-
-                        $modal.open({
-                            animation: 'true',
-                            templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
-                            controller: 'newEditCreativeCtrl',
-                            resolve: {
-                                modalState: function() {
-                                    return editCreativeModals[id];
-                                }
-                            },
-                            size: 'lg'
-                        });
-                    }
-
-                    function gotoPlacements(creative) {
-                        $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
-                    }
-
-                    function transformCreativeData(data) {
-                        var crudCreative =  {
-                            campaignId: data.campaignId,
-                            expandedWidth: data.expandedWidth,
-                            deleted: data.deleted,
-                            expandedHeight: data.expandedHeight,
-                            name: data.name + ' (copy)',
-                            type: data.type,
-                            keywords: data.keywords.join(','),
-                            embedHeight: data.embedHeight,
-                            device: data.device,
-                            embedWidth: data.embedWidth,
-                            clickthroughUrl: data.clickthroughUrl
-                        };
-
-                        if (data.expandAnchor) {
-                            crudCreative.expandAnchor = data.expandAnchor;
-                        } else {
-                            crudCreative.expandAnchor = 'topright';
-                        }
-
-                        if (data.expandDirection) {
-                            crudCreative.expandDirection = data.expandDirection;
-                        } else {
-                            crudCreative.expandDirection = 'left';
-                        }
-
-                        if (data.expandMode) {
-                            crudCreative.expandMode = data.expandMode;
-                        }
-                        return crudCreative;
-                    }
-
-                    function copyCreative(id) {
-                        creativeRecordService.getById(id).then(function(creative) {
-                            creative = creative.all();
-                            var newCreative = ng.copy(creative);
-                            delete newCreative.id;
-                            newCreative = removeNulls(newCreative);
-                            creativeRecordService.create( transformCreativeData(newCreative) );
-                        });
-                    }
-
-                    function deleteCreative(creative) {
-                        creativeRecordService.delete( creative.id );
-                    }
-
-                    function updateCreatives() {
-                        var allCreatives = creatives.all();
-                        var duplicateCreatives = [];
-
-                        if ($scope.filter) {
-                            duplicateCreatives = $filter('filter')(allCreatives.data, {type: $scope.filter});
-                        } else {
-                            duplicateCreatives = allCreatives.data;
-                        }
-
-                        $scope.creatives = duplicateCreatives;
-                    }
-
-            }]
-        };
-    }]);
-});
-
-
-define('tpl!campaignManagement/campaigns/creatives/directives/creativeOptions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeOptions.html', '<span>\n<a>Edit in Studio</a>\n<span>\n    <a title="Creative Settings" ng-click="openEditCreativeModal()"><i\n        class="glyph-icon glyph-settings"></i></a>\n    <a title="Copy Creative"><i class="glyph-icon glyph-copy"></i></a>\n    <a title="Delete Creative"><i class="glyph-icon glyph-close"></i></a>\n</span>\n</span>\n'); });
-
-define('campaignManagement/campaigns/creatives/directives/creativeOptions',['require','./../../../module','tpl!./creativeOptions.html'],function (require) {
-    'use strict';
-
-    var app = require('./../../../module');
-
-    require('tpl!./creativeOptions.html');
-
-    app.directive('creativeOptions', [function () {
-        return {
-            restrict: 'A',
-            replace: true,
-            scope: {
-                id: '='
-            },
-            templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeOptions.html',
-            controller: ['$scope', '$modal', function ($scope, $modal) {
-                $scope.openEditCreativeModal = openEditCreativeModal;
-
-                var editCreativeModal;
-                function openEditCreativeModal() {
-                    if (!editCreativeModal) {
-                        editCreativeModal = {
-                            creativeId: $scope.id,
-                            action: 'Edit'
-                        };
-                    }
-
-                    $modal.open({
-                        animation: 'true',
-                        templateUrl: 'campaignManagement/campaigns/creatives/new-edit-creative.html',
-                        controller: 'newEditCreativeCtrl',
-                        resolve: {
-                            modalState: function() {
-                                return editCreativeModal;
-                            }
-                        },
-                        size: 'lg'
-                    });
-                }
-            }]
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/creatives/services/creatives',['require','./../../../module','angular'],function(require) {
-    'use strict';
-
-    var module = require('./../../../module');
-
-    var ng = require('angular');
-
-    var apiConfig = {
-        endpoint: 'creatives',
-        queryParams: {
-            dimensions: [
-                'id', 'name', 'live', 'type', 'device', 'embedWidth',
-                'embedHeight', 'expandedWidth', 'expandedHeight',
-                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix'
-            ],
-            limit: 500
-        }
-    };
-
-    var rules = {
-        checked: '',
-        creativeName: '',
-        delivering: 'delivering',
-        type: '',
-        dimensions: '',
-        expandedDimensions: '',
-        numPlacements: 'link',
-        options: ''
-    };
-
-    var headers = [
-        {name: '', id: 'checked'},
-        {name: 'Creative Name', id: 'creativeName'},
-        {name: 'Delivering', id: 'delivering'},
-        {name: 'Type', id: 'type'},
-        {name: 'Dimensions', id: 'dimensions'},
-        {name: 'Expandable', id: 'expandedDimensions'},
-        {name: 'No. Placements', id: 'numPlacements'},
-        {name: '', id: 'options'}
-    ];
-
-    var typeTransform = {
-        'In-Banner': 'IBV',
-        'In-Stream': 'IS',
-        'Rich Media': 'RM',
-        'Display': 'DISPLAY'
-    };
-
-    module.service('creatives', [
-        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
-            var cache = cacheFactory({
-                transform: function(data) {
-                    return data.creatives;
-                }
-            });
-
-            creativeRecordService.observe(function(newUpdatedRecord) {
-                var existingRecord = getCreative(newUpdatedRecord.id);
-
-                if (!existingRecord) {
-                    // Set up defaults for a new record
-                    existingRecord = {
-                        lastModified: new Date(),
-                        delivering: false,
-                        countPlacements: 0
-                    };
-                }
-                var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
-                addData([transformedRecord]);
-
-            }, undefined, true);
-
-            function transformCrudRecord(updatedRecord, existingRecord) {
-                return {
-                    deleted: updatedRecord.deleted,
-                    embedHeight: updatedRecord.embedHeight,
-                    expandedWidth: updatedRecord.expandedWidth,
-                    embedWidth: updatedRecord.embedWidth,
-                    expandedHeight: updatedRecord.expandedHeight,
-                    modifiedDate: existingRecord.lastModified,
-                    name: updatedRecord.name,
-                    id: updatedRecord.id,
-                    thumbnailUrlPrefix:  updatedRecord.thumbnailUrlPrefix,
-                    type: updatedRecord.type,
-                    device: updatedRecord.device,
-                    live: existingRecord.delivering,
-                    countPlacements: existingRecord.countPlacements
-                };
-            }
-
-            function getCreative(id) {
-                var creatives = cache.all( _apiConfig() );
-                var c;
-                for (var i=0; creatives.length > i; i++) {
-                    c = creatives[i];
-                    if (c.id === id) {
-                        return c;
-                    }
-                }
-                return false;
-            }
-
-            function _transformCreatives(creatives) {
-                var creative;
-                var transformedTable = {
-                    rules: rules,
-                    headers: headers,
-                    data: []
-                };
-
-                for(var i = 0; i < creatives.length; i ++) {
-                    creative = creatives[i];
-                    transformedTable.data.push({
-                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
-                        creativeName: creative.name,
-                        delivering: creative.live,
-                        type: typeTransform[creative.type],
-                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaignId,
-                        numPlacements: {
-                            name: creative.countPlacements || 0,
-                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
-                        },
-                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
-
-                        // These properties are needed by thumbnails but aren't
-						// in the table
-                        id: creative.id,
-                        lastModified: creative.modifiedDate,
-                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
-                    });
-                }
-                return transformedTable;
-            }
-
-            function _apiConfig() {
-
-                var newConfig = ng.copy(apiConfig);
-                if ($state.params.campaignId) {
-                    newConfig.queryParams.filters = ['campaign.id:eq:' + $state.params.campaignId];
-                }
-
-                return newConfig;
-            }
-
-            function all() {
-                return _transformCreatives(cache.all(_apiConfig()));
-            }
-
-            function observe(callback, $scope, preventImmediate, preventInit) {
-                return cache.observe(_apiConfig(), callback, $scope, preventImmediate, preventInit);
-            }
-
-            function addData(newData) {
-                cache.addData(_apiConfig(), newData);
-            }
-
-            /**
-             * Returns underlying dataFactory object for the cache entry
-             * @param {boolean} [initialize=false] should we call init
-             * @returns {{dataFactory}}
-             */
-            function data(initialize) {
-                return cache.get(_apiConfig(), initialize);
-            }
-
-            return {
-                _transformCreatives: _transformCreatives,
-                _apiConfig: _apiConfig,
-                _getCreative: getCreative,
-                all: all,
-                data: data,
-                addData: addData,
-                observe: observe
-            };
-        }
-    ]);
-});
-
-define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['require','./../../../module'],function(require) {
-    'use strict';
-
-    var module = require('./../../../module');
-
-    /**
-     * The studioDirectAdapter adapt the newEditCreative.js params object to
-     * Studio Direct's params API.
-     *
-     * @memberof app
-     * @ngdoc service
-     * @name studioDirectAdapter
-     * @ngInject
-     */
-    module.service('studioDirectAdapter', [function () {
-        function getAdType(type, expandedWidth, expandedHeight) {
-            if(type === 'IMG') {
-                // Image
-                return 'IMG';
-            } else if(type === 'SWF') {
-                // SWF
-                return 'SWF';
-            }  else if(type === 'ISV') {
-                // In-Stream Video
-                return 'IS';
-            } else if(type === 'RM') {
-                // 'Rich Media' AKA 'Interactive-Display'
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
-                    return 'IDRM';
-                } else {
-                    return 'ID';
-                }
-            } else if(type === 'IBV') {
-                // 'In-Banner Video' AKA 'MLQ'
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
-                    return 'IDMLQ';
-                } else {
-                    return 'MLQ';
-                }
-            } else {
-                // unknown
-                return null;
-            }
-        }
-
-        function getAdEnvironment(env) {
-            switch(env) {
-                case 'multi-screen':
-                    return 'multiscreen';
-                case 'mobile':
-                    return 'tabletphone';
-                case 'mraid':
-                    return 'inappmraid';
-                default: // desktop
-                    return env;
-            }
-        }
-
-        function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
-            if(type === 'IBV') {
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
-                    // IDMLQ
-                    params.idw = embedWidth;
-                    params.idh = embedHeight;
-                    params.tcw = expandedWidth;
-                    params.tch = expandedHeight;
-                } else {
-                    // MLQ
-                    params.tcw = embedWidth;
-                    params.tch = embedHeight;
-                }
-            } else {
-                params.idw = embedWidth;
-                params.idh = embedHeight;
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
-                    params.tcw = expandedWidth;
-                    params.tch = expandedHeight;
-                }
-            }
-        }
-
-        return function(creative) {
-            var params = {};
-            params.sdf = 'new';
-            params.ad = getAdType(creative.type, creative.expandedWidth, creative.expandedHeight);
-            params.env = getAdEnvironment(creative.environment);
-            params.url = creative.clickthroughUrl;
-            params.title = creative.name;
-            setDimensions(params, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight );
-
-            return params;
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/creatives/services/newCreative',['require','./../../../module'],function(require) {
-    'use strict';
-
-    var module = require('./../../../module');
-
-    /**
-     * The newCreativeService returns a promise that creates a new Ad
-     * from the settings handed to the service and returns the URL
-     * to be opened in a new.
-     *
-     * @memberof app
-     * @ngdoc service
-     * @name newCreativeService
-     * @ngInject
-     */
-    module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', 'studioLocation', function($httpParamSerializer, $q, studioDirectAdapter, studioLocation) {
-       function createStudioDirectUrl(creative) {
-            var studioDirectUrl = studioLocation.host() + '/studio';
-            var params = studioDirectAdapter(creative);
-            return studioDirectUrl + '?' + $httpParamSerializer(params);
-        }
-
-        return function(creative) {
-            var deferred = $q.defer();
-            var url = createStudioDirectUrl(creative);
-            deferred.resolve(url);
-            return deferred.promise;
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/creatives/services/creative',['require','./../../../module','angular'],function(require) {
-    'use strict';
-
-    var module = require('./../../../module');
-    var ng = require('angular');
-
-    var apiConfig = {
-        endpoint: 'creatives',
-        queryParams: {
-            dimensions: [
-                'id', 'name', 'live', 'type', 'device', 'embedWidth',
-                'embedHeight', 'expandedWidth', 'expandedHeight',
-                'countPlacements',
-                'live', 'modifiedDate', 'thumbnailUrlPrefix'
-            ]
-        }
-    };
-
-    module.service('creativeService', ['$http', 'dataFactory', 'apiUriGenerator', function($http, dataFactory, apiUriGenerator) {
-        var creatives = dataFactory();
-        var pendingRequest = {};
-
-        function getApiConfig(id) {
-            var config = ng.copy(apiConfig);
-            config.queryParams.filters = ['id:eq:' + id];
-            return config;
-        }
-
-        function find(id, data) {
-            var output;
-
-            for (var i = 0; i < data.length; i++) {
-                if (data[i].id === id) {
-                    output = data[i];
-                    break;
-                }
-            }
-
-            return output;
-        }
-
-        function get(id){
-            var item = find(id, creatives.all());
-
-            if (!item && !pendingRequest[id]) {
-                pendingRequest[id] = true;
-
-                var url = apiUriGenerator(getApiConfig(id));
-
-                $http.get(url).success(function (d) {
-                    creatives.addData(d.creatives, id);
-                });
-            }
-
-            return item;
-        }
-
-        return {
-            observe: creatives.observe,
-            _getApiConfig: getApiConfig,
-            _find: find,
-            all: creatives.all,
-            get: get
-        };
-    }]);
-});
-
-define('campaignManagement/campaigns/index',['require','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./services/campaignDetails','./controllers/newEditCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./factories/campaignsByStatusAccordionTable','./filters/campaignStatus','./placements/controllers/placementsList','./placements/controllers/placementsHeader','./placements/controllers/newEditPlacement','./placements/directives/placementOptions','./placements/directives/expandAnchorsDirections','./placements/services/placements','./placements/services/placementsByPublisher','./placements/services/placementsByCreative','./placements/services/placementsByAdType','./creatives/controllers/creativesHeader','./creatives/controllers/creativesList','./creatives/controllers/newEditCreative','./creatives/directives/creativeThumbnails','./creatives/directives/creativeOptions','./creatives/services/creatives','./creatives/services/studioDirectAdapter','./creatives/services/newCreative','./creatives/services/creative'],function (require) {
-    'use strict';
+    require('./placements/index');
+    require('./creatives/index');
 
     services();
     controllers();
@@ -65771,16 +65802,6 @@ define('campaignManagement/campaigns/index',['require','./services/campaignCache
     function filters() {
         require('./filters/campaignStatus');
     }
-
-    require('./placements/controllers/placementsList');
-    require('./placements/controllers/placementsHeader');
-    require('./placements/controllers/newEditPlacement');
-    require('./placements/directives/placementOptions');
-    require('./placements/directives/expandAnchorsDirections');
-    require('./placements/services/placements');
-    require('./placements/services/placementsByPublisher');
-    require('./placements/services/placementsByCreative');
-    require('./placements/services/placementsByAdType');
 
     require('./creatives/controllers/creativesHeader');
     require('./creatives/controllers/creativesList');
