@@ -4,16 +4,15 @@ define(function (require) {
     var module = require('./../module');
 
     var apiConfig = {
-        create: {
+        update: {
             version: 'crud',
             endpoint: 'accounts/{id}'
         },
-        update: {
+        create: {
             version: 'crud',
             endpoint: 'accounts'
         }
     };
-
 
     module.service('accountRecordService', ['recordPoolFactory', function (recordPoolFactory) {
         return recordPoolFactory(apiConfig);

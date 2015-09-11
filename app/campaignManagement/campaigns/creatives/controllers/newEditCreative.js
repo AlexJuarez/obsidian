@@ -77,7 +77,6 @@ define(function (require) {
 
         var expandedDimensions = {
             1: { name: 'Non-Expanding' },
-            2: { name: 'Legacy' },
             3: { widthHeight: [300, 600], name: '300x600' },
             4: { widthHeight: [560, 300], name: '560x300' },
             5: { widthHeight: [600, 250], name: '600x250' },

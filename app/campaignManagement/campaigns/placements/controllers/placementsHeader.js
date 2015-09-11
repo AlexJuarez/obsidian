@@ -201,7 +201,7 @@ define(function(require) {
                     width: placement.embedWidth,
                     height: placement.embedHeight,
                     id: placement.targetId, // The creative guid / entry point for multi-creative
-                    // TODO: ad real url here
+                    // TODO: ad real u`rl here
                     prerenderUrl: 'http://www.google.com', // Image to show before load
                     clickThroughUrl: placement.clickthroughUrl,
                     // TODO: add real data here
