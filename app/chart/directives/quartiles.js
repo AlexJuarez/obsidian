@@ -11,12 +11,12 @@ define(function (require) {
             scope: {
                 quartileData: '='
             },
-			templateUrl: 'core/directives/quartiles.html',
+			templateUrl: 'chart/directives/quartiles.html',
 			link: function (scope, elem) {
 
                 if (scope.quartileData) {
                     scope.$watch(scope.quartileData, function() {
-                        
+
                         var viewNum =       scope.quartileData.view;
                         scope.dataArray = [
                             {
@@ -36,9 +36,9 @@ define(function (require) {
                                 'quartile': '100'
                             }
                         ];
-                        
+
                         for (var i = 0; i < scope.dataArray.length; i++) {
-                            
+
                             var obj = scope.dataArray[i];
                             setGraph(obj.value, obj.quartile);
 

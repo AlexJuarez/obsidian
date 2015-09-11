@@ -8,5 +8,6 @@ define(function (require) {
     require('./directives/analyticsLineChart');
     require('./directives/quartileBarGraph');
     require('./directives/pacingChart');
+    require('./directives/quartiles');
     require('./services/analyticsChart');
 });
