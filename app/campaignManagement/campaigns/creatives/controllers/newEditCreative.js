@@ -233,11 +233,12 @@ define(function (require) {
                 var getEnvironment = function(id) {
                     for (var i=0; i<$scope.environments.length; i++) {
                         if ($scope.environments[i].id === id) {
-                            return $scope.environments[i];
+                            return environments[id].id;
                         }
                     }
                     return null;
                 };
+
                 return {
                     expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
                     expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
