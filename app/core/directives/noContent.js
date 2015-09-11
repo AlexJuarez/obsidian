@@ -10,9 +10,6 @@ define(function (require) {
             replace: false,
             scope: true,
             templateUrl: 'core/directives/noContent.html',
-            // link: function(scope, elem, attr) {
-            //     console.log( 'we', attr.section );
-            // },
             controller: ['$scope', '$state', '$timeout', 'clientSet', 'divisionSet', function ($scope, $state, $timeout, clientSet, divisionSet) {
                 console.log('$state.params', $state );
                 
@@ -34,7 +31,7 @@ define(function (require) {
                             console.log( 'countAccounts is zero', $scope.showAccountMsg );
                         }
 
-                    }, 2000);
+                    }, 1000);
                     
                 }
 
