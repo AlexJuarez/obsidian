@@ -128,7 +128,7 @@ define(function(require) {
 						// in the table
                         id: creative.id,
                         lastModified: creative.modifiedDate,
-                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
+                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
                     });
                 }
                 return transformedTable;
@@ -146,6 +146,10 @@ define(function(require) {
 
             function all() {
                 return _transformCreatives(cache.all(_apiConfig()));
+            }
+
+            function setLimit(limit) {
+                apiConfig.queryParams.limit = limit;
             }
 
             function observe(callback, $scope, preventImmediate, preventInit) {
@@ -169,6 +173,7 @@ define(function(require) {
                 _transformCreatives: _transformCreatives,
                 _apiConfig: _apiConfig,
                 _getCreative: getCreative,
+                setLimit: setLimit,
                 all: all,
                 data: data,
                 addData: addData,

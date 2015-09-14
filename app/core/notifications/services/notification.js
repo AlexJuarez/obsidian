@@ -3,7 +3,7 @@ define(function (require) {
 
     var module = require('./../../module');
 
-    module.service('notificationService', ['$rootScope', function ($rootScope) {
+    module.service('notificationService', ['$rootScope', '$notification', function ($rootScope, $notification) {
         //var data = [];
 
         $rootScope.$on('notifications:success', notificationHandler);
@@ -13,12 +13,12 @@ define(function (require) {
         $rootScope.$on('notifications:dismissAll', dismissNotifications);
 
 
-        function notificationHandler(event, message, options) {
-            console.log(event, message, options);
+        function notificationHandler(event, args, type) {
+            $notification[type](args);
         }
 
         function dismissNotifications() {
-            console.log('dismiss all of the notifications');
+            $notification.clearAll();
         }
     }]);
 });
