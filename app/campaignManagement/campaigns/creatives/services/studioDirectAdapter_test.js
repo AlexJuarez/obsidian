@@ -18,14 +18,6 @@ define(function (require) {
             expect(sdAdapter).not.toEqual(null);
         });
 
-        it('should return object when called', function () {
-            var creative = {};
-
-            var result = sdAdapter(creative);
-
-            expect(result).not.toEqual(null);
-        });
-
         it('should return expected Image adapted object', function () {
             var creative = {
                 type: 'IMG',
@@ -199,6 +191,78 @@ define(function (require) {
             expect(result.idh).toBeUndefined();
             expect(result.tcw).toEqual(160);
             expect(result.tch).toEqual(600);
+        });
+
+        it('should return null when called with null', function () {
+            var result = sdAdapter();
+
+            expect(result).toEqual(null);
+        });
+
+        it('should return null if unknown \'type\'', function () {
+            var creative = {
+                type: 'foo',
+                environment: 'multi-screen',
+                clickthroughUrl: 'lego.com',
+                name: 'El Title',
+                embedWidth: 160,
+                embedHeight: 600,
+                expandedWidth: NaN,
+                expandedHeight: NaN
+            };
+
+            var result = sdAdapter(creative);
+
+            expect(result).toEqual(null);
+        });
+
+        it('should return null if unknown \'environment\'', function () {
+            var creative = {
+                type: 'IBV',
+                environment: 'foo',
+                clickthroughUrl: 'lego.com',
+                name: 'El Title',
+                embedWidth: 160,
+                embedHeight: 600,
+                expandedWidth: NaN,
+                expandedHeight: NaN
+            };
+
+            var result = sdAdapter(creative);
+
+            expect(result).toEqual(null);
+        });
+
+        it('should return null if unknown \'clickthroughUrl\'', function () {
+            var creative = {
+                type: 'IBV',
+                environment: 'foo',
+                name: 'El Title',
+                embedWidth: 160,
+                embedHeight: 600,
+                expandedWidth: NaN,
+                expandedHeight: NaN
+            };
+
+            var result = sdAdapter(creative);
+
+            expect(result).toEqual(null);
+        });
+
+        it('should return null if unknown \'name\'', function () {
+            var creative = {
+                type: 'IBV',
+                environment: 'foo',
+                clickthroughUrl: 'lego.com',
+                embedWidth: 160,
+                embedHeight: 600,
+                expandedWidth: NaN,
+                expandedHeight: NaN
+            };
+
+            var result = sdAdapter(creative);
+
+            expect(result).toEqual(null);
         });
     });
 });

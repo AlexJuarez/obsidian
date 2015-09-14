@@ -19,7 +19,7 @@ define(function (require) {
             expect(newCreative).not.toEqual(null);
         });
 
-        it ('should test receive the fulfilled promise', function() {
+        it ('should return fullfiled promise for valid creative', function() {
             var creative = {
                 type: 'IMG',
                 environment: 'multi-screen',
@@ -32,9 +32,21 @@ define(function (require) {
             };
             var calledUrl = '//studio.mixpo.com/studio?ad=IMG&env=multiscreen&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
+
             newCreative(creative).then(handler);
+
             scope.$digest();
             expect(handler).toHaveBeenCalledWith(calledUrl);
+        });
+
+        it ('should return rejected promise for valid creative', function() {
+            var invalidCreative = {};
+            var handler = jasmine.createSpy('error');
+
+            newCreative(invalidCreative).then(null, handler);
+
+            scope.$digest();
+            expect(handler).toHaveBeenCalled();
         });
     });
 });
