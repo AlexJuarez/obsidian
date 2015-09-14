@@ -11,7 +11,7 @@ define(function(require) {
             dimensions: [
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight',
-                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix'
+                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
             limit: 500
         }
@@ -117,7 +117,7 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaignId,
+                        campaignId: creative.campaign.id,
                         numPlacements: {
                             name: creative.countPlacements || 0,
                             route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'

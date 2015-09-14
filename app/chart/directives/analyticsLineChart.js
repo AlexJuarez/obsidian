@@ -113,6 +113,10 @@ define(function (require) {
                     }
                     var height = chartArea.clientHeight - margin.top - margin.bottom;
 
+                    if (height < 0) {
+                        height = 0;
+                    }
+
                     var bisectDate = d3.bisector(function(d) { return d.date; }).left;
 
                     var x = d3.time.scale()

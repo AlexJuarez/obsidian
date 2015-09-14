@@ -108,18 +108,6 @@ define(function (require) {
                 expect(window.open).toHaveBeenCalled();
             });
 
-            it('should go to the placements page', function () {
-                var id = 1;
-
-                spyOn(state, 'go').and.callFake(function (state, params) {
-                    expect(params).toEqual(jasmine.objectContaining({ campaignId: id }));
-                });
-
-                var scope = setUpScope();
-
-                scope.gotoPlacements({ campaignId: id });
-            });
-
             it('should update the filter on stateChange', function () {
                 var scope = setUpScope();
                 rootScope.$broadcast('$stateChangeSuccess', {}, { filter: 'test' });

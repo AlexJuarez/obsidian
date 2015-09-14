@@ -22,7 +22,6 @@ define(function (require) {
                     $scope.openPreviewPage = openPreviewPage;
                     $scope.openStudio = openStudio;
                     $scope.openSettings = openSettings;
-                    $scope.gotoPlacements = gotoPlacements;
                     $scope.copyCreative = copyCreative;
                     $scope.deleteCreative = deleteCreative;
                     $scope.transformCreativeData = transformCreativeData;
@@ -70,10 +69,6 @@ define(function (require) {
                             },
                             size: 'lg'
                         });
-                    }
-
-                    function gotoPlacements(creative) {
-                        $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
                     }
 
                     function transformCreativeData(data) {
