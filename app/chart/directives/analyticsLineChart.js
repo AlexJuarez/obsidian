@@ -306,6 +306,7 @@ define(function (require) {
                             transformData(data, $scope.interval);
                             createChart(chartArea[0], data, $scope.interval, $scope.show);
                             chartArea.removeClass('loading');
+                            $scope.noData = data.length === 0; //check for no data
                         }, $scope, true);
                     } else {
                         var data = analyticChartService.get($scope.interval, $scope.startDate).all();
@@ -323,6 +324,7 @@ define(function (require) {
                     transformData(data, $scope.interval);
                     createChart($element.find('.chart-area')[0], data, $scope.interval, $scope.show);
                     $element.find('.chart-area').removeClass('loading');
+                    $scope.noData = data.length === 0; //check for no data
                 }, $scope, true);
 
                 $scope.$watch('interval', function() {
