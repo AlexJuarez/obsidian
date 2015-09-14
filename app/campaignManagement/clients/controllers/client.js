@@ -5,7 +5,7 @@ define(function (require) {
 
     require('tpl!./../new-edit-client.html');
 
-    app.controller('clientCtrl', ['$scope', '$modal', 'navbarService', function ($scope, $modal, navbar) {
+    app.controller('clientCtrl', ['$scope', '$modal', '$state', 'divisionService', 'navbarService', function ($scope, $modal, $state, divisionService, navbar) {
 
         $scope.openEditClientModal = openEditClientModal;
         $scope.openNewDivisionModal = openNewDivisionModal;
@@ -14,8 +14,14 @@ define(function (require) {
         function updateClientName() {
             $scope.client = navbar.all().client;
         }
-
         navbar.observe(updateClientName, $scope);
+
+        if ($state.clientId) {
+            var updateDivisions = function() {
+                $scope.noDivisions = divisionService.filtered().length === 0;
+            };
+            divisionService.observe(updateDivisions, $scope);
+        }
 
         var editClientModal;
         function openEditClientModal() {
