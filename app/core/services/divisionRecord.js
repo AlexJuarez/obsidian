@@ -8,7 +8,7 @@ define(function (require) {
             version: 'crud',
             endpoint: 'divisions/{id}'
         },
-        delete: {
+        create: {
             version: 'crud',
             endpoint: 'divisions'
         }

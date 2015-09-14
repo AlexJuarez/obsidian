@@ -63,6 +63,7 @@ define(function (require) {
         function isRepInfoRequired(campaign) {
             var deferred = $q.defer();
             accountRecordService.getById(campaign.accountId).then(function(account) {
+                console.log(account.all());
                 divisionRecordService.getById(account.all().divisionId).then(function(division) {
                    clientRecordService.getById(division.all().clientId).then(function(client) {
                        deferred.resolve(client.all().requireRepInfo);

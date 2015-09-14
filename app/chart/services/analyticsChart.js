@@ -6,21 +6,29 @@ define(function (require) {
 
     ///api/v2/analytics/data?&metrics=impression,view,videoSeconds,userAction,clickthrough,averagePercentComplete&dimensions=weekStarting&filters=clientId%3Aeq%3A3a9ad769-b533-4fea-94c9-b4d41a8abc2b&order=weekStarting.asc
 
-    var apiConfig = {
-        version: 'v2/analytics',
-        endpoint: 'data',
-        queryParams: {
-            metrics: [
-                'impression', 'view', 'videoSeconds',
-                'userAction', 'clickthrough', 'averagePercentComplete'
-            ]
-        }
-    };
+    var filters = ['clientId', 'divisionId', 'accountId', 'campaignId'];
 
     module.service('analyticsChartService', ['cacheFactory', '$state', '$filter', function(cacheFactory, $state, $filter) {
         var cache = cacheFactory();
 
+        function addFilters(config, filter) {
+            if($state.params[filter]) {
+                config.queryParams.filters = [filter + ':eq:' + $state.params[filter]];
+            }
+        }
+
         function _apiConfig(interval, startDate) {
+            var apiConfig = {
+                version: 'v2/analytics',
+                endpoint: 'data',
+                queryParams: {
+                    metrics: [
+                        'impression', 'view', 'videoSeconds',
+                        'userAction', 'clickthrough', 'averagePercentComplete'
+                    ]
+                }
+            };
+
             var newConfig = ng.merge(apiConfig , {
                 queryParams: {
                     dimensions: [interval],
@@ -32,9 +40,9 @@ define(function (require) {
                 newConfig.queryParams.startDate = $filter('date')(startDate, 'yyyy-MM-dd');
             }
 
-            if ($state.params.clientId) {
-                newConfig.queryParams.filters = ['clientId:eq:' + $state.params.clientId];
-            }
+            ng.forEach(filters, function (v) {
+                addFilters(newConfig, v);
+            });
 
             return newConfig;
         }
