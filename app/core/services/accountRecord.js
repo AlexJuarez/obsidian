@@ -14,7 +14,6 @@ define(function (require) {
         }
     };
 
-
     module.service('accountRecordService', ['recordPoolFactory', function (recordPoolFactory) {
         return recordPoolFactory(apiConfig);
     }]);

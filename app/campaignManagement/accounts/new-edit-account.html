@@ -9,7 +9,7 @@
                     '1': 'There is 1 error on this form.',
                     'other': 'There are {} errors on this form.'}">
         </div>
-        <div ng-if="divisions" class="form-group row" ng-class="{'has-error': newAccount.divisionId.$invalid && submitted}">
+        <div ng-if="divisions" class="form-group row" ng-class="{'has-error': newAccount.division.$invalid && submitted}">
             <label class="col-sm-3 form-label required"><span>Division</span></label>
             <div class="col-sm-9 single-select-light">
                 <select name="division" class="single-select" chosen ng-options="division.id as division.name for division in divisions track by division.id" disable-search-threshold="10" ng-model="account.divisionId" required>
