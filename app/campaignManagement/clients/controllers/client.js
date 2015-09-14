@@ -16,7 +16,7 @@ define(function (require) {
         }
         navbar.observe(updateClientName, $scope);
 
-        if ($state.clientId) {
+        if ($state.params.clientId) {
             var updateDivisions = function() {
                 $scope.noDivisions = divisionService.filtered().length === 0;
             };
