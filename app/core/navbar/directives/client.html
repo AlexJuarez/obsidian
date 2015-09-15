@@ -16,10 +16,12 @@
         <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">
             <li><a ui-sref=".clients">All {{section}}</a></li>
             <li ng-if="pinned.length">Pinned
-                <ul  class="pinned">
+                <ul class="pinned">
                     <li ng-repeat="client in pinned track by client.id">
-                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>
-                        <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                        <div class="wrapper">
+                            <a ng-click="unpin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                            <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>
+                        </div>
                     </li>
                 </ul >
             </li>
@@ -29,8 +31,11 @@
                 {{item.key}}
                 <ul limit="5">
                     <li ng-repeat="client in (item.value | limitTo: limit) track by client.id">
-                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>
-                        <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                        <div class="wrapper">
+                            <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                            <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>
+                        </div>
+                    </li>
                     <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
                 </ul>
             </li>
@@ -39,8 +44,11 @@
             <li>Results for "{{query}}"
                 <ul>
                     <li ng-repeat="client in results track by client.id">
-                    <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>
-                        <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                        <div class="wrapper">
+                            <a ng-click="pin(client)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                            <a title="{{client.name}}" ui-sref=".campaigns.client({ clientId: client.id })">{{client.name}}</a>
+                        </div>
+                    </li>
                 </ul>
             </li>
         </ul>
