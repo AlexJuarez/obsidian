@@ -27,7 +27,8 @@ define(function (require) {
             email: 'invalid@e,'
         };
 
-        notification.warn('test', {});
+        $scope.notify = notify;
+        $scope.dismissAll = dismissAll;
 
         $scope.pacing = {
             max: 65600,
@@ -178,6 +179,14 @@ define(function (require) {
                 }, 100)
             );
         });
+
+        function notify(type) {
+            notification[type]('New notification');
+        }
+
+        function dismissAll() {
+            notification.dismissAll();
+        }
 
         function debounce(func, wait, immediate) {
             var timeout;

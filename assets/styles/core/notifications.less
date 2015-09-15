@@ -1,0 +1,75 @@
+@import "brand";
+@import "variables";
+
+@notification-color: @white;
+@notification-background: @dark-gray;
+
+.ui-notification {
+    position: fixed;
+    z-index: 9999;
+    left: 50%;
+    margin-left: -400px;
+    width: 800px;
+    color: @notification-color;
+    background: @notification-background;
+    transition:all ease 0.5s;
+    &.killed {
+        opacity: 0;
+        transition: opacity ease 1s;
+    }
+    &:hover {
+        opacity: 1;
+    }
+    & > h3 {
+        display: block;
+        margin: 10px 10px 0 10px;
+        padding: 0 0 5px 0;
+        text-align: left;
+        font-size: @font-size-base;
+        font-weight: bold;
+        border-bottom: 1px solid fadeout(@notification-background, 70%);
+    }
+    & a {
+        color: @notification-color;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+    & > .message {
+        margin: 10px 10px 10px 20px;
+    }
+
+    &:before {
+        content: '';
+        width: 5px;
+        height: 100%;
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+    }
+    &.warn {
+        &:before {
+            background: @brand-warning;
+        }
+        color: @brand-warning-color;
+    }
+    &.error {
+        &:before {
+            background: @brand-danger;
+        }
+        color: @brand-danger-color;
+    }
+    &.success {
+        &:before {
+            background: @brand-success;
+        }
+        color: @brand-success-color;
+    }
+    &.info {
+        &:before {
+            background: @brand-info;
+        }
+        color: @brand-info-color;
+    }
+}
