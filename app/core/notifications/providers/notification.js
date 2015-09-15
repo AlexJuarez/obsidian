@@ -20,8 +20,8 @@ define(function (require) {
             this.options = ng.extend({}, this.options, options);
         };
 
-        this.$get = ['$timeout', '$compile', '$templateRequest', '$rootScope', '$injector', '$window', '$q', '$controller', '$document',
-            function($timeout, $compile, $templateRequest, $rootScope, $injector, $window, $q, $controller, $document){
+        this.$get = ['$timeout', '$compile', '$templateRequest', '$rootScope', '$injector', '$q', '$controller', '$document',
+            function($timeout, $compile, $templateRequest, $rootScope, $injector, $q, $controller, $document){
                 var opts = this.options;
                 var messageElements = [];
 
@@ -95,7 +95,7 @@ define(function (require) {
                         };
 
                         //Set the timeout
-                        if(ng.isNumber(settings.timeout)) {
+                        if(ng.isNumber(settings.timeout) || settings.timeout === 0) {
                             $timeout(function() {
                                 element.addClass('killed');
                             }, settings.timeout);

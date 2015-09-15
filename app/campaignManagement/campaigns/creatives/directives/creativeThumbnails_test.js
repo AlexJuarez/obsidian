@@ -54,7 +54,7 @@ define(function (require) {
             var html = compile('<div creative-thumbnails></div>')(parentScope);
             parentScope.$apply();
 
-            return html.scope();
+            return html.isolateScope();
         }
 
         describe('controller', function () {
