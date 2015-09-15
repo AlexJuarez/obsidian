@@ -91,7 +91,7 @@ define(function (require) {
                             }
                         });
 
-                        scope.$dismiss = function() {
+                        scope.dismiss = function() {
                             removeElement(notificationInstance);
                         };
 

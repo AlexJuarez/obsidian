@@ -105,7 +105,7 @@ define(function (require) {
                 var instance = setUp.instance;
                 var body = setUp.body;
 
-                instance.scope.$dismiss();
+                instance.scope.dismiss();
                 expect(body.find('.ui-notification').length).toEqual(0);
             });
         });
