@@ -67,7 +67,8 @@ define(function (require) {
                         //bind the passed in controller to the scope
                         if (settings.controller) {
                             var locals = {
-                                $scope: scope
+                                $scope: scope,
+                                $notificationInstance: notificationInstance
                             };
 
                             ng.forEach(settings.resolve, function(value, key) {
@@ -95,7 +96,7 @@ define(function (require) {
                         };
 
                         //Set the timeout
-                        if(ng.isNumber(settings.timeout) || settings.timeout === 0) {
+                        if(ng.isNumber(settings.timeout) && settings.timeout !== 0) {
                             $timeout(function() {
                                 element.addClass('killed');
                             }, settings.timeout);
@@ -109,7 +110,7 @@ define(function (require) {
 
                         messageElements.push(notificationInstance);
 
-                        $timeout(reposition);
+                        reposition();
 
                         deferred.resolve(notificationInstance);
                     });
