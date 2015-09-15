@@ -5,8 +5,8 @@ define(function (require) {
     var ng = require('angular');
 
     app.controller('newEditCreativeCtrl',
-        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
-            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
+        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window', 'URL_VALIDATION',
+            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window, URL_VALIDATION) {
 
         //Modal functions
         $scope.ok = undefined;
@@ -14,6 +14,7 @@ define(function (require) {
         $scope.creative = modalState.creative;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
+        $scope.URL_VALIDATION = URL_VALIDATION;
 
         var types = [
             { id: 'IBV', name: 'In-Banner Video' },
@@ -126,6 +127,7 @@ define(function (require) {
                     var current;
                     for(var i = 0; i < idArray.length; i ++) {
                         currentId = idArray[i];
+                        console.log
                         current = options[currentId];
                         filtered.push({
                             id: currentId,
@@ -200,6 +202,7 @@ define(function (require) {
             }
 
             $scope.ok = function(errors) {
+                console.log($scope);
                 $scope.errors = errors;
                 if(ng.equals({}, $scope.errors) || ! $scope.errors) {
                     var transformedCreative = transformCreative();

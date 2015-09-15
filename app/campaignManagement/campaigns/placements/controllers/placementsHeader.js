@@ -4,8 +4,8 @@ define(function(require) {
     var app = require('./../../../module');
 
     app.controller('placementsHeader', [
-        '$scope', '$modal', '$rootScope', '$q', '$interpolate', 'placements', 'adTagService', 'placementRecordService',
-        function($scope, $modal, $rootScope, $q, $interpolate, placements, adTagService, placementRecordService) {
+        '$scope', '$modal', '$rootScope', '$q', '$interpolate', '$state', 'placements', 'adTagService', 'placementRecordService',
+        function($scope, $modal, $rootScope, $q, $interpolate, $state, placements, adTagService, placementRecordService) {
 
             $scope.openNewPlacementModal = openNewPlacementModal;
             $scope.editPlacements = editPlacements;
@@ -17,7 +17,8 @@ define(function(require) {
             function openNewPlacementModal() {
                 if(! newPlacementModal) {
                     newPlacementModal = {
-                        action: 'New'
+                        action: 'New',
+                        campaignId: $state.params.campaignId
                     };
                 }
 
@@ -201,7 +202,7 @@ define(function(require) {
                     width: placement.embedWidth,
                     height: placement.embedHeight,
                     id: placement.targetId, // The creative guid / entry point for multi-creative
-                    // TODO: ad real u`rl here
+                    // TODO: ad real url here
                     prerenderUrl: 'http://www.google.com', // Image to show before load
                     clickThroughUrl: placement.clickthroughUrl,
                     // TODO: add real data here

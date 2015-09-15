@@ -5,6 +5,7 @@ define(function(require) {
     require('./datepicker/index');
     require('./navbar/index');
     require('./constants/apiURI');
+    require('./constants/urlValidation');
     require('./creativePreview/index');
     require('./notifications/index');
 

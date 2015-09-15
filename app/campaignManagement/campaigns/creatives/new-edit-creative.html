@@ -54,14 +54,15 @@
             <label for="clickthroughUrl" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.clickthroughUrl" type="text"
+                <input ng-model="creative.clickthroughUrl" type="text" ng-pattern="URL_VALIDATION"
                        name="clickthroughUrl" class="form-control"
                        id="clickthroughUrl" placeholder="Clickthrough Url" required/>
 
                 <p ng-show="newCreative.clickthroughUrl.$invalid && submitted"
                    class="help-block">
-                    clickthrough url is required
+                    clickthrough url must be a valid URL
                 </p>
+
             </div>
         </div>
 
@@ -71,12 +72,12 @@
                 class="col-sm-3 form-label required"><span>Creative Type</span></label>
 
             <div class="col-sm-9 single-select-light">
-                <select name="types" class="single-select" chosen
+                <select name="type" class="single-select" chosen
                         ng-options="type.id as type.name for type in types track by type.id"
                         disable-search-threshold="10"
+
                         ng-model="creative.type" required>
                 </select>
-
                 <p ng-show="newCreative.type.$invalid && submitted"
                    class="help-block">
                     creative type is required

@@ -108,7 +108,7 @@ define(function (require) {
                 }
 
                 if (!$scope.placement) {
-                    $scope.placement = originalPlacement;
+                    $scope.placement = ng.copy(originalPlacement);
                 }
 
                 $scope.placement.campaignId = originalPlacement.campaignId = modalState.campaignId;
@@ -151,6 +151,8 @@ define(function (require) {
                     flightStart: placement.flightStart || new Date(),
                     flightEnd: placement.flightEnd || new Date()
                 });
+
+                return placement;
             }
 
             function updatePublishers(campaignId) {
