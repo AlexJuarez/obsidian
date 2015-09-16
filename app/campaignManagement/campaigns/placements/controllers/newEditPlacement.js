@@ -6,16 +6,29 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditPlacementCtrl', ['$scope', '$q', '$modalInstance', 'placements',
-                                            'placementRecordService', 'campaignRecordService',
-                                            'accountRecordService', 'divisionRecordService',
-                                            'clientRecordService', 'clientPublisherRecordService', 'modalState',
-                                            function ($scope, $q, $modalInstance, placements,
-                                                      placementRecordService, campaignRecordService,
-                                                      accountRecordService, divisionRecordService,
-                                                      clientRecordService, clientPublisherRecordService, modalState) {
+    app.controller('newEditPlacementCtrl', [
+        '$scope', '$q', '$modalInstance', '$filter', 'placements',
+        'placementRecordService', 'campaignRecordService',
+        'accountRecordService', 'divisionRecordService',
+        'clientRecordService', 'clientPublisherRecordService',
+        'modalState',
+        function ($scope, $q, $modalInstance, $filter, placements,
+            placementRecordService, campaignRecordService,
+            accountRecordService, divisionRecordService,
+            clientRecordService, clientPublisherRecordService,
+            modalState) {
         $scope.placement = modalState.placement;
         $scope.action = modalState.action;
+
+        $scope.formatDate = function($event) {
+            var date = new Date($event.target.value);
+            if (isNaN( date.getTime() )) {
+
+                // Date doesn't parse!
+                date = new Date('Jan 1 2000');
+            }
+            $event.target.value = $filter('date')(date, 'M/d/yyyy');
+        };
 
         setupDatePickers();
         setupRateTypes();
