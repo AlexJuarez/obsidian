@@ -53,7 +53,7 @@
         <div class="form-group row" ng-class="{'has-error': newAccount.clickthroughUrl.$invalid && submitted}">
             <label for="clickthroughUrl" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>
             <div class="col-sm-9">
-                <input ng-model="account.clickthroughUrl" type="text" ng-pattern="URL_VALIDATION" class="form-control" name="clickthroughUrl" id="clickthroughUrl" placeholder="Enter URL" />
+                <input ng-model="account.clickthroughUrl" type="text" ng-pattern="URL_REGEX" class="form-control" name="clickthroughUrl" id="clickthroughUrl" placeholder="Enter URL" />
                 <p ng-show="newAccount.clickthroughUrl.$invalid && submitted" class="help-block">
                     clickthrough url is invalid
                 </p>

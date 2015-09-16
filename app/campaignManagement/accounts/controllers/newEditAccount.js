@@ -6,11 +6,13 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', 'URL_VALIDATION',
-																					function ($scope, $modalInstance, divisionService, accountRecordService, industries, modalState, URL_VALIDATION) {
+    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService',
+                                          'industryService', 'modalState', 'URL_REGEX',
+																					function ($scope, $modalInstance, divisionService, accountRecordService,
+                                                    industries, modalState, URL_REGEX) {
         $scope.account = modalState.account;
         $scope.action = modalState.action;
-				$scope.URL_VALIDATION = URL_VALIDATION;
+				$scope.URL_REGEX = URL_REGEX;
 
         var originalAccount;
 

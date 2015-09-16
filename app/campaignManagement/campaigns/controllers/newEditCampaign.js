@@ -6,10 +6,10 @@ define(function (require) {
     var ng = require('angular');
 
     app.controller('newEditCampaignCtrl', [
-        '$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService',
-        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState',
-        function ($scope, $q, $modalInstance, accounts, accountRecordService, divisionRecordService,
-                  clientRecordService, campaignRecordService, modalState) {
+        '$scope', '$q', '$modalInstance', '$filter', '$interpolate', '$timeout', 'accountService', 'accountRecordService',
+        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'URL_REGEX', 'MONEY_REGEX',
+        function ($scope, $q, $modalInstance, $filter, $interpolate, $timeout, accounts, accountRecordService, divisionRecordService,
+                  clientRecordService, campaignRecordService, modalState, URL_REGEX, MONEY_REGEX) {
 
         //Datepicker functions
         $scope.format = 'MM/dd/yyyy';
@@ -20,12 +20,31 @@ define(function (require) {
             startingDay: 0,
             maxMode: 'day'
         };
+        $scope.URL_REGEX = URL_REGEX;
+        $scope.MONEY_REGEX = MONEY_REGEX;
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
         $scope.campaign = modalState.campaign;
         $scope.action = modalState.action;
+
+        $scope.formatDate = function($event) {
+            var date = new Date($event.target.value);
+            if (isNaN( date.getTime() )) {
+
+                // Date doesn't parse!
+                date = new Date('Jan 1 2000');
+            }
+            $event.target.value = $filter('date')(date, 'M/d/yyyy');
+        };
+
+        var conversionEmbedSnippetTemplate = $interpolate('<img src="https://player1.mixpo.com/player/analytics/ct?event={{conversionEvent}} />');
+        $scope.$watch('campaign.conversionEvent', function() {
+            $scope.conversionEmbedSnippetText = conversionEmbedSnippetTemplate({
+                conversionEvent: encodeURIComponent($scope.campaign && $scope.campaign.conversionEvent || 'default')
+            });
+        });
 
         accounts.observe(updateAccounts, $scope);
 
