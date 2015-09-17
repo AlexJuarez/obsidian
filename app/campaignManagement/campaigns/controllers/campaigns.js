@@ -17,6 +17,9 @@ define(function (require) {
         $scope.clearFilter = clearFilter;
         $scope.updateFilters = updateFilters;
 
+        console.log( campaigns.all() );
+
+
         accounts.observe(function() {
             updateFilters($scope.filter);
         }, $scope, true);

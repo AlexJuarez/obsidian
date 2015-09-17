@@ -24,10 +24,16 @@
         width:32px;
         text-align:center;
     }
+    .icons__item:hover i {
+/*        -webkit-transform:scale(1.5);
+        transform:scale(1.5);
+*/    }
 </style>
 <div ng-click="changeGlyph($event)" class="icons" id="icons">
     
     <div class="icons__item" data-name="add"><i class="glyph-icon glyph-add"></i> glyph-add</div>
+    
+    <div class="icons__item" data-name="alert"><i class="glyph-icon glyph-alert"></i> glyph-alert</div>
     
     <div class="icons__item" data-name="benchmarks"><i class="glyph-icon glyph-benchmarks"></i> glyph-benchmarks</div>
     
