@@ -43,7 +43,6 @@ define(function (require) {
                 this._attributes = {};
                 this.attributes = {};
                 this.saving = false;
-                this.saved = false;
                 this.idAttribute = options.idAttribute || 'id';
                 this.rules = ng.merge({}, options.rules);
 

@@ -35,7 +35,7 @@ define(function (require) {
             }
 
             function notifyObservers() {
-                var args = [].slice(arguments);
+                var args = Array.prototype.slice.call(arguments);
 
                 for (var x in observers) {
                     observers[x].apply(undefined, args);

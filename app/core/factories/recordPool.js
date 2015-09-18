@@ -15,10 +15,6 @@ define(function (require) {
             var observers = observerFactory();
             var records = {};
 
-            function makeRecord() {
-
-            }
-
             function get(id) {
                 if (records[id]) {
                     return records[id];
@@ -35,17 +31,20 @@ define(function (require) {
 
             function fetch(id) {
                 var record = get(id);
-                return record.fetch();
+                record.fetch();
+                return record;
             }
 
             function update(id) {
                 var record = get(id);
-                return record.save();
+                record.save();
+                return record;
             }
 
             function _delete(id) {
                 var record = get(id);
-                return record.destroy();
+                record.destroy();
+                return record;
             }
 
             function create() {
