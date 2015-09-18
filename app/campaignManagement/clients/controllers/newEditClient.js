@@ -36,8 +36,11 @@ define(function (require) {
             if (ng.equals({}, $scope.errors) || !$scope.errors) {
                 var onSuccess = function() {
                     $modalInstance.dismiss('cancel');
+                    $scope.client = {};
                 };
-                record.save().then(onSuccess);
+                if (record.hasChanges()) {
+                    record.save().success(onSuccess);
+                }
             }
             $scope.submitted = true;
         };
@@ -46,6 +49,7 @@ define(function (require) {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
                     $modalInstance.dismiss('cancel');
+                    $scope.client = {};
                 }
             } else {
                 $modalInstance.dismiss('cancel');

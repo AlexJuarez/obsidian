@@ -40,7 +40,10 @@ define(function (require) {
             }
 
             var model = function(options) {
+                this._attributes = {};
                 this.attributes = {};
+                this.saving = false;
+                this.saved = false;
                 this.idAttribute = options.idAttribute || 'id';
                 this.rules = ng.merge({}, options.rules);
 
@@ -55,8 +58,7 @@ define(function (require) {
             model.prototype = {
                 id: null,
                 _errors: {},
-                saving: false,
-                set: function(attrs){
+                set: function(attrs, saved){
                     //do nothing if empty
                     if (attrs == null) {
                         return this;
@@ -133,19 +135,21 @@ define(function (require) {
                         var requestFn = $http[method];
                         var result = (requestFn.length === 3) ? requestFn(url, data) : requestFn(url);
 
-                        return result.then(function (resp) {
+                        result.then(function (resp) {
                             successHandler.call(that, resp);
                         }, function (resp) {
                             errorHandler.call(that, resp);
                         });
+
+                        return result;
                     }
                 },
                 hasChanges: function() {
-                    return !ng.equal({}, this.diff(this._attributes, this.attributes));
+                    return !ng.equals({}, this.diff(this._attributes, this.attributes)) || !this.id;
                 },
                 create: function() {
                     var createConfig = ng.copy(this.apiConfig.create);
-                    var data = this._filter(this.attributes);
+                    var data = this._filter(this._attributes);
                     var method = createConfig.method || 'post';
                     return this.makeRequest(method, createConfig, data);
                 },
@@ -153,7 +157,7 @@ define(function (require) {
                     var updateConfig = ng.copy(this.apiConfig.update);
                     var data = this.diff(this._attributes, this.attributes);
                     var method = updateConfig.method || 'put';
-                    if (!ng.equal({}, data)) {
+                    if (!ng.equals({}, data)) {
                         return this.makeRequest(method, updateConfig, data);
                     }
                 },
