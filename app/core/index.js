@@ -20,6 +20,7 @@ define(function(require) {
         require('./factories/record');
         require('./factories/recordPool');
         require('./factories/domainInterceptor');
+        require('./factories/observer');
     }
 
     function directives() {
