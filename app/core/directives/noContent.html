@@ -1,18 +1,47 @@
-<div ng-if="showAccountMsg">
-	<div class="no-content">
-	    <!-- <div class="glyph-benchmarks"></div> -->
-	    <h3>It appears you don't have any accounts.</h3>
-	    <p>Let's fix that! Click to add an account.</p>
-	    <button class="btn btn-default solid" ng-click="openNewAccountModal()">Add New Account</button>
-	</div>
-</div>
+<div class="no-content-wrapper">
+    
+    <div ng-if="showAccountMsg">
+        <div class="no-content">
+            <div class="glyph-reminder"></div>
+            <h3>It appears you don't have any accounts.</h3>
+            <p>Let's fix that! Click to add an account.</p>
+            <button class="btn btn-default solid" ng-click="openNewAccountModal()">Add New Account</button>
+        </div>
+    </div>
 
-<div ng-if="showCampaignMsg">
-	<div class="no-content">
-	    <!-- <div class="glyph-benchmarks"></div> -->
-    	<h3>It appears you don't have any campaigns.</h3>
-      <p>Please add a campaign in order to proceed.</p>
-    	<button class="btn btn-default solid" ng-click="openNewCampaignModal()">Add New Campaign</button>
-	</div>
-</div>
+    <div ng-if="showCampaignMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any campaigns.</h3>
+          <p>Let's fix that! Click to add a campaign.</p>
+            <button class="btn btn-default solid" ng-click="openNewCampaignModal()">Add New Campaign</button>
+        </div>
+    </div>
 
+    <div ng-if="showCreativeMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any creatives.</h3>
+          <p>Let's fix that! Click to create a new creative.</p>
+            <button class="btn btn-default solid" ng-click="openNewCampaignModal()">Add New Creative</button>
+        </div>
+    </div>
+
+    <div ng-if="showPlacementMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any placements.</h3>
+            <p>Let's fix that! Click to create a new placement.</p>
+            <div class="dropdown">
+                <a class="dropdown-toggle btn-default btn solid">Add New Placement<i class="glyph-chevron-down"></i></a>
+                <ul class="dropdown-menu" role="menu">
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="">New Placement</a></li>
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>
+                </ul>
+            </div>
+
+            <!-- <button class="btn btn-default solid" ng-click="openNewCampaignModal()">Add New Placement</button> -->
+        </div>
+    </div>
+
+</div>

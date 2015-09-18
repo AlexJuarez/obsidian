@@ -8,6 +8,7 @@ define(function (require) {
     module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
+            var loaded = false;
             var data = [];
             var observers = {};
             var observerId = 0;
@@ -28,6 +29,7 @@ define(function (require) {
                     initialized = true;
 
                     $http.get(url).success(function (d) {
+                        loaded = true;
                         setData(transform.call(this, d));
                         deferred.resolve(data);
                     });
@@ -112,6 +114,10 @@ define(function (require) {
                 }
             }
 
+            function isLoaded() {
+                return loaded;
+            }
+
             function notifyObservers(event) {
                 for (var x in observers) {
                     observers[x](event);
@@ -127,6 +133,7 @@ define(function (require) {
                 init: init,
                 setData: setData,
                 addData: addData,
+                isLoaded: isLoaded,
                 all: all,
                 filtered: filtered,
                 observe: observe,

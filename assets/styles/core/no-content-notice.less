@@ -1,20 +1,31 @@
-
-.no-content {
-    display: inline-block;
-    border: 1px solid @light-gray;
-    text-align: center;
-    padding: 1rem 3rem 2rem 3rem;
-    margin: 1rem 0 2rem 0;
-    box-sizing: border-box;
-    [class*="glyph"] {
-        .font-size(4);
-        color: #F89930;
-        font-weight: bold;
-    }
-    h3 {
-        margin: 0;
+.no-content-wrapper {
+    clear: both;
+    padding: 0;
+    .no-content {
+        //display: inline-block;
+        display: block;
+        border: 1px solid @light-gray;
+        text-align: center;
+        padding: 1rem 3rem 2rem 3rem;
+        //margin: 1rem 0 2rem 0;
+        width: 50%;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+        .glyph-info {
+            .font-size(4);
+            color: @light-blue;
+        }
+        h3 {
+            margin: 0;
+        }
     }
     @media(max-width: @screen-sm-min) {
-        width: 100%;
+        padding: 0 2rem;
+        .no-content {
+            width: 100%;
+        }
     }
 }
