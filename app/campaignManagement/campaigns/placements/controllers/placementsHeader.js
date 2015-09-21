@@ -11,6 +11,7 @@ define(function(require) {
             $scope.editPlacements = editPlacements;
             $scope.pullTags = pullTags;
             $scope.selectedPlacements = [];
+            $scope.hasPlacements = false;
 
             var newPlacementModal;
 
@@ -42,7 +43,7 @@ define(function(require) {
             function updateMeta() {
                 var allPlacements = placements.all(true);
 
-                if(allPlacements) {
+                if(allPlacements && placements.data().isLoaded()) {
                     var placement;
                     var creative;
 
@@ -71,6 +72,11 @@ define(function(require) {
                         creatives: creatives.length,
                         types: types.length
                     };
+    
+                    if ($scope.placementsMeta.publishers !== 0) {
+                        $scope.hasPlacements = true;
+                    }
+
                 }
             }
 
