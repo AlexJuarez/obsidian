@@ -14,16 +14,16 @@ define(function(require) {
      * @ngInject
      */
     module.service('newCreativeService', ['$httpParamSerializer', '$q', 'studioDirectAdapter', 'studioLocation', function($httpParamSerializer, $q, studioDirectAdapter, studioLocation) {
-       function createStudioDirectUrl(creative) {
-            var studioDirectUrl = studioLocation.host() + '/studio';
-            var params = studioDirectAdapter(creative);
-            return studioDirectUrl + '?' + $httpParamSerializer(params);
-        }
-
         return function(creative) {
             var deferred = $q.defer();
-            var url = createStudioDirectUrl(creative);
-            deferred.resolve(url);
+            var studioDirectUrl = studioLocation.host() + '/studio';
+            var params = studioDirectAdapter(creative);
+            if(params === null) {
+                deferred.reject('invalid creative');
+            } else {
+                var url = studioDirectUrl + '?' + $httpParamSerializer(params);
+                deferred.resolve(url);
+            }
             return deferred.promise;
         };
     }]);

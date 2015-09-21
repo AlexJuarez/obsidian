@@ -11,7 +11,7 @@ define(function(require) {
             dimensions: [
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight',
-                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix'
+                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
             limit: 500
         }
@@ -117,7 +117,7 @@ define(function(require) {
                         type: typeTransform[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaignId,
+                        campaignId: creative.campaign.id,
                         numPlacements: {
                             name: creative.countPlacements || 0,
                             route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
@@ -128,7 +128,7 @@ define(function(require) {
 						// in the table
                         id: creative.id,
                         lastModified: creative.modifiedDate,
-                        thumbnail: 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg'
+                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
                     });
                 }
                 return transformedTable;
@@ -146,6 +146,10 @@ define(function(require) {
 
             function all() {
                 return _transformCreatives(cache.all(_apiConfig()));
+            }
+
+            function setLimit(limit) {
+                apiConfig.queryParams.limit = limit;
             }
 
             function observe(callback, $scope, preventImmediate, preventInit) {
@@ -169,6 +173,7 @@ define(function(require) {
                 _transformCreatives: _transformCreatives,
                 _apiConfig: _apiConfig,
                 _getCreative: getCreative,
+                setLimit: setLimit,
                 all: all,
                 data: data,
                 addData: addData,

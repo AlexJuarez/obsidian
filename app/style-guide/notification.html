@@ -4,11 +4,11 @@
     A notifications api exists, the module is named <code>notification</code> and provides the following functions.
 </p>
 <ul>
-    <li><code>warn(message, options)</code> - which broadcast notifications:warn</li>
-    <li><code>info(message, options)</code> - which broadcast notifications:info</li>
-    <li><code>success(message, options)</code> - which broadcast notifications:success</li>
-    <li><code>error(message, options)</code> - which broadcast notifications:error</li>
-    <li><code>dismissAll()</code> - which broadcast notifications:dismissAll</li>
+    <li><code>warn(message, options)</code> - <button class="btn btn-primary warn btn-sm" ng-click="notify('warn')">Warn</button> - which broadcast notifications:warn</li>
+    <li><code>info(message, options)</code> - <button class="btn btn-primary info btn-sm" ng-click="notify('info')">Info</button> - which broadcast notifications:info</li>
+    <li><code>success(message, options)</code> - <button class="btn btn-primary success btn-sm" ng-click="notify('success')">Success</button> - which broadcast notifications:success</li>
+    <li><code>error(message, options)</code> - <button class="btn btn-primary error btn-sm" ng-click="notify('error')">Error</button> - which broadcast notifications:error</li>
+    <li><code>dismissAll()</code> - <button class="btn btn-primary btn-sm" ng-click="dismissAll()">Dismiss</button> - which broadcast notifications:dismissAll</li>
 </ul>
 <h3>Options</h3>
 <p>All of the options have defaults, and do not need to be passed in</p>

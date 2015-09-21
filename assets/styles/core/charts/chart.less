@@ -5,6 +5,23 @@
 .interactive-chart {
     margin-top: 3rem;
     clear: both;
+    .no-data {
+        text-align: center;
+        .text {
+            .font-size(3);
+            margin-left: -3rem;
+            font-family: 'Oswald', sans-serif;
+            position: absolute;
+            display: inline-block;
+            vertical-align: middle;
+            &:before {
+                content: '';
+                display: inline-block;
+                height: 250px;
+                vertical-align: middle;
+            }
+        }
+    }
 }
 
 .chart-area {

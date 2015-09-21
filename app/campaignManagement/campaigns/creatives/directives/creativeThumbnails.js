@@ -10,7 +10,9 @@ define(function (require) {
         return {
             restrict: 'A',
             replace: true,
-            scope: true,
+            scope: {
+                limit: '='
+            },
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
             controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation',
                 function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation) {
@@ -22,10 +24,13 @@ define(function (require) {
                     $scope.openPreviewPage = openPreviewPage;
                     $scope.openStudio = openStudio;
                     $scope.openSettings = openSettings;
-                    $scope.gotoPlacements = gotoPlacements;
                     $scope.copyCreative = copyCreative;
                     $scope.deleteCreative = deleteCreative;
                     $scope.transformCreativeData = transformCreativeData;
+
+                    if ($scope.limit) {
+                        creatives.setLimit($scope.limit);
+                    }
 
                     creatives.observe(updateCreatives, $scope);
 
@@ -70,10 +75,6 @@ define(function (require) {
                             },
                             size: 'lg'
                         });
-                    }
-
-                    function gotoPlacements(creative) {
-                        $state.go('cm.campaigns.detail.placements', { campaignId: creative.campaignId });
                     }
 
                     function transformCreativeData(data) {

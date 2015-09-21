@@ -1,12 +1,25 @@
 var allTestFiles = [];
 var TEST_REGEXP = /_test\.js$/;
+var filter;
+
+if (window.__karma__.config.filter) {
+    filter = window.__karma__.config.filter;
+    filter = new RegExp(filter);
+}
 
 var pathToModule = function(path) {
     return path.replace(/^\/base\//, '').replace(/\.js$/, '');
 };
 
+function testPath(path) {
+    if (typeof filter !== 'undefined') {
+        return filter.test(path);
+    }
+    return true;
+}
+
 Object.keys(window.__karma__.files).forEach(function(file) {
-    if (TEST_REGEXP.test(file)) {
+    if (TEST_REGEXP.test(file) && testPath(file)) {
         // Normalize paths to RequireJS module names.
         allTestFiles.push(pathToModule(file));
     }

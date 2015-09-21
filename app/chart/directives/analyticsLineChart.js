@@ -113,6 +113,10 @@ define(function (require) {
                     }
                     var height = chartArea.clientHeight - margin.top - margin.bottom;
 
+                    if (height < 0) {
+                        height = 0;
+                    }
+
                     var bisectDate = d3.bisector(function(d) { return d.date; }).left;
 
                     var x = d3.time.scale()
@@ -306,6 +310,7 @@ define(function (require) {
                             transformData(data, $scope.interval);
                             createChart(chartArea[0], data, $scope.interval, $scope.show);
                             chartArea.removeClass('loading');
+                            $scope.noData = data.length === 0; //check for no data
                         }, $scope, true);
                     } else {
                         var data = analyticChartService.get($scope.interval, $scope.startDate).all();
@@ -323,6 +328,7 @@ define(function (require) {
                     transformData(data, $scope.interval);
                     createChart($element.find('.chart-area')[0], data, $scope.interval, $scope.show);
                     $element.find('.chart-area').removeClass('loading');
+                    $scope.noData = data.length === 0; //check for no data
                 }, $scope, true);
 
                 $scope.$watch('interval', function() {

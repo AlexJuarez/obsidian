@@ -3,4 +3,5 @@ define(function(require) {
 
     require('./factories/notification');
     require('./services/notification');
+    require('./providers/notification');
 });
