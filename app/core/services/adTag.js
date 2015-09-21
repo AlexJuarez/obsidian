@@ -3,7 +3,7 @@ define(function (require) {
 
     var module = require('./../module');
 
-    module.service('adTagService', ['dataFactory', '$http', function (dataFactory) {
+    module.service('adTagService', ['dataFactory', function (dataFactory) {
         var data = dataFactory();
 
         function transform(data) {

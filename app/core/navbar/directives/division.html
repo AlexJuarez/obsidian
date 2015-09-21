@@ -19,8 +19,10 @@
             <li ng-if="pinned.length">Pinned
                 <ul class="pinned">
                     <li ng-repeat="division in pinned track by division.id">
-                        <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>
-                        <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                        <div class="wrapper">
+                            <a ng-click="unpin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                            <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>
+                        </div>
                     </li>
                 </ul>
             </li>
@@ -30,8 +32,11 @@
                 {{item.key}}
                 <ul limit="5">
                     <li ng-repeat="division in (item.value | limitTo: limit) track by division.id ">
-                        <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>
-                        <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                        <div class="wrapper">
+                            <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                            <a title="{{division.name}}" ui-sref=".campaigns.division({divisionId: division.id})">{{division.name}}</a>
+                        </div>
+                    </li>
                     <li ng-if="item.value.length > limit"><button ng-click="more()" class="btn btn-xs solid btn-default">More</button></li>
                 </ul>
             </li>
@@ -40,8 +45,11 @@
             <li>Results for "{{query}}"
                 <ul>
                     <li ng-repeat="division in results track by division.id">
-                        <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>
-                        <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a></li>
+                        <div class="wrapper">
+                            <a ng-click="pin(division)"><i class="pin"><span class="unpin">Unpin</span><span class="repin">Pin</span></i></a>
+                            <a title="{{division.name}}" ui-sref=".campaigns.division({ divisionId: division.id })">{{division.name}}</a>
+                        </div>
+                    </li>
                 </ul>
             </li>
         </ul>

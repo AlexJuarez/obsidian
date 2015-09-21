@@ -4,7 +4,9 @@ define(function (require) {
     var app = require('./../../../module');
     var ng = require('angular');
 
-    app.controller('newEditCreativeCtrl', ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState) {
+    app.controller('newEditCreativeCtrl',
+        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
+            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
 
         //Modal functions
         $scope.ok = undefined;
@@ -199,9 +201,9 @@ define(function (require) {
             }
 
             $scope.ok = function(errors) {
-                var transformedCreative = transformCreative();
                 $scope.errors = errors;
                 if(ng.equals({}, $scope.errors) || ! $scope.errors) {
+                    var transformedCreative = transformCreative();
                     var onSuccess = function() {
                         originalCreative = $scope.creative;
                         $modalInstance.dismiss('cancel');
@@ -215,10 +217,11 @@ define(function (require) {
                             $modalInstance.dismiss('cancel');
                         }
                     } else {
-                        // debugger;
-                        newCreativeService(transformedCreative);//.then()
-                        // TODO: wait for promise from newCreativeService, then do something
-                        //creativeRecordService.create($scope.creative).then(onSuccess);
+                        newCreativeService(transformedCreative)
+                            .then(function(url) {
+                                onSuccess();
+                                $window.open(url, '_blank');
+                            });
                     }
                 }
                 $scope.submitted = true;
@@ -227,6 +230,15 @@ define(function (require) {
             function transformCreative() {
                 var creative = $scope.creative;
                 var allDimensions = getDimensions(creative);
+                var getEnvironment = function(id) {
+                    for (var i=0; i<$scope.environments.length; i++) {
+                        if ($scope.environments[i].id === id) {
+                            return environments[id].id;
+                        }
+                    }
+                    return null;
+                };
+
                 return {
                     expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
                     expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
@@ -234,7 +246,7 @@ define(function (require) {
                     embedHeight: parseInt(allDimensions.embed.height, 10),
                     clickthroughUrl: creative.clickthroughUrl,
                     type: creative.type,
-                    environment: environments[creative.environment].id,
+                    environment: getEnvironment(creative.environment),
                     name: creative.name
                 };
             }

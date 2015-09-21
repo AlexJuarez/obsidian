@@ -27,6 +27,8 @@ define(function (require) {
         $scope.campaign = modalState.campaign;
         $scope.action = modalState.action;
 
+        accounts.observe(updateAccounts, $scope);
+
         var originalCampaign;
 
         if (modalState.campaignId) {
@@ -52,8 +54,6 @@ define(function (require) {
             $scope.campaign = ng.copy(modalState.campaign || originalCampaign);
         }
 
-        accounts.observe(updateAccounts, $scope);
-
         function updateAccounts() {
             if (!modalState.campaignId) {
                 $scope.accounts = accounts.filtered();
@@ -63,38 +63,15 @@ define(function (require) {
         function isRepInfoRequired(campaign) {
             var deferred = $q.defer();
             accountRecordService.getById(campaign.accountId).then(function(account) {
+                console.log(account.all());
                 divisionRecordService.getById(account.all().divisionId).then(function(division) {
                    clientRecordService.getById(division.all().clientId).then(function(client) {
                        deferred.resolve(client.all().requireRepInfo);
                    });
                 });
             });
-
             return deferred.promise;
         }
-
-        $scope.select = [
-            {
-                name: 'First Option',
-                value: '1'
-            },
-            {
-                name: 'Second Option',
-                value: '2'
-            },
-            {
-                name: 'Third Option',
-                value: '3'
-            },
-            {
-                name: 'Fourth Option',
-                value: '4'
-            },
-            {
-                name: 'Fifth Option',
-                value: '5'
-            }
-        ];
 
         function openPicker($event, name) {
             $event.preventDefault();
@@ -149,7 +126,7 @@ define(function (require) {
             var diff = {};
             for (var index in changed) {
                 if (changed.hasOwnProperty(index)) {
-                    if (original[index] && !ng.equals(changed[index], original[index])) {
+                    if (!ng.equals(changed[index], original[index])) {
                         diff[index] = changed[index];
                     }
                 }

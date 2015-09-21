@@ -12,8 +12,8 @@
 		<div class="creative-info">
 			<span class="title">{{creative.creativeName}}</span>
 			<div class="data">
-				<a ng-click="gotoPlacements(creative)" title="View Creative Placements">Placements: </a>
-				<a ng-click="gotoPlacements(creative)" title="View Creative Placements">{{creative.numPlacements.name}}</a>
+				<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">Placements: </a>
+				<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">{{creative.numPlacements.name}}</a>
 			</div>
 			<div class="data">
 				<span>Ad Type:</span>

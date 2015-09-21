@@ -6,7 +6,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('creativesHeaderCtrl', function () {
-        var header, mockCreatives, httpBackend, state, scope;
+        var header, mockCreatives, httpBackend, state, scope, modal;
 
         mockCreatives = {
             all: function() {
@@ -25,12 +25,21 @@ define(function (require) {
         beforeEach(function () {
             module('app.campaign-management');
 
+            module(function($provide){
+                $provide.value('$modal', {
+                    open: function(opts) {
+                        opts.resolve.modalState();
+                    }
+                });
+            });
+
             spyOn(mockCreatives, 'observe');
 
-            inject(function ($controller, $httpBackend, $state, $rootScope) {
+            inject(function ($controller, $httpBackend, $state, $rootScope, $modal) {
                 httpBackend = $httpBackend;
                 state = $state;
                 scope = $rootScope.$new();
+                modal = $modal;
                 header = $controller('creativesHeaderCtrl', {$scope: scope, creatives: mockCreatives});
             });
         });
@@ -57,6 +66,14 @@ define(function (require) {
             };
 
             expect(scope.creativesMeta).toEqual(expected);
+        });
+
+        it('should open a modal', function() {
+            spyOn(modal, 'open').and.callThrough();
+
+            scope.openNewCreativeModal();
+
+            expect(modal.open).toHaveBeenCalled();
         });
 
     });

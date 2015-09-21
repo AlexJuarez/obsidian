@@ -6,6 +6,7 @@ define(function (require) {
     require('tpl!./creativesThumbnails.html');
     require('tpl!./creativesHeader.html');
     require('tpl!./directives/creativeThumbnails.html');
+    require('tpl!./new-edit-creative.html');
 
     return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
 

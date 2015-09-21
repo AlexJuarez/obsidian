@@ -1,9 +1,9 @@
 <nav class="row tab-header" role="form">
     <div class="col-lg-3">
         <b>View By:</b>
-        <a ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers}})</a>
-        <a ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives}})</a>
-        <a ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types}})</a>
+        <a ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers || 0}})</a>
+        <a ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives || 0}})</a>
+        <a ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types || 0}})</a>
     </div>
     <div class="col-lg-2">
         <label class="form-label search">

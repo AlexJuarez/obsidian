@@ -4,8 +4,14 @@ define(function (require) {
     var module = require('./../module');
 
     var apiConfig = {
-        version: 'crud',
-        endpoint: 'campaigns/{id}'
+        update: {
+            version: 'crud',
+            endpoint: 'campaigns/{id}'
+        },
+        create: {
+            version: 'crud',
+            endpoint: 'campaigns'
+        }
     };
 
 

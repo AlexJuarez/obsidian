@@ -1,6 +1,9 @@
 define(function (require) {
     'use strict';
 
+    require('./placements/index');
+    require('./creatives/index');
+
     services();
     controllers();
     directives();
@@ -37,23 +40,4 @@ define(function (require) {
     function filters() {
         require('./filters/campaignStatus');
     }
-
-    require('./placements/controllers/placementsList');
-    require('./placements/controllers/placementsHeader');
-    require('./placements/controllers/newEditPlacement');
-    require('./placements/directives/placementOptions');
-    require('./placements/directives/expandAnchorsDirections');
-    require('./placements/services/placements');
-    require('./placements/services/placementsByPublisher');
-    require('./placements/services/placementsByCreative');
-    require('./placements/services/placementsByAdType');
-
-    require('./creatives/controllers/creativesHeader');
-    require('./creatives/controllers/creativesList');
-    require('./creatives/controllers/newEditCreative');
-    require('./creatives/directives/creativeThumbnails');
-    require('./creatives/directives/creativeOptions');
-    require('./creatives/services/creatives');
-    require('./creatives/services/newCreative');
-    require('./creatives/services/creative');
 });

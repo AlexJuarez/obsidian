@@ -293,14 +293,6 @@
         }
 
         .list {
-            .pinned {
-                a {
-                    max-width: 102px;
-                }
-            }
-        }
-
-        .list {
             box-sizing: border-box;
             max-height: 27rem;
             height: 100%;
@@ -327,15 +319,22 @@
                 }
                 margin-top: 1rem;
             }
-            a {
-                max-width: 120px;
+            li > div.wrapper {
+                display: inline-block;
+                max-width: 100%;
                 overflow: hidden;
                 white-space: nowrap;
-                text-overflow: ellipsis;
-                display: inline-block;
                 text-transform: none;
                 font-weight: normal;
                 .font-size(1.4);
+                a:first-child {
+                    float: right;
+                }
+                a:last-child {
+                    display: block;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
             }
             ul {
                 list-style: none;

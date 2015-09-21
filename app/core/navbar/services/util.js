@@ -15,6 +15,13 @@ define(function () {
         return data;
     }
 
+    function getYearQuarter(date) {
+        date = new Date(date);
+        var quarter = Math.floor(date.getMonth() / 3) + 1;
+        var year = date.getUTCFullYear();
+        return year + ' ' + 'Q' + quarter;
+    }
+
     function checkName(item, query) {
         return item.name && item.name.toLowerCase().indexOf(query) > -1;
     }
@@ -110,20 +117,11 @@ define(function () {
         return output;
     }
 
-    function get(items, id) {
-        var length = items.length;
-        for (var i = 0; i < length; i++) {
-            if (items[i].id === id) {
-                return items[i];
-            }
-        }
-    }
-
     return {
         sortByName: sortByName,
         search: search,
         alphabetMap: alphabetMap,
         pinned: pinned,
-        get: get
+        getYearQuarter: getYearQuarter
     };
 });

@@ -10,8 +10,14 @@ define(function (require) {
         var recordPool, httpBackend, apiGenerator, data;
 
         var apiConfig = {
-            version: 'test',
-            endpoint: 'endpoint/{id}'
+            update: {
+                version: 'test',
+                endpoint: 'endpoint/{id}'
+            },
+            create: {
+                version: 'test',
+                endpoint: 'endpoint'
+            }
         };
 
         beforeEach(function () {
@@ -42,9 +48,9 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint = idConfig.endpoint.replace('{id}', 'id');
+            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
 
-            httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
+            httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
 
             records.getById('id').then(function(returnedRecord) {
                 expect(returnedRecord.all()).toEqual(record);
@@ -62,9 +68,9 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint = idConfig.endpoint.replace('{id}', 'id');
+            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
 
-            httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
+            httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
             httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 });
 
             records.update('id', { success: false }).then(function(updatedRecord) {
@@ -87,8 +93,7 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var postConfig = ng.copy(apiConfig);
-            postConfig.endpoint = postConfig.endpoint.replace('{id}', '');
-            httpBackend.when('POST', apiGenerator(postConfig)).respond(record);
+            httpBackend.when('POST', apiGenerator(postConfig.create)).respond(record);
 
             records.create({ success: false }).then(function(createdRecord) {
                 expect(createdRecord.data).toEqual(record);
@@ -106,10 +111,10 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.endpoint = idConfig.endpoint.replace('{id}', 'id');
+            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
 
-            httpBackend.when('GET', apiGenerator(idConfig)).respond(record);
-            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 });
+            httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
+            httpBackend.when('PUT', apiGenerator(idConfig.update)).respond({ updated: 1 });
 
             records.delete('id').then(function(updatedRecord) {
                 expect(updatedRecord.data).toEqual({ updated: 1 });

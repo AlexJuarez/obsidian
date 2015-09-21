@@ -1,6 +1,5 @@
 // Karma configuration
 // Generated on Mon Apr 27 2015 09:14:42 GMT-0700 (PDT)
-
 module.exports = function(config) {
     config.set({
 
@@ -15,12 +14,13 @@ module.exports = function(config) {
             'karma-firefox-launcher',
             'karma-phantomjs-launcher',
             'karma-requirejs',
-            'karma-coverage'
+            'karma-coverage',
+            require('./karma-filter')
         ],
 
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['jasmine-jquery', 'jasmine', 'requirejs'],
+        frameworks: ['jasmine-jquery', 'jasmine', 'requirejs', 'filter'],
 
         // list of files / patterns to load in the browser
         files: [

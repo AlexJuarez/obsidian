@@ -38,7 +38,7 @@ define(function (require) {
 
         function filter(config, id) {
             var newConfig = ng.copy(config);
-            newConfig.queryParams.filters = ['campaign.id:' + id];
+            newConfig.queryParams.filters = ['campaign.id:eq:' + id];
             return newConfig;
         }
 
