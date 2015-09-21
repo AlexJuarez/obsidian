@@ -52,9 +52,15 @@ define(function (require) {
     };
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
-                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
-        var placementCache = cache({
-            transform: function(data) {
+                                  function ($state, $interpolate, $compile, $rootScope, cacheFactory, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+        // var placementCache = cache({
+        //     transform: function(data) {
+        //         return data.placements;
+        //     }
+        // });
+
+        var placementCache = cacheFactory({
+            transform: function (data) {
                 return data.placements;
             }
         });
@@ -184,11 +190,22 @@ define(function (require) {
 
         function observe(callback, $scope, preventImmediate) {
 
-            updateCache();
+            return placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
 
-            function updateCache() {
-                placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
-            }
+            // updateCache();
+
+            // function updateCache() {
+            //     placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
+            // }
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return placementCache.get(getPlacementsApiConfig(), initialize);
         }
 
         return {
@@ -196,6 +213,7 @@ define(function (require) {
             _getPlacementGroups: _getPlacementGroups,
             getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
+            data: data,
             observe: observe
         };
     }]);
