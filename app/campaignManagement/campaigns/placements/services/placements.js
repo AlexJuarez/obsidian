@@ -53,11 +53,6 @@ define(function (require) {
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
                                   function ($state, $interpolate, $compile, $rootScope, cacheFactory, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
-        // var placementCache = cache({
-        //     transform: function(data) {
-        //         return data.placements;
-        //     }
-        // });
 
         var placementCache = cacheFactory({
             transform: function (data) {
@@ -192,11 +187,6 @@ define(function (require) {
 
             return placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
 
-            // updateCache();
-
-            // function updateCache() {
-            //     placementCache.observe(getPlacementsApiConfig(), callback, $scope, preventImmediate);
-            // }
         }
 
         /**
