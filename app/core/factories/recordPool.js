@@ -35,8 +35,9 @@ define(function (require) {
                 return record;
             }
 
-            function update(id) {
+            function update(id, data) {
                 var record = get(id);
+                record.set(data);
                 record.save();
                 return record;
             }
@@ -47,14 +48,16 @@ define(function (require) {
                 return record;
             }
 
-            function create() {
-                var record = recordFactory({ apiConfig: apiConfig,
+            function create(attrs) {
+                var record = recordFactory({
+                    apiConfig: apiConfig,
                     successFn: function(data) {
                         records[data.id] = record;
                         record.observe(function() {
                             observers.notifyObservers(record.get());
                         }, undefined, true);
-                    }
+                    },
+                    attributes: attrs
                 });
 
                 return record;

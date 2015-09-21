@@ -7,7 +7,7 @@ define(function (require) {
     var ng = require('angular');
 
     describe('recordPool', function () {
-        var recordPool, httpBackend, apiGenerator, scope;
+        var recordPool, httpBackend, scope;
 
         var apiConfig = {
             update: {
@@ -22,10 +22,10 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (recordPoolFactory, $httpBackend, apiUriGenerator, $rootScope) {
+
+            inject(function (recordPoolFactory, $httpBackend, $rootScope) {
                 recordPool = recordPoolFactory;
                 httpBackend = $httpBackend;
-                apiGenerator = apiUriGenerator;
                 scope = $rootScope.$new();
             });
         });
@@ -36,50 +36,40 @@ define(function (require) {
             scope.$destroy();
         });
 
-        // function setupTests(apiConfig) {
-
-        // }
-
         it('should be an instance of recordPool', function () {
             expect(recordPool).not.toEqual(null);
         });
 
         it('should be able to get a record by id and notify observers on load', function() {
-            var record = { success: true };
-            var records = recordPool(apiConfig);
+            var opts = ng.copy(apiConfig);
+            var records = recordPool(opts);
+            var record = records.get('id');
 
-            var idConfig = ng.copy(apiConfig);
-            idConfig.update.endpoint = idConfig.update.endpoint.replace('{{id}}', 'id');
+            httpBackend.when('GET', record.createUrl(opts.update)).respond({ success: true });
 
-            httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
-
-            records.get('id').observe(function() {
+            record.observe(function() {
                 var r = records.get('id');
-                expect(r.get()).toEqual(jasmine.objectContaining(record));
+                expect(r.get()).toEqual(jasmine.objectContaining({ success: true }));
             }, scope, true);
 
             records.fetch('id');
 
             records.observe(function(newUpdatedRecord) {
-                expect(newUpdatedRecord).toEqual(jasmine.objectContaining(record));
+                expect(newUpdatedRecord).toEqual(jasmine.objectContaining({ success: true }));
             }, undefined, true);
 
             httpBackend.flush();
         });
 
         it('should update a record', function() {
-            var record = { success: true };
-            var records = recordPool(apiConfig);
+            var opts = ng.copy(apiConfig);
+            var records = recordPool(opts);
+            var record = records.get('id');
 
-            var idConfig = ng.copy(apiConfig);
-            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
+            httpBackend.when('GET', record.createUrl(opts.update)).respond({ success: true });
+            httpBackend.when('PUT', record.createUrl(opts.update)).respond({ updated: 1 });
 
-            httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
-            httpBackend.when('PUT', apiGenerator(idConfig)).respond({ updated: 1 });
-
-            records.update('id', { success: false }).then(function(updatedRecord) {
-                expect(updatedRecord.data).toEqual({ updated: 1 });
-            });
+            records.update('id', { success: false });
 
             var putObserve = false;
             records.observe(function(updatedRecord) {
@@ -90,39 +80,36 @@ define(function (require) {
             }, undefined, true);
 
             httpBackend.flush();
+
+            expect(record.get()).toEqual(jasmine.objectContaining({ updated: 1 }));
         });
 
         it('should create a new record', function() {
-            var record = { success: true };
-            var records = recordPool(apiConfig);
+            var opts = ng.copy(apiConfig);
+            var records = recordPool(opts);
 
-            var postConfig = ng.copy(apiConfig);
-            httpBackend.when('POST', apiGenerator(postConfig.create)).respond(record);
+            var record = records.create({ success: false });
+            httpBackend.when('POST', record.createUrl(opts.create)).respond({ success: true });
 
-            records.create({ success: false }).then(function(createdRecord) {
-                expect(createdRecord.data).toEqual(record);
-            });
+            record.save();
 
             records.observe(function(updatedRecord) {
-                expect(updatedRecord).toEqual(record);
+                expect(updatedRecord).toEqual(jasmine.objectContaining({ success: true }));
             }, undefined, true);
 
             httpBackend.flush();
+
+            expect(record.get()).toEqual(jasmine.objectContaining({ success: true }));
         });
 
         it('should delete an existing record', function() {
-            var record = { deleted: false };
-            var records = recordPool(apiConfig);
+            var opts = ng.copy(apiConfig);
+            var records = recordPool(opts);
+            var record = records.get('id');
 
-            var idConfig = ng.copy(apiConfig);
-            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
+            httpBackend.when('PUT', record.createUrl(opts.update), { deleted: true }).respond({ updated: 1 });
 
-            httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
-            httpBackend.when('PUT', apiGenerator(idConfig.update)).respond({ updated: 1 });
-
-            records.delete('id').then(function(updatedRecord) {
-                expect(updatedRecord.data).toEqual({ updated: 1 });
-            });
+            records.delete('id');
 
             var putObserve = false;
             records.observe(function(updatedRecord) {
@@ -133,6 +120,8 @@ define(function (require) {
             }, undefined, true);
 
             httpBackend.flush();
+
+            expect(record.get()).toEqual(jasmine.objectContaining({ updated: 1 }));
         });
 
     });

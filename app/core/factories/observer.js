@@ -5,9 +5,10 @@ define(function (require) {
     var ng = require('angular');
 
     module.factory('observerFactory', ['$timeout', '$rootScope', '$log', function ($timeout, $rootScope, $log) {
+        var observerId = 0;
+
         return function (){
             var observers = {};
-            var observerId = 0;
 
             function observe(callback, $scope, preventImmediate) {
                 if (!ng.isFunction(callback)) {
