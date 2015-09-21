@@ -29,72 +29,72 @@ define(function (require) {
 
         var typeSettings = {
             IBV: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+                environments: [0,1,2,3],
+                dimensions: [0,1,2,3,10,11,12,13],
+                expandedDimensions: [0,1,2,3,4,5,6,7,8]
             },
             ISV: {
-                environments: [1,2],
-                dimensions: [6,7,8,9,10,14],
+                environments: [0,1],
+                dimensions: [5,6,7,8,9,13],
                 expandedDimensions: undefined
             },
             RM: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
+                environments: [0,1,2,3],
+                dimensions: [0,1,2,3,10,11,12,13],
+                expandedDimensions: [0,1,2,3,4,5,6,7,8]
             },
             SWF: {
-                environments: [2],
+                environments: [1],
                 dimensions: undefined,
                 expandedDimensions: undefined
             },
             IMG: {
-                environments: [1,2,3,4],
+                environments: [0,1,2,3],
                 dimensions: undefined,
                 expandedDimensions: undefined
             }
         };
 
-        var environments = {
-            1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
-            2: { id: 'desktop', name: 'Desktop' },
-            3: { id: 'mobile', name: 'Tablet & Phone' },
-            4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
-        };
+        var environments = [
+            { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
+            { id: 'desktop', name: 'Desktop' },
+            { id: 'mobile', name: 'Tablet & Phone' },
+            { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
+        ];
 
-        var dimensions = {
-            1: { widthHeight: [160, 600], name: '160x600' },
-            2: { widthHeight: [180, 150], name: '180x150' },
-            3: { widthHeight: [300, 250], name: '300x250' },
-            4: { widthHeight: [300, 600], name: '300x600' },
-            5: { widthHeight: [728, 90], name: '728x90' },
-            6: { widthHeight: [480, 360], name: '480x360 (4:3)' },
-            7: { widthHeight: [533, 300], name: '533x300 (16:9)' },
-            8: { widthHeight: [640, 360], name: '640x360 (16:9)' },
-            9: { widthHeight: [640, 480], name: '640x480 (4:3)' },
-            10: { widthHeight: [768, 432], name: '768x432 (16:9)' },
-            11: { widthHeight: [728, 90], name: '728x90' },
-            12: { widthHeight: [970, 90], name: '970x90' },
-            13: { widthHeight: [1, 1], name: 'Interstitial 1x1' },
-            14: { name: 'Custom' }
-        };
+        var dimensions = [
+            { widthHeight: [160, 600], name: '160x600' },
+            { widthHeight: [180, 150], name: '180x150' },
+            { widthHeight: [300, 250], name: '300x250' },
+            { widthHeight: [300, 600], name: '300x600' },
+            { widthHeight: [728, 90], name: '728x90' },
+            { widthHeight: [480, 360], name: '480x360 (4:3)' },
+            { widthHeight: [533, 300], name: '533x300 (16:9)' },
+            { widthHeight: [640, 360], name: '640x360 (16:9)' },
+            { widthHeight: [640, 480], name: '640x480 (4:3)' },
+            { widthHeight: [768, 432], name: '768x432 (16:9)' },
+            { widthHeight: [728, 90], name: '728x90' },
+            { widthHeight: [970, 90], name: '970x90' },
+            { widthHeight: [1, 1], name: 'Interstitial 1x1' },
+            { name: 'Custom' }
+        ];
 
-        var expandedDimensions = {
-            1: { name: 'Non-Expanding' },
-            3: { widthHeight: [300, 600], name: '300x600' },
-            4: { widthHeight: [560, 300], name: '560x300' },
-            5: { widthHeight: [600, 250], name: '600x250' },
-            6: { widthHeight: [600, 600], name: '600x600' },
-            7: { widthHeight: [728, 315], name: '728x315' },
-            8: { widthHeight: [970, 250], name: '970x250' },
-            9: { widthHeight: [970, 415], name: '970x415' },
-            10: { name: 'Custom' }
-        };
+        var expandedDimensions = [
+            { name: 'Non-Expanding' },
+            { widthHeight: [300, 600], name: '300x600' },
+            { widthHeight: [560, 300], name: '560x300' },
+            { widthHeight: [600, 250], name: '600x250' },
+            { widthHeight: [600, 600], name: '600x600' },
+            { widthHeight: [728, 315], name: '728x315' },
+            { widthHeight: [970, 250], name: '970x250' },
+            { widthHeight: [970, 415], name: '970x415' },
+            { name: 'Custom' }
+        ];
 
-        setupBusinessLogic();
+        setupTranslationLogic();
         setupModalLogic();
 
-        function setupBusinessLogic() {
+        function setupTranslationLogic() {
             // Update available environments, dimensions and expanded dimensions
             // based on creative types and the settings above
             $scope.types = types;
@@ -163,7 +163,7 @@ define(function (require) {
                 creativeRecordService.getById(modalState.creativeId).then(function(creative) {
                     originalCreative = creative.all();
                     if(! $scope.creative || $scope.creative === {}) {
-                        $scope.creative = ng.copy(modalState.creative || originalCreative);
+                        $scope.creative = transformCreativeToModal(ng.copy(modalState.creative || originalCreative));
                     }
                 });
             } else {
@@ -174,7 +174,7 @@ define(function (require) {
                     campaignId: modalState.campaignId
                 };
 
-                $scope.creative = ng.copy(modalState.creative || originalCreative);
+                $scope.creative = transformCreativeToModal(ng.copy(modalState.creative || originalCreative));
             }
 
             campaigns.observe(updateCampaigns, $scope);
@@ -184,7 +184,7 @@ define(function (require) {
 
                     // TODO: add render limit so this isn't crazy slow
                     //$scope.campaigns = campaigns.all().slice(0, 10);
-                    $scope.campaigns = [{id: '1234', name: 'test'}];
+                    $scope.campaigns = [{id: '1c5cf047-5ecd-444b-822a-17e1eebed4b3', name: 'test'}];
                 }
             }
 
@@ -207,7 +207,7 @@ define(function (require) {
                 console.log($scope);
                 $scope.errors = errors;
                 if(ng.equals({}, $scope.errors) || ! $scope.errors) {
-                    var transformedCreative = transformCreative();
+                    var transformedCreative = transformModalToCreative();
                     var onSuccess = function() {
                         originalCreative = $scope.creative;
                         $modalInstance.dismiss('cancel');
@@ -231,7 +231,7 @@ define(function (require) {
                 $scope.submitted = true;
             };
 
-            function transformCreative() {
+            function transformModalToCreative() {
                 var creative = $scope.creative;
                 var allDimensions = getDimensions(creative);
                 var getEnvironment = function(id) {
@@ -253,6 +253,11 @@ define(function (require) {
                     environment: getEnvironment(creative.environment),
                     name: creative.name
                 };
+            }
+
+            function transformCreativeToModal(creative) {
+                //debugger;
+                return creative;
             }
 
             function getDimensions(creative) {
