@@ -10,6 +10,7 @@ define(function (require) {
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */
         return function(options) {
+            options = options || {};
             var observers = observerFactory();
             var validationErrorFn = options.validationErrorFn || function(errors){};
             var successFn = options.successFn || function() {};
@@ -35,7 +36,7 @@ define(function (require) {
                 this.saving = false;
                 if (resp.status === 200) {
                     successFn.call(this, resp.data);
-                    this.set(resp.data);
+                    this._set(resp.data);
                 }
             }
 
@@ -51,13 +52,16 @@ define(function (require) {
                 this.transform = options.transform || function (data) { return data; };
                 this.apiConfig = ng.copy(options.apiConfig);
 
-                this.set(options.attributes);
+                this._set(options.attributes);
             };
 
             model.prototype = {
                 id: null,
                 _errors: {},
-                set: function(attrs, saved){
+                set: function(attrs) {
+                    ng.merge(this._attributes, attrs);
+                },
+                _set: function(attrs){
                     //do nothing if empty
                     if (attrs == null) {
                         return this;
@@ -125,10 +129,16 @@ define(function (require) {
 
                     return true;
                 },
+                createUrl: function(config) {
+                    var conf = ng.copy(config);
+                    if(this.validConfig(conf)) {
+                        conf.endpoint = $interpolate(conf.endpoint)(this.attributes);
+                        return apiUriGenerator(conf);
+                    }
+                },
                 makeRequest: function(method, config, data){
-                    if(this.validConfig(config)) {
-                        config.endpoint = $interpolate(config.endpoint)(this.attributes);
-                        var url = apiUriGenerator(config);
+                    var url = this.createUrl(config);
+                    if(url) {
                         var that = this;
                         this.saving = true;
                         var requestFn = $http[method];
@@ -144,7 +154,7 @@ define(function (require) {
                     }
                 },
                 hasChanges: function() {
-                    return !ng.equals({}, this.diff(this._attributes, this.attributes)) || !this.id;
+                    return !ng.equals({}, this.diff(this._attributes, this.attributes));
                 },
                 create: function() {
                     var createConfig = ng.copy(this.apiConfig.create);
@@ -161,8 +171,8 @@ define(function (require) {
                     }
                 },
                 destroy: function() {
-                    var destroyConfig = ng.copy(this.apiConfig.delete);
-                    var method = destroyConfig || 'put';
+                    var destroyConfig = ng.copy(this.apiConfig.delete || this.apiConfig.update);
+                    var method = destroyConfig.method || 'put';
                     if (method === 'put') {
                         var data = { deleted: true };
                         return this.makeRequest(method, destroyConfig, data);

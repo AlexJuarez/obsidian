@@ -1,4 +1,5 @@
 /* globals confirm */
+
 define(function (require) {
     'use strict';
 

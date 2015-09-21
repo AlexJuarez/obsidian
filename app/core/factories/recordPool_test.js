@@ -7,12 +7,12 @@ define(function (require) {
     var ng = require('angular');
 
     describe('recordPool', function () {
-        var recordPool, httpBackend, apiGenerator, data;
+        var recordPool, httpBackend, apiGenerator, scope;
 
         var apiConfig = {
             update: {
                 version: 'test',
-                endpoint: 'endpoint/{id}'
+                endpoint: 'endpoint/{{id}}'
             },
             create: {
                 version: 'test',
@@ -22,17 +22,18 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (recordPoolFactory, $httpBackend, apiUriGenerator, dataFactory) {
+            inject(function (recordPoolFactory, $httpBackend, apiUriGenerator, $rootScope) {
                 recordPool = recordPoolFactory;
                 httpBackend = $httpBackend;
                 apiGenerator = apiUriGenerator;
-                data = dataFactory;
+                scope = $rootScope.$new();
             });
         });
 
         afterEach(function () {
             httpBackend.verifyNoOutstandingExpectation();
             httpBackend.verifyNoOutstandingRequest();
+            scope.$destroy();
         });
 
         // function setupTests(apiConfig) {
@@ -48,16 +49,19 @@ define(function (require) {
             var records = recordPool(apiConfig);
 
             var idConfig = ng.copy(apiConfig);
-            idConfig.update.endpoint = idConfig.update.endpoint.replace('{id}', 'id');
+            idConfig.update.endpoint = idConfig.update.endpoint.replace('{{id}}', 'id');
 
             httpBackend.when('GET', apiGenerator(idConfig.update)).respond(record);
 
-            records.getById('id').then(function(returnedRecord) {
-                expect(returnedRecord.all()).toEqual(record);
-            });
+            records.get('id').observe(function() {
+                var r = records.get('id');
+                expect(r.get()).toEqual(jasmine.objectContaining(record));
+            }, scope, true);
+
+            records.fetch('id');
 
             records.observe(function(newUpdatedRecord) {
-                expect(newUpdatedRecord).toEqual(record);
+                expect(newUpdatedRecord).toEqual(jasmine.objectContaining(record));
             }, undefined, true);
 
             httpBackend.flush();
