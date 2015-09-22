@@ -24,7 +24,7 @@ define(function (require) {
                 var olddata = get(record.id);
                 var data = record.get();
 
-                if (olddata && olddata.pinned !== data.pinned){
+                if (olddata && olddata.pinned !== data.pinned || !olddata){
                     clients.addData([{
                         id: data.id,
                         name: data.name,

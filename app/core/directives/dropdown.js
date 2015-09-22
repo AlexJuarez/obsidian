@@ -15,7 +15,9 @@ define(function (require) {
                 function documentClickHandler() {
                     if (!scope.clicked) {
                         scope.selected = false;
-                        $timeout(scope.$apply);
+                        $timeout(function() {
+                            scope.$apply();
+                        });
                     } else {
                         scope.clicked = false;
                     }
@@ -29,7 +31,10 @@ define(function (require) {
                     scope.toggle = true;
 
                     scope.selected = !scope.selected;
-                    $timeout(scope.$apply);
+
+                    $timeout(function() {
+                        scope.$apply();
+                    });
                 });
 
                 element.parent().on('click', function (event) {

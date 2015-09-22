@@ -20,7 +20,6 @@ define(function (require) {
                     var record = recordFactory({apiConfig: apiConfig, attributes: { id: id }});
                     records[id] = record;
                     record.observe(observers.notifyObservers, undefined, true);
-
                     return record;
                 }
             }

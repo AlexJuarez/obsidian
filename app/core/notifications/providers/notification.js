@@ -46,7 +46,8 @@ define(function (require) {
                         timeout: opts.timeout,
                         positionY: opts.positionY,
                         type: t || '',
-                        resolve: {}
+                        resolve: {},
+                        locals: {}
                     };
 
                     var settings = ng.merge(defaults, args);
@@ -55,6 +56,10 @@ define(function (require) {
 
                     $q.all(promises).then(function(templateAndVars) {
                         var scope = settings.scope.$new();
+
+                        ng.forEach(settings.locals, function(d, i) {
+                            scope[i] = d;
+                        });
 
                         var notificationInstance = {
                             content: templateAndVars[0],

@@ -7,13 +7,15 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', function ($scope, $modalInstance, channels, modalState, clientRecords) {
+    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', 'notification',
+        function ($scope, $modalInstance, channels, modalState, clientRecords, notification) {
         $scope.action = modalState.action;
 
         var record;
 
         if (modalState.clientId) {
-            record = clientRecords.fetch(modalState.clientId);
+            record = clientRecords.get(modalState.clientId);
+            record.fetch();
         } else {
             record = clientRecords.create();
             record.set(modalState.client);
@@ -35,12 +37,20 @@ define(function (require) {
         $scope.ok = function (errors) {
             $scope.errors = errors;
             if (ng.equals({}, $scope.errors) || !$scope.errors) {
-                var onSuccess = function() {
+                var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
                     $scope.client = {};
+                    notification.success(
+                        'View your campaign <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
+                        {
+                            locals: {
+                                id: resp.data.id,
+                                name: resp.data.name
+                            }
+                        });
                 };
                 if (record.hasChanges()) {
-                    record.save().success(onSuccess);
+                    record.save().then(onSuccess);
                 }
             }
             $scope.submitted = true;
