@@ -57,9 +57,7 @@ define(function (require) {
                     $q.all(promises).then(function(templateAndVars) {
                         var scope = settings.scope.$new();
 
-                        ng.forEach(settings.locals, function(d, i) {
-                            scope[i] = d;
-                        });
+                        ng.merge(scope, settings.locals);
 
                         var notificationInstance = {
                             content: templateAndVars[0],

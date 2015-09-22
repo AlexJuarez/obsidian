@@ -5,7 +5,7 @@ define(function (require) {
 
     var ng = require('angular');
 
-    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q) {
+    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification) {
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */
@@ -28,7 +28,9 @@ define(function (require) {
                         record.setErrors(resp.data.errors);
                     }
                 } else {
-                    $log.warn('an unexpected server error has occurred');
+                    $log.warn('An unexpected server error has occurred.');
+                    $log.warn(resp);
+                    notification.error('An unexpected server error has occurred.');
                 }
             }
 

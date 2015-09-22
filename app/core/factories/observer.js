@@ -11,6 +11,8 @@ define(function (require) {
             var observers = {};
 
             function observe(callback, $scope, preventImmediate) {
+                $scope = $scope || $rootScope;
+
                 if (!ng.isFunction(callback)) {
                     $log.warn(callback + ' callback was not a function');
                 } else {

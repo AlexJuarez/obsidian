@@ -35,13 +35,12 @@ define(function (require) {
         }
 
         $scope.ok = function (errors) {
-            $scope.errors = errors;
-            if (ng.equals({}, $scope.errors) || !$scope.errors) {
+            if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
                     $scope.client = {};
                     notification.success(
-                        'View your campaign <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
+                        'View your client <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
                         {
                             locals: {
                                 id: resp.data.id,

@@ -9,10 +9,17 @@
     z-index: 9999;
     left: 50%;
     margin-left: -400px;
-    width: 800px;
+    width: ~"calc(100% - 20px)";
+    max-width: 800px;
     color: @notification-color;
     background: @notification-background;
     transition:all ease 0.5s;
+    a {
+        color: @light-blue;
+        &:hover {
+            color: darken(@light-blue, 20%);
+        }
+    }
     &.killed {
         opacity: 0;
         transition: opacity ease 1s;
@@ -39,6 +46,10 @@
         top: 10px;
         right: 15px;
         text-decoration: none;
+        color: @notification-color;
+        &:hover {
+            color: @light-gray;
+        }
     }
 
     &:before {

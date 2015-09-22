@@ -4,9 +4,11 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', function ($http, dataFactory, $state, $rootScope) {
+    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification) {
         var divisions = dataFactory(utils.sortByName);
         var client = {};
+
+        divisionRecordService.observe(divisionUpdate, undefined, true);
 
         $rootScope.$on('navStateChange', function (event, state) {
             if (state.client && state.client.id !== client.id) {
@@ -16,8 +18,27 @@ define(function (require) {
                 client = {};
                 divisions.notifyObservers();
             }
-
         });
+
+        // Observe for new/updated divisions
+
+        function divisionUpdate(event, record) {
+            if (event === 'change') {
+                var olddata = get(record.id);
+                var data = record.get();
+
+                if (olddata && olddata.pinned !== data.pinned || !olddata){
+                    divisions.addData([{
+                        id: data.id,
+                        name: data.name,
+                        pinned: data.pinned,
+                        client: {
+                            id: data.clientId
+                        }
+                    }]);
+                }
+            }
+        }
 
         function init(apiConfig) {
             return divisions.init(apiConfig, function (data) {
@@ -64,14 +85,22 @@ define(function (require) {
             return divisions.all();
         }
 
+        function togglePin(division, value) {
+            var record = divisionRecordService.get(division.id);
+            record.set({ pinned: value });
+            return record.save();
+        }
+
         function pin(division) {
-            division.pinned = true;
-            divisions.notifyObservers('pin');
+            return togglePin(division, true).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.division({ divisionId: id})">{{name}}</a> has been pinned', { locals: { name: division.name, id: division.id }});
+            });
         }
 
         function unpin(division) {
-            division.pinned = false;
-            divisions.notifyObservers('pin');
+            return togglePin(division, false).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.division({ divisionId: id})">{{name}}</a> has been unpinned', { locals: { name: division.name, id: division.id }});
+            });
         }
 
         function pinned() {

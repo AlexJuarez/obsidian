@@ -4,8 +4,10 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', function ($http, dataFactory, accounts, $state) {
+    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', function ($http, dataFactory, accounts, $state, campaignRecordService, notification) {
         var campaigns = dataFactory(sortByStartDateDescending);
+
+        campaignRecordService.observe(campaignUpdate, undefined, true);
 
         function init(apiConfig) {
             return campaigns.init(apiConfig, function (data) {
@@ -23,6 +25,35 @@ define(function (require) {
             });
 
             return data;
+        }
+
+        // Observe for new/updated campaigns
+
+        function campaignUpdate(event, record) {
+            if (event === 'change') {
+                var olddata = get(record.id);
+                var data = record.get();
+                var account = accounts.get(data.accountId);
+
+                if (olddata && olddata.pinned !== data.pinned || !olddata){
+                    campaigns.addData([{
+                        id: data.id,
+                        name: data.name,
+                        pinned: data.pinned,
+                        startDate: data.startDate,
+                        endDate: data.endDate,
+                        account: {
+                            id: data.accountId
+                        },
+                        division: {
+                            id: account.division.id
+                        },
+                        client: {
+                            id: account.client.id
+                        }
+                    }]);
+                }
+            }
         }
 
         function quarterMap() {
@@ -95,14 +126,22 @@ define(function (require) {
             return campaigns.all();
         }
 
+        function togglePin(campaign, value) {
+            var record = campaignRecordService.get(campaign.id);
+            record.set({ pinned: value });
+            return record.save();
+        }
+
         function pin(campaign) {
-            campaign.pinned = true;
-            campaigns.notifyObservers('pin');
+            return togglePin(campaign, true).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.account({ campaignId: id})">{{name}}</a> has been pinned', { locals: { name: campaign.name, id: campaign.id }});
+            });
         }
 
         function unpin(campaign) {
-            campaign.pinned = false;
-            campaigns.notifyObservers('pin');
+            return togglePin(campaign, false).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.account({ campaignId: id})">{{name}}</a> has been unpinned', { locals: { name: campaign.name, id: campaign.id }});
+            });
         }
 
         function pinned() {

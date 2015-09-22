@@ -5,7 +5,7 @@ define(function (require) {
 
     var apiConfig = {
         version: 'crud',
-        endpoint: 'clients/{id}/publishers'
+        endpoint: 'clients/{{id}}/publishers'
     };
 
 
