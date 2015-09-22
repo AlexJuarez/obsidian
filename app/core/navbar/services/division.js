@@ -23,7 +23,7 @@ define(function (require) {
         // Observe for new/updated divisions
 
         function divisionUpdate(event, record) {
-            if (event === 'change') {
+            if (event === 'create' || event === 'update') {
                 var olddata = get(record.id);
                 var data = record.get();
 

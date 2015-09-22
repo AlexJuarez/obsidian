@@ -29,7 +29,7 @@ define(function (require) {
         // Creating a new account under a client
         if (modalState.clientId) {
             var updateDivisions = function() {
-                var divisions = divisionService.filtered()
+                var divisions = divisionService.filtered();
                 if (divisions.length === 1) {
                     $scope.account.divisionId = divisions[0].id;
                 } else {
@@ -47,8 +47,7 @@ define(function (require) {
         }
 
         $scope.ok = function (errors) {
-            $scope.errors = errors;
-            if (ng.equals({}, $scope.errors) || !$scope.errors) {
+            if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
                     $scope.account = {};

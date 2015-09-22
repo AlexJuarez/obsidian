@@ -90,6 +90,9 @@ define(function (require) {
                 reset: function() {
                     this._attributes = ng.copy(this.attributes);
                 },
+                changes: function() {
+                    return this.diff(this._attributes, this.attributes);
+                },
                 diff: function(changed, original){
                     var _diff = {}, val;
 
@@ -164,7 +167,7 @@ define(function (require) {
                     return deferred.promise;
                 },
                 hasChanges: function() {
-                    return !ng.equals({}, this.diff(this._attributes, this.attributes));
+                    return !ng.equals({}, this.changes());
                 },
                 create: function() {
                     var createConfig = ng.copy(this.apiConfig.create);
@@ -183,7 +186,7 @@ define(function (require) {
                 update: function() {
                     var deferred = $q.defer();
                     var updateConfig = ng.copy(this.apiConfig.update);
-                    var data = this.diff(this._attributes, this.attributes);
+                    var data = this.changes();
                     var method = updateConfig.method || 'put';
                     var request;
                     var that = this;

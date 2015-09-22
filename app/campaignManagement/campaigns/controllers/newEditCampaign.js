@@ -59,7 +59,7 @@ define(function (require) {
                 var deferred = $q.defer();
                 accountRecords.fetch(accountId).then(function(resp) {
                     divisionRecords.fetch(resp.data.divisionId).then(function(resp) {
-                        clientRecords.getById(resp.data.clientId).then(function(resp) {
+                        clientRecords.fetch(resp.data.clientId).then(function(resp) {
                            deferred.resolve(resp.data.requireRepInfo);
                        });
                     });
@@ -91,8 +91,7 @@ define(function (require) {
             }
 
             function ok(errors) {
-                $scope.errors = errors;
-                if (ng.equals({}, $scope.errors) || !$scope.errors) {
+                if (ng.equals({}, errors) || !errors) {
                     var onSuccess = function(resp) {
                         $modalInstance.dismiss('cancel');
                         $scope.campaign = {};

@@ -30,7 +30,7 @@ define(function (require) {
         // Observe for new/updated accounts
 
         function accountUpdate(event, record) {
-            if (event === 'change') {
+            if (event === 'create' || event === 'update') {
                 var olddata = get(record.id);
                 var data = record.get();
                 var division = divisions.get(data.divisionId);
