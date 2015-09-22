@@ -7,11 +7,6 @@ define(function (require) {
     module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService) {
         var clients = dataFactory(utils.sortByName);
 
-        var _apiPinConfig = {
-            version: 'crud',
-            endpoint: 'clients/'
-        };
-
         function init(apiConfig) {
             return clients.init(apiConfig, function (data) {
                 return data.clients;
@@ -23,19 +18,23 @@ define(function (require) {
         }
 
         // Observe for new/updated clients
-        clientRecordService.observe(function(newUpdatedRecord) {
-            var existingRecord = get(newUpdatedRecord.id);
-            var pinned = false;
-            if (existingRecord) {
-                pinned = existingRecord.pinned;
-            }
 
-            clients.addData([{
-                id: newUpdatedRecord.id,
-                name: newUpdatedRecord.name,
-                pinned: pinned
-            }]);
-        }, undefined, true);
+        function clientUpdate(event, record) {
+            if (event === 'change') {
+                var olddata = get(record.id);
+                var data = record.get();
+
+                if (olddata && olddata.pinned !== data.pinned){
+                    clients.addData([{
+                        id: data.id,
+                        name: data.name,
+                        pinned: data.pinned
+                    }]);
+                }
+            }
+        }
+
+        clientRecordService.observe(clientUpdate, undefined, true);
 
         function search(query) {
             return utils.search(all(), query);
@@ -45,17 +44,16 @@ define(function (require) {
             return utils.alphabetMap(all());
         }
 
-        function togglePin(client, boolean) {
-            client.pinned = boolean;
-            clientRecordService.update(client.id, {pinned: boolean});
-        }
-
         function pin(client) {
-            togglePin(client, true);
+            var record = clientRecordService.get(client.id);
+            record.set({ 'pinned': true });
+            return record.save();
         }
 
         function unpin(client) {
-            togglePin(client, false);
+            var record = clientRecordService.get(client.id);
+            record.set({ 'pinned': false });
+            return record.save();
         }
 
         function pinned() {
@@ -67,7 +65,6 @@ define(function (require) {
         }
 
         return {
-            _apiPinConfig: _apiPinConfig,
             init: init,
             setData: clients.setData,
             addData: clients.addData,

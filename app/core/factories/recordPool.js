@@ -8,8 +8,6 @@ define(function (require) {
 
     var module = require('./../module');
 
-    var ng = require('angular');
-
     module.factory('recordPoolFactory', ['recordFactory', 'observerFactory', function (recordFactory, observerFactory) {
         return function (apiConfig) {
             var observers = observerFactory();
@@ -21,9 +19,7 @@ define(function (require) {
                 } else {
                     var record = recordFactory({apiConfig: apiConfig, attributes: { id: id }});
                     records[id] = record;
-                    record.observe(function() {
-                        observers.notifyObservers(record.get());
-                    }, undefined, true);
+                    record.observe(observers.notifyObservers, undefined, true);
 
                     return record;
                 }
@@ -31,21 +27,18 @@ define(function (require) {
 
             function fetch(id) {
                 var record = get(id);
-                record.fetch();
-                return record;
+                return record.fetch();
             }
 
             function update(id, data) {
                 var record = get(id);
                 record.set(data);
-                record.save();
-                return record;
+                return record.save();
             }
 
             function _delete(id) {
                 var record = get(id);
-                record.destroy();
-                return record;
+                return record.destroy();
             }
 
             function create(attrs) {
@@ -53,9 +46,7 @@ define(function (require) {
                     apiConfig: apiConfig,
                     successFn: function(data) {
                         records[data.id] = record;
-                        record.observe(function() {
-                            observers.notifyObservers(record.get());
-                        }, undefined, true);
+                        record.observe(observers.notifyObservers, undefined, true);
                     },
                     attributes: attrs
                 });

@@ -3,7 +3,7 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.directive('dropdownToggle', ['$document', function ($document) {
+    app.directive('dropdownToggle', ['$document', '$timeout', function ($document, $timeout) {
         return {
             restrict: 'C',
             scope: {
@@ -14,9 +14,8 @@ define(function (require) {
 
                 function documentClickHandler() {
                     if (!scope.clicked) {
-                        scope.$apply(function () {
-                            scope.selected = false;
-                        });
+                        scope.selected = false;
+                        $timeout(scope.$apply);
                     } else {
                         scope.clicked = false;
                     }
@@ -29,9 +28,8 @@ define(function (require) {
                     scope.clicked = true;
                     scope.toggle = true;
 
-                    scope.$apply(function () {
-                        scope.selected = !scope.selected;
-                    });
+                    scope.selected = !scope.selected;
+                    $timeout(scope.$apply);
                 });
 
                 element.parent().on('click', function (event) {

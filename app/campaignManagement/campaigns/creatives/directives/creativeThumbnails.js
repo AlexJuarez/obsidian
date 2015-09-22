@@ -111,7 +111,7 @@ define(function (require) {
                     }
 
                     function copyCreative(id) {
-                        creativeRecordService.getById(id).then(function(creative) {
+                        creativeRecordService.fetch(id).then(function(creative) {
                             creative = creative.all();
                             var newCreative = ng.copy(creative);
                             delete newCreative.id;

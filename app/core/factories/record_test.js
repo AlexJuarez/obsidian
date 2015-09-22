@@ -117,7 +117,7 @@ define(function(require) {
                 record.save();
                 httpBackend.flush();
 
-                expect(record.get()).toEqual(jasmine.objectContaining({ success: true, test: 'test' }));
+                expect(record.get()).toEqual(jasmine.objectContaining({ test: 'test' }));
             });
         });
 

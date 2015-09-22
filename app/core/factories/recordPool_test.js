@@ -54,8 +54,8 @@ define(function (require) {
 
             records.fetch('id');
 
-            records.observe(function(newUpdatedRecord) {
-                expect(newUpdatedRecord).toEqual(jasmine.objectContaining({ success: true }));
+            records.observe(function(event, r) {
+                expect(r.get()).toEqual(jasmine.objectContaining({ success: true }));
             }, undefined, true);
 
             httpBackend.flush();
@@ -66,17 +66,12 @@ define(function (require) {
             var records = recordPool(opts);
             var record = records.get('id');
 
-            httpBackend.when('GET', record.createUrl(opts.update)).respond({ success: true });
             httpBackend.when('PUT', record.createUrl(opts.update)).respond({ updated: 1 });
 
             records.update('id', { success: false });
 
-            var putObserve = false;
-            records.observe(function(updatedRecord) {
-                if (putObserve) {
-                    expect(updatedRecord).toEqual({ success: false });
-                }
-                putObserve = true;
+            records.observe(function(event, r) {
+                expect(r.get()).toEqual(jasmine.objectContaining({ updated: 1 }));
             }, undefined, true);
 
             httpBackend.flush();
@@ -93,8 +88,8 @@ define(function (require) {
 
             record.save();
 
-            records.observe(function(updatedRecord) {
-                expect(updatedRecord).toEqual(jasmine.objectContaining({ success: true }));
+            records.observe(function(event, r) {
+                expect(r.get()).toEqual(jasmine.objectContaining({ success: true }));
             }, undefined, true);
 
             httpBackend.flush();
@@ -107,21 +102,21 @@ define(function (require) {
             var records = recordPool(opts);
             var record = records.get('id');
 
-            httpBackend.when('PUT', record.createUrl(opts.update), { deleted: true }).respond({ updated: 1 });
+            httpBackend.when('PUT', record.createUrl(opts.update), { deleted: true }).respond({ deleted: true });
 
             records.delete('id');
 
             var putObserve = false;
-            records.observe(function(updatedRecord) {
+            records.observe(function(event, r) {
                 if (putObserve) {
-                    expect(updatedRecord).toEqual({ deleted: true });
+                    expect(r.get()).toEqual(jasmine.objectContaining({ deleted: true }));
                 }
                 putObserve = true;
             }, undefined, true);
 
             httpBackend.flush();
 
-            expect(record.get()).toEqual(jasmine.objectContaining({ updated: 1 }));
+            expect(record.get()).toEqual(jasmine.objectContaining({ deleted: true }));
         });
 
     });

@@ -5,14 +5,14 @@ define(function (require) {
 
     var ng = require('angular');
 
-    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', function($interpolate, apiUriGenerator, $http, observerFactory, $log) {
+    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q) {
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */
         return function(options) {
             options = options || {};
             var observers = observerFactory();
-            var validationErrorFn = options.validationErrorFn || function(errors){};
+            var validationErrorFn = options.validationErrorFn || function(){};
             var successFn = options.successFn || function() {};
 
             /**
@@ -20,27 +20,27 @@ define(function (require) {
              * https://docs.angularjs.org/api/ng/service/$http
              * @param resp
              */
-            function errorHandler(resp){
-                this.saving = false;
+            function errorHandler(resp, record){
+                record.saving = false;
                 if (resp.status === 400) { //if the response is a bad-request
-                    validationErrorFn.call(this, resp.data);
+                    validationErrorFn.call(record, resp.data);
                     if (resp.data.errors) {
-                        this.setErrors(resp.data.errors);
+                        record.setErrors(resp.data.errors);
                     }
                 } else {
                     $log.warn('an unexpected server error has occurred');
                 }
             }
 
-            function successHandler(resp) {
-                this.saving = false;
+            function successHandler(resp, record) {
+                record.saving = false;
                 if (resp.status === 200) {
-                    successFn.call(this, resp.data);
-                    this._set(resp.data);
+                    successFn.call(record, resp.data);
+                    record._set(resp.data);
                 }
             }
 
-            var model = function(options) {
+            var Model = function(options) {
                 this._attributes = {};
                 this.attributes = {};
                 this.saving = false;
@@ -55,7 +55,7 @@ define(function (require) {
                 this._set(options.attributes);
             };
 
-            model.prototype = {
+            Model.prototype = {
                 id: null,
                 _errors: {},
                 set: function(attrs) {
@@ -63,7 +63,7 @@ define(function (require) {
                 },
                 _set: function(attrs){
                     //do nothing if empty
-                    if (attrs == null) {
+                    if (attrs == null || ng.equals({}, attrs)) {
                         return this;
                     }
 
@@ -75,7 +75,7 @@ define(function (require) {
                     //create a _attributes hash that can be modified outside
                     this.attributes = ng.merge({}, this.attributes, this.transform(attrs));
                     this._attributes = ng.copy(this.attributes);
-                    observers.notifyObservers(this);
+                    observers.notifyObservers('change', this);
                 },
                 fetch: function() {
                     var getConfig = ng.copy(this.apiConfig.read || this.apiConfig.update);
@@ -119,7 +119,7 @@ define(function (require) {
                 },
                 setErrors: function(errors) {
                     this._errors = errors;
-                    observers.notifyObservers(this);
+                    observers.notifyObservers('error', this);
                 },
                 validConfig: function(config) {
                     if (!config || ng.equals({}, config)) {
@@ -137,21 +137,26 @@ define(function (require) {
                     }
                 },
                 makeRequest: function(method, config, data){
+                    var deferred = $q.defer();
                     var url = this.createUrl(config);
-                    if(url) {
+                    if(method && url) {
                         var that = this;
                         this.saving = true;
                         var requestFn = $http[method];
                         var result = (requestFn.length === 3) ? requestFn(url, data) : requestFn(url);
 
                         result.then(function (resp) {
-                            successHandler.call(that, resp);
+                            successHandler.call(that, resp, that);
+                            deferred.resolve(resp);
                         }, function (resp) {
-                            errorHandler.call(that, resp);
+                            errorHandler.call(that, resp, that);
+                            deferred.reject(resp);
                         });
-
-                        return result;
+                    } else {
+                        deferred.reject('invalid method or url');
                     }
+
+                    return deferred.promise;
                 },
                 hasChanges: function() {
                     return !ng.equals({}, this.diff(this._attributes, this.attributes));
@@ -160,42 +165,77 @@ define(function (require) {
                     var createConfig = ng.copy(this.apiConfig.create);
                     var data = this._filter(this._attributes);
                     var method = createConfig.method || 'post';
-                    return this.makeRequest(method, createConfig, data);
+                    var request = this.makeRequest(method, createConfig, data);
+
+                    var that = this;
+
+                    request.then(function() {
+                        that.notifyObservers('create', that);
+                    });
+
+                    return request;
                 },
                 update: function() {
+                    var deferred = $q.defer();
                     var updateConfig = ng.copy(this.apiConfig.update);
                     var data = this.diff(this._attributes, this.attributes);
                     var method = updateConfig.method || 'put';
+                    var request;
+                    var that = this;
+
                     if (!ng.equals({}, data)) {
-                        return this.makeRequest(method, updateConfig, data);
+                        request = this.makeRequest(method, updateConfig, data);
+                        request.then(deferred.resolve, deferred.reject);
+                        request.then(function() {
+                            that.notifyObservers('update', that);
+                        });
+                    } else {
+                        deferred.reject('No change');
                     }
+
+                    return deferred.promise;
                 },
                 destroy: function() {
+                    var deferred = $q.defer();
                     var destroyConfig = ng.copy(this.apiConfig.delete || this.apiConfig.update);
                     var method = destroyConfig.method || 'put';
+                    var request;
+                    var that = this;
+
                     if (method === 'put') {
                         var data = { deleted: true };
-                        return this.makeRequest(method, destroyConfig, data);
+                        request = this.makeRequest(method, destroyConfig, data);
+                        request.then(deferred.resolve, deferred.reject);
+                        request.then(function() {
+                            that.notifyObservers('destroy', that);
+                        });
                     } else {
-                        return this.makeRequest(method, destroyConfig);
+                        this.makeRequest(method, destroyConfig).then(deferred.resolve, deferred.reject);
                     }
+
+                    return deferred.promise;
                 },
                 observe: observers.observe,
                 notifyObservers: observers.notifyObservers,
                 save: function() {
+                    var deferred = $q.defer();
+
                     if (!this.saving) {
                         if (this.id) {
-                            return this.update();
+                            this.update().then(deferred.resolve, deferred.reject);
                         } else {
-                            return this.create();
+                            this.create().then(deferred.resolve, deferred.reject);
                         }
                     } else {
-                        $log.info('A save is already in progress')
+                        $log.info('A save is already in progress');
+                        deferred.reject('A save is in progress');
                     }
+
+                    return deferred.promise;
                 }
             };
 
-            return new model(options);
-        }
+            return new Model(options);
+        };
     }]);
 });

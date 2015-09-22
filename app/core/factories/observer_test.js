@@ -24,7 +24,7 @@ define(function (require) {
             spyOn(log, 'warn');
             spyOn(rootScope, '$apply');
 
-            var id = observers.observe(function() {
+            observers.observe(function() {
                 called++;
             }, scope);
 
