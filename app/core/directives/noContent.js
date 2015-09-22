@@ -26,29 +26,33 @@ define(function (require) {
                     ng.forEach(data, function(d) {
                         results.push(d == 0);
                     });
-                    if (results.length > 0) {
+                    //console.log( results );
+                    //if (results.length !== 0) {
                         return results.every(function (d) {
                             return d;
                         });
-                    }
+                    //}
                 }
 
                 function updatePlacementMsg() {
                     if ( placements.data().isLoaded() ) {
                         var data = placements.all(true);
-                        if (data.length < 1) {
-                            $scope.showPlacementMsg = true;
+                        $scope.showPlacementMsg = hasContent(data);
+                        // if (data.length < 1) {
+                        //     $scope.showPlacementMsg = true;
 
-                        }
+                        // }
                     }
                 }
 
                 function updateCreativeMsg() {
                     if ( creatives.data().isLoaded() ) {
-                        var data = creatives.all();
-                        if (data.data.length < 1) {
-                            $scope.showCreativeMsg = true;
-                        }
+                        var data = creatives.all().data;
+                        console.log( 'creatives', data );
+                        $scope.showCreativeMsg = hasContent(data);
+                        // if (data.data.length < 1) {
+                        //     $scope.showCreativeMsg = true;
+                        // }
                     }
                 }
 
@@ -61,9 +65,12 @@ define(function (require) {
 
                 function updateClientMsg() {
                     if ( clientSet.data().isLoaded() ) {
-                        var data = clientSet.all();
-                        $scope.showAccountMsg = hasContent(data.countAccounts);
+                        var data = clientSet.all().countAccounts;
+                        var dataObj = {data};
+                        console.log( 'countAccounts',dataObj );
+                        $scope.showAccountMsg = hasContent(dataObj);
                     }
+                    console.log( $scope.showAccountMsg );
                 }
                 
 
@@ -88,7 +95,7 @@ define(function (require) {
                         divisionSet.observe(updateAccountMsg, $scope);
                     
                     } else {
-                        
+                        console.log( 'client level' );
                         clientSet.observe(updateClientMsg, $scope, false);
                     
                     }
