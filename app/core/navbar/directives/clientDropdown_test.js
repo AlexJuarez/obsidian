@@ -59,9 +59,7 @@ define(function (require) {
 
             it('should change the pinned client when pin state change', function() {
                 var scope = createDropDown(clients);
-
-                httpBackend.expect('GET', '/api/crud/clients/clientId0')
-                    .respond( 200, { id: 'clientId0', pinned: false } );
+                
                 httpBackend.expect('PUT', '/api/crud/clients/clientId0')
                     .respond( 200, { pinned: false } );
 

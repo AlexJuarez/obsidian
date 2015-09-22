@@ -9,7 +9,7 @@
                     '1': 'There is 1 error on this form.',
                     'other': 'There are {} errors on this form.'}">
         </div>
-        <div class="form-group row" ng-class="{'has-error': newClient.channels.$invalid && submitted}">
+        <div class="form-group row" ng-class="{'has-error': (newClient.channels.$invalid || errors.channelId) && submitted}">
             <label class="col-sm-3 form-label required"><span>Channel</span></label>
             <div class="col-sm-9 single-select-light">
                 <select name="channels" ng-model="client.channelId" class="single-select" chosen ng-options="item.id as item.name for item in channels track by item.id" disable-search-threshold="10" required>
@@ -17,14 +17,20 @@
                 <p ng-show="newClient.channels.$invalid && submitted" class="help-block">
                     channel is required
                 </p>
+                <p ng-show="errors.channelId && submitted" class="help-block">
+                    {{errors.channelId}}
+                </p>
             </div>
         </div>
-        <div class="form-group row" ng-class="{'has-error': newClient.name.$invalid && submitted}">
+        <div class="form-group row" ng-class="{'has-error': (newClient.name.$invalid || errors.name) && submitted}">
             <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>
             <div class="col-sm-9">
                 <input ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />
                 <p ng-show="newClient.name.$invalid && submitted" class="help-block">
                     name is required
+                </p>
+                <p ng-show="errors.name && submitted" class="help-block">
+                    {{errors.name}}
                 </p>
             </div>
         </div>

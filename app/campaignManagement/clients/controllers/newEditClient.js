@@ -1,4 +1,5 @@
 /* globals confirm */
+
 define(function (require) {
     'use strict';
 
@@ -6,20 +7,26 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', function ($scope, $modalInstance, channels, modalState, clientRecordService) {
-        $scope.client = modalState.client;
+    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', 'notification',
+        function ($scope, $modalInstance, channels, modalState, clientRecords, notification) {
         $scope.action = modalState.action;
 
-        var originalClient;
+        var record;
 
         if (modalState.clientId) {
-            clientRecordService.getById(modalState.clientId).then(function(client) {
-                originalClient = client.all();
-                if (!$scope.client) {
-                    $scope.client = ng.copy(originalClient);
-                }
-            });
+            record = clientRecords.get(modalState.clientId);
+            record.fetch();
+        } else {
+            record = clientRecords.create();
+            record.set(modalState.client);
         }
+
+        var update = function() {
+            $scope.client = record.get();
+            $scope.errors = record.errors();
+        };
+
+        record.observe(update, $scope);
 
         channels.init();
         channels.observe(updateChannels, $scope);
@@ -30,54 +37,35 @@ define(function (require) {
         $scope.ok = function (errors) {
             $scope.errors = errors;
             if (ng.equals({}, $scope.errors) || !$scope.errors) {
-                var onSuccess = function() {
-                    originalClient = $scope.client;
+                var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
+                    $scope.client = {};
+                    notification.success(
+                        'View your campaign <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
+                        {
+                            locals: {
+                                id: resp.data.id,
+                                name: resp.data.name
+                            }
+                        });
                 };
-                if($scope.client && $scope.client.id) {
-                    var clientDiff = getDiff($scope.client, originalClient);
-
-                    if (!ng.equals(clientDiff, {})) {
-                        clientRecordService.update($scope.client.id, clientDiff).then(onSuccess);
-                    } else {
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
-                    clientRecordService.create($scope.client).then(onSuccess);
+                if (record.hasChanges()) {
+                    record.save().then(onSuccess);
                 }
             }
             $scope.submitted = true;
         };
 
-
-        // Simple diffing function for PUT request
-        function getDiff(changed, original) {
-            var diff = {};
-            for (var index in changed) {
-                if (changed.hasOwnProperty(index)) {
-                    if (original[index] && !ng.equals(changed[index], original[index])) {
-                        diff[index] = changed[index];
-                    }
-                }
-            }
-
-            return diff;
-        }
-
         $scope.cancel = function () {
-            if (hasUnsavedChanges()) {
+            if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
-                    $scope.client = ng.copy(originalClient);
                     $modalInstance.dismiss('cancel');
+                    $scope.client = {};
                 }
             } else {
                 $modalInstance.dismiss('cancel');
             }
         };
-
-        function hasUnsavedChanges() {
-            return !ng.equals(originalClient, $scope.client);
-        }
 
         $scope.$on('$destroy', function() {
             modalState.client = $scope.client;
