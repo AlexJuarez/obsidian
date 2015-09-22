@@ -23,7 +23,7 @@ define(function (require) {
             function errorHandler(resp, record){
                 record.saving = false;
                 if (resp.status === 400) { //if the response is a bad-request
-                    validationErrorFn.call(record, resp.data);
+                    validationErrorFn.call(record, resp);
                     if (resp.data.errors) {
                         record.setErrors(resp.data.errors);
                     }
@@ -37,7 +37,7 @@ define(function (require) {
             function successHandler(resp, record) {
                 record.saving = false;
                 if (resp.status === 200) {
-                    successFn.call(record, resp.data);
+                    successFn.call(record, resp);
                     record._set(resp.data);
                 }
             }
@@ -76,7 +76,7 @@ define(function (require) {
 
                     //create a _attributes hash that can be modified outside
                     this.attributes = ng.merge({}, this.attributes, this.transform(attrs));
-                    this._attributes = ng.copy(this.attributes);
+                    this.reset();
                     observers.notifyObservers('change', this);
                 },
                 fetch: function() {
@@ -86,6 +86,9 @@ define(function (require) {
                 },
                 get: function() {
                     return this._attributes;
+                },
+                reset: function() {
+                    this._attributes = ng.copy(this.attributes);
                 },
                 diff: function(changed, original){
                     var _diff = {}, val;

@@ -15,7 +15,7 @@ define(function (require) {
             record = accountRecords.get(modalState.accountId);
             record.fetch();
         } else {
-            record = accountRecords.create();
+            record = accountRecords.create(modalState.originalAccount);
             record.set(modalState.account);
         }
 
@@ -60,9 +60,7 @@ define(function (require) {
                             }
                         });
                 };
-                if (record.hasChanges()) {
-                    record.save().then(onSuccess);
-                }
+                record.save().then(onSuccess);
             }
             $scope.submitted = true;
         };
@@ -71,7 +69,8 @@ define(function (require) {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
                     $modalInstance.dismiss('cancel');
-                    $scope.account = {};
+                    record.reset();
+                    $scope.account = record.get();
                 }
             } else {
                 $modalInstance.dismiss('cancel');

@@ -16,7 +16,7 @@ define(function (require) {
         function openNewAccountModal() {
             if (!newAccountModal) {
                 newAccountModal = {
-                    account: {
+                    originalAccount: {
                         divisionId: $scope.division.id
                     },
                     action: 'New'

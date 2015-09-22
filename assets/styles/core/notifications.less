@@ -4,85 +4,94 @@
 @notification-color: @white;
 @notification-background: @dark-gray;
 
-.ui-notification {
+#ui-notification-container {
+    top: 0;
+    left: 0;
+    right: 0;
     position: fixed;
     z-index: 9999;
-    left: 50%;
-    margin-left: -400px;
-    width: ~"calc(100% - 20px)";
-    max-width: 800px;
-    color: @notification-color;
-    background: @notification-background;
-    transition:all ease 0.5s;
-    a {
-        color: @light-blue;
-        &:hover {
-            color: darken(@light-blue, 20%);
-        }
-    }
-    &.killed {
-        opacity: 0;
-        transition: opacity ease 1s;
-    }
-    &:hover {
-        opacity: 1;
-    }
-    & > h3 {
-        display: block;
-        margin: 10px 10px 0 10px;
-        padding: 0 0 5px 0;
-        text-align: left;
-        font-size: @font-size-base;
-        font-weight: bold;
-        border-bottom: 1px solid fadeout(@notification-background, 70%);
-    }
-    & > .message {
-        margin: 10px 46px 10px 20px;
-    }
 
-    .close {
+    .ui-notification {
         position: absolute;
-        display:inline-block;
-        top: 10px;
-        right: 15px;
-        text-decoration: none;
+        display: block;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        width: ~"calc(100% - 20px)";
+        max-width: 800px;
         color: @notification-color;
+        background: @notification-background;
+        transition:all ease 0.5s;
+        a {
+            color: @light-blue;
+            &:hover {
+                color: darken(@light-blue, 20%);
+            }
+        }
+        &.killed {
+            opacity: 0;
+            transition: opacity ease 1s;
+        }
         &:hover {
-            color: @light-gray;
+            opacity: 1;
         }
-    }
+        & > h3 {
+            display: block;
+            margin: 10px 10px 0 10px;
+            padding: 0 0 5px 0;
+            text-align: left;
+            font-size: @font-size-base;
+            font-weight: bold;
+            border-bottom: 1px solid fadeout(@notification-background, 70%);
+        }
+        & > .message {
+            margin: 10px 46px 10px 20px;
+        }
 
-    &:before {
-        content: '';
-        width: 5px;
-        height: 100%;
-        display: block;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-    }
-    &.warn {
-        &:before {
-            background: @brand-warning;
+        .close {
+            position: absolute;
+            display:inline-block;
+            top: 10px;
+            right: 15px;
+            text-decoration: none;
+            color: @notification-color;
+            &:hover {
+                color: @light-gray;
+            }
         }
-        color: @brand-warning-color;
-    }
-    &.error {
+
         &:before {
-            background: @brand-danger;
+            content: '';
+            width: 5px;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            bottom: 0;
         }
-        color: @brand-danger-color;
-    }
-    &.success {
-        &:before {
-            background: @brand-success;
+        &.warn {
+            &:before {
+                background: @brand-warning;
+            }
+            color: @brand-warning-color;
         }
-        color: @brand-success-color;
-    }
-    &.info {
-        &:before {
-            background: @brand-info;
+        &.error {
+            &:before {
+                background: @brand-danger;
+            }
+            color: @brand-danger-color;
         }
-        color: @brand-info-color;
+        &.success {
+            &:before {
+                background: @brand-success;
+            }
+            color: @brand-success-color;
+        }
+        &.info {
+            &:before {
+                background: @brand-info;
+            }
+            color: @brand-info-color;
+        }
     }
 }

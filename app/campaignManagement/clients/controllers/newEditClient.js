@@ -48,9 +48,7 @@ define(function (require) {
                             }
                         });
                 };
-                if (record.hasChanges()) {
-                    record.save().then(onSuccess);
-                }
+                record.save().then(onSuccess);
             }
             $scope.submitted = true;
         };

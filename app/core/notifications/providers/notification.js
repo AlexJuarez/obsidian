@@ -106,8 +106,9 @@ define(function (require) {
                         }
 
                         //attach element
+                        addElement(notificationInstance);
+
                         var offset = -(parseInt(element[0].offsetHeight) + opts.bufferTop);
-                        $document.find('body').append(element);
                         element.addClass(settings.type);
                         element.css(notificationInstance.positionY, offset + 'px');
 
@@ -163,9 +164,20 @@ define(function (require) {
                     return promisesArr;
                 }
 
+                function addElement(notificationInstance) {
+                    var element = notificationInstance.element;
+                    if (!messageElements.length) {
+                        $document.find('body').append(ng.element('<div id="ui-notification-container"></div>'));
+                    }
+                    $document.find('#ui-notification-container').append(element);
+                }
+
                 function removeElement(notificationInstance) {
                     notificationInstance.element.remove();
                     messageElements.splice(messageElements.indexOf(notificationInstance), 1);
+                    if (!messageElements.length) {
+                        $document.find('#ui-notification-container').remove();
+                    }
                     $timeout(reposition);
                 }
 

@@ -43,7 +43,8 @@ define(function (require) {
             function create(attrs) {
                 var record = recordFactory({
                     apiConfig: apiConfig,
-                    successFn: function(data) {
+                    successFn: function(resp) {
+                        var data = resp.data;
                         records[data.id] = record;
                         record.observe(observers.notifyObservers, undefined, true);
                     },
