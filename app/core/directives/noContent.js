@@ -42,31 +42,23 @@ define(function (require) {
                 function updateCreativeMsg() {
                     if ( creatives.data().isLoaded() ) {
                         var data = creatives.all().data;
-                        console.log( 'creatives', data );
                         $scope.showCreativeMsg = hasContent(data);
                     }
                 }
 
                 function updateAccountMsg() {
-                    console.log( 'updateAccountMsg' );
                     if ( campaignsHeader.data().isLoaded() ) {
                         var data = campaignsHeader.all();
-                        console.log( 'data',data );
                         $scope.showCampaignMsg = hasContent(data);
                     }
                 }
 
                 function updateDivisionMsg() {
-                    console.log( 'updateDivisionMsg' );
                     if ( divisionSet.data().isLoaded() ) {
                         var data = divisionSet.all().countAccounts;
                         var dataObj = {data};
                         $scope.showAccountMsg = hasContent(dataObj);
                     }
-                    // if ( campaignsHeader.data().isLoaded() ) {
-                    //     var data = campaignsHeader.all();
-                    //     $scope.showCampaignMsg = hasContent(data);
-                    // }
                 }
 
                 function updateClientMsg() {
@@ -95,7 +87,7 @@ define(function (require) {
                         campaignsHeader.observe(updateAccountMsg, $scope);
                     
                     } else if ($state.params.divisionId) {
-                        console.log( 'at division' );
+
                         divisionSet.observe(updateDivisionMsg, $scope);
                     
                     } else {

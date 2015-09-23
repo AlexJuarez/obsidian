@@ -13,7 +13,6 @@ define(function (require) {
             controller: ['$scope', 'campaignsHeader', function ($scope, campaignsHeader) {
                 function updateSummary() {
                     $scope.summary = campaignsHeader.all();
-                    //console.log( 'campaignsHeader summary',$scope.summary );
                 }
 
                 campaignsHeader.observe(updateSummary, $scope, true);
