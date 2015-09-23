@@ -68,11 +68,10 @@
 
         <div class="form-group row"
              ng-class="{'has-error': newCreative.type.$invalid && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Creative Type</span></label>
+            <label ng-class="{disabled:editing}"class="col-sm-3 form-label required"><span>Creative Type</span></label>
 
             <div class="col-sm-9 single-select-light">
-                <select name="type" class="single-select" chosen
+                <select ng-disabled="editing" name="type" class="single-select" chosen
                         ng-options="type.id as type.name for type in types track by type.id"
                         disable-search-threshold="10"
 
@@ -87,12 +86,11 @@
 
         <div ng-if="environments" class="form-group row"
              ng-class="{'has-error': newCreative.environment.$invalid && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Environment</span></label>
+            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Environment</span></label>
 
             <div class="col-sm-9 single-select-light">
-                <select name="environment" class="single-select" chosen
-                        ng-options="environment.id as environment.name for environment in environments track by environment.id"
+                <select ng-disabled="editing" name="environment" class="single-select" chosen
+                        ng-options="index as environment.name for (index, environment) in environments track by index"
                         disable-search-threshold="10"
                         ng-model="creative.environment" required>
                 </select>
@@ -106,12 +104,11 @@
 
         <div ng-if="dimensions" class="form-group row"
              ng-class="{'has-error': (newCreative.dimensions.$invalid || newCreative.customDimensionsWidth.$invalid || newCreative.customDimensionsHeight.$invalid) && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Dimensions</span></label>
+            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Dimensions</span></label>
 
             <div class="col-sm-3 single-select-light">
-                <select name="dimensions" class="single-select" chosen
-                        ng-options="dimension.id as dimension.name for dimension in dimensions track by dimension.id"
+                <select ng-disabled="editing" name="dimensions" class="single-select" chosen
+                        ng-options="index as dimension.name for (index, dimension) in dimensions track by index"
                         disable-search-threshold="10"
                         ng-model="creative.dimensions" required>
                 </select>
@@ -131,26 +128,24 @@
             </div>
             <div class="col-sm-6" ng-if="dimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input name="customDimensionsWidth" ng-model="creative.customDimensionsWidth" type="text"
+                    <input ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.customDimensionsWidth" type="text"
                            class="form-control" id="customDimensionsWidth"
                            placeholder="Width" required/>
                 </div>
                 <div class="col-sm-6">
-                    <input name="customDimensionsHeight" ng-model="creative.customDimensionsHeight" type="text"
+                    <input ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.customDimensionsHeight" type="text"
                            class="form-control" id="customDimensionsHeight"
                            placeholder="Height" required/>
                 </div>
             </div>
         </div>
-
         <div ng-if="expandedDimensions" class="form-group row"
              ng-class="{'has-error': (newCreative.expandedDimensions.$invalid || newCreative.customExpandedDimensionsWidth.$invalid || newCreative.customExpandedDimensionsHeight.$invalid) && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>
+            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>
 
             <div class="col-sm-3 single-select-light">
-                <select name="expandedDimensions" class="single-select" chosen
-                        ng-options="expandedDimension.id as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
+                <select ng-disabled="editing" name="expandedDimensions" class="single-select" chosen
+                        ng-options="index as expandedDimension.name for (index, expandedDimension) in expandedDimensions track by index"
                         disable-search-threshold="10"
                         ng-model="creative.expandedDimensions" required>
                 </select>
@@ -170,19 +165,19 @@
             </div>
             <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input name="customExpandedDimensionsWidth" ng-model="creative.customExpandedDimensionsWidth" type="text"
+                    <input ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.customExpandedDimensionsWidth" type="text"
                            class="form-control" id="customExpandedDimensionsWidth"
                            placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
-                    <input name="customExpandedDimensionsHeight" ng-model="creative.customExpandedDimensionsHeight" type="text"
+                    <input ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.customExpandedDimensionsHeight" type="text"
                            class="form-control" id="customExpandedDimensionsHeight"
                            placeholder="Height" required />
                 </div>
             </div>
         </div>
 
-        <div ng-if="creative.type == 'SWF'">
+        <div ng-if="creative.type == 'SWF' && !editing">
             <div class="form-group row">
                 <label class="col-sm-3 form-label">Upload SWF</label>
                 <div class="col-sm-9 file-selection-wrapper form-inline">
@@ -191,7 +186,7 @@
             </div>
         </div>
 
-        <div ng-if="creative.type == 'IMG'">
+        <div ng-if="creative.type == 'IMG' && !editing">
             <div class="form-group row">
                 <label class="col-sm-3 form-label">Upload Image</label>
                 <div class="col-sm-9 file-selection-wrapper form-inline">
@@ -200,11 +195,11 @@
             </div>
         </div>
 
-        <div class="form-group row">
-            <label for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>
+        <div ng-show="creative.type==='IBV' && creative.expandedDimensions === nonExpandingIndex" class="form-group row">
+            <label ng-class="{disabled:editing}" for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>
             <div class="col-sm-9">
                 <label>
-                    <input id="customStartFrame" ng-model="creative.customStartFrame" type="checkbox" class="checkbox checkbox-light" />
+                    <input ng-disabled="editing" id="customStartFrame" ng-model="creative.customStartFrame" type="checkbox" class="checkbox checkbox-light" />
                     <span></span>
                 </label>
             </div>

@@ -6,7 +6,7 @@ define(function (require) {
 	module.constant('URL_REGEX', new RegExp(
 		'^' +
 			// protocol identifier
-			//'(?:(?:https?|ftp)://)' +
+		'(?:(?:https?|ftp)://)?' +
 			// user:pass authentication
 		'(?:\\S+(?::\\S*)?@)?' +
 		'(?:' +

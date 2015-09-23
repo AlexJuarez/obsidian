@@ -1,4 +1,5 @@
 @import "checkboxes";
+@import "../brand";
 @import "radio-buttons";
 @import "range-input";
 @import "alert";
@@ -41,6 +42,9 @@ textarea.form-control {
     color: #7c7c86;
 }
 
+.form-label.disabled {
+    color: @light-gray;
+}
 
 .form {
     &:extend(.clearfix all);

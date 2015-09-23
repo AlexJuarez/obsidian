@@ -45,13 +45,13 @@ define(function(require) {
 
         function getAdEnvironment(env) {
             switch(env) {
-                case 'multi-screen':
+                case 'multidevice':
                     return 'multiscreen';
-                case 'mobile':
-                    return 'tabletphone';
-                case 'mraid':
-                    return 'inappmraid';
                 case 'desktop':
+                    return 'tabletphone';
+                case 'tablet':
+                    return 'inappmraid';
+                case 'mobile':
                     return 'desktop';
                 default:
                     // unknown
