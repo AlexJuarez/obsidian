@@ -62,8 +62,27 @@
 }
 
 .tab-header {
-    > div[class*="col"] {
+    div[class*="col"] {
         margin-bottom: 2rem;
+        a, b {
+            margin-right: 1rem;
+            display: inline;
+        }
+    }
+    .search {
+        display: inline-block;
+    }
+    @media (max-width: @screen-xs-max) {
+        div[class*="col"] {
+            margin-bottom: 2rem;
+            a, b {
+                margin-right: 0;
+                display: block;
+            }
+        }
+        .search {
+            display: block;
+        }
     }
 }
 
