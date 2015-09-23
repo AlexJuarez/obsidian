@@ -2,16 +2,17 @@
     clear: both;
     padding: 0;
     .no-content {
-        display: block;
+        display: inline-block;
         border: 1px solid @light-gray;
         text-align: center;
         padding: 1rem 3rem 2rem 3rem;
-        width: 100%;
-        margin-top: 1rem;
-        margin-bottom: 2rem;
-        margin-left: auto;
-        margin-right: auto;
+        margin: 4rem 0 2rem 0;
         box-sizing: border-box;
+        position: relative;
+        left: 50%;
+        -webkit-transform: translateX(-50%);
+        -ms-transform: translateX(-50%);
+        transform: translateX(-50%);
         .glyph-info {
             .font-size(4);
             color: @light-blue;
@@ -22,7 +23,7 @@
     }
     @media(max-width: @screen-sm-min) {
         .no-content {
-            margin-top: 0;
+            margin: 0 0 2rem 0;
         }
     }
 }

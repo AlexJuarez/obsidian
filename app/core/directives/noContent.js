@@ -26,22 +26,16 @@ define(function (require) {
                     ng.forEach(data, function(d) {
                         results.push(d == 0);
                     });
-                    //console.log( results );
-                    //if (results.length !== 0) {
-                        return results.every(function (d) {
-                            return d;
-                        });
-                    //}
+
+                    return results.every(function (d) {
+                        return d;
+                    });
                 }
 
                 function updatePlacementMsg() {
                     if ( placements.data().isLoaded() ) {
                         var data = placements.all(true);
                         $scope.showPlacementMsg = hasContent(data);
-                        // if (data.length < 1) {
-                        //     $scope.showPlacementMsg = true;
-
-                        // }
                     }
                 }
 
@@ -50,27 +44,37 @@ define(function (require) {
                         var data = creatives.all().data;
                         console.log( 'creatives', data );
                         $scope.showCreativeMsg = hasContent(data);
-                        // if (data.data.length < 1) {
-                        //     $scope.showCreativeMsg = true;
-                        // }
                     }
                 }
 
                 function updateAccountMsg() {
+                    console.log( 'updateAccountMsg' );
                     if ( campaignsHeader.data().isLoaded() ) {
                         var data = campaignsHeader.all();
+                        console.log( 'data',data );
                         $scope.showCampaignMsg = hasContent(data);
                     }
+                }
+
+                function updateDivisionMsg() {
+                    console.log( 'updateDivisionMsg' );
+                    if ( divisionSet.data().isLoaded() ) {
+                        var data = divisionSet.all().countAccounts;
+                        var dataObj = {data};
+                        $scope.showAccountMsg = hasContent(dataObj);
+                    }
+                    // if ( campaignsHeader.data().isLoaded() ) {
+                    //     var data = campaignsHeader.all();
+                    //     $scope.showCampaignMsg = hasContent(data);
+                    // }
                 }
 
                 function updateClientMsg() {
                     if ( clientSet.data().isLoaded() ) {
                         var data = clientSet.all().countAccounts;
                         var dataObj = {data};
-                        console.log( 'countAccounts',dataObj );
                         $scope.showAccountMsg = hasContent(dataObj);
                     }
-                    console.log( $scope.showAccountMsg );
                 }
                 
 
@@ -91,12 +95,12 @@ define(function (require) {
                         campaignsHeader.observe(updateAccountMsg, $scope);
                     
                     } else if ($state.params.divisionId) {
-                        
-                        divisionSet.observe(updateAccountMsg, $scope);
+                        console.log( 'at division' );
+                        divisionSet.observe(updateDivisionMsg, $scope);
                     
                     } else {
-                        console.log( 'client level' );
-                        clientSet.observe(updateClientMsg, $scope, false);
+                        
+                        clientSet.observe(updateClientMsg, $scope);
                     
                     }
                 }
