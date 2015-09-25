@@ -31,12 +31,12 @@ define(function (require) {
             var record;
 
             if (modalState.campaignId) {
+                record = campaignRecords.get(modalState.campaignId);
                 campaignRecords.fetch(modalState.campaignId).then(function(resp) {
                     isRepInfoRequired(resp.data.accountId).then(function(isRequired) {
                         $scope.isRepInfoRequired = isRequired;
                     });
                 });
-                record = campaignRecords.get(modalState.campaignId);
             } else {
                 record = campaignRecords.create(modalState.originalCampaign);
                 record.set(modalState.campaign);

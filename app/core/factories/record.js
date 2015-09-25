@@ -37,6 +37,7 @@ define(function (require) {
             function successHandler(resp, record) {
                 record.saving = false;
                 if (resp.status === 200) {
+                    record._isNew = false;
                     successFn.call(record, resp);
                     record._set(resp.data);
                 }
@@ -49,6 +50,7 @@ define(function (require) {
                 this.idAttribute = options.idAttribute || 'id';
                 this.rules = ng.merge({}, options.rules);
 
+                this._isNew = true;
                 this.rules[this.idAttribute] = { ignore: true };
 
                 this.transform = options.transform || function (data) { return data; };
@@ -83,6 +85,9 @@ define(function (require) {
                     var getConfig = ng.copy(this.apiConfig.read || this.apiConfig.update);
                     var method = getConfig.method || 'get';
                     return this.makeRequest(method, getConfig);
+                },
+                isNew: function() {
+                    return this._isNew;
                 },
                 get: function() {
                     return this._attributes;

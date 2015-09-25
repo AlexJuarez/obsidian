@@ -59,10 +59,13 @@ define(function(require) {
             var firstClient = client.all()[0];
             var record = records.get(firstClient.id);
 
-            spyOn(record, 'save');
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
 
             client.pin(firstClient);
 
+            expect(record.get().pinned).toEqual(true);
             expect(record.save).toHaveBeenCalled();
         });
 
@@ -71,10 +74,13 @@ define(function(require) {
             var firstClient = client.all()[0];
             var record = records.get(firstClient.id);
 
-            spyOn(record, 'save');
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
 
             client.unpin(firstClient);
 
+            expect(record.get().pinned).toEqual(false);
             expect(record.save).toHaveBeenCalled();
         });
 

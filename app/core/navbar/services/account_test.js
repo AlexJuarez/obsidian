@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('accountService', function () {
-        var account, httpBackend, divisions, state, apiGenerator;
+        var account, httpBackend, divisions, state, apiGenerator, records;
 
         var apiConfig = {
             endpoint: 'test',
@@ -47,12 +47,13 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (accountService, $httpBackend, divisionService, $state, apiUriGenerator) {
+            inject(function (accountService, $httpBackend, divisionService, $state, apiUriGenerator, accountRecordService) {
                 account = accountService;
                 httpBackend = $httpBackend;
                 state = $state;
                 divisions = divisionService;
                 apiGenerator = apiUriGenerator;
+                records = accountRecordService;
             });
         });
 
@@ -80,16 +81,31 @@ define(function (require) {
         it('should pin an account', function () {
             account.setData(accounts);
             var a = account.all()[0];
+            var record = records.get(a.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             account.pin(a);
-            expect(account.pinned().length).toEqual(1);
+
+            expect(record.get().pinned).toEqual(true);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should unpin an account', function () {
             account.setData(accounts);
             var a = account.all()[0];
-            account.pin(a);
+            var record = records.get(a.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             account.unpin(a);
-            expect(account.pinned().length).toEqual(0);
+
+            expect(record.get().pinned).toEqual(false);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should return a map containing a key of the first letter by name', function () {

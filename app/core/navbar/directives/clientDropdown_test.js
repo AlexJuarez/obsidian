@@ -7,22 +7,21 @@ define(function (require) {
     var template = require('tpl!./client.html');
 
     describe('clientDropdownDirective', function () {
-        var compile, httpBackend, rootScope, document, client, navbar;
+        var compile, rootScope, document, client, navbar;
 
         beforeEach(function () {
             module('app.core');
+
+            inject(function ($compile, $rootScope, $document, $templateCache, clientService, navbarService) {
+                $templateCache.put('core/navbar/directives/client.html', template);
+
+                compile = $compile;
+                rootScope = $rootScope;
+                document = $document;
+                client = clientService;
+                navbar = navbarService;
+            });
         });
-
-        beforeEach(inject(function ($compile, $httpBackend, $rootScope, $document, $templateCache, clientService, navbarService) {
-            $templateCache.put('core/navbar/directives/client.html', template);
-
-            compile = $compile;
-            httpBackend = $httpBackend;
-            rootScope = $rootScope;
-            document = $document;
-            client = clientService;
-            navbar = navbarService;
-        }));
 
         function createDropDown(clients) {
             client.setData(clients);
@@ -59,20 +58,18 @@ define(function (require) {
 
             it('should change the pinned client when pin state change', function() {
                 var scope = createDropDown(clients);
-                
-                httpBackend.expect('PUT', '/api/crud/clients/clientId0')
-                    .respond( 200, { pinned: false } );
+
+                expect(scope.pin).toEqual(jasmine.any(Function));
+                expect(scope.unpin).toEqual(jasmine.any(Function));
+
+                spyOn(scope, 'unpin');
+                spyOn(scope, 'pin');
 
                 scope.unpin(client.all()[0]);
-                httpBackend.flush();
-                expect(scope.pinned.length).toEqual(0);
+                expect(scope.unpin).toHaveBeenCalled();
 
-                httpBackend.expect('PUT', '/api/crud/clients/clientId0')
-                    .respond( 200, { pinned: true } );
                 scope.pin(client.all()[0]);
-
-                httpBackend.flush();
-                expect(scope.pinned.length).toEqual(1);
+                expect(scope.pin).toHaveBeenCalled();
             });
 
             it('should have the current client', function() {

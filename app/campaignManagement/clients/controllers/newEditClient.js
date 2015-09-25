@@ -14,8 +14,8 @@ define(function (require) {
         var record;
 
         if (modalState.clientId) {
-            clientRecords.fetch(modalState.clientId);
             record = clientRecords.get(modalState.clientId);
+            clientRecords.fetch(modalState.clientId);
         } else {
             record = clientRecords.create();
             record.set(modalState.client);

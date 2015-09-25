@@ -12,8 +12,8 @@ define(function (require) {
         var record;
 
         if (modalState.accountId) {
-            accountRecords.fetch(modalState.accountId);
             record = accountRecords.get(modalState.accountId);
+            accountRecords.fetch(modalState.accountId);
         } else {
             record = accountRecords.create(modalState.originalAccount);
             record.set(modalState.account);

@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('divisionService', function () {
-        var division, httpBackend, state, apiGenerator;
+        var division, httpBackend, state, apiGenerator, records;
 
         var apiConfig = {
             endpoint: 'test',
@@ -34,11 +34,12 @@ define(function (require) {
                 });
             });
 
-            inject(function (divisionService, $httpBackend, $state, apiUriGenerator) {
+            inject(function (divisionService, $httpBackend, $state, apiUriGenerator, divisionRecordService) {
                 division = divisionService;
                 httpBackend = $httpBackend;
                 state = $state;
                 apiGenerator = apiUriGenerator;
+                records = divisionRecordService;
             });
         });
 
@@ -66,16 +67,31 @@ define(function (require) {
         it('should pin an division', function () {
             division.setData(divisions);
             var a = division.all()[0];
+            var record = records.get(a.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             division.pin(a);
-            expect(division.pinned().length).toEqual(1);
+
+            expect(record.get().pinned).toEqual(true);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should unpin an division', function () {
             division.setData(divisions);
             var a = division.all()[0];
-            division.pin(a);
+            var record = records.get(a.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             division.unpin(a);
-            expect(division.pinned().length).toEqual(0);
+
+            expect(record.get().pinned).toEqual(false);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should return a map containing a key of the first letter by name', function () {

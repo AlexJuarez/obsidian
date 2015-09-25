@@ -30,13 +30,12 @@ define(function (require) {
 
             function fetch(id) {
                 var deferred = $q.defer();
-                var exist = exists(id);
                 var record = get(id);
 
-                if (exist) {
-                    deferred.resolve({ data: record.get() });
-                } else {
+                if (record.isNew()) {
                     record.fetch().then(deferred.resolve, deferred.reject);
+                } else {
+                    deferred.resolve({ data: record.get() });
                 }
 
                 return deferred.promise;
