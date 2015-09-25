@@ -14,7 +14,7 @@ define(function (require) {
                     $scope.byStatus = campaignsByStatus.all();
                 }
 
-                campaignsByStatus.observe(updateByStatus, $scope);
+                campaignsByStatus.observe(updateByStatus, $scope, true);
             }]
         };
     }]);

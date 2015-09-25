@@ -5,11 +5,13 @@ define(function (require) {
 
     var ng = require('angular');
 
-    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', 'observerFactory', function ($http, $q, $rootScope, $timeout, apiUriGenerator, observerFactory) {
+    module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', function ($http, $q, $rootScope, $timeout, apiUriGenerator) {
         return function (sortFn) {
             var initialized = false;
+            var loaded = false;
             var data = [];
-            var observers = observerFactory();
+            var observers = {};
+            var observerId = 0;
 
             sortFn = sortFn || function (d) { return d; };
 
@@ -27,6 +29,7 @@ define(function (require) {
                     initialized = true;
 
                     $http.get(url).success(function (d) {
+                        loaded = true;
                         setData(transform.call(this, d));
                         deferred.resolve(data);
                     });
@@ -39,7 +42,7 @@ define(function (require) {
 
             function setData(d) {
                 data = sortFn(d);
-                observers.notifyObservers();
+                notifyObservers();
             }
 
             function addData(d, event) {
@@ -62,7 +65,7 @@ define(function (require) {
 
                 data = sortFn(temp.concat(d));
                 filterDeleted();
-                observers.notifyObservers(event);
+                notifyObservers(event);
             }
 
             function all() {
@@ -96,6 +99,35 @@ define(function (require) {
                 return output;
             }
 
+            function observe(callback, $scope, preventImmediate) {
+                var id = observerId++;
+                observers[id] = callback;
+
+                if (preventImmediate !== true) {
+                    callback();
+                }
+
+                if ($scope) {
+                    $scope.$on('$destroy', function() {
+                        delete observers[id];
+                    });
+                }
+            }
+
+            function isLoaded() {
+                return loaded;
+            }
+
+            function notifyObservers(event) {
+                for (var x in observers) {
+                    observers[x](event);
+                }
+
+                $timeout(function () {
+                    $rootScope.$apply();
+                });
+            }
+
             function getById(id) {
                 for (var i = 0; i < data.length; i++) {
                     if (data[i].id === id) {
@@ -105,15 +137,16 @@ define(function (require) {
             }
 
             return {
-                _observers: observers._observers,
+                _observers: observers,
                 init: init,
                 setData: setData,
                 addData: addData,
+                isLoaded: isLoaded,
                 getById: getById,
                 all: all,
                 filtered: filtered,
-                observe: observers.observe,
-                notifyObservers: observers.notifyObservers
+                observe: observe,
+                notifyObservers: notifyObservers
             };
         };
     }]);

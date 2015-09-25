@@ -10,9 +10,14 @@ define(function (require) {
         $scope.openEditClientModal = openEditClientModal;
         $scope.openNewDivisionModal = openNewDivisionModal;
         $scope.openNewAccountModal = openNewAccountModal;
+        $scope.isLoaded = false;
 
         function updateClientName() {
+            console.log( 'updateClientName' );
             $scope.client = navbar.all().client;
+            if ($scope.client) {
+                $scope.isLoaded = true;
+            }
         }
 
         navbar.observe(updateClientName, $scope);
