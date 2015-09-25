@@ -56,16 +56,6 @@
                        placeholder="Keywords"/>
             </div>
         </div>
-        <div class="form-group row" ng-class="{'has-error': newCampaign.clickthroughUrl.$invalid && submitted}">
-            <label for="clickthroughUrl" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>
-            <div class="col-sm-9">
-                <input ng-model="campaign.clickthroughUrl" type="text" ng-pattern="URL_REGEX" class="form-control" name="clickthroughUrl" id="clickthroughUrl" placeholder="Enter URL" />
-                <p ng-show="newCampaign.clickthroughUrl.$invalid && submitted" class="help-block">
-                    clickthrough url is invalid
-                </p>
-            </div>
-        </div>
-
         <div class="form-group row"
              ng-class="{'has-error': (newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted}">
             <label
@@ -219,7 +209,7 @@
             </div>
         </div>
         <div class="form-group row"
-             ng-class="{'has-error': newCampaign.repName.$invalid && submitted}">
+             ng-class="{'has-error': (newCampaign.repName.$invalid || errors.repName) && submitted}">
             <label for="repName" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Name</span></label>
 
             <div class="col-sm-9">
@@ -231,10 +221,13 @@
                    class="help-block">
                     rep name is invalid
                 </p>
+                <p ng-show="errors.repName && submitted" class="help-block">
+                    {{errors.repName}}
+                </p>
             </div>
         </div>
         <div class="form-group row"
-             ng-class="{'has-error': newCampaign.repEmail.$invalid && submitted}">
+             ng-class="{'has-error': (newCampaign.repEmail.$invalid || errors.repEmail) && submitted}">
             <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>
 
             <div class="col-sm-9">
@@ -245,6 +238,9 @@
                 <p ng-show="newCampaign.repEmail.$invalid && submitted"
                    class="help-block">
                     rep email is invalid
+                </p>
+                <p ng-show="errors.repEmail && submitted" class="help-block">
+                    {{errors.repEmail}}
                 </p>
             </div>
         </div>

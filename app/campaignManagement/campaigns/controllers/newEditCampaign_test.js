@@ -24,44 +24,21 @@ define(function (require) {
             dismiss: function() {}
         };
 
-        function all(){
-            return {id: 1, keywords: [], requireRepInfo: false};
-        }
-
         beforeEach(function () {
             module('app.campaign-management');
             module('app.core');
 
             module(function($provide) {
-                $provide.value('campaignRecordService', {
-                    getById: function() {
-                        return { then: function(fn) { fn({all: all}); }};
-                    },
-                    create: function() { return { then: function(fn) { fn({all: all}); }}; },
-                    update: function() { return { then: function(fn) { fn({all: all}); }}; }
-                });
-                $provide.value('accountRecordService', {
-                    getById: function() {
-                        return { then: function(fn) {
-                            fn({all: all});
-                        }};
-                    }
-                });
-                $provide.value('divisionRecordService', {
-                    getById: function() {
-                        return { then: function(fn) {
-                            fn({all: all});
-                        }};
-                    }
-                });
-                $provide.value('clientRecordService', {
-                    getById: function() {
-                        return { then: function(fn) {
-                            fn({all: all});
-                        }};
-                    }
+                $provide.value('notification', {
+                    info: function() {},
+                    success: function() {}
                 });
 
+                $provide.value('accountRecordService', {
+                    fetch: function() {
+                        return { then: function() {} };
+                    }
+                });
             });
 
             spyOn(mockAccounts, 'observe').and.callThrough();
@@ -77,6 +54,8 @@ define(function (require) {
 
         function setUp(modalState) {
             modalState = modalState || {};
+
+            httpBackend.when('GET', '/api/crud/campaigns/1').respond({ id: 1 });
 
             return controller('newEditCampaignCtrl',
                 {
@@ -146,7 +125,6 @@ define(function (require) {
             setUp();
 
             scope.ok('errors');
-            expect(scope.errors).toEqual('errors');
             expect(scope.submitted).toEqual(true);
         });
 
@@ -169,34 +147,47 @@ define(function (require) {
         describe('ok', function() {
             it('should work without errors', function() {
                 setUp({ campaignId: 1 });
+                var record = campaignRecords.get(1);
+                httpBackend.flush();
+
+                spyOn(record, 'save').and.returnValue({
+                    then: function() {}
+                });
 
                 scope.ok({});
 
-                expect(scope.errors).toEqual({});
+                expect(record.save).toHaveBeenCalled();
             });
 
             it('should update the campaign', function() {
+                var record = campaignRecords.get(1);
+                spyOn(record, 'update').and.returnValue({
+                    then: function() {}
+                });
+
                 setUp({ campaignId: 1 });
+                httpBackend.flush();
+
                 scope.campaign.name = 'New Name';
-                spyOn(campaignRecords, 'update').and.callThrough();
                 spyOn(mockModalInstance, 'dismiss');
 
                 scope.ok({});
 
-                expect(campaignRecords.update).toHaveBeenCalled();
-                expect(mockModalInstance.dismiss).toHaveBeenCalled();
+                expect(record.update).toHaveBeenCalled();
                 expect(scope.errors).toEqual({});
             });
 
             it('should create the campaign', function() {
+                httpBackend.when('POST', '/api/crud/campaigns').respond({ id: 1, name: 'New Name'});
                 setUp();
                 scope.campaign.name = 'New Name';
-                spyOn(campaignRecords, 'create').and.callThrough();
+
                 spyOn(mockModalInstance, 'dismiss');
 
                 scope.ok({});
+                httpBackend.flush();
 
-                expect(campaignRecords.create).toHaveBeenCalled();
+                expect(campaignRecords.get(1).get().name).toEqual('New Name');
                 expect(mockModalInstance.dismiss).toHaveBeenCalled();
                 expect(scope.errors).toEqual({});
             });

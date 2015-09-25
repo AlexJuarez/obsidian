@@ -11,18 +11,18 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
+
+            inject(function ($compile, $rootScope, $document, $templateCache, navbarService, divisionService, clientService) {
+                $templateCache.put('core/navbar/directives/division.html', template);
+
+                compile = $compile;
+                rootScope = $rootScope;
+                document = $document;
+                navbar = navbarService;
+                division = divisionService;
+                client = clientService;
+            });
         });
-
-        beforeEach(inject(function ($compile, $rootScope, $document, $templateCache, navbarService, divisionService, clientService) {
-            $templateCache.put('core/navbar/directives/division.html', template);
-
-            compile = $compile;
-            rootScope = $rootScope;
-            document = $document;
-            navbar = navbarService;
-            division = divisionService;
-            client = clientService;
-        }));
 
         function createDropDown(divisions) {
             division.setData(divisions);
@@ -77,11 +77,17 @@ define(function (require) {
             it('should change the pinned account when pin state change', function() {
                 var scope = createDropDown(divisions).scope();
 
+                expect(scope.pin).toEqual(jasmine.any(Function));
+                expect(scope.unpin).toEqual(jasmine.any(Function));
+
+                spyOn(scope, 'unpin');
+                spyOn(scope, 'pin');
+
                 scope.unpin(division.all()[0]);
-                expect(scope.pinned.length).toEqual(0);
+                expect(scope.unpin).toHaveBeenCalled();
 
                 scope.pin(division.all()[0]);
-                expect(scope.pinned.length).toEqual(1);
+                expect(scope.pin).toHaveBeenCalled();
             });
 
             it('should have the current account', function() {

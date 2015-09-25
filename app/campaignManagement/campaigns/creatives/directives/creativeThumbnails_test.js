@@ -143,7 +143,7 @@ define(function (require) {
             it('should create a creative', function () {
                 var scope = setUpScope();
                 spyOn(records, 'create');
-                spyOn(records, 'getById').and.callFake(function () {
+                spyOn(records, 'fetch').and.callFake(function () {
                     return {
                         then: function(fn) {
                             fn({

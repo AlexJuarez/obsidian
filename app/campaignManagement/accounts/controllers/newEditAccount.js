@@ -6,102 +6,77 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService',
-                                          'industryService', 'modalState', 'URL_REGEX',
-																					function ($scope, $modalInstance, divisionService, accountRecordService,
-                                                    industries, modalState, URL_REGEX) {
-        $scope.account = modalState.account;
+    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', 'notification', 'URL_REGEX',
+        function ($scope, $modalInstance, divisionService, accountRecords, industries, modalState, notification, URL_REGEX) {
         $scope.action = modalState.action;
-				$scope.URL_REGEX = URL_REGEX;
+        $scope.URL_REGEX = URL_REGEX;
 
-        var originalAccount;
+        var record;
 
-        // Editing an account
         if (modalState.accountId) {
-            accountRecordService.getById(modalState.accountId).then(function(account) {
-                originalAccount = account.all();
-                if (!$scope.account || $scope.account === {}) {
-                    $scope.account = ng.copy(originalAccount);
-                }
-            });
+            record = accountRecords.get(modalState.accountId);
+            accountRecords.fetch(modalState.accountId);
+        } else {
+            record = accountRecords.create(modalState.originalAccount);
+            record.set(modalState.account);
         }
 
-        // Creating a new account under a division
-        if (modalState.divisionId) {
-            if (!$scope.account) {
-                $scope.account = {};
-            }
-            if (!originalAccount) {
-                originalAccount = {};
-            }
-            $scope.account.divisionId = originalAccount.divisionId = modalState.divisionId;
-        }
+        var update = function() {
+            $scope.account = record.get();
+            $scope.errors = record.errors();
+        };
+
+        record.observe(update, $scope);
 
         // Creating a new account under a client
         if (modalState.clientId || modalState.divisionId) {
             var updateDivisions = function() {
-                $scope.divisions = divisionService.filtered();
+                var divisions = divisionService.filtered();
+                if (divisions.length === 1) {
+                    $scope.account.divisionId = divisions[0].id;
+                } else {
+                    $scope.divisions = divisions;
+                }
             };
             divisionService.observe(updateDivisions, $scope);
         }
 
         industries.init();
         industries.observe(updateIndustries, $scope);
+
         function updateIndustries() {
             $scope.industries = industries.all();
         }
 
         $scope.ok = function (errors) {
-            $scope.errors = errors;
-            if (ng.equals({}, $scope.errors) || !$scope.errors) {
-                var onSuccess = function() {
-                    originalAccount = $scope.account;
+            if (ng.equals({}, errors) || !errors) {
+                var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
+                    $scope.account = {};
+                    notification.success('View your account <a ui-sref="cm.campaigns.account({ accountId: id })">{{name}}</a>.',
+                        {
+                            locals: {
+                                id: resp.data.id,
+                                name: resp.data.name
+                            }
+                        });
                 };
-                if($scope.account && $scope.account.id) {
-                    var accountDiff = getDiff($scope.account, originalAccount);
-
-                    if (!ng.equals(accountDiff, {})) {
-                        accountRecordService.update($scope.account.id, accountDiff).then(onSuccess);
-                    } else {
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
-                    accountRecordService.create($scope.account).then(onSuccess);
-                }
+                record.save().then(onSuccess);
             }
             $scope.submitted = true;
         };
 
-
-        // Simple diffing function for PUT request
-        function getDiff(changed, original) {
-            var diff = {};
-            for (var index in changed) {
-                if (changed.hasOwnProperty(index)) {
-                    if (original[index] && !ng.equals(changed[index], original[index])) {
-                        diff[index] = changed[index];
-                    }
-                }
-            }
-
-            return diff;
-        }
-
         $scope.cancel = function () {
-            if (hasUnsavedChanges()) {
+            if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
-                    $scope.account = ng.copy(originalAccount);
+                    record.reset();
+                    $scope.account = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
                 $modalInstance.dismiss('cancel');
             }
         };
-
-        function hasUnsavedChanges() {
-            return !ng.equals(originalAccount, $scope.account);
-        }
 
         $scope.$on('$destroy', function() {
             modalState.account = $scope.account;
