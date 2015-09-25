@@ -1,17 +1,13 @@
-<div class="loading-wrapper" ng-class="{'fade-out': isLoaded}">
-    <img src="images/loader-light.gif" class="loading-spinner" />
-</div>
+<!-- <div loading-indicator is-loaded="isLoaded"></div> -->
 
-<div ng-if="isLoaded">
-		<div class="dropdown">
-		    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{client.name}} Summary</div>
-		    <div class="dropdown-menu">
-		        <div you-work-on></div>
-		    </div>
-		</div>
-		<div class="btn-group right">
-		    <button class="btn btn-default solid" ng-click="openNewAccountModal()">New Account</button>
-		    <!-- <button class="btn btn-default solid" ng-click="openNewDivisionModal()">New Division</button> -->
-		    <button class="btn btn-default solid" ng-click="openEditClientModal()">Edit Client</button>
-		</div>
+<div class="dropdown">
+    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{client.name}} Summary</div>
+    <div class="dropdown-menu">
+        <div you-work-on></div>
+    </div>
+</div>
+<div class="btn-group right">
+    <button class="btn btn-default solid" ng-click="openNewAccountModal()">New Account</button>
+    <!-- <button class="btn btn-default solid" ng-click="openNewDivisionModal()">New Division</button> -->
+    <button class="btn btn-default solid" ng-click="openEditClientModal()">Edit Client</button>
 </div>

@@ -13,6 +13,7 @@ define(function (require) {
 
         topClients.observe(updateTopClients, $scope, true);
 
+
         function updateTopClients() {
             $scope.topClients = topClients.all();
             if ($scope.topClients.data) {

@@ -25,6 +25,7 @@ define(function (require) {
                 function init(length, s){
                     if (length && !opened) {
                         s.open = opened = true;
+                        scope.isLoaded = true;
                     }
                 }
             }
