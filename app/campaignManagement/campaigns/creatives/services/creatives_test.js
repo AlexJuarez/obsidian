@@ -110,11 +110,13 @@ define(function(require) {
             httpBackend.when('GET', apiGenerator(creativesService._apiConfig())).respond({
                 creatives: data
             });
-
+            creativesService.all();
+            httpBackend.flush();
             httpBackend.when('POST', '/api/crud/creatives').respond({ id: 1, name: 'test' });
             record.save();
             httpBackend.flush();
 
+            expect(record.isNew()).toEqual(false);
             expect(creativesService._getCreative(1)).toEqual(jasmine.objectContaining({ id: 1 }));
         });
     });
