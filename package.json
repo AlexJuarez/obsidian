@@ -1,7 +1,11 @@
 {
   "name": "css-scaffolding",
   "version": "1.0.0",
+  "description": "Obsidian, a not so well know rock.",
   "private": true,
+  "scripts": {
+    "test": "karma start"
+  },
   "dependencies": {
     "body-parser": "^1.12.4",
     "bower": "^1.4.1",
