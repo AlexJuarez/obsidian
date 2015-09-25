@@ -98,7 +98,7 @@ define(function(require) {
             };
 
             creativesService.observe(callback, scope, true, true);
-            creativesService.addData(data);
+gitg            creativesService.addData(data);
         });
 
         it('should observe creativeRecordService', function () {
