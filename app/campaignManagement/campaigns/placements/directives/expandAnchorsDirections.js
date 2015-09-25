@@ -54,7 +54,7 @@ define(function (require) {
 
                 $scope.setExpandAnchor = function(anchor) {
                     $scope.expandAnchor = anchor;
-                }
+                };
             }]
         };
     }]);

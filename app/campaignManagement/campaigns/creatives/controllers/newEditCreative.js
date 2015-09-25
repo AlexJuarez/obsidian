@@ -6,18 +6,18 @@ define(function (require) {
 
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService',
-         'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns,
-                      creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX) {
+         'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX', 'notification',
+    function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns,
+                      creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX, notification) {
 
         //Modal functions
         $scope.ok = undefined;
         $scope.cancel = undefined;
-        $scope.creative = modalState.creative;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
         $scope.URL_REGEX = URL_REGEX;
         $scope.MONEY_REGEX = MONEY_REGEX;
+        $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
 
         var types = [
             { id: 'IBV', name: 'In-Banner Video', dbName: 'In-Banner' },
@@ -25,7 +25,7 @@ define(function (require) {
             { id: 'RM', name: 'Rich Media', dbName: 'Rich Media' },
             { id: 'SWF', name: 'Display: SWF', dbName: 'Display' },
             { id: 'IMG', name: 'Display: Image', dbName: 'Display' }
-        ];
+];
 
         var typeSettings = {
             IBV: {
@@ -90,7 +90,6 @@ define(function (require) {
             { width: 970, height: 415, name: '970x415' },
             { isCustom: true, name: 'Custom' }
         ];
-        $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
 
         setupTranslationLogic();
         setupModalLogic();
@@ -157,30 +156,27 @@ define(function (require) {
         }
 
         function setupModalLogic() {
-            var originalCreative;
+            var record;
 
             if(modalState.creativeId) {
-                $scope.editing = true;
-                creativeRecordService.getById(modalState.creativeId).then(function(creative) {
-                    originalCreative = transformDatabaseToModal(creative.all());
-                    if(! $scope.creative || $scope.creative === {}) {
-                        $scope.creative = ng.copy(modalState.creative || originalCreative);
-                    }
-                });
+                record = creativeRecordService.get(modalState.creativeId);
+                creativeRecordService.fetch(modalState.creativeId);
             } else {
-                originalCreative = {
-                    startDate: (modalState.creative && modalState.creative.startDate) || new Date(),
-                    endDate: (modalState.creative && modalState.creative.endDate) || new Date(),
-                    campaignId: modalState.campaignId
-                };
+                record = creativeRecordService.create();
+                record.set(modalState.creative);
+            }
 
-                $scope.creative = transformDatabaseToModal(ng.copy(modalState.creative || originalCreative));
+            record.observe(update, $scope);
+
+            function update() {
+                $scope.creative = transformDatabaseToModal(record.get());
+                $scope.errors = record.errors();
             }
 
             campaigns.observe(updateCampaigns, $scope);
 
             function updateCampaigns() {
-                if(! modalState.creativeId) {
+                if(!modalState.creativeId) {
 
                     // TODO: add render limit so this isn't crazy slow
                     //$scope.campaigns = campaigns.all().slice(0, 10);
@@ -189,9 +185,10 @@ define(function (require) {
             }
 
             $scope.cancel = function() {
-                if(hasUnsavedChanges()) {
+                if(record.hasChanges()) {
                     if(confirm('You have unsaved changes. Really close?')) {
-                        $scope.creative = originalCreative;
+                        record.reset();
+                        $scope.campaign = record.get();
                         $modalInstance.dismiss('cancel');
                     }
                 } else {
@@ -199,32 +196,29 @@ define(function (require) {
                 }
             };
 
-            function hasUnsavedChanges() {
-                return !ng.equals($scope.creative, originalCreative);
-            }
-
             $scope.ok = function(errors) {
-                $scope.errors = errors;
-                if(ng.equals({}, $scope.errors) || ! $scope.errors) {
+                if(ng.equals({}, errors) || !errors) {
                     var transformedCreative = transformModalToDatabase();
-                    var onSuccess = function() {
-                        originalCreative = $scope.creative;
+                    var onSuccess = function(resp) {
+                        $scope.creative = {};
+                        notification.success('Creative: {{name}}, has been updated.',
+                            {
+                                locals: {
+                                    name: resp.data.name
+                                }
+                            });
                         $modalInstance.dismiss('cancel');
                     };
-                    if($scope.creative && $scope.creative.id) {
-                        var creativeDiff = getDiff($scope.creative, originalCreative);
 
-                        if(! ng.equals(creativeDiff, {})) {
-                            creativeRecordService.update($scope.creative.id, creativeDiff).then(onSuccess);
-                        } else {
-                            $modalInstance.dismiss('cancel');
-                        }
-                    } else {
+                    if (record.isNew()) {
                         newCreativeService(transformedCreative)
                             .then(function(url) {
-                                onSuccess();
+                                $scope.creative = {};
+                                $modalInstance.dismiss('cancel');
                                 $window.open(url, '_blank');
                             });
+                    } else {
+                        record.save().then(onSuccess);
                     }
                 }
                 $scope.submitted = true;
@@ -329,20 +323,6 @@ define(function (require) {
                 }
 
                 return allDimensions;
-            }
-
-            // Simple diffing function for PUT request
-            function getDiff(changed, original) {
-                var diff = {};
-                for(var index in changed) {
-                    if(changed.hasOwnProperty(index)) {
-                        if(original[index] && ! ng.equals(changed[index], original[index])) {
-                            diff[index] = changed[index];
-                        }
-                    }
-                }
-
-                return diff;
             }
 
             //Before closing the modal save the state;

@@ -170,12 +170,12 @@ define(function(require) {
                 var placementPromises = [];
 
                 placementIds.forEach(function(placementId) {
-                    placementPromises.push(placementRecordService.getById(placementId));
+                    placementPromises.push(placementRecordService.fetch(placementId));
                 });
 
                 $q.all(placementPromises).then(function(placements) {
-                    placements.forEach(function(placement) {
-                        placement = placement.all();
+                    placements.forEach(function(resp) {
+                        var placement = resp.data;
                         tags += getPlacementTagText(placement);
                     });
 

@@ -6,6 +6,7 @@ define(function (require) {
     var ng = require('angular');
 
     module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification) {
+        //destroy, update, create, error, change
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */

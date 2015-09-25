@@ -54,20 +54,22 @@ define(function(require) {
                 }
             });
 
-            creativeRecordService.observe(function(newUpdatedRecord) {
-                var existingRecord = getCreative(newUpdatedRecord.id);
+            creativeRecordService.observe(function(event, record) {
+                if (event === 'create' || event === 'update') {
+                    var existingRecord = getCreative(record.id);
 
-                if (!existingRecord) {
-                    // Set up defaults for a new record
-                    existingRecord = {
-                        lastModified: new Date(),
-                        delivering: false,
-                        countPlacements: 0
-                    };
+                    if (!existingRecord) {
+                        // Set up defaults for a new record
+                        existingRecord = {
+                            lastModified: new Date(),
+                            delivering: false,
+                            countPlacements: 0
+                        };
+                    }
+
+                    var transformedRecord = transformCrudRecord(record.get(), existingRecord);
+                    addData([transformedRecord]);
                 }
-                var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
-                addData([transformedRecord]);
-
             }, undefined, true);
 
             function transformCrudRecord(updatedRecord, existingRecord) {
