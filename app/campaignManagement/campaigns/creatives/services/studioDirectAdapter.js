@@ -61,7 +61,7 @@ define(function(require) {
 
         function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
             if(type === 'IBV') {
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                if (!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     // IDMLQ
                     params.idw = embedWidth;
                     params.idh = embedHeight;
@@ -72,6 +72,10 @@ define(function(require) {
                     params.tcw = embedWidth;
                     params.tch = embedHeight;
                 }
+            } else if(type === 'ISV') {
+                // IS
+                params.tcw = embedWidth;
+                params.tch = embedHeight;
             } else {
                 params.idw = embedWidth;
                 params.idh = embedHeight;
