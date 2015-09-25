@@ -15,7 +15,7 @@ define(function (require) {
 
         if (modalState.clientId) {
             record = clientRecords.get(modalState.clientId);
-            record.fetch();
+            clientRecords.fetch(modalState.clientId);
         } else {
             record = clientRecords.create();
             record.set(modalState.client);
@@ -35,13 +35,12 @@ define(function (require) {
         }
 
         $scope.ok = function (errors) {
-            $scope.errors = errors;
-            if (ng.equals({}, $scope.errors) || !$scope.errors) {
+            if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
                     $scope.client = {};
                     notification.success(
-                        'View your campaign <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
+                        'View your client <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
                         {
                             locals: {
                                 id: resp.data.id,
@@ -49,9 +48,7 @@ define(function (require) {
                             }
                         });
                 };
-                if (record.hasChanges()) {
-                    record.save().then(onSuccess);
-                }
+                record.save().then(onSuccess);
             }
             $scope.submitted = true;
         };
@@ -59,8 +56,9 @@ define(function (require) {
         $scope.cancel = function () {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
+                    record.reset();
+                    $scope.client = record.get();
                     $modalInstance.dismiss('cancel');
-                    $scope.client = {};
                 }
             } else {
                 $modalInstance.dismiss('cancel');

@@ -4,8 +4,10 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService) {
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification) {
         var clients = dataFactory(utils.sortByName);
+
+        clientRecordService.observe(clientUpdate, undefined, true);
 
         function init(apiConfig) {
             return clients.init(apiConfig, function (data) {
@@ -20,7 +22,7 @@ define(function (require) {
         // Observe for new/updated clients
 
         function clientUpdate(event, record) {
-            if (event === 'change') {
+            if (event === 'create' || event === 'update') {
                 var olddata = get(record.id);
                 var data = record.get();
 
@@ -34,8 +36,6 @@ define(function (require) {
             }
         }
 
-        clientRecordService.observe(clientUpdate, undefined, true);
-
         function search(query) {
             return utils.search(all(), query);
         }
@@ -44,16 +44,22 @@ define(function (require) {
             return utils.alphabetMap(all());
         }
 
-        function pin(client) {
+        function togglePin(client, value) {
             var record = clientRecordService.get(client.id);
-            record.set({ 'pinned': true });
+            record.set({ pinned: value });
             return record.save();
         }
 
+        function pin(client) {
+            return togglePin(client, true).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.client({ clientId: id})">{{name}}</a> has been pinned', { locals: { name: client.name, id: client.id }});
+            });
+        }
+
         function unpin(client) {
-            var record = clientRecordService.get(client.id);
-            record.set({ 'pinned': false });
-            return record.save();
+            return togglePin(client, false).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.client({ clientId: id})">{{name}}</a> has been unpinned', { locals: { name: client.name, id: client.id }});
+            });
         }
 
         function pinned() {

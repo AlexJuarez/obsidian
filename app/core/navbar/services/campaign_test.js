@@ -5,7 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('campaignService', function () {
-        var campaign, httpBackend, state, accountServ, apiGenerator;
+        var campaign, httpBackend, state, accountServ, apiGenerator, records;
 
         var apiConfig = {
             endpoint: 'test',
@@ -131,12 +131,13 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
-            inject(function (campaignService, $httpBackend, $state, accountService, apiUriGenerator) {
+            inject(function (campaignService, $httpBackend, $state, accountService, apiUriGenerator, campaignRecordService) {
                 campaign = campaignService;
                 accountServ = accountService;
                 httpBackend = $httpBackend;
                 state = $state;
                 apiGenerator = apiUriGenerator;
+                records = campaignRecordService;
             });
         });
 
@@ -178,16 +179,31 @@ define(function (require) {
         it('should pin an campaign', function () {
             campaign.setData(campaignsUnsorted);
             var a = campaign.all()[0];
+            var record = records.get(a.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             campaign.pin(a);
-            expect(campaign.pinned().length).toEqual(1);
+
+            expect(record.get().pinned).toEqual(true);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should unpin an campaign', function () {
             campaign.setData(campaignsUnsorted);
             var a = campaign.all()[0];
-            campaign.pin(a);
+            var record = records.get(a.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             campaign.unpin(a);
-            expect(campaign.pinned().length).toEqual(0);
+
+            expect(record.get().pinned).toEqual(false);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should return a map containing a key of correct quarter information', function () {

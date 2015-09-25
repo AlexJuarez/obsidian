@@ -5,7 +5,7 @@ define(function (require) {
 
     var ng = require('angular');
 
-    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q) {
+    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification) {
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */
@@ -23,19 +23,22 @@ define(function (require) {
             function errorHandler(resp, record){
                 record.saving = false;
                 if (resp.status === 400) { //if the response is a bad-request
-                    validationErrorFn.call(record, resp.data);
+                    validationErrorFn.call(record, resp);
                     if (resp.data.errors) {
                         record.setErrors(resp.data.errors);
                     }
                 } else {
-                    $log.warn('an unexpected server error has occurred');
+                    $log.warn('An unexpected server error has occurred.');
+                    $log.warn(resp);
+                    notification.error('An unexpected server error has occurred.');
                 }
             }
 
             function successHandler(resp, record) {
                 record.saving = false;
                 if (resp.status === 200) {
-                    successFn.call(record, resp.data);
+                    record._isNew = false;
+                    successFn.call(record, resp);
                     record._set(resp.data);
                 }
             }
@@ -47,6 +50,7 @@ define(function (require) {
                 this.idAttribute = options.idAttribute || 'id';
                 this.rules = ng.merge({}, options.rules);
 
+                this._isNew = true;
                 this.rules[this.idAttribute] = { ignore: true };
 
                 this.transform = options.transform || function (data) { return data; };
@@ -74,7 +78,7 @@ define(function (require) {
 
                     //create a _attributes hash that can be modified outside
                     this.attributes = ng.merge({}, this.attributes, this.transform(attrs));
-                    this._attributes = ng.copy(this.attributes);
+                    this.reset();
                     observers.notifyObservers('change', this);
                 },
                 fetch: function() {
@@ -82,8 +86,17 @@ define(function (require) {
                     var method = getConfig.method || 'get';
                     return this.makeRequest(method, getConfig);
                 },
+                isNew: function() {
+                    return this._isNew;
+                },
                 get: function() {
                     return this._attributes;
+                },
+                reset: function() {
+                    this._attributes = ng.copy(this.attributes);
+                },
+                changes: function() {
+                    return this.diff(this._attributes, this.attributes);
                 },
                 diff: function(changed, original){
                     var _diff = {}, val;
@@ -159,7 +172,7 @@ define(function (require) {
                     return deferred.promise;
                 },
                 hasChanges: function() {
-                    return !ng.equals({}, this.diff(this._attributes, this.attributes));
+                    return !ng.equals({}, this.changes());
                 },
                 create: function() {
                     var createConfig = ng.copy(this.apiConfig.create);
@@ -178,7 +191,7 @@ define(function (require) {
                 update: function() {
                     var deferred = $q.defer();
                     var updateConfig = ng.copy(this.apiConfig.update);
-                    var data = this.diff(this._attributes, this.attributes);
+                    var data = this.changes();
                     var method = updateConfig.method || 'put';
                     var request;
                     var that = this;

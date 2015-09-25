@@ -59,6 +59,8 @@ define(function (require) {
             }, undefined, true);
 
             httpBackend.flush();
+
+            records.fetch('id');
         });
 
         it('should update a record', function() {
