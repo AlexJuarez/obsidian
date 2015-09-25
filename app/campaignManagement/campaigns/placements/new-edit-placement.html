@@ -159,6 +159,28 @@
         </div>
 
         <div expand-anchors-directions></div>
+
+        <div class="form-group row">
+            <label for="adtype" class="col-sm-3 form-label"><span>Ad Type</span></label>
+            <div class="col-sm-9 single-select-light">
+              <select id="adtype" class="single-select" chosen
+                      disable-search-threshold="10"
+                      ng-options="index as adType.name for (index, adType) in creativesByAdType"
+                      ng-model="adType">
+              </select>
+            </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="creative" class="col-sm-3 form-label"><span>Creative</span></label>
+          <div class="col-sm-9 single-select-light">
+            <select id="creative" class="single-select" chosen
+                    disable-search-threshold="10"
+                    ng-options="creative.name for creative in creativesByAdType[adType].creatives"
+                    ng-model="creative">
+            </select>
+          </div>
+        </div>
     </form>
 </div>
 <div class="modal-footer">

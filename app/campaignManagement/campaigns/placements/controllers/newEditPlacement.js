@@ -7,16 +7,16 @@ define(function (require) {
     var ng = require('angular');
 
     app.controller('newEditPlacementCtrl', [
-        '$scope', '$q', '$modalInstance', '$filter', 'placements',
+        '$scope', '$q', '$modalInstance', '$timeout', '$filter', 'placements',
         'placementRecordService', 'campaignRecordService',
         'accountRecordService', 'divisionRecordService',
         'clientRecordService', 'clientPublisherRecordService',
-        'modalState',
-        function ($scope, $q, $modalInstance, $filter, placements,
+        'modalState', 'creatives',
+        function ($scope, $q, $modalInstance, $timeout, $filter, placements,
             placementRecordService, campaignRecordService,
             accountRecordService, divisionRecordService,
             clientRecordService, clientPublisherRecordService,
-            modalState) {
+            modalState, creativeService) {
         $scope.placement = modalState.placement;
         $scope.action = modalState.action;
 
@@ -32,6 +32,7 @@ define(function (require) {
 
         setupDatePickers();
         setupRateTypes();
+        setupPickCreative();
         setupModal();
 
         function setupDatePickers() {
@@ -84,6 +85,34 @@ define(function (require) {
                         $scope.showTotalCost = fields.showTotalCost;
                     }
                 }
+            });
+        }
+
+        function setupPickCreative() {
+            creativeService.observe(function() {
+                var adTypes = [];
+                var creatives = creativeService.data().all();
+
+                creatives.forEach(function(creative) {
+                    var adTypeIndex = -1;
+                    adTypes.forEach(function(adType, index) {
+                        if (adType.name === creative.type) {
+                            adTypeIndex = index;
+                        }
+                    });
+                    if (adTypeIndex === -1) {
+                        adTypes.push({name: creative.type, creatives: []});
+                        adTypeIndex = adTypes.length - 1;
+                    }
+
+                    adTypes[adTypeIndex].creatives.push(creative);
+                }, $scope, true);
+
+                $scope.creativesByAdType = adTypes;
+                console.log($scope.creativesByAdType);
+                $timeout(function() {
+                    $scope.$apply();
+                });
             });
         }
 
