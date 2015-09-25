@@ -4,7 +4,12 @@
   "description": "Obsidian, a not so well know rock.",
   "private": true,
   "scripts": {
+	"start": "grunt --proxy https://thorwhal-stable-api.mixpo.com",
     "test": "karma start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mixpo/obsidian.git"
   },
   "dependencies": {
     "body-parser": "^1.12.4",
