@@ -12,8 +12,8 @@ define(function (require) {
         var record;
 
         if (modalState.accountId) {
+            accountRecords.fetch(modalState.accountId);
             record = accountRecords.get(modalState.accountId);
-            record.fetch();
         } else {
             record = accountRecords.create(modalState.originalAccount);
             record.set(modalState.account);
@@ -67,9 +67,9 @@ define(function (require) {
         $scope.cancel = function () {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
-                    $modalInstance.dismiss('cancel');
                     record.reset();
                     $scope.account = record.get();
+                    $modalInstance.dismiss('cancel');
                 }
             } else {
                 $modalInstance.dismiss('cancel');

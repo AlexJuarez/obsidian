@@ -8,13 +8,17 @@ define(function (require) {
 
     var module = require('./../module');
 
-    module.factory('recordPoolFactory', ['recordFactory', 'observerFactory', function (recordFactory, observerFactory) {
+    module.factory('recordPoolFactory', ['recordFactory', 'observerFactory', '$q', function (recordFactory, observerFactory, $q) {
         return function (apiConfig) {
             var observers = observerFactory();
             var records = {};
 
+            function exists(id) {
+                return typeof records[id] !== 'undefined';
+            }
+
             function get(id) {
-                if (records[id]) {
+                if (exists(id)) {
                     return records[id];
                 } else {
                     var record = recordFactory({apiConfig: apiConfig, attributes: { id: id }});
@@ -25,8 +29,17 @@ define(function (require) {
             }
 
             function fetch(id) {
+                var deferred = $q.defer();
+                var exist = exists(id);
                 var record = get(id);
-                return record.fetch();
+
+                if (exist) {
+                    deferred.resolve({ data: record.get() });
+                } else {
+                    record.fetch().then(deferred.resolve, deferred.reject);
+                }
+
+                return deferred.promise;
             }
 
             function update(id, data) {
@@ -57,6 +70,7 @@ define(function (require) {
             return {
                 _records: records,
                 get: get,
+                exists: exists,
                 fetch: fetch,
                 update: update,
                 create: create,

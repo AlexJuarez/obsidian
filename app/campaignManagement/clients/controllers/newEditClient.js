@@ -14,8 +14,8 @@ define(function (require) {
         var record;
 
         if (modalState.clientId) {
+            clientRecords.fetch(modalState.clientId);
             record = clientRecords.get(modalState.clientId);
-            record.fetch();
         } else {
             record = clientRecords.create();
             record.set(modalState.client);
@@ -56,8 +56,9 @@ define(function (require) {
         $scope.cancel = function () {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
+                    record.reset();
+                    $scope.client = record.get();
                     $modalInstance.dismiss('cancel');
-                    $scope.client = {};
                 }
             } else {
                 $modalInstance.dismiss('cancel');

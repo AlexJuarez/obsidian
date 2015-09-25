@@ -31,12 +31,12 @@ define(function (require) {
             var record;
 
             if (modalState.campaignId) {
-                record = campaignRecords.get(modalState.campaignId);
-                record.fetch().then(function(resp) {
+                campaignRecords.fetch(modalState.campaignId).then(function(resp) {
                     isRepInfoRequired(resp.data.accountId).then(function(isRequired) {
                         $scope.isRepInfoRequired = isRequired;
                     });
                 });
+                record = campaignRecords.get(modalState.campaignId);
             } else {
                 record = campaignRecords.create(modalState.originalCampaign);
                 record.set(modalState.campaign);
@@ -81,9 +81,9 @@ define(function (require) {
             function cancel() {
                 if (record.hasChanges()) {
                     if (confirm('You have unsaved changes. Really close?')) {
-                        $modalInstance.dismiss('cancel');
                         record.reset();
                         $scope.campaign = record.get();
+                        $modalInstance.dismiss('cancel');
                     }
                 } else {
                     $modalInstance.dismiss('cancel');
@@ -93,7 +93,6 @@ define(function (require) {
             function ok(errors) {
                 if (ng.equals({}, errors) || !errors) {
                     var onSuccess = function(resp) {
-                        $modalInstance.dismiss('cancel');
                         $scope.campaign = {};
                         notification.success('View your campaign <a ui-sref="cm.campaigns.detail({ campaignId: id })">{{name}}</a>.',
                             {
@@ -102,6 +101,7 @@ define(function (require) {
                                     name: resp.data.name
                                 }
                             });
+                        $modalInstance.dismiss('cancel');
                     };
                     record.save().then(onSuccess);
                 }
