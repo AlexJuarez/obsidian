@@ -8,89 +8,74 @@ define(function (require) {
 
     var module = require('./../module');
 
-    var ng = require('angular');
-
-    module.factory('recordPoolFactory', ['recordFactory', '$q', '$rootScope', '$timeout', function (recordFactory, $q, $rootScope, $timeout) {
+    module.factory('recordPoolFactory', ['recordFactory', 'observerFactory', '$q', function (recordFactory, observerFactory, $q) {
         return function (apiConfig) {
-            var observers = {};
+            var observers = observerFactory();
             var records = {};
-            var observerId = 0;
 
-            function getById(recordId) {
-                var deferred = $q.defer();
+            function exists(id) {
+                return typeof records[id] !== 'undefined';
+            }
 
-                if (records[recordId]) {
-                    deferred.resolve(records[recordId]);
+            function get(id) {
+                if (exists(id)) {
+                    return records[id];
                 } else {
-                    var newConfig = ng.copy(apiConfig);
-                    newConfig.update.endpoint = newConfig.update.endpoint.replace('{id}', recordId);
-                    var record = recordFactory(newConfig);
-                    record.init().then(function () {
-                        records[recordId] = record;
-                        deferred.resolve(record);
-                    });
+                    var record = recordFactory({apiConfig: apiConfig, attributes: { id: id }});
+                    records[id] = record;
+                    record.observe(observers.notifyObservers, undefined, true);
+                    return record;
+                }
+            }
 
-                    record.observe(function() {
-                        notifyObservers(record.all());
-                    }, undefined, true);
+            function fetch(id) {
+                var deferred = $q.defer();
+                var record = get(id);
+
+                if (record.isNew()) {
+                    record.fetch().then(deferred.resolve, deferred.reject);
+                } else {
+                    deferred.resolve({ data: record.get() });
                 }
 
                 return deferred.promise;
             }
 
-            function update(recordId, updatedFields) {
-                return getById(recordId).then(function(record) {
-                    return record.update(updatedFields);
+            function update(id, data) {
+                var record = get(id);
+                record.set(data);
+                return record.save();
+            }
+
+            function _delete(id) {
+                var record = get(id);
+                return record.destroy();
+            }
+
+            function create(attrs) {
+                var record = recordFactory({
+                    apiConfig: apiConfig,
+                    successFn: function(resp) {
+                        var data = resp.data;
+                        records[data.id] = record;
+                        record.observe(observers.notifyObservers, undefined, true);
+                    },
+                    attributes: attrs
                 });
-            }
 
-            function _delete(recordId) {
-                return getById(recordId).then(function(record) {
-                    return record.delete();
-                });
-            }
-
-            function create(newRecord) {
-                var record = recordFactory(apiConfig);
-                record.observe(function() {
-                    notifyObservers(record.all());
-                }, undefined, true);
-                return record.create(newRecord);
-            }
-
-            function observe(callback, $scope, preventImmediate) {
-                var id = observerId++;
-                observers[id] = callback;
-
-                if (preventImmediate !== true) {
-                    callback();
-                }
-
-                if ($scope) {
-                    $scope.$on('$destroy', function() {
-                        delete observers[id];
-                    });
-                }
-            }
-
-            function notifyObservers(event) {
-                for (var x in observers) {
-                    observers[x](event);
-                }
-
-                $timeout(function () {
-                    $rootScope.$apply();
-                });
+                return record;
             }
 
             return {
                 _records: records,
-                getById: getById,
-                notifyObservers: notifyObservers,
+                get: get,
+                exists: exists,
+                fetch: fetch,
                 update: update,
-                delete: _delete,
                 create: create,
-                observe: observe
+                delete: _delete,
+                observe: observers.observe,
+                notifyObservers: observers.notifyObservers
             };
         };
     }]);

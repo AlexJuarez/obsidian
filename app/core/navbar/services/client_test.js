@@ -4,10 +4,8 @@ define(function(require) {
     require('./client');
     require('angularMocks');
 
-    var ng = require('angular');
-
     describe('clientService', function() {
-        var client, httpBackend, apiGenerator;
+        var client, httpBackend, apiGenerator, interpolate, records;
 
         var apiConfig = {
             endpoint: 'test',
@@ -28,10 +26,12 @@ define(function(require) {
 
         beforeEach(function() {
             module('app.core');
-            inject(function(clientService, $httpBackend, apiUriGenerator) {
+            inject(function(clientService, $httpBackend, apiUriGenerator, $interpolate, clientRecordService) {
                 client = clientService;
                 httpBackend = $httpBackend;
                 apiGenerator = apiUriGenerator;
+                interpolate = $interpolate;
+                records = clientRecordService;
             });
         });
 
@@ -55,36 +55,33 @@ define(function(require) {
         });
 
         it('should pin a client', function() {
-            var pinConfig = ng.copy(client._apiPinConfig);
-            pinConfig.endpoint += clients[0].id;
-
             client.setData(clients);
             var firstClient = client.all()[0];
-            httpBackend.expect('GET', apiGenerator(pinConfig))
-                .respond(200, {id: clients[0].id, pinned: false});
+            var record = records.get(firstClient.id);
 
-            httpBackend.expect('PUT', apiGenerator(pinConfig))
-                .respond(200, {pinned: true});
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
             client.pin(firstClient);
-            httpBackend.flush();
-            expect(client.pinned().length).toEqual(1);
+
+            expect(record.get().pinned).toEqual(true);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should unpin a client', function() {
-            var pinConfig = ng.copy(client._apiPinConfig);
-            pinConfig.endpoint += clients[0].id;
-
-            httpBackend.expect('GET', apiGenerator(pinConfig))
-                .respond(200, clients[0]);
-
-            httpBackend.expect('PUT', apiGenerator(pinConfig))
-                .respond(200, {id: clients[0].id, pinned: false});
-
             client.setData(clients);
-            var a = client.all()[0];
-            client.unpin(a);
-            httpBackend.flush();
-            expect(client.pinned().length).toEqual(0);
+            var firstClient = client.all()[0];
+            var record = records.get(firstClient.id);
+
+            spyOn(record, 'save').and.returnValue({
+                then: function() {}
+            });
+
+            client.unpin(firstClient);
+
+            expect(record.get().pinned).toEqual(false);
+            expect(record.save).toHaveBeenCalled();
         });
 
         it('should return a map containing a key of the first letter by name', function() {

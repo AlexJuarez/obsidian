@@ -18,7 +18,11 @@ define(function (require) {
         function openNewCampaignModal() {
             if (!newCampaignModal) {
                 newCampaignModal = {
-                    accountId: getAccountId(),
+                    originalCampaign: {
+                        accountId: getAccountId(),
+                        startDate: new Date(),
+                        endDate: new Date()
+                    },
                     action: 'New'
                 };
             }

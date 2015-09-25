@@ -11,18 +11,18 @@ define(function (require) {
 
         beforeEach(function () {
             module('app.core');
+
+            inject(function ($compile, $rootScope, $document, $templateCache, navbarService, campaignService, accountService) {
+                $templateCache.put('core/navbar/directives/campaign.html', template);
+
+                compile = $compile;
+                rootScope = $rootScope;
+                document = $document;
+                navbar = navbarService;
+                campaign = campaignService;
+                account = accountService;
+            });
         });
-
-        beforeEach(inject(function ($compile, $rootScope, $document, $templateCache, navbarService, campaignService, accountService) {
-            $templateCache.put('core/navbar/directives/campaign.html', template);
-
-            compile = $compile;
-            rootScope = $rootScope;
-            document = $document;
-            navbar = navbarService;
-            campaign = campaignService;
-            account = accountService;
-        }));
 
         function createDropDown(campaigns) {
             campaign.setData(campaigns);
@@ -92,11 +92,17 @@ define(function (require) {
             it('should change the pinned campaign when pin state change', function() {
                 var scope = createDropDown(campaigns);
 
+                expect(scope.pin).toEqual(jasmine.any(Function));
+                expect(scope.unpin).toEqual(jasmine.any(Function));
+
+                spyOn(scope, 'unpin');
+                spyOn(scope, 'pin');
+
                 scope.unpin(campaign.all()[0]);
-                expect(scope.pinned.length).toEqual(0);
+                expect(scope.unpin).toHaveBeenCalled();
 
                 scope.pin(campaign.all()[0]);
-                expect(scope.pinned.length).toEqual(1);
+                expect(scope.pin).toHaveBeenCalled();
             });
 
             it('should have the current campaign', function() {

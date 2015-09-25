@@ -16,7 +16,9 @@ define(function (require) {
         function openNewAccountModal() {
             if (!newAccountModal) {
                 newAccountModal = {
-                    divisionId: $state.params.divisionId,
+                    originalAccount: {
+                        divisionId: $state.params.divisionId
+                    },
                     action: 'New'
                 };
             }

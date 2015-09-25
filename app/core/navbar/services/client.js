@@ -4,13 +4,10 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService) {
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification) {
         var clients = dataFactory(utils.sortByName);
 
-        var _apiPinConfig = {
-            version: 'crud',
-            endpoint: 'clients/'
-        };
+        clientRecordService.observe(clientUpdate, undefined, true);
 
         function init(apiConfig) {
             return clients.init(apiConfig, function (data) {
@@ -23,19 +20,21 @@ define(function (require) {
         }
 
         // Observe for new/updated clients
-        clientRecordService.observe(function(newUpdatedRecord) {
-            var existingRecord = get(newUpdatedRecord.id);
-            var pinned = false;
-            if (existingRecord) {
-                pinned = existingRecord.pinned;
-            }
 
-            clients.addData([{
-                id: newUpdatedRecord.id,
-                name: newUpdatedRecord.name,
-                pinned: pinned
-            }]);
-        }, undefined, true);
+        function clientUpdate(event, record) {
+            if (event === 'create' || event === 'update') {
+                var olddata = get(record.id);
+                var data = record.get();
+
+                if (olddata && olddata.pinned !== data.pinned || !olddata){
+                    clients.addData([{
+                        id: data.id,
+                        name: data.name,
+                        pinned: data.pinned
+                    }]);
+                }
+            }
+        }
 
         function search(query) {
             return utils.search(all(), query);
@@ -45,17 +44,22 @@ define(function (require) {
             return utils.alphabetMap(all());
         }
 
-        function togglePin(client, boolean) {
-            client.pinned = boolean;
-            clientRecordService.update(client.id, {pinned: boolean});
+        function togglePin(client, value) {
+            var record = clientRecordService.get(client.id);
+            record.set({ pinned: value });
+            return record.save();
         }
 
         function pin(client) {
-            togglePin(client, true);
+            return togglePin(client, true).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.client({ clientId: id})">{{name}}</a> has been pinned', { locals: { name: client.name, id: client.id }});
+            });
         }
 
         function unpin(client) {
-            togglePin(client, false);
+            return togglePin(client, false).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.client({ clientId: id})">{{name}}</a> has been unpinned', { locals: { name: client.name, id: client.id }});
+            });
         }
 
         function pinned() {
@@ -67,7 +71,6 @@ define(function (require) {
         }
 
         return {
-            _apiPinConfig: _apiPinConfig,
             init: init,
             setData: clients.setData,
             addData: clients.addData,

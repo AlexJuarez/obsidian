@@ -4,8 +4,10 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', function ($http, dataFactory, divisions, $state, accountRecordService) {
+    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', 'notification', function ($http, dataFactory, divisions, $state, accountRecordService, notification) {
         var accounts = dataFactory(utils.sortByName);
+
+        accountRecordService.observe(accountUpdate, undefined, true);
 
         function init(apiConfig) {
             return accounts.init(apiConfig, function (data) {
@@ -26,25 +28,28 @@ define(function (require) {
         }
 
         // Observe for new/updated accounts
-        accountRecordService.observe(function(newUpdatedRecord) {
-            var existingRecord = get(newUpdatedRecord.id);
-            var pinned = false;
-            if (existingRecord) {
-                pinned = existingRecord.pinned;
-            }
 
-            accounts.addData([{
-                id: newUpdatedRecord.id,
-                name: newUpdatedRecord.name,
-                division: {
-                    id: newUpdatedRecord.divisionId
-                },
-                client: {
-                    id: newUpdatedRecord.clientId
-                },
-                pinned: pinned
-            }]);
-        }, undefined, true);
+        function accountUpdate(event, record) {
+            if (event === 'create' || event === 'update') {
+                var olddata = get(record.id);
+                var data = record.get();
+                var division = divisions.get(data.divisionId);
+
+                if (olddata && olddata.pinned !== data.pinned || !olddata){
+                    accounts.addData([{
+                        id: data.id,
+                        name: data.name,
+                        pinned: data.pinned,
+                        division: {
+                            id: data.divisionId
+                        },
+                        client: {
+                            id: division.client.id
+                        }
+                    }]);
+                }
+            }
+        }
 
         //TODO: grab the current divisionId from campaign
         function filtered() {
@@ -85,15 +90,22 @@ define(function (require) {
             return output;
         }
 
+        function togglePin(account, value) {
+            var record = accountRecordService.get(account.id);
+            record.set({ pinned: value });
+            return record.save();
+        }
 
         function pin(account) {
-            account.pinned = true;
-            accounts.notifyObservers('pin');
+            return togglePin(account, true).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.account({ accountId: id})">{{name}}</a> has been pinned', { locals: { name: account.name, id: account.id }});
+            });
         }
 
         function unpin(account) {
-            account.pinned = false;
-            accounts.notifyObservers('pin');
+            return togglePin(account, false).then(function() {
+                notification.info('<a ui-sref="cm.campaigns.account({ accountId: id})">{{name}}</a> has been unpinned', { locals: { name: account.name, id: account.id }});
+            });
         }
 
         function pinned() {
