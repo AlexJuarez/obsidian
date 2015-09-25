@@ -21,7 +21,7 @@ define(function (require) {
         it('should return expected Image adapted object', function () {
             var creative = {
                 type: 'IMG',
-                environment: 'multi-screen',
+                environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -46,7 +46,7 @@ define(function (require) {
         it('should return expected SWF adapted object', function () {
             var creative = {
                 type: 'SWF',
-                environment: 'multi-screen',
+                environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -71,7 +71,7 @@ define(function (require) {
         it('should return expected In-Stream Video adapted object', function () {
             var creative = {
                 type: 'ISV',
-                environment: 'multi-screen',
+                environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -121,7 +121,7 @@ define(function (require) {
         it('should return expected Interactive Display Rich Media adapted object', function () {
             var creative = {
                 type: 'RM',
-                environment: 'mraid',
+                environment: 'tablet',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -171,7 +171,7 @@ define(function (require) {
         it('should return expected MLQ adapted object', function () {
             var creative = {
                 type: 'IBV',
-                environment: 'multi-screen',
+                environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -202,7 +202,7 @@ define(function (require) {
         it('should return null if unknown \'type\'', function () {
             var creative = {
                 type: 'foo',
-                environment: 'multi-screen',
+                environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,

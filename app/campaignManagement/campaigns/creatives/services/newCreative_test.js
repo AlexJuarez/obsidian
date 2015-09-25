@@ -22,7 +22,7 @@ define(function (require) {
         it ('should return fullfiled promise for valid creative', function() {
             var creative = {
                 type: 'IMG',
-                environment: 'multi-screen',
+                environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,

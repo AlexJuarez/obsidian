@@ -47,11 +47,11 @@ define(function(require) {
             switch(env) {
                 case 'multidevice':
                     return 'multiscreen';
-                case 'desktop':
+                case 'mobile':
                     return 'tabletphone';
                 case 'tablet':
                     return 'inappmraid';
-                case 'mobile':
+                case 'desktop':
                     return 'desktop';
                 default:
                     // unknown
