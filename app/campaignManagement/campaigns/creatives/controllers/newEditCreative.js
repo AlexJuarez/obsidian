@@ -89,7 +89,7 @@ define(function (require) {
         }
 
         function dimensionsTransform(dimension) {
-            if (arguments.length) {
+            if (dimension) {
                 $scope.dimensionsAreCustom = dimension.isCustom;
 
                 if (!dimension.isCustom) {
@@ -104,7 +104,7 @@ define(function (require) {
         }
 
         function dimensionsExpandTransform(dimension) {
-            if (arguments.length) {
+            if (dimension) {
                 $scope.expandedDimensionsAreCustom = dimension.isCustom;
 
                 if (!dimension.isCustom || !dimension.isNonExpanding) {
@@ -138,7 +138,7 @@ define(function (require) {
         }
 
         function environmentTransform(environment) {
-            if (arguments.length) {
+            if (environment) {
                 record.set({
                     environment: environment.dbName
                 });
