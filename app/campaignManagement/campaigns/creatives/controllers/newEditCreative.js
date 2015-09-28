@@ -185,7 +185,7 @@ define(function (require) {
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
-            var dimensionId = getDimensionsValue(creativeSettings.dimensions, record.get().expandedWidth, record.get().expandedHeight);
+            var dimensionId = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
             if (dimensionId) {
                 $scope.dimensionsAreCustom = creativeSettings.dimensions[dimensionId].isCustom;
             }
@@ -193,6 +193,7 @@ define(function (require) {
             if (dimensionExpandedId) {
                 $scope.expandedDimensionsAreCustom = creativeSettings.expandedDimensions[dimensionExpandedId].isCustom;
             }
+            console.log(record.get());
         }
 
         campaigns.observe(updateCampaigns, $scope);
