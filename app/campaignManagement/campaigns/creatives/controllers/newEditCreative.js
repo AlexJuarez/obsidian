@@ -79,9 +79,7 @@ define(function (require) {
             });
         }
 
-        function getDimensionsValue(arry, data) {
-            var width = data.embedWidth;
-            var height = data.embedHeight;
+        function getDimensionsValue(arry, width, height) {
             var index;
             var customIndex;
 
@@ -109,7 +107,7 @@ define(function (require) {
                 }
             }
 
-            return getDimensionsValue(creativeSettings.dimensions, record.get());
+            return getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
         }
 
         function dimensionsExpandTransform(dimension) {
@@ -132,7 +130,7 @@ define(function (require) {
                 }
             }
 
-            return getDimensionsValue(creativeSettings.expandedDimensions, record.get());
+            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
         }
 
         function getEnvironmentValue(environments, data) {

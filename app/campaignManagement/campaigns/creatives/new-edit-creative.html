@@ -147,7 +147,7 @@
                 <select ng-disabled="editing" name="expandedDimensions" class="single-select" chosen
                         ng-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
                         disable-search-threshold="10"
-                        ng-model="creative.expandedDimensions" required>
+                        ng-model="dimensionsExpandTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
 
                 <p ng-show="newCreative.expandedDimensions.$invalid && submitted"
