@@ -72,10 +72,9 @@
 
             <div class="col-sm-9 single-select-light">
                 <select ng-disabled="editing" name="type" class="single-select" chosen
-                        ng-options="type.id as type.name for type in types track by type.id"
+                        ng-options="type as type.name for type in types track by type.id"
                         disable-search-threshold="10"
-
-                        ng-model="creative.type" required>
+                        ng-model="typeTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
                 <p ng-show="newCreative.type.$invalid && submitted"
                    class="help-block">

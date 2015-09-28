@@ -21,60 +21,71 @@ define(function (require) {
         $scope.dimensionsTransform = dimensionsTransform;
         $scope.dimensionsExpandTransform = dimensionsExpandTransform;
         $scope.environmentTransform = environmentTransform;
+        $scope.typeTransform = typeTransform;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
         $scope.URL_REGEX = URL_REGEX;
         $scope.MONEY_REGEX = MONEY_REGEX;
         $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
 
-        setupTranslationLogic();
+        $scope.types = creativeSettings.types;
 
-        function setupTranslationLogic() {
-            // Update available environments, dimensions and expanded dimensions
-            // based on creative types and the settings above
-            $scope.types = creativeSettings.types;
-            $scope.$watch('creative.type', updateType);
+        function getTypeId(data){
+            var index;
 
-            function updateType() {
-                if ($scope.creative && creativeSettings.typeSettings[$scope.creative.type]) {
-                    var settings = creativeSettings.typeSettings[$scope.creative.type];
-                    updateEnvironments(settings.environments);
-                    updateDimensions(settings.dimensions);
-                    updateExpandedDimensions(settings.expandedDimensions);
+            ng.forEach(creativeSettings.types, function(d) {
+                if (data.type === d.dbName && data.subtype === d.subtype) {
+                    index = d.id;
                 }
+            });
+
+            return index;
+        }
+
+        function typeTransform(type) {
+            if (type) {
+                record.set({ type: type.dbName, subtype: type.subtype });
+
+                var settings = creativeSettings.typeSettings[type.id];
+                updateEnvironments(settings.environments);
+                updateDimensions(settings.dimensions);
+                updateExpandedDimensions(settings.expandedDimensions);
             }
 
-            function updateEnvironments(enabledEnvironmentIds) {
-                $scope.environments = filterById(creativeSettings.environments, enabledEnvironmentIds);
-            }
+            return getTypeId(record.get());
+        }
 
-            function updateDimensions(enabledDimensionIds) {
-                $scope.dimensions = filterById(creativeSettings.dimensions, enabledDimensionIds);
-            }
+        function updateEnvironments(enabledEnvironmentIds) {
+            $scope.environments = filterById(creativeSettings.environments, enabledEnvironmentIds);
+        }
 
-            function updateExpandedDimensions(enabledExpandedDimensionIds) {
-                $scope.expandedDimensions = filterById(creativeSettings.expandedDimensions, enabledExpandedDimensionIds);
-            }
+        function updateDimensions(enabledDimensionIds) {
+            $scope.dimensions = filterById(creativeSettings.dimensions, enabledDimensionIds);
+        }
 
-            function filterById(options, idArray) {
-                if (typeof idArray === 'undefined') {
-                    return undefined;
-                } else {
-                    var filtered = [];
-                    var id;
-                    for (var i = 0; i < idArray.length; i++) {
-                        id = idArray[i];
-                        filtered.push(options[id]);
-                    }
+        function updateExpandedDimensions(enabledExpandedDimensionIds) {
+            $scope.expandedDimensions = filterById(creativeSettings.expandedDimensions, enabledExpandedDimensionIds);
+        }
 
-                    return filtered;
+        function filterById(options, idArray) {
+            if (typeof idArray === 'undefined') {
+                return undefined;
+            } else {
+                var filtered = [];
+                var id;
+                for (var i = 0; i < idArray.length; i++) {
+                    id = idArray[i];
+                    filtered.push(options[id]);
                 }
+
+                return filtered;
             }
         }
 
         function getDimensionsValue(arry, width, height) {
             var index;
             var customIndex;
+            var nonExpandingIndex;
 
             ng.forEach(arry, function(d) {
                 if (width === d.width && height === d.height) {
@@ -83,7 +94,14 @@ define(function (require) {
                 if (d.isCustom) {
                     customIndex = d.id;
                 }
+                if (d.isNonExpanding) {
+                    nonExpandingIndex = d.id;
+                }
             });
+
+            if (!width || !height) {
+                return nonExpandingIndex;
+            }
 
             return index == null ? customIndex : index;
         }
@@ -160,6 +178,21 @@ define(function (require) {
         function update() {
             $scope.creative = record.get();
             $scope.errors = record.errors();
+            var typeId = getTypeId(record.get());
+            if (typeId) {
+                var settings = creativeSettings.typeSettings[typeId];
+                updateEnvironments(settings.environments);
+                updateDimensions(settings.dimensions);
+                updateExpandedDimensions(settings.expandedDimensions);
+            }
+            var dimensionId = getDimensionsValue(creativeSettings.dimensions, record.get().expandedWidth, record.get().expandedHeight);
+            if (dimensionId) {
+                $scope.dimensionsAreCustom = creativeSettings.dimensions[dimensionId].isCustom;
+            }
+            var dimensionExpandedId = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+            if (dimensionExpandedId) {
+                $scope.expandedDimensionsAreCustom = creativeSettings.expandedDimensions[dimensionExpandedId].isCustom;
+            }
         }
 
         campaigns.observe(updateCampaigns, $scope);

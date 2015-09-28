@@ -13,8 +13,8 @@ define(function(require) {
 			{id: 'IBV', name: 'In-Banner Video', dbName: 'In-Banner'},
 			{id: 'ISV', name: 'In-Stream Video', dbName: 'In-Stream'},
 			{id: 'RM', name: 'Rich Media', dbName: 'Rich Media'},
-			{id: 'SWF', name: 'Display: SWF', dbName: 'Display'},
-			{id: 'IMG', name: 'Display: Image', dbName: 'Display'}
+			{id: 'SWF', name: 'Display: SWF', subtype: 'SWF', dbName: 'Display'},
+			{id: 'IMG', name: 'Display: Image', subtype: 'IMG', dbName: 'Display'}
 		],
 
 		typeSettings: {
