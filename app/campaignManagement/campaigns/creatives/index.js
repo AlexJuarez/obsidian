@@ -8,6 +8,7 @@ define(function (require) {
     require('./directives/creativeOptions');
     require('./services/creatives');
     require('./services/studioDirectAdapter');
+    require('./services/newEditModalTranslation');
     require('./services/newCreative');
     require('./services/creative');
 });
