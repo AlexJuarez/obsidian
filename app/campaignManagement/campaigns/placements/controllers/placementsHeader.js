@@ -18,7 +18,11 @@ define(function(require) {
                 if(! newPlacementModal) {
                     newPlacementModal = {
                         action: 'New',
-                        campaignId: $state.params.campaignId
+                        originalPlacement: {
+                            campaignId: $state.params.campaignId,
+                            flightStart: new Date(),
+                            flightEnd: new Date()
+                        }
                     };
                 }
 
@@ -90,6 +94,10 @@ define(function(require) {
                     selectedPlacements = $scope.selectedPlacements;
                     editPlacementsModal = {
                         placementIds: $scope.selectedPlacements,
+                        originalPlacement: {
+                            flightStart: new Date(),
+                            flightEnd: new Date()
+                        },
                         action: 'Edit'
                     };
                 }

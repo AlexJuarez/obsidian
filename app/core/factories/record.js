@@ -111,6 +111,18 @@ define(function (require) {
 
                     return this._filter(_diff);
                 },
+                intersect: function(changed, original) {
+                    var _intersection = {}, val;
+
+                    for (var attr in changed) {
+                        val = changed[attr];
+                        if(ng.equals(original[attr], val)) {
+                            _intersection[attr] = val;
+                        }
+                    }
+
+                    return this._filter(_intersection);
+                },
                 ignore: function(key){
                     return this.rules[key] && this.rules[key].ignore;
                 },
