@@ -108,9 +108,9 @@
 
             <div class="col-sm-3 single-select-light">
                 <select ng-disabled="editing" name="dimensions" class="single-select" chosen
-                        ng-options="index as dimension.name for (index, dimension) in dimensions track by index"
+                        ng-options="dimension as dimension.name for dimension in dimensions track by dimension.id"
                         disable-search-threshold="10"
-                        ng-model="creative.dimensions" required>
+                        ng-model="dimensionsTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
 
                 <p ng-show="newCreative.dimensions.$invalid && submitted"
@@ -126,14 +126,14 @@
                     height is required
                 </p>
             </div>
-            <div class="col-sm-6" ng-if="dimensionsAreCustom">
+            <div class="col-sm-6" ng-show="dimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.customDimensionsWidth" type="text"
+                    <input ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.embedWidth" type="text"
                            class="form-control" id="customDimensionsWidth"
                            placeholder="Width" required/>
                 </div>
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.customDimensionsHeight" type="text"
+                    <input ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.embedHeight" type="text"
                            class="form-control" id="customDimensionsHeight"
                            placeholder="Height" required/>
                 </div>
@@ -145,7 +145,7 @@
 
             <div class="col-sm-3 single-select-light">
                 <select ng-disabled="editing" name="expandedDimensions" class="single-select" chosen
-                        ng-options="index as expandedDimension.name for (index, expandedDimension) in expandedDimensions track by index"
+                        ng-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
                         disable-search-threshold="10"
                         ng-model="creative.expandedDimensions" required>
                 </select>
@@ -163,14 +163,14 @@
                     expanded height is required
                 </p>
             </div>
-            <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
+            <div class="col-sm-6" ng-show="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.customExpandedDimensionsWidth" type="text"
+                    <input ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="text"
                            class="form-control" id="customExpandedDimensionsWidth"
                            placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.customExpandedDimensionsHeight" type="text"
+                    <input ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="text"
                            class="form-control" id="customExpandedDimensionsHeight"
                            placeholder="Height" required />
                 </div>

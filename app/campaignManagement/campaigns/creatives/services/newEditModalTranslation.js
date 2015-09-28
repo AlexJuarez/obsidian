@@ -73,18 +73,8 @@ define(function(require) {
 				}
 			};
 
-			// dimensions
-			modalCreative.dimensions = getModalDimensions(
-				creativeSettings.dimensions, dbCreative.embedWidth, dbCreative.embedHeight
-			);
-
 			modalCreative.customDimensionsWidth = dbCreative.embedWidth;
 			modalCreative.customDimensionsHeight = dbCreative.embedHeight;
-
-			// expanded dimensions
-			modalCreative.expandedDimensions = getModalDimensions(
-				creativeSettings.expandedDimensions, dbCreative.expandedWidth, dbCreative.expandedHeight
-			);
 
 			modalCreative.customExpandedDimensionsWidth = dbCreative.expandedWidth;
 			modalCreative.customExpandedDimensionsHeight = dbCreative.expandedHeight;

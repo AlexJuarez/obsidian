@@ -7,15 +7,18 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'newEditModalTranslation', 'notification',
+         'CREATIVE_SETTINGS', 'newEditModalTranslation', 'notification', '$timeout',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, translate,
-    notification) {
+              creativeSettings, translate, notification, $timeout
+    ) {
+        var record;
 
         //Modal functions
-        $scope.ok = undefined;
-        $scope.cancel = undefined;
+        $scope.ok = ok;
+        $scope.cancel = cancel;
+        $scope.dimensionsTransform = dimensionsTransform;
+        $scope.dimensionsExpandTransform = dimensionsExpandTransform;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
         $scope.URL_REGEX = URL_REGEX;
@@ -23,7 +26,6 @@ define(function (require) {
         $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
 
         setupTranslationLogic();
-        setupModalLogic();
 
         function setupTranslationLogic() {
             // Update available environments, dimensions and expanded dimensions
@@ -57,26 +59,15 @@ define(function (require) {
                     return undefined;
                 } else {
                     var filtered = [];
-                    var currentId;
-                    var current;
-                    for(var i = 0; i < idArray.length; i ++) {
-                        currentId = idArray[i];
-                        current = options[currentId];
-                        filtered.push({
-                            id: currentId,
-                            name: current.name
-                        });
+                    var id;
+                    for (var i = 0; i < idArray.length; i++) {
+                        id = idArray[i];
+                        filtered.push(options[id]);
                     }
 
                     return filtered;
                 }
             }
-            $scope.$watch('creative.dimensions', function() {
-                if ($scope.creative && $scope.creative.dimensions) {
-                    $scope.dimensionsAreCustom =
-                      creativeSettings.dimensions[$scope.creative.dimensions].isCustom;
-                }
-            });
 
             $scope.$watch('creative.expandedDimensions', function() {
                 if ($scope.creative && $scope.creative.expandedDimensions) {
@@ -86,83 +77,134 @@ define(function (require) {
             });
         }
 
-        function setupModalLogic() {
-            var record;
+        function getDimensionsValue(arry, data) {
+            var width = data.embedWidth;
+            var height = data.embedHeight;
+            var index;
+            var customIndex;
 
-            if(modalState.creativeId) {
-                $scope.editing = true;
-                record = creativeRecordService.get(modalState.creativeId);
-                creativeRecordService.fetch(modalState.creativeId);
-            } else {
-                record = creativeRecordService.create();
-                record.set(modalState.creative);
-            }
+            ng.forEach(arry, function(d) {
+                if (width === d.width && height === d.height) {
+                    index = d.id;
+                }
+                if (d.isCustom) {
+                    customIndex = d.id
+                }
+            });
 
-            record.observe(update, $scope);
+            return index == null ? customIndex : index;
+        }
 
-            function update() {
-                $scope.dbCreative = record.get();
-                $scope.creative = translate.db2Modal($scope.dbCreative);
-                $scope.errors = record.errors();
-            }
+        function dimensionsTransform(dimension) {
+            if (arguments.length) {
+                $scope.dimensionsAreCustom = dimension.isCustom;
 
-            campaigns.observe(updateCampaigns, $scope);
-
-            function updateCampaigns() {
-                if(!modalState.creativeId) {
-
-                    // TODO: add render limit so this isn't crazy slow
-                    //$scope.campaigns = campaigns.all().slice(0, 10);
-                    $scope.campaigns = [{id: '1c5cf047-5ecd-444b-822a-17e1eebed4b3', name: 'test'}];
+                if (!dimension.isCustom) {
+                    record.set({
+                        embedWidth: dimension.width,
+                        embedHeight: dimension.height
+                    });
                 }
             }
 
-            $scope.cancel = function() {
-                if(record.hasChanges()) {
-                    if(confirm('You have unsaved changes. Really close?')) {
-                        record.reset();
-                        $scope.campaign = record.get();
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
+            return getDimensionsValue(creativeSettings.dimensions, record.get());
+        }
+
+        function dimensionsExpandTransform(dimension) {
+            if (arguments.length) {
+                $scope.expandedDimensionsAreCustom = dimension.isCustom;
+
+                if (!dimension.isCustom || !dimension.isNonExpanding) {
+                    record.set({
+                        expandedWidth: dimension.width,
+                        expandedHeight: dimension.height
+                    });
+                }
+
+                if(dimension.isNonExpanding) {
+                    record.set({
+                        expandedWidth: null,
+                        expandedHeight: null,
+                        expandMode: null
+                    })
+                }
+            }
+
+            return getDimensionsValue(creativeSettings.expandedDimensions, record.get());
+        }
+
+        if(modalState.creativeId) {
+            $scope.editing = true;
+            record = creativeRecordService.get(modalState.creativeId);
+            creativeRecordService.fetch(modalState.creativeId);
+        } else {
+            record = creativeRecordService.create();
+            record.set(modalState.creative);
+        }
+
+        record.observe(update, $scope);
+
+        function update() {
+            $scope.dbCreative = record.get();
+            $scope.creative = translate.db2Modal($scope.dbCreative);
+            $scope.errors = record.errors();
+        }
+
+        campaigns.observe(updateCampaigns, $scope);
+
+        function updateCampaigns() {
+            if(!modalState.creativeId) {
+                // TODO: add render limit so this isn't crazy slow
+                //$scope.campaigns = campaigns.all().slice(0, 10);
+                $scope.campaigns = [{id: '1c5cf047-5ecd-444b-822a-17e1eebed4b3', name: 'test'}];
+            }
+        }
+
+        function cancel() {
+            if(record.hasChanges()) {
+                if(confirm('You have unsaved changes. Really close?')) {
+                    record.reset();
+                    $scope.campaign = record.get();
                     $modalInstance.dismiss('cancel');
                 }
-            };
-
-            $scope.ok = function(errors) {
-                if(ng.equals({}, errors) || !errors) {
-                    $scope.dbCreative = translate.modal2Db($scope.creative);
-                    var onSuccess = function(resp) {
-                        $scope.creative = {};
-                        $scope.dbCreative = {};
-                        notification.success('Creative: {{name}}, has been updated.',
-                            {
-                                locals: {
-                                    name: resp.data.name
-                                }
-                            });
-                        $modalInstance.dismiss('cancel');
-                    };
-
-                    if (record.isNew()) {
-                        newCreativeService($scope.dbCreative)
-                            .then(function(url) {
-                                $scope.creative = {};
-                                $scope.dbCreative = {};
-                                $modalInstance.dismiss('cancel');
-                                $window.open(url, 'mixpo_studio');
-                            });
-                    } else {
-                        record.save().then(onSuccess);
-                    }
-                }
-                $scope.submitted = true;
-            };
-
-            //Before closing the modal save the state;
-            $scope.$on('$destroy', function() {
-                modalState.creative = $scope.creative;
-            });
+            } else {
+                $modalInstance.dismiss('cancel');
+            }
         }
+
+        function ok(errors) {
+            if(ng.equals({}, errors) || !errors) {
+                $scope.dbCreative = translate.modal2Db($scope.creative);
+                var onSuccess = function(resp) {
+                    $scope.creative = {};
+                    $scope.dbCreative = {};
+                    notification.success('Creative: {{name}}, has been updated.',
+                        {
+                            locals: {
+                                name: resp.data.name
+                            }
+                        });
+                    $modalInstance.dismiss('cancel');
+                };
+
+                if (record.isNew()) {
+                    newCreativeService($scope.dbCreative)
+                        .then(function(url) {
+                            $scope.creative = {};
+                            $scope.dbCreative = {};
+                            $modalInstance.dismiss('cancel');
+                            $window.open(url, 'mixpo_studio');
+                        });
+                } else {
+                    record.save().then(onSuccess);
+                }
+            }
+            $scope.submitted = true;
+        }
+
+        //Before closing the modal save the state;
+        $scope.$on('$destroy', function() {
+            modalState.creative = $scope.creative;
+        });
     }]);
 });
