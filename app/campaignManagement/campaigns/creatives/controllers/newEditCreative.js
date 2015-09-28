@@ -1,4 +1,5 @@
 /* globals confirm */
+/* jshint maxstatements:false */
 define(function (require) {
     'use strict';
     var app = require('./../../../module');
@@ -7,10 +8,10 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'newEditModalTranslation', 'notification', '$timeout',
+         'CREATIVE_SETTINGS', 'notification',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, translate, notification, $timeout
+              creativeSettings, notification
     ) {
         var record;
 
@@ -19,6 +20,7 @@ define(function (require) {
         $scope.cancel = cancel;
         $scope.dimensionsTransform = dimensionsTransform;
         $scope.dimensionsExpandTransform = dimensionsExpandTransform;
+        $scope.environmentTransform = environmentTransform;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
         $scope.URL_REGEX = URL_REGEX;
@@ -86,7 +88,7 @@ define(function (require) {
                     index = d.id;
                 }
                 if (d.isCustom) {
-                    customIndex = d.id
+                    customIndex = d.id;
                 }
             });
 
@@ -124,11 +126,31 @@ define(function (require) {
                         expandedWidth: null,
                         expandedHeight: null,
                         expandMode: null
-                    })
+                    });
                 }
             }
 
             return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+        }
+
+        function getEnvironmentValue(environments, data) {
+            var index;
+            ng.forEach(environments, function(environment) {
+                if (environment.id === data.environment) {
+                    index = environment.id;
+                }
+            });
+
+            return index;
+        }
+
+        function environmentTransform(environment) {
+            if (arguments.length) {
+                record.set({
+                    environment: creativeSettings.environments[environment]
+                });
+            }
+            return getEnvironmentValue(creativeSettings.environments, record.get());
         }
 
         if(modalState.creativeId) {
@@ -143,8 +165,7 @@ define(function (require) {
         record.observe(update, $scope);
 
         function update() {
-            $scope.dbCreative = record.get();
-            $scope.creative = translate.db2Modal($scope.dbCreative);
+            $scope.creative = record.get();
             $scope.errors = record.errors();
         }
 
@@ -172,10 +193,8 @@ define(function (require) {
 
         function ok(errors) {
             if(ng.equals({}, errors) || !errors) {
-                $scope.dbCreative = translate.modal2Db($scope.creative);
                 var onSuccess = function(resp) {
                     $scope.creative = {};
-                    $scope.dbCreative = {};
                     notification.success('Creative: {{name}}, has been updated.',
                         {
                             locals: {
@@ -186,10 +205,9 @@ define(function (require) {
                 };
 
                 if (record.isNew()) {
-                    newCreativeService($scope.dbCreative)
+                    newCreativeService($scope.creative)
                         .then(function(url) {
                             $scope.creative = {};
-                            $scope.dbCreative = {};
                             $modalInstance.dismiss('cancel');
                             $window.open(url, 'mixpo_studio');
                         });
