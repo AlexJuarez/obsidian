@@ -13,24 +13,24 @@ define(function(require) {
      * @ngInject
      */
     module.service('studioDirectAdapter', [function () {
-        function getAdType(type, expandedWidth, expandedHeight) {
-            if(type === 'IMG') {
+        function getAdType(type, subtype, expandedWidth, expandedHeight) {
+            if(type === 'Display' && subtype === 'IMG') {
                 // Image
                 return 'IMG';
-            } else if(type === 'SWF') {
+            } else if(type === 'Display' && subtype === 'SWF') {
                 // SWF
                 return 'SWF';
-            }  else if(type === 'ISV') {
+            }  else if(type === 'In-Stream') {
                 // In-Stream Video
                 return 'IS';
-            } else if(type === 'RM') {
+            } else if(type === 'Rich Media') {
                 // 'Rich Media' AKA 'Interactive-Display'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDRM';
                 } else {
                     return 'ID';
                 }
-            } else if(type === 'IBV') {
+            } else if(type === 'In-Banner') {
                 // 'In-Banner Video' AKA 'MLQ'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDMLQ';
@@ -60,7 +60,7 @@ define(function(require) {
         }
 
         function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
-            if(type === 'IBV') {
+            if(type === 'In-Banner') {
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     // IDMLQ
                     params.idw = embedWidth;
@@ -86,7 +86,8 @@ define(function(require) {
             if(!!!creative) {
                 return false;
             }
-            if(getAdType(creative.type, creative.expandedWidth, creative.expandedHeight)===null) {
+            debugger;
+            if(getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight)===null) {
                 return false;
             }
             if(getAdEnvironment(creative.environment)===null) {
@@ -107,7 +108,7 @@ define(function(require) {
             }
             var params = {};
             params.sdf = 'new';
-            params.ad = getAdType(creative.type, creative.expandedWidth, creative.expandedHeight);
+            params.ad = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight);
             params.env = getAdEnvironment(creative.environment);
             params.url = creative.clickthroughUrl;
             params.title = creative.name;

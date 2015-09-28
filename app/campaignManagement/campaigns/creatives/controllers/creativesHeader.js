@@ -11,7 +11,11 @@ define(function(require) {
         function openNewCreativeModal() {
             if (!newCreativeModal) {
                 newCreativeModal = {
-                    action: 'New'
+                    action: 'New',
+                    creative: {
+                        expandedHeight: null,
+                        expandedWidth: null
+                    }
                 };
             }
 

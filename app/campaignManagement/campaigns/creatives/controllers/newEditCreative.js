@@ -115,6 +115,11 @@ define(function (require) {
                         embedWidth: dimension.width,
                         embedHeight: dimension.height
                     });
+                } else {
+                    record.set({
+                        embedWidth: 0,
+                        embedHeight: 0
+                    });
                 }
             }
 
@@ -193,7 +198,6 @@ define(function (require) {
             if (dimensionExpandedId) {
                 $scope.expandedDimensionsAreCustom = creativeSettings.expandedDimensions[dimensionExpandedId].isCustom;
             }
-            console.log(record.get());
         }
 
         campaigns.observe(updateCampaigns, $scope);
@@ -232,6 +236,7 @@ define(function (require) {
                 };
 
                 if (record.isNew()) {
+                    debugger;
                     newCreativeService($scope.creative)
                         .then(function(url) {
                             $scope.creative = {};

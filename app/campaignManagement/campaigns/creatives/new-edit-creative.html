@@ -14,21 +14,24 @@
                     '1': 'There is 1 error on this form.',
                     'other': 'There are {} errors on this form.'}">
         </div>
-        <div ng-if="campaigns" class="form-group row"
-             ng-class="{'has-error': newCreative.accountId.$invalid && submitted}">
+        <div ng-show="campaigns" class="form-group row"
+             ng-class="{'has-error': newCreative.campaignId.$invalid && submitted}">
             <label
                 class="col-sm-3 form-label required"><span>Campaign</span></label>
 
             <div class="col-sm-9 single-select-light">
-                <select name="campaigns" class="single-select" chosen
+                <select name="campaignId" class="single-select" chosen
                         ng-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"
                         disable-search-threshold="10"
                         ng-model="creative.campaignId" required>
                 </select>
 
-                <p ng-show="newCreative.accountId.$invalid && submitted"
+                <p ng-show="newCreative.campaignId.$invalid && submitted"
                    class="help-block">
                     campaign is required
+                </p>
+                <p ng-show="errors.campaignId && submitted" class="help-block">
+                    {{errors.campaignId}}
                 </p>
             </div>
         </div>
@@ -45,6 +48,9 @@
                 <p ng-show="newCreative.name.$invalid && submitted"
                    class="help-block">
                     name is required
+                </p>
+                <p ng-show="errors.name && submitted" class="help-block">
+                    {{errors.name}}
                 </p>
             </div>
         </div>
@@ -63,6 +69,9 @@
                     clickthrough url must be a valid URL
                 </p>
 
+                <p ng-show="errors.clickthroughUrl && submitted" class="help-block">
+                    {{errors.clickthroughUrl}}
+                </p>
             </div>
         </div>
 
@@ -79,6 +88,9 @@
                 <p ng-show="newCreative.type.$invalid && submitted"
                    class="help-block">
                     creative type is required
+                </p>
+                <p ng-show="errors.type && submitted" class="help-block">
+                    {{errors.type}}
                 </p>
             </div>
         </div>
@@ -97,6 +109,9 @@
                 <p ng-show="newCreative.environment.$invalid && submitted"
                    class="help-block">
                     environment is required
+                </p>
+                <p ng-show="errors.environment && submitted" class="help-block">
+                    {{errors.environment}}
                 </p>
             </div>
         </div>
@@ -123,6 +138,12 @@
                 <p ng-show="newCreative.customDimensionsHeight.$invalid && submitted"
                    class="help-block">
                     height is required
+                </p>
+                <p ng-show="errors.embedWidth && submitted" class="help-block">
+                    {{errors.embedWidth}}
+                </p>
+                <p ng-show="errors.embedHeight && submitted" class="help-block">
+                    {{errors.embedHeight}}
                 </p>
             </div>
             <div class="col-sm-6" ng-show="dimensionsAreCustom">
@@ -161,22 +182,28 @@
                    class="help-block">
                     expanded height is required
                 </p>
+                <p ng-show="errors.expandedWidth && submitted" class="help-block">
+                    {{errors.expandedWidth}}
+                </p>
+                <p ng-show="errors.expandedHeight && submitted" class="help-block">
+                    {{errors.expandedHeight}}
+                </p>
             </div>
             <div class="col-sm-6" ng-show="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
                     <input ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
                            class="form-control" id="customExpandedDimensionsWidth"
-                           placeholder="Width" required />
+                           placeholder="Width" ng-required="creative.expandedWidth !== null" />
                 </div>
                 <div class="col-sm-6">
                     <input ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
                            class="form-control" id="customExpandedDimensionsHeight"
-                           placeholder="Height" required />
+                           placeholder="Height" ng-required="creative.expandedHeight !== null" />
                 </div>
             </div>
         </div>
 
-        <div ng-if="creative.type == 'SWF' && !editing">
+        <div ng-if="creative.subtype == 'SWF' && !editing">
             <div class="form-group row">
                 <label class="col-sm-3 form-label">Upload SWF</label>
                 <div class="col-sm-9 file-selection-wrapper form-inline">
@@ -185,7 +212,7 @@
             </div>
         </div>
 
-        <div ng-if="creative.type == 'IMG' && !editing">
+        <div ng-if="creative.subtype == 'IMG' && !editing">
             <div class="form-group row">
                 <label class="col-sm-3 form-label">Upload Image</label>
                 <div class="col-sm-9 file-selection-wrapper form-inline">
@@ -212,6 +239,10 @@
                        class="form-control" id="keywords"
                        placeholder="Keywords"/>
             </div>
+
+            <p ng-show="errors.keywords && submitted" class="help-block">
+                {{errors.keywords}}
+            </p>
         </div>
     </form>
 </div>
