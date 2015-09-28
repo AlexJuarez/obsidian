@@ -24,19 +24,16 @@ define(function (require) {
 
         function divisionUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    divisions.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned,
-                        client: {
-                            id: data.clientId
-                        }
-                    }]);
-                }
+                divisions.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned,
+                    client: {
+                        id: data.clientId
+                    }
+                }]);
             }
         }
 
