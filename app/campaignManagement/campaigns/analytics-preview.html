@@ -9,7 +9,7 @@
 
         <div class="cell" ng-class="colClasses" ng-repeat="adUnit in creativeData | adTypeOrder">
             <div class="top">
-                <h4 class="thin-header">{{adUnit.type}}</h4>
+                <h4 class="thin-header">{{adUnit.type}}<span ng-if="adUnit.type === 'In-Stream' || adUnit.type === 'In-Banner'"> Video</span></h4>
                 <p>Placements:&nbsp;<strong>{{adUnit.metrics.countPlacements|number}}</strong></p>
                 <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|truncateNumber}}</strong></p>
                 <p ng-if="adUnit.type != 'In-Stream' && adUnit.type != 'Display'">View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>
