@@ -70,13 +70,6 @@ define(function (require) {
                     return filtered;
                 }
             }
-
-            $scope.$watch('creative.expandedDimensions', function() {
-                if ($scope.creative && $scope.creative.expandedDimensions) {
-                    $scope.expandedDimensionsAreCustom =
-                      creativeSettings.expandedDimensions[$scope.creative.expandedDimensions].isCustom;
-                }
-            });
         }
 
         function getDimensionsValue(arry, width, height) {
@@ -136,7 +129,7 @@ define(function (require) {
         function getEnvironmentValue(environments, data) {
             var index;
             ng.forEach(environments, function(environment) {
-                if (environment.id === data.environment) {
+                if (environment.dbName === data.environment) {
                     index = environment.id;
                 }
             });
@@ -147,7 +140,7 @@ define(function (require) {
         function environmentTransform(environment) {
             if (arguments.length) {
                 record.set({
-                    environment: creativeSettings.environments[environment]
+                    environment: environment.dbName
                 });
             }
             return getEnvironmentValue(creativeSettings.environments, record.get());

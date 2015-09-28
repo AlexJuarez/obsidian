@@ -19,27 +19,27 @@ define(function(require) {
 
 		typeSettings: {
 			IBV: {
-				environments: [0, 1, 2, 3],
+				environments: [1, 2, 3, 4],
 				dimensions: [1, 2, 3, 4, 11, 12, 13, 14],
 				expandedDimensions: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 			},
 			ISV: {
-				environments: [0, 1],
+				environments: [1, 2],
 				dimensions: [6, 7, 8, 9, 10, 14],
 				expandedDimensions: undefined
 			},
 			RM: {
-				environments: [0, 1, 2, 3],
+				environments: [1, 2, 3, 4],
 				dimensions: [1, 2, 3, 4, 11, 12, 13, 14],
 				expandedDimensions: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 			},
 			SWF: {
-				environments: [1],
+				environments: [2],
 				dimensions: undefined,
 				expandedDimensions: undefined
 			},
 			IMG: {
-				environments: [0, 1, 2, 3],
+				environments: [1, 2, 3, 4],
 				dimensions: undefined,
 				expandedDimensions: undefined
 			}
