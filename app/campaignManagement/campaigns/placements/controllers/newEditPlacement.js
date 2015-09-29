@@ -145,7 +145,7 @@ define(function (require) {
 
                 for (var i=0; i<placements.length; i++) {
                     curr = placements[i];
-                    intersection = curr.intersect(intersection, curr.get())
+                    intersection = curr.intersect(intersection, curr.get());
                 }
 
                 return intersection;
