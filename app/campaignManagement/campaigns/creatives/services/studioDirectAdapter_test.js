@@ -89,10 +89,10 @@ define(function (require) {
             expect(result.env).toEqual('multiscreen');
             expect(result.url).toEqual('lego.com');
             expect(result.title).toEqual('El Title');
-            expect(result.idw).toEqual(160);
-            expect(result.idh).toEqual(600);
-            expect(result.tcw).toBeUndefined();
-            expect(result.tch).toBeUndefined();
+            expect(result.idw).toBeUndefined();
+            expect(result.idh).toBeUndefined();
+            expect(result.tcw).toEqual(160);
+            expect(result.tch).toEqual(600);
         });
 
         it('should return expected Interactive Display adapted object', function () {

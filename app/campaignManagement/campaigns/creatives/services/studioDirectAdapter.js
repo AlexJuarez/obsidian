@@ -72,6 +72,10 @@ define(function(require) {
                     params.tcw = embedWidth;
                     params.tch = embedHeight;
                 }
+            } else if(type === 'ISV') {
+                // IS
+                params.tcw = embedWidth;
+                params.tch = embedHeight;
             } else {
                 params.idw = embedWidth;
                 params.idh = embedHeight;
