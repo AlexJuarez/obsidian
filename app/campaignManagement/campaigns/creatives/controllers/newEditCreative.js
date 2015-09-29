@@ -115,11 +115,6 @@ define(function (require) {
                         embedWidth: dimension.width,
                         embedHeight: dimension.height
                     });
-                } else {
-                    record.set({
-                        embedWidth: 0,
-                        embedHeight: 0
-                    });
                 }
             }
 
@@ -236,7 +231,6 @@ define(function (require) {
                 };
 
                 if (record.isNew()) {
-                    debugger;
                     newCreativeService($scope.creative)
                         .then(function(url) {
                             $scope.creative = {};

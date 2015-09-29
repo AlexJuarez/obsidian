@@ -86,7 +86,7 @@ define(function(require) {
             if(!!!creative) {
                 return false;
             }
-            debugger;
+
             if(getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight)===null) {
                 return false;
             }

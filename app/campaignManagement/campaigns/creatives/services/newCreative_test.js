@@ -21,7 +21,8 @@ define(function (require) {
 
         it ('should return fullfiled promise for valid creative', function() {
             var creative = {
-                type: 'IMG',
+                type: 'Display',
+                subtype: 'IMG',
                 environment: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',

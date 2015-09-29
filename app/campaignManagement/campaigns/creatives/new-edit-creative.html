@@ -189,16 +189,16 @@
                     {{errors.expandedHeight}}
                 </p>
             </div>
-            <div class="col-sm-6" ng-show="expandedDimensionsAreCustom">
+            <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
                     <input ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
                            class="form-control" id="customExpandedDimensionsWidth"
-                           placeholder="Width" ng-required="creative.expandedWidth !== null" />
+                           placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
                     <input ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
                            class="form-control" id="customExpandedDimensionsHeight"
-                           placeholder="Height" ng-required="creative.expandedHeight !== null" />
+                           placeholder="Height" required />
                 </div>
             </div>
         </div>
