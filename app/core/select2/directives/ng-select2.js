@@ -1,3 +1,4 @@
+//jshint maxstatements:40
 define(function(require){
     'use strict';
 
@@ -48,7 +49,7 @@ define(function(require){
         }
 
         var objType = typeof obj;
-        if (objType == 'function' || (objType == 'object' && obj !== null)) {
+        if (objType === 'function' || (objType === 'object' && obj !== null)) {
             key = obj.$$hashKey = objType + ':' + (nextUidFn || nextUid)();
         } else {
             key = objType + ':' + obj;
@@ -57,26 +58,44 @@ define(function(require){
         return key;
     }
 
+    function findTheme(element) {
+        var curr = element,
+            classes;
+        while(curr.length) {
+            if (curr[0].className) {
+                classes = curr[0].className.split(' ');
+                for (var i = 0; i < classes.length; i++) {
+                    if (classes[i].indexOf('theme') > -1) {
+                        return classes[i];
+                    }
+                }
+            }
+            curr = curr.parent();
+        }
+    }
+
     module.value('select2Config', {
         minimumResultsForSearch: 10,
         dropdownAutoWidth: false,
-        tokenSeparators: [',', ' ']
+        tokenSeparators: [',']
     });
 
-    var attrOptions = ['placeholder', 'minimumResultsForSearch', 'dropdownAutoWidth', 'maximumSelectionLength', 'tokenSeparators', 'tags', 'ajax', 'query', 'width', 'allowClear'];
+    var attrOptions = ['placeholder', 'minimumResultsForSearch', 'dropdownAutoWidth', 'maximumSelectionLength', 'tokenSeparators', 'tags', 'ajax', 'query', 'width', 'allowClear', 'formatModelInsert'];
 
     var placeholderMultiselect = 'Select some options';
     var placeholderSelect = 'Select an option';
 
-    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse',
-        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse) {
+    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse', 'trackValuesFactory',
+        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse, trackValuesFactory) {
         return {
             restrict: 'A',
             require: '?ngModel',
             terminal: true,
             link: function(scope, element, attr, ngModel) {
-                var match, valuesFn, trackBy, theme, select2, trackValues = {}, isMultiple, timer;
-                isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== "false";
+                var trackValues = trackValuesFactory();
+                var match, valuesFn, trackBy, theme, select2, isMultiple, timer;
+                //set a flag to see if this is a multiselect instance
+                isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
                 var opts = ng.extend({}, defaults, scope.$eval(attr.options));
 
                 //Add each attribute that is in the white list to the options hash
@@ -101,22 +120,7 @@ define(function(require){
                     };
                 }
 
-                function findTheme() {
-                    var curr = element, classes;
-                    while(curr.length) {
-                        if (curr[0].className) {
-                            classes = curr[0].className.split(' ');
-                            for (var i = 0; i < classes.length; i++) {
-                                if (classes[i].indexOf('theme') > -1) {
-                                    return classes[i];
-                                }
-                            }
-                        }
-                        curr = curr.parent();
-                    }
-                }
-
-                theme = findTheme();
+                theme = findTheme(element);
 
                 if (theme) {
                     opts.theme = theme;
@@ -131,7 +135,6 @@ define(function(require){
                     trackBy = match[9];
                     var keyName = match[6];
                     var valueName = match[5] || match[7];
-
                     var trackByFn = trackBy && $parse(trackBy);
 
                     // Get the value by which we are going to track the option
@@ -156,21 +159,18 @@ define(function(require){
                     };
 
                     //Make a map of angular models -> values
-                    trackValues = {};
-
                     scope.$watchCollection(valuesFn, function(values) {
+                        trackValues.reset();
                         ng.forEach(values, function(value, key) {
                             var selectValue = getTrackByValue(value, key);
-                            trackValues[JSON.stringify(value)] = { index: selectValue, value: value };
-                            //add both the hashed value and the select value, both are valid
-                            trackValues[selectValue] = { index: selectValue, value: value };
+                            trackValues.add(selectValue, value);
                         });
                         initOrUpdate();
                     });
                 } else {
                     //in the event of no ngOptions still want to bind the trackValues to change the model
                     var options = element.find('option');
-                    trackValues = {};
+                    trackValues.reset();
                     ng.forEach(options, function(option) {
                         var key;
                         var text = option.innerText;
@@ -179,30 +179,71 @@ define(function(require){
                         } else {
                             key = text;
                         }
-                        trackValues[key] = { index: key, value: key };
+                        trackValues.add(key, key);
                     });
+                }
+
+                var formatModelInsert = opts.formatModelInsert || function(v) {
+                        return {
+                            value: v.id,
+                            name: v.text
+                        };
+                    };
+
+                function updateModel() {
+                    var options = element.select2('data');
+                    var newValues = [];
+                    ng.forEach(options, function (v) {
+                        var trackValue = trackValues.get(v.id);
+                        if (!trackValue) {
+                            var value = formatModelInsert(v);
+                            //remove the select2 attribute or else things fall out of sync
+                            v.element.removeAttribute('data-select2-tag');
+                            newValues.push(value);
+                        }
+                    });
+
+                    if (newValues.length) {
+                        var currentValues = ngModel.$viewValue;
+                        if (!ng.isArray(currentValues)) {
+                            currentValues = [];
+                        }
+                        var values = valuesFn(scope);
+                        if (ng.isArray(values)) {
+                            [].push.apply(values, newValues);
+                        } else {
+                            $log.warn('Not sure how to add new values to hash.');
+                        }
+                        [].push.apply(currentValues, newValues);
+                        ngModel.$setViewValue(currentValues);
+                        scope.$apply();
+                    }
                 }
 
                 function initOrUpdate() {
                     setDefaultText();
                     timer = $timeout(function() {
-                        //init select2 once
                         if (!select2) {
+                            //init select2 once
                             select2 = element.select2(opts);
+                            if (isMultiple && opts.tags) {
+                                element.on('change', updateModel);
+                            }
                         }
-                        if (!ng.equals({}, trackValues) && ngModel) {
+                        if (!trackValues.isEmpty() && ngModel) {
                             //if ngModel is an array and is multiple set the element and trigger a change to update select2;
                             if (ng.isArray(ngModel.$viewValue) && isMultiple) {
                                 var values = [];
                                 ng.forEach(ngModel.$viewValue, function(v) {
-                                    var trackValue = trackValues[JSON.stringify(v)];
+                                    var trackValue = trackValues.get(v);
                                     if (trackValue) {
                                         values.push(trackValue.index);
                                     }
                                 });
+
                                 element.val(values).trigger('change');
                             } else {
-                                var trackValue = trackValues[ngModel.$viewValue] || trackValues[JSON.stringify(ngModel.$viewValue)];
+                                var trackValue = trackValues.get(ngModel.$viewValue);
                                 if (trackValue) {
                                     element.val(trackValue.index).trigger('change');
                                 }
@@ -211,6 +252,7 @@ define(function(require){
                     });
                 }
 
+                //set up the default placeholders
                 function setDefaultText() {
                     if (isMultiple) {
                         opts.placeholder = opts.placeholder || placeholderMultiselect;
@@ -226,7 +268,7 @@ define(function(require){
 
                 if (ngModel) {
                     var originalRender = ngModel.$render;
-                    ngModel.$render = function(val) {
+                    ngModel.$render = function() {
                         originalRender();
                         initOrUpdate();
                     };
