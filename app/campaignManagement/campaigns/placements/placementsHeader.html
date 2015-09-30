@@ -3,15 +3,15 @@
 
     <div class="col-sm-6 col-xs-12">
         
-        <div class="btn-group left filters">
+        <div class="filters left">
             <b style="float: left;">View By:</b>
             <a ng-click="setActive()" ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers || 0}})</a>
             <a ng-click="setActive()" ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives || 0}})</a>
             <a ng-click="setActive()" ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types || 0}})</a>
-            <label class="form-label search">
-                <input class="input" placeholder="Search" type="search"/>
-            </label>
         </div>
+        <label class="form-label search left">
+            <input class="input" placeholder="Search" type="search"/>
+        </label>
     </div>        
     <div class="col-sm-6 col-xs-12">
         <div class="btn-group right">

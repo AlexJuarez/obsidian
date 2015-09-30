@@ -16,9 +16,14 @@
     border-bottom: 1px solid @tab-border-color;
 
     margin-top: 4rem;
+    .clearfix();
 
     li {
         display: inline-block;
+        padding-left: 1rem;
+        &:first-child {
+            padding-left: 2rem;
+        }
     }
 
     a { // blurred
@@ -27,7 +32,6 @@
         z-index: 1;
 
         padding: 1.5rem 2.5rem;
-        margin-left: 1rem;
 
         border-radius: 1px 1px 0 0;
         border: 1px solid @blur-tab-border-color;
@@ -40,9 +44,6 @@
         text-transform: uppercase;
         cursor: pointer;
 
-        &:first-child {
-            margin-left: 2rem;
-        }
     }
 
     .active {
@@ -57,7 +58,7 @@
 }
 
 .nav-tabs-content {
-    padding:3.5rem 0;
+    padding: 3.5rem 0;
     background-color: @background;
 }
 
@@ -83,42 +84,20 @@
             margin-right: 2rem;
         }
         .search {
-            //display: inline-block;
             padding-top: 4px;
             
-        }
-                
-            
-        
-    }
-    @media (max-width: @screen-md-max) {
-        div[class*="col"] {
-            .icons {
-                border: none; 
-                float: none;
-                //padding-right: 1rem; 
-                //margin-right: 2rem;
-                .glyph-icon {
-                    .font-size(2);
-                }
-            }
-            .filters {
-                padding-top: 0;
-                float: none;
-
-            }
         }
     }
     @media (max-width: @screen-xs-max) {
         div[class*="col"] {
-            //margin-bottom: 2rem;
-            a, b {
-                margin-right: 0;
-                display: block;
+            .icons {
+                border: none;
             }
         }
         .search {
             display: block;
+            width: 100%;
+            margin: 1rem 0;
         }
     }
 }
@@ -129,17 +108,17 @@
 
 @media (max-width: @screen-xs-max) {
     .nav-tabs-content {
-        padding:2rem 0;
+        padding: 2rem 0;
     }
 
     .nav-tabs {
+        margin-left: -20px;
+        margin-right: -20px;
+
         a {
             padding: 1.5rem 2rem;
             .font-size(1.6);
 
-            &:first-child {
-                margin-left: 1rem;
-            }
         }
     }
 
