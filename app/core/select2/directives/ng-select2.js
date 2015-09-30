@@ -18,6 +18,12 @@ define(function(require){
     // 8: collection expression
     // 9: track by expression
 
+
+    var uid = 0;
+    var nextUid = function() {
+        return uid++;
+    };
+
     /**
      * Computes a hash of an 'obj'.
      * Hash of a:
@@ -30,10 +36,6 @@ define(function(require){
      * @returns {string} hash string such that the same input will have the same hash string.
      *         The resulting string key is in 'type:hashKey' format.
      */
-    var uid = 0;
-    var nextUid = function() {
-        return uid++;
-    };
 
     function hashKey(obj, nextUidFn) {
         var key = obj && obj.$$hashKey;
@@ -73,10 +75,11 @@ define(function(require){
             require: '?ngModel',
             terminal: true,
             link: function(scope, element, attr, ngModel) {
-                var match, valuesFn, trackBy, theme, select2, trackValues = {}, isMultiple;
+                var match, valuesFn, trackBy, theme, select2, trackValues = {}, isMultiple, timer;
                 isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== "false";
                 var opts = ng.extend({}, defaults, scope.$eval(attr.options));
 
+                //Add each attribute that is in the white list to the options hash
                 ng.forEach(attr, function(value, key) {
                     if (attrOptions.indexOf(key) > -1) {
                         opts[key] = scope.$eval(value);
@@ -84,6 +87,7 @@ define(function(require){
                 });
 
                 opts.matcher = function(params, data) {
+                    // Angular adds a null element with no value when using ngOptions, filter this value
                     if (data.id === '?' || !data.id) {
                         return null;
                     }
@@ -151,12 +155,14 @@ define(function(require){
                         return locals;
                     };
 
+                    //Make a map of angular models -> values
                     trackValues = {};
 
                     scope.$watchCollection(valuesFn, function(values) {
                         ng.forEach(values, function(value, key) {
                             var selectValue = getTrackByValue(value, key);
                             trackValues[JSON.stringify(value)] = { index: selectValue, value: value };
+                            //add both the hashed value and the select value, both are valid
                             trackValues[selectValue] = { index: selectValue, value: value };
                         });
                         initOrUpdate();
@@ -168,8 +174,6 @@ define(function(require){
                     ng.forEach(options, function(option) {
                         var key;
                         var text = option.innerText;
-                        // For some browsers, `attr` is undefined; for others,
-                        // `attr` is false.  Check for both.
                         if (option.hasAttribute('value')) {
                             key = option.getAttributeNode('value').value;
                         } else {
@@ -181,12 +185,13 @@ define(function(require){
 
                 function initOrUpdate() {
                     setDefaultText();
-                    $timeout(function() {
+                    timer = $timeout(function() {
+                        //init select2 once
                         if (!select2) {
                             select2 = element.select2(opts);
                         }
-
                         if (!ng.equals({}, trackValues) && ngModel) {
+                            //if ngModel is an array and is multiple set the element and trigger a change to update select2;
                             if (ng.isArray(ngModel.$viewValue) && isMultiple) {
                                 var values = [];
                                 ng.forEach(ngModel.$viewValue, function(v) {
@@ -234,6 +239,16 @@ define(function(require){
                 } else {
                     initOrUpdate();
                 }
+
+                //On destroy clean up the timeout/ select2 element
+                scope.$on('$destroy', function() {
+                    if (timer) {
+                        $timeout.cancel(timer);
+                    }
+                    if (select2) {
+                        element.select2('destroy');
+                    }
+                });
             }
         };
     }]);
