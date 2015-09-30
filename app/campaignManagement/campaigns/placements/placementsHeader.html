@@ -1,34 +1,4 @@
-<!-- <<<<<<< HEAD
-<div ng-if="hasPlacements">
-    <nav class="row tab-header" role="form">
-    
-        <div class="col-sm-6 col-xs-12">
-            
-            <div class="btn-group left">
-                <b style="float: left;">View By:</b>
-                <a ng-click="setActive()" ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers || 0}})</a>
-                <a ng-click="setActive()" ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives || 0}})</a>
-                <a ng-click="setActive()" ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types || 0}})</a>
-                <label class="form-label search">
-                    <input class="input" placeholder="Search" type="search"/>
-                </label>
-            </div>
-        </div>        
-        <div class="col-sm-6 col-xs-12">
-            <div class="btn-group right">
-                <button class="btn btn-default solid" ng-click="openNewPlacementModal()">New Placement</button>
-                <button ng-show="selectedPlacements.length > 0" ng-click="editPlacements()" class="btn btn-default">Edit Placement<span ng-show="selectedPlacements.length > 1">s</span></button>
-                <button class="btn btn-default">Set Trackers</button>
-                <button ng-click="pullTags()" class="btn btn-default">Pull Tags</button>
-
-            </div>
-        </div>
-        
-    
-    </nav>
-</div>
-=======
- --><nav class="row tab-header" role="form">
+<nav class="row tab-header" role="form">
     <div ng-if="hasPlacements">
         <div class="col-lg-3">
             <b>View By:</b>
@@ -65,5 +35,4 @@
     </div>
 </nav>
 
-<!-- >>>>>>> feature/TH-356 -->
 <div no-content></div>
