@@ -7,6 +7,7 @@ define(function(require) {
     require('./constants/apiURI');
     require('./creativePreview/index');
     require('./notifications/index');
+    require('./select2/index');
 
     services();
     filters();
