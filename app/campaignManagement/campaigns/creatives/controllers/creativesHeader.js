@@ -6,6 +6,7 @@ define(function(require) {
     app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
 
         $scope.openNewCreativeModal = openNewCreativeModal;
+        $scope.hasCreatives = false;
 
         var newCreativeModal;
         function openNewCreativeModal() {
@@ -31,8 +32,8 @@ define(function(require) {
         function updateMeta() {
 
             var allCreatives = creatives.all().data;
-
-            if (allCreatives) {
+            
+            if (allCreatives && creatives.data().isLoaded()) {
                 var creative = 0;
 
                 var meta = {
@@ -51,6 +52,11 @@ define(function(require) {
                     }
                 }
                 $scope.creativesMeta = meta;
+
+                if ($scope.creativesMeta.all !== 0) {
+                    $scope.hasCreatives = true;
+                }
+
             }
         }
         updateMeta();

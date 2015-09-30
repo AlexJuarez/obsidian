@@ -32,6 +32,7 @@ define(function(require) {
         require('./directives/placeholder');
         require('./directives/filePicker');
         require('./directives/youWorkOn');
+        require('./directives/noContent');
     }
 
     function filters() {

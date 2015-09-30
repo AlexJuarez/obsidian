@@ -8,6 +8,7 @@ define(function (require) {
     module.factory('dataFactory', ['$http', '$q', '$rootScope', '$timeout', 'apiUriGenerator', 'observerFactory', function ($http, $q, $rootScope, $timeout, apiUriGenerator, observerFactory) {
         return function (sortFn) {
             var initialized = false;
+            var loaded = false;
             var data = [];
             var observers = observerFactory();
 
@@ -27,6 +28,7 @@ define(function (require) {
                     initialized = true;
 
                     $http.get(url).success(function (d) {
+                        loaded = true;
                         setData(transform.call(this, d));
                         deferred.resolve(data);
                     });
@@ -96,6 +98,35 @@ define(function (require) {
                 return output;
             }
 
+            function observe(callback, $scope, preventImmediate) {
+                var id = observerId++;
+                observers[id] = callback;
+
+                if (preventImmediate !== true) {
+                    callback();
+                }
+
+                if ($scope) {
+                    $scope.$on('$destroy', function() {
+                        delete observers[id];
+                    });
+                }
+            }
+
+            function isLoaded() {
+                return loaded;
+            }
+
+            function notifyObservers(event) {
+                for (var x in observers) {
+                    observers[x](event);
+                }
+
+                $timeout(function () {
+                    $rootScope.$apply();
+                });
+            }
+
             function getById(id) {
                 for (var i = 0; i < data.length; i++) {
                     if (data[i].id === id) {
@@ -109,6 +140,7 @@ define(function (require) {
                 init: init,
                 setData: setData,
                 addData: addData,
+                isLoaded: isLoaded,
                 getById: getById,
                 all: all,
                 filtered: filtered,

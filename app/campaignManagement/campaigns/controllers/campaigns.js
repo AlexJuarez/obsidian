@@ -6,7 +6,7 @@ define(function (require) {
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('campaignsCtrl', ['$scope', '$state', 'campaignService', 'accountService', 'campaignsByStatus', 'campaignsByAccount', '$timeout', function ($scope, $state, campaigns, accounts, campaignsByStatus, campaignsByAccount, $timeout) {
+    app.controller('campaignsCtrl', ['$scope', '$state', 'campaignService', 'accountService', 'campaignsByStatus', 'campaignsByAccount', '$timeout', 'campaignsHeader', function ($scope, $state, campaigns, accounts, campaignsByStatus, campaignsByAccount, $timeout, campaignsHeader) {
         //Needed for viewBy query Parameter
         $scope.params = $state.params;
         $scope.filter = '';
@@ -17,6 +17,17 @@ define(function (require) {
         $scope.clearFilter = clearFilter;
         $scope.updateFilters = updateFilters;
 
+        $scope.hasCampaigns = false;
+
+        campaignsHeader.observe(function() {
+            if ( campaignsHeader.data().isLoaded() ) {
+                var data = campaignsHeader.all();
+
+                $scope.hasCampaigns = hasContent(data);
+            }
+
+        }, $scope);
+
         accounts.observe(function() {
             updateFilters($scope.filter);
         }, $scope, true);
@@ -24,6 +35,16 @@ define(function (require) {
         campaigns.observe(function() {
             updateFilters($scope.filter);
         }, $scope, true);
+
+        function hasContent(data) {
+            var results = [];
+            ng.forEach(data, function(d) {
+                results.push(d != 0);
+            });
+            return results.some(function (d) {
+                return d;
+            });
+        }
 
         function filterBy(result) {
             campaignsByStatus.setFilter(result);

@@ -52,9 +52,10 @@ define(function (require) {
     };
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
-                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
-        var placementCache = cache({
-            transform: function(data) {
+                                  function ($state, $interpolate, $compile, $rootScope, cacheFactory, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+
+        var placementCache = cacheFactory({
+            transform: function (data) {
                 return data.placements;
             }
         });
@@ -171,7 +172,13 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
+
+            return placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
+
+        }
+
+        function data(initialize) {
+            return placementCache.get(getApiConfig(), initialize);
         }
 
         return {
@@ -180,6 +187,7 @@ define(function (require) {
             _getApiConfig: getApiConfig,
             getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
+            data: data,
             observe: observe
         };
     }]);
