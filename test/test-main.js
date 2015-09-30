@@ -39,8 +39,7 @@ requirejs.config({
         'd3': '/base/app/components/d3/d3',
         'hljs': '/base/app/components/highlightjs/highlight.pack',
         'jquery': '/base/app/components/jquery/dist/jquery',
-        'chosen': '/base/app/components/chosen/chosen.jquery',
-        'angular-chosen': '/base/app/components/angular-chosen-localytics/chosen',
+        'select2': '/base/app/components/select2/dist/js/select2.full',
         'ng-perfect-scrollbar': '/base/app/components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': '/base/app/components/perfect-scrollbar/src/perfect-scrollbar',
         'simpleUpload': '/base/app/components/Simple-Ajax-Uploader/SimpleAjaxUploader'
@@ -72,10 +71,7 @@ requirejs.config({
         'perfect-scrollbar': {
             deps: ['jquery']
         },
-        'angular-chosen': {
-            deps: ['angular', 'chosen']
-        },
-        'chosen': {
+        'select2': {
             deps: ['jquery']
         },
         'jquery': {

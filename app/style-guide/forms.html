@@ -57,7 +57,7 @@
             <input class="form-control" placeholder="Enter name" type="text">
         </label>
     </div>
-    <div class="form-group single-select-light">
+    <div class="form-group">
         <label class="form-label"><span class="sr-only">Select Options</span></label>
         <select select2 ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
     </div>
@@ -114,8 +114,8 @@
     </div>
     <div class="form-group row">
         <label class="col-sm-2 form-label required"><span>Channel</span></label>
-        <div class="col-sm-10 single-select-light">
-            <select class="single-select" select2>
+        <div class="col-sm-10">
+            <select select2>
                 <option>Option 1</option>
                 <option>Option 2</option>
                 <option>Option 3</option>
@@ -178,8 +178,8 @@
     &lt;/div&gt;
     &lt;div class=&quot;form-group row&quot;&gt;
         &lt;label class=&quot;col-sm-2 form-label required&quot;&gt;&lt;span&gt;Channel&lt;/span&gt;&lt;/label&gt;
-        &lt;div class=&quot;col-sm-10 single-select-light&quot;&gt;
-            &lt;select class=&quot;single-select&quot; select2 &gt;
+        &lt;div class=&quot;col-sm-10 &quot;&gt;
+            &lt;select select2 &gt;
                 &lt;option&gt;Option 1&lt;/option&gt;
                 &lt;option&gt;Option 2&lt;/option&gt;
                 &lt;option&gt;Option 3&lt;/option&gt;
@@ -261,8 +261,8 @@
 
 <form class="form" role="form">
     <div class="form-group">
-        <label class="form-label single-select-light"><span>Single Select w/o Search</span></label>
-        <div class="single-select-light">
+        <label class="form-label"><span>Single Select w/o Search</span></label>
+        <div>
             <select select2 ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
         </div>
     </div>

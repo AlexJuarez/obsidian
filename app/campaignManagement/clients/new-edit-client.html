@@ -11,8 +11,8 @@
         </div>
         <div class="form-group row" ng-class="{'has-error': (newClient.channels.$invalid || errors.channelId) && submitted}">
             <label class="col-sm-3 form-label required"><span>Channel</span></label>
-            <div class="col-sm-9 single-select-light">
-                <select id="new-edit-client-channels-select" name="channels" ng-model="client.channelId" class="single-select" chosen ng-options="item.id as item.name for item in channels track by item.id" disable-search-threshold="10" required>
+            <div class="col-sm-9">
+                <select id="new-edit-client-channels-select" name="channels" ng-model="client.channelId" select2 ng-options="item.id as item.name for item in channels track by item.id" required>
                 </select>
                 <p ng-show="newClient.channels.$invalid && submitted" class="help-block">
                     channel is required

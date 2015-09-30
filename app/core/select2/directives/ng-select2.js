@@ -20,16 +20,27 @@ define(function(require){
     var placeholderMultiselect = 'Select some options';
     var placeholderSelect = 'Select an option';
 
-    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$compile',
-        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $compile) {
+    function isEmpty(value) {
+        if (ng.isArray(value)) {
+            return !value.length;
+        } else if (ng.isObject(value)) {
+            return ng.equals({}, value);
+        } else if (ng.isString(value)) {
+            return !$.trim(value).length;
+        }
+
+        return true;
+    }
+
+    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse',
+        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse) {
         return {
             restrict: 'A',
             require: '?ngModel',
             terminal: true,
             link: function(scope, element, attr, ngModel) {
-                var match, valuesFn;
+                var match, valuesFn, theme, select2, hasValues = false, valueName, valueFn;
                 var opts = ng.extend({}, defaults, scope.$eval(attr.options));
-
 
                 ng.forEach(attr, function(value, key) {
                     if (attrOptions.indexOf(key) > -1) {
@@ -38,7 +49,6 @@ define(function(require){
                 });
 
                 opts.matcher = function(params, data) {
-                    console.log(data);
                     if (data.id === '?' || !data.id) {
                         return null;
                     }
@@ -67,10 +77,44 @@ define(function(require){
                     }
                 }
 
-                var theme = findTheme();
+                theme = findTheme();
 
                 if (theme) {
                     opts.theme = theme;
+                }
+
+                if (attr.ngOptions) {
+                    if (!(match = attr.ngOptions.match(NG_OPTIONS_REGEXP))) {
+                        $log.warn('Invalid ngOptions: ', attr.ngOptions);
+                    }
+
+                    valuesFn = match[7];
+                    valueName = match[4] || match[6];
+                    valueFn = $parse(match[2] ? match[1] : valueName);
+
+                    scope.$watchCollection(valuesFn, function(newVal) {
+                        if (!ng.isUndefined(newVal) && newVal.length) {
+                            hasValues = true;
+                            initOrUpdate();
+                        }
+                    });
+                } else {
+                    hasValues = true;
+                }
+
+                function initOrUpdate() {
+                    setDefaultText();
+                    $timeout(function() {
+                        if (!select2) {
+                            select2 = element.select2(opts);
+                        } else if (!isEmpty(ngModel.$viewValue) && hasValues) {
+                            if (ng.isObject(ngModel.$viewValue) || ng.isArray(ngModel.$viewValue)) {
+                                element.val(ngModel.$viewValue.value).trigger('change');
+                            } else {
+                                element.val(ngModel.$viewValue).trigger('change');
+                            }
+                        }
+                    });
                 }
 
                 function setDefaultText() {
@@ -86,29 +130,11 @@ define(function(require){
                     }
                 }
 
-                if (attr.ngOptions) {
-                    if (!(match = attr.ngOptions.match(NG_OPTIONS_REGEXP))) {
-                        $log.warn('Invalid ngOptions: ', attr.ngOptions);
-                    }
-
-                    valuesFn = match[7];
-
-                    scope.$watchCollection(valuesFn, function() {
-                        $timeout(function() {
-                            setDefaultText();
-
-                            element.trigger('change');
-                        });
-                    });
-                }
-
                 if (ngModel) {
                     var originalRender = ngModel.$render;
-                    ngModel.$render = function() {
+                    ngModel.$render = function(newVal) {
                         originalRender();
-                        $timeout(function() {
-                            element.trigger('change');
-                        });
+                        initOrUpdate();
                     };
 
                     var viewWatch = function() {
@@ -116,17 +142,9 @@ define(function(require){
                     };
 
                     scope.$watch(viewWatch, ngModel.$render, true);
+                } else {
+                    initOrUpdate();
                 }
-
-                scope.$on('$destroy', function() {
-                    element.select2('destroy');
-                });
-
-                $timeout(function() {
-                    setDefaultText();
-
-                    element.select2(opts);
-                });
             }
         };
     }]);
