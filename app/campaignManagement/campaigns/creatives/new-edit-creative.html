@@ -19,8 +19,13 @@
             <label
                 class="col-sm-3 form-label required"><span>Campaign</span></label>
 
+<<<<<<< HEAD
             <div class="col-sm-9">
                 <select name="campaigns" select2
+=======
+            <div class="col-sm-9 single-select-light">
+                <select id="new-edit-creative-select-campaign" name="campaigns" class="single-select" chosen
+>>>>>>> develop
                         ng-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"
                         ng-model="creative.campaignId" required>
                 </select>
@@ -37,7 +42,7 @@
             <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.name" type="text" name="name"
+                <input id="new-edit-creative-name-field" ng-model="creative.name" type="text" name="name"
                        class="form-control" id="inputName" placeholder="Name"
                        required/>
 
@@ -53,7 +58,7 @@
             <label for="clickthroughUrl" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.clickthroughUrl" type="text"
+                <input id="new-edit-creative-clickthrough-url-field" ng-model="creative.clickthroughUrl" type="text"
                        name="clickthroughUrl" class="form-control"
                        id="clickthroughUrl" placeholder="Clickthrough Url" required/>
 
@@ -69,8 +74,13 @@
             <label
                 class="col-sm-3 form-label required"><span>Creative Type</span></label>
 
+<<<<<<< HEAD
             <div class="col-sm-9">
                 <select name="types" select2
+=======
+            <div class="col-sm-9 single-select-light">
+                <select id="new-edit-creative-select-creative-type" name="types" class="single-select" chosen
+>>>>>>> develop
                         ng-options="type.id as type.name for type in types track by type.id"
                         ng-model="creative.type" required>
                 </select>
@@ -87,8 +97,13 @@
             <label
                 class="col-sm-3 form-label required"><span>Environment</span></label>
 
+<<<<<<< HEAD
             <div class="col-sm-9">
                 <select name="environment" select2
+=======
+            <div class="col-sm-9 single-select-light">
+                <select id="new-edit-creative-select-environment" name="environment" class="single-select" chosen
+>>>>>>> develop
                         ng-options="environment.id as environment.name for environment in environments track by environment.id"
                         ng-model="creative.environment" required>
                 </select>
@@ -105,8 +120,13 @@
             <label
                 class="col-sm-3 form-label required"><span>Dimensions</span></label>
 
+<<<<<<< HEAD
             <div class="col-sm-3">
                 <select name="dimensions" select2
+=======
+            <div class="col-sm-3 single-select-light">
+                <select id="new-edit-creative-select-dimensions" name="dimensions" class="single-select" chosen
+>>>>>>> develop
                         ng-options="dimension.id as dimension.name for dimension in dimensions track by dimension.id"
                         ng-model="creative.dimensions" required>
                 </select>
@@ -126,12 +146,12 @@
             </div>
             <div class="col-sm-6" ng-if="dimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input name="customDimensionsWidth" ng-model="creative.customDimensionsWidth" type="text"
+                    <input id="new-edit-creative-custom-width-field" name="customDimensionsWidth" ng-model="creative.customDimensionsWidth" type="text"
                            class="form-control" id="customDimensionsWidth"
                            placeholder="Width" required/>
                 </div>
                 <div class="col-sm-6">
-                    <input name="customDimensionsHeight" ng-model="creative.customDimensionsHeight" type="text"
+                    <input id="new-edit-creative-custom-height-field" name="customDimensionsHeight" ng-model="creative.customDimensionsHeight" type="text"
                            class="form-control" id="customDimensionsHeight"
                            placeholder="Height" required/>
                 </div>
@@ -144,7 +164,7 @@
                 class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>
 
             <div class="col-sm-3">
-                <select name="expandedDimensions" select2
+                <select id="new-edit-creative-select-exp-dimension"  name="expandedDimensions" select2
                         ng-options="expandedDimension.id as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
                         ng-model="creative.expandedDimensions" required>
                 </select>
@@ -164,12 +184,12 @@
             </div>
             <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input name="customExpandedDimensionsWidth" ng-model="creative.customExpandedDimensionsWidth" type="text"
+                    <input id="new-edit-creative-custom-exp-width-field" name="customExpandedDimensionsWidth" ng-model="creative.customExpandedDimensionsWidth" type="text"
                            class="form-control" id="customExpandedDimensionsWidth"
                            placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
-                    <input name="customExpandedDimensionsHeight" ng-model="creative.customExpandedDimensionsHeight" type="text"
+                    <input id="new-edit-creative-custom-exp-height-field" name="customExpandedDimensionsHeight" ng-model="creative.customExpandedDimensionsHeight" type="text"
                            class="form-control" id="customExpandedDimensionsHeight"
                            placeholder="Height" required />
                 </div>
@@ -208,7 +228,7 @@
             <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.keywords" type="text"
+                <input id="new-edit-creative-keywords-field" ng-model="creative.keywords" type="text"
                        class="form-control" id="keywords"
                        placeholder="Keywords"/>
             </div>
@@ -216,8 +236,8 @@
     </form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save
+    <button id="new-edit-creative-save-creative-btn" class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save
         Creative
     </button>
-    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
+    <button id="new-edit-creative-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>
 </div>
