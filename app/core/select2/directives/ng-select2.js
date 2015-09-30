@@ -7,7 +7,53 @@ define(function(require){
     var $ = require('jquery');
     var config = $.fn.select2.amd.require('select2/defaults').defaults;
 
-    module.constant('NG_OPTIONS_REGEXP', /^\s*(.*?)(?:\s+as\s+(.*?))?(?:\s+group\s+by\s+(.*))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+(.*?)(?:\s+track\s+by\s+(.*?))?$/);
+    module.constant('NG_OPTIONS_REGEXP', /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?(?:\s+group\s+by\s+([\s\S]+?))?(?:\s+disable\s+when\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?$/);
+    // 1: value expression (valueFn)
+    // 2: label expression (displayFn)
+    // 3: group by expression (groupByFn)
+    // 4: disable when expression (disableWhenFn)
+    // 5: array item variable name
+    // 6: object item key variable name
+    // 7: object item value variable name
+    // 8: collection expression
+    // 9: track by expression
+
+    /**
+     * Computes a hash of an 'obj'.
+     * Hash of a:
+     *  string is string
+     *  number is number as string
+     *  object is either result of calling $$hashKey function on the object or uniquely generated id,
+     *         that is also assigned to the $$hashKey property of the object.
+     *
+     * @param obj
+     * @returns {string} hash string such that the same input will have the same hash string.
+     *         The resulting string key is in 'type:hashKey' format.
+     */
+    var uid = 0;
+    var nextUid = function() {
+        return uid++;
+    };
+
+    function hashKey(obj, nextUidFn) {
+        var key = obj && obj.$$hashKey;
+
+        if (key) {
+            if (typeof key === 'function') {
+                key = obj.$$hashKey();
+            }
+            return key;
+        }
+
+        var objType = typeof obj;
+        if (objType == 'function' || (objType == 'object' && obj !== null)) {
+            key = obj.$$hashKey = objType + ':' + (nextUidFn || nextUid)();
+        } else {
+            key = objType + ':' + obj;
+        }
+
+        return key;
+    }
 
     module.value('select2Config', {
         minimumResultsForSearch: 10,
@@ -20,18 +66,6 @@ define(function(require){
     var placeholderMultiselect = 'Select some options';
     var placeholderSelect = 'Select an option';
 
-    function isEmpty(value) {
-        if (ng.isArray(value)) {
-            return !value.length;
-        } else if (ng.isObject(value)) {
-            return ng.equals({}, value);
-        } else if (ng.isString(value)) {
-            return !$.trim(value).length;
-        }
-
-        return true;
-    }
-
     module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse',
         function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse) {
         return {
@@ -39,7 +73,8 @@ define(function(require){
             require: '?ngModel',
             terminal: true,
             link: function(scope, element, attr, ngModel) {
-                var match, valuesFn, theme, select2, hasValues = false, valueName, valueFn;
+                var match, valuesFn, trackBy, theme, select2, trackValues = {}, isMultiple;
+                isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== "false";
                 var opts = ng.extend({}, defaults, scope.$eval(attr.options));
 
                 ng.forEach(attr, function(value, key) {
@@ -66,7 +101,7 @@ define(function(require){
                     var curr = element, classes;
                     while(curr.length) {
                         if (curr[0].className) {
-                            classes = curr[0].className.split(" ");
+                            classes = curr[0].className.split(' ');
                             for (var i = 0; i < classes.length; i++) {
                                 if (classes[i].indexOf('theme') > -1) {
                                     return classes[i];
@@ -88,18 +123,60 @@ define(function(require){
                         $log.warn('Invalid ngOptions: ', attr.ngOptions);
                     }
 
-                    valuesFn = match[7];
-                    valueName = match[4] || match[6];
-                    valueFn = $parse(match[2] ? match[1] : valueName);
+                    valuesFn = $parse(match[8]);
+                    trackBy = match[9];
+                    var keyName = match[6];
+                    var valueName = match[5] || match[7];
 
-                    scope.$watchCollection(valuesFn, function(newVal) {
-                        if (!ng.isUndefined(newVal) && newVal.length) {
-                            hasValues = true;
-                            initOrUpdate();
-                        }
+                    var trackByFn = trackBy && $parse(trackBy);
+
+                    // Get the value by which we are going to track the option
+                    // if we have a trackFn then use that (passing scope and locals)
+                    // otherwise just hash the given viewValue
+                    var getTrackByValueFn =  trackBy ?
+                        function(value, locals) { return trackByFn(scope, locals); } :
+                        function(value) { return hashKey(value); };
+
+                    var getTrackByValue = function(value, key) {
+                        return getTrackByValueFn(value, getLocals(value, key));
+                    };
+
+                    var locals = {};
+                    var getLocals = keyName ? function(value, key) {
+                        locals[keyName] = key;
+                        locals[valueName] = value;
+                        return locals;
+                    } : function(value) {
+                        locals[valueName] = value;
+                        return locals;
+                    };
+
+                    trackValues = {};
+
+                    scope.$watchCollection(valuesFn, function(values) {
+                        ng.forEach(values, function(value, key) {
+                            var selectValue = getTrackByValue(value, key);
+                            trackValues[JSON.stringify(value)] = { index: selectValue, value: value };
+                            trackValues[selectValue] = { index: selectValue, value: value };
+                        });
+                        initOrUpdate();
                     });
                 } else {
-                    hasValues = true;
+                    //in the event of no ngOptions still want to bind the trackValues to change the model
+                    var options = element.find('option');
+                    trackValues = {};
+                    ng.forEach(options, function(option) {
+                        var key;
+                        var text = option.innerText;
+                        // For some browsers, `attr` is undefined; for others,
+                        // `attr` is false.  Check for both.
+                        if (option.hasAttribute('value')) {
+                            key = option.getAttributeNode('value').value;
+                        } else {
+                            key = text;
+                        }
+                        trackValues[key] = { index: key, value: key };
+                    });
                 }
 
                 function initOrUpdate() {
@@ -107,18 +184,30 @@ define(function(require){
                     $timeout(function() {
                         if (!select2) {
                             select2 = element.select2(opts);
-                        } else if (!isEmpty(ngModel.$viewValue) && hasValues) {
-                            if (ng.isObject(ngModel.$viewValue) || ng.isArray(ngModel.$viewValue)) {
-                                element.val(ngModel.$viewValue.value).trigger('change');
+                        }
+
+                        if (!ng.equals({}, trackValues) && ngModel) {
+                            if (ng.isArray(ngModel.$viewValue) && isMultiple) {
+                                var values = [];
+                                ng.forEach(ngModel.$viewValue, function(v) {
+                                    var trackValue = trackValues[JSON.stringify(v)];
+                                    if (trackValue) {
+                                        values.push(trackValue.index);
+                                    }
+                                });
+                                element.val(values).trigger('change');
                             } else {
-                                element.val(ngModel.$viewValue).trigger('change');
+                                var trackValue = trackValues[ngModel.$viewValue] || trackValues[JSON.stringify(ngModel.$viewValue)];
+                                if (trackValue) {
+                                    element.val(trackValue.index).trigger('change');
+                                }
                             }
                         }
                     });
                 }
 
                 function setDefaultText() {
-                    if (attr.hasOwnProperty('multiple')) {
+                    if (isMultiple) {
                         opts.placeholder = opts.placeholder || placeholderMultiselect;
                     } else {
                         var option = element.find('option').eq(0);
@@ -132,7 +221,7 @@ define(function(require){
 
                 if (ngModel) {
                     var originalRender = ngModel.$render;
-                    ngModel.$render = function(newVal) {
+                    ngModel.$render = function(val) {
                         originalRender();
                         initOrUpdate();
                     };

@@ -115,7 +115,7 @@
     <div class="form-group row">
         <label class="col-sm-2 form-label required"><span>Channel</span></label>
         <div class="col-sm-10">
-            <select select2>
+            <select select2 ng-model="options">
                 <option>Option 1</option>
                 <option>Option 2</option>
                 <option>Option 3</option>
@@ -299,7 +299,7 @@
     <div class="form-group">
         <label class="form-label theme-dark">
             <span>Dark Single Select w/ Search</span>
-            <select select2 ng-model="selected" minimum-results-for-search="0" ng-options="item.name for item in select track by item.value"></select>
+            <select select2 ng-model="selected2" minimum-results-for-search="0" ng-options="value for (key, value) in select2 track by key"></select>
         </label>
     </div>
 </form>
