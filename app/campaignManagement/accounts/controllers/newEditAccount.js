@@ -6,8 +6,10 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', 'notification', function ($scope, $modalInstance, divisionService, accountRecords, industries, modalState, notification) {
+    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', 'notification', 'URL_REGEX',
+        function ($scope, $modalInstance, divisionService, accountRecords, industries, modalState, notification, URL_REGEX) {
         $scope.action = modalState.action;
+        $scope.URL_REGEX = URL_REGEX;
 
         var record;
 
@@ -27,7 +29,7 @@ define(function (require) {
         record.observe(update, $scope);
 
         // Creating a new account under a client
-        if (modalState.clientId) {
+        if (modalState.clientId || modalState.divisionId) {
             var updateDivisions = function() {
                 var divisions = divisionService.filtered();
                 if (divisions.length === 1) {

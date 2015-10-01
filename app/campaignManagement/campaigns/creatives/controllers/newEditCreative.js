@@ -1,303 +1,252 @@
 /* globals confirm */
+/* jshint maxstatements:false */
 define(function (require) {
     'use strict';
     var app = require('./../../../module');
     var ng = require('angular');
 
     app.controller('newEditCreativeCtrl',
-        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
-            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
+        ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
+         'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
+         'CREATIVE_SETTINGS', 'notification',
+    function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
+              creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
+              creativeSettings, notification
+    ) {
+        var record;
 
         //Modal functions
-        $scope.ok = undefined;
-        $scope.cancel = undefined;
-        $scope.creative = modalState.creative;
+        $scope.ok = ok;
+        $scope.cancel = cancel;
+        $scope.dimensionsTransform = dimensionsTransform;
+        $scope.dimensionsExpandTransform = dimensionsExpandTransform;
+        $scope.environmentTransform = environmentTransform;
+        $scope.typeTransform = typeTransform;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
+        $scope.URL_REGEX = URL_REGEX;
+        $scope.MONEY_REGEX = MONEY_REGEX;
+        $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
 
-        var types = [
-            { id: 'IBV', name: 'In-Banner Video' },
-            { id: 'ISV', name: 'In-Stream Video' },
-            { id: 'RM', name: 'Rich Media' },
-            { id: 'SWF', name: 'SWF' },
-            { id: 'IMG', name: 'Image' }
-        ];
+        $scope.types = creativeSettings.types;
 
-        var typeSettings = {
-            IBV: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-            },
-            ISV: {
-                environments: [1,2],
-                dimensions: [6,7,8,9,10,14],
-                expandedDimensions: undefined
-            },
-            RM: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-            },
-            SWF: {
-                environments: [2],
-                dimensions: undefined,
-                expandedDimensions: undefined
-            },
-            IMG: {
-                environments: [1,2,3,4],
-                dimensions: undefined,
-                expandedDimensions: undefined
-            }
-        };
+        function getTypeId(data){
+            var index;
 
-        var environments = {
-            1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
-            2: { id: 'desktop', name: 'Desktop' },
-            3: { id: 'mobile', name: 'Tablet & Phone' },
-            4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
-        };
-
-        var dimensions = {
-            1: { widthHeight: [160, 600], name: '160x600' },
-            2: { widthHeight: [180, 150], name: '180x150' },
-            3: { widthHeight: [300, 250], name: '300x250' },
-            4: { widthHeight: [300, 600], name: '300x600' },
-            5: { widthHeight: [728, 90], name: '728x90' },
-            6: { widthHeight: [480, 360], name: '480x360 (4:3)' },
-            7: { widthHeight: [533, 300], name: '533x300 (16:9)' },
-            8: { widthHeight: [640, 360], name: '640x360 (16:9)' },
-            9: { widthHeight: [640, 480], name: '640x480 (4:3)' },
-            10: { widthHeight: [768, 432], name: '768x432 (16:9)' },
-            11: { widthHeight: [728, 90], name: '728x90' },
-            12: { widthHeight: [970, 90], name: '970x90' },
-            13: { widthHeight: [1, 1], name: 'Interstitial 1x1' },
-            14: { name: 'Custom' }
-        };
-
-        var expandedDimensions = {
-            1: { name: 'Non-Expanding' },
-            2: { name: 'Legacy' },
-            3: { widthHeight: [300, 600], name: '300x600' },
-            4: { widthHeight: [560, 300], name: '560x300' },
-            5: { widthHeight: [600, 250], name: '600x250' },
-            6: { widthHeight: [600, 600], name: '600x600' },
-            7: { widthHeight: [728, 315], name: '728x315' },
-            8: { widthHeight: [970, 250], name: '970x250' },
-            9: { widthHeight: [970, 415], name: '970x415' },
-            10: { name: 'Custom' }
-        };
-
-        setupBusinessLogic();
-        setupModalLogic();
-
-        function setupBusinessLogic() {
-            // Update available environments, dimensions and expanded dimensions
-            // based on creative types and the settings above
-            $scope.types = types;
-            $scope.$watch('creative.type', updateType);
-
-            function updateType() {
-                if ($scope.creative && typeSettings[$scope.creative.type]) {
-                    var settings = typeSettings[$scope.creative.type];
-                    updateEnvironments(settings.environments);
-                    updateDimensions(settings.dimensions);
-                    updateExpandedDimensions(settings.expandedDimensions);
-                }
-            }
-
-            function updateEnvironments(enabledEnvironmentIds) {
-                $scope.environments = filterById(environments, enabledEnvironmentIds);
-            }
-
-            function updateDimensions(enabledDimensionIds) {
-                $scope.dimensions = filterById(dimensions, enabledDimensionIds);
-            }
-
-            function updateExpandedDimensions(enabledExpandedDimensionIds) {
-                $scope.expandedDimensions = filterById(expandedDimensions, enabledExpandedDimensionIds);
-            }
-
-            function filterById(options, idArray) {
-                if (typeof idArray === 'undefined') {
-                    return undefined;
-                } else {
-                    var filtered = [];
-                    var currentId;
-                    var current;
-                    for(var i = 0; i < idArray.length; i ++) {
-                        currentId = idArray[i];
-                        current = options[currentId];
-                        filtered.push({
-                            id: currentId,
-                            name: current.name
-                        });
-                    }
-
-                    return filtered;
-                }
-            }
-
-            $scope.$watch('creative.dimensions', function() {
-                if ($scope.creative && $scope.creative.dimensions) {
-                    $scope.dimensionsAreCustom =
-                        dimensions[$scope.creative.dimensions].name === 'Custom';
+            ng.forEach(creativeSettings.types, function(d) {
+                if (data.type === d.dbName && data.subtype === d.subtype) {
+                    index = d.id;
                 }
             });
 
-            $scope.$watch('creative.expandedDimensions', function() {
-                if ($scope.creative && $scope.creative.expandedDimensions) {
-                    $scope.expandedDimensionsAreCustom =
-                        expandedDimensions[$scope.creative.expandedDimensions].name === 'Custom';
-                }
-            });
+            return index;
         }
 
-        function setupModalLogic() {
-            var originalCreative;
+        function typeTransform(type) {
+            if (type) {
+                record.set({ type: type.dbName, subtype: type.subtype });
 
-            if(modalState.creativeId) {
-                creativeRecordService.getById(modalState.creativeId).then(function(creative) {
-                    originalCreative = creative.all();
-                    if(! $scope.creative || $scope.creative === {}) {
-                        $scope.creative = ng.copy(modalState.creative || originalCreative);
-                    }
-                });
-            } else {
-                originalCreative = {
-                    startDate: (modalState.creative && modalState.creative.startDate) || new Date(),
-                    endDate: (modalState.creative && modalState.creative.endDate) || new Date(),
-                    objectives: [],
-                    campaignId: modalState.campaignId
-                };
-
-                $scope.creative = ng.copy(modalState.creative || originalCreative);
+                var settings = creativeSettings.typeSettings[type.id];
+                updateEnvironments(settings.environments);
+                updateDimensions(settings.dimensions);
+                updateExpandedDimensions(settings.expandedDimensions);
             }
 
-            campaigns.observe(updateCampaigns, $scope);
+            return getTypeId(record.get());
+        }
 
-            function updateCampaigns() {
-                if(! modalState.creativeId) {
+        function updateEnvironments(enabledEnvironmentIds) {
+            $scope.environments = filterById(creativeSettings.environments, enabledEnvironmentIds);
+        }
 
-                    // TODO: add render limit so this isn't crazy slow
-                    //$scope.campaigns = campaigns.all().slice(0, 10);
-                    $scope.campaigns = [{id: '1234', name: 'test'}];
+        function updateDimensions(enabledDimensionIds) {
+            $scope.dimensions = filterById(creativeSettings.dimensions, enabledDimensionIds);
+        }
+
+        function updateExpandedDimensions(enabledExpandedDimensionIds) {
+            $scope.expandedDimensions = filterById(creativeSettings.expandedDimensions, enabledExpandedDimensionIds);
+        }
+
+        function filterById(options, idArray) {
+            if (typeof idArray === 'undefined') {
+                return undefined;
+            } else {
+                var filtered = [];
+                var id;
+                for (var i = 0; i < idArray.length; i++) {
+                    id = idArray[i];
+                    filtered.push(options[id]);
+                }
+
+                return filtered;
+            }
+        }
+
+        function getDimensionsValue(arry, width, height) {
+            var index;
+            var customIndex;
+            var nonExpandingIndex;
+
+            ng.forEach(arry, function(d) {
+                if (width === d.width && height === d.height) {
+                    index = d.id;
+                }
+                if (d.isCustom) {
+                    customIndex = d.id;
+                }
+                if (d.isNonExpanding) {
+                    nonExpandingIndex = d.id;
+                }
+            });
+
+            if (!width || !height) {
+                return nonExpandingIndex;
+            }
+
+            return index == null ? customIndex : index;
+        }
+
+        function dimensionsTransform(dimension) {
+            if (dimension) {
+                $scope.dimensionsAreCustom = dimension.isCustom;
+
+                if (!dimension.isCustom) {
+                    record.set({
+                        embedWidth: dimension.width,
+                        embedHeight: dimension.height
+                    });
                 }
             }
 
-            $scope.cancel = function() {
-                if(hasUnsavedChanges()) {
-                    if(confirm('You have unsaved changes. Really close?')) {
-                        $scope.creative = originalCreative;
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
+            return getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+        }
+
+        function dimensionsExpandTransform(dimension) {
+            if (dimension) {
+                $scope.expandedDimensionsAreCustom = dimension.isCustom;
+
+                if (!dimension.isCustom || !dimension.isNonExpanding) {
+                    record.set({
+                        expandedWidth: dimension.width,
+                        expandedHeight: dimension.height
+                    });
+                }
+
+                if(dimension.isNonExpanding) {
+                    record.set({
+                        expandedWidth: null,
+                        expandedHeight: null,
+                        expandMode: null
+                    });
+                }
+            }
+
+            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+        }
+
+        function getEnvironmentValue(environments, data) {
+            var index;
+            ng.forEach(environments, function(environment) {
+                if (environment.dbName === data.environment) {
+                    index = environment.id;
+                }
+            });
+
+            return index;
+        }
+
+        function environmentTransform(environment) {
+            if (environment) {
+                record.set({
+                    environment: environment.dbName
+                });
+            }
+            return getEnvironmentValue(creativeSettings.environments, record.get());
+        }
+
+        if(modalState.creativeId) {
+            $scope.editing = true;
+            record = creativeRecordService.get(modalState.creativeId);
+            creativeRecordService.fetch(modalState.creativeId);
+        } else {
+            record = creativeRecordService.create();
+            record.set(modalState.creative);
+        }
+
+        record.observe(update, $scope);
+
+        function update() {
+            $scope.creative = record.get();
+            $scope.errors = record.errors();
+            var typeId = getTypeId(record.get());
+            if (typeId) {
+                var settings = creativeSettings.typeSettings[typeId];
+                updateEnvironments(settings.environments);
+                updateDimensions(settings.dimensions);
+                updateExpandedDimensions(settings.expandedDimensions);
+            }
+            var dimensionId = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+            if (dimensionId) {
+                $scope.dimensionsAreCustom = creativeSettings.dimensions[dimensionId].isCustom;
+            }
+            var dimensionExpandedId = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+            if (dimensionExpandedId) {
+                $scope.expandedDimensionsAreCustom = creativeSettings.expandedDimensions[dimensionExpandedId].isCustom;
+            }
+        }
+
+        campaigns.observe(updateCampaigns, $scope);
+
+        function updateCampaigns() {
+            if(!modalState.creativeId) {
+                // TODO: add render limit so this isn't crazy slow
+                //$scope.campaigns = campaigns.all().slice(0, 10);
+                $scope.campaigns = [{id: '1c5cf047-5ecd-444b-822a-17e1eebed4b3', name: 'test'}];
+            }
+        }
+
+        function cancel() {
+            if(record.hasChanges()) {
+                if(confirm('You have unsaved changes. Really close?')) {
+                    record.reset();
+                    $scope.campaign = record.get();
                     $modalInstance.dismiss('cancel');
                 }
-            };
-
-            function hasUnsavedChanges() {
-                return ! ng.equals($scope.creative, originalCreative);
+            } else {
+                $modalInstance.dismiss('cancel');
             }
-
-            $scope.ok = function(errors) {
-                $scope.errors = errors;
-                if(ng.equals({}, $scope.errors) || ! $scope.errors) {
-                    var transformedCreative = transformCreative();
-                    var onSuccess = function() {
-                        originalCreative = $scope.creative;
-                        $modalInstance.dismiss('cancel');
-                    };
-                    if($scope.creative && $scope.creative.id) {
-                        var creativeDiff = getDiff($scope.creative, originalCreative);
-
-                        if(! ng.equals(creativeDiff, {})) {
-                            creativeRecordService.update($scope.creative.id, creativeDiff).then(onSuccess);
-                        } else {
-                            $modalInstance.dismiss('cancel');
-                        }
-                    } else {
-                        newCreativeService(transformedCreative)
-                            .then(function(url) {
-                                onSuccess();
-                                $window.open(url, '_blank');
-                            });
-                    }
-                }
-                $scope.submitted = true;
-            };
-
-            function transformCreative() {
-                var creative = $scope.creative;
-                var allDimensions = getDimensions(creative);
-                var getEnvironment = function(id) {
-                    for (var i=0; i<$scope.environments.length; i++) {
-                        if ($scope.environments[i].id === id) {
-                            return environments[id].id;
-                        }
-                    }
-                    return null;
-                };
-
-                return {
-                    expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
-                    expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
-                    embedWidth: parseInt(allDimensions.embed.width, 10),
-                    embedHeight: parseInt(allDimensions.embed.height, 10),
-                    clickthroughUrl: creative.clickthroughUrl,
-                    type: creative.type,
-                    environment: getEnvironment(creative.environment),
-                    name: creative.name
-                };
-            }
-
-            function getDimensions(creative) {
-                var allDimensions = {
-                    embed: {},
-                    expanded: {}
-                };
-
-                var widthHeight = dimensions[creative.dimensions].widthHeight;
-                allDimensions.embed.width = widthHeight && widthHeight[0];
-                allDimensions.embed.height = widthHeight && widthHeight[1];
-
-                allDimensions.embed = {
-                    width: allDimensions.embed.width || creative.customDimensionsWidth,
-                    height: allDimensions.embed.height || creative.customDimensionsHeight
-                };
-
-                if (creative.expandedDimensions) {
-                    widthHeight = expandedDimensions[creative.expandedDimensions].widthHeight;
-                    allDimensions.expanded.width = widthHeight && widthHeight[0];
-                    allDimensions.expanded.height = widthHeight && widthHeight[1];
-
-                    allDimensions.expanded = {
-                        width: allDimensions.expanded.width || creative.customExpandedDimensionsWidth,
-                        height: allDimensions.expanded.height || creative.customExpandedDimensionsHeight
-                    };
-                }
-
-                return allDimensions;
-            }
-
-            // Simple diffing function for PUT request
-            function getDiff(changed, original) {
-                var diff = {};
-                for(var index in changed) {
-                    if(changed.hasOwnProperty(index)) {
-                        if(original[index] && ! ng.equals(changed[index], original[index])) {
-                            diff[index] = changed[index];
-                        }
-                    }
-                }
-
-                return diff;
-            }
-
-            //Before closing the modal save the state;
-            $scope.$on('$destroy', function() {
-                modalState.creative = $scope.creative;
-            });
         }
+
+        function ok(errors) {
+            if(ng.equals({}, errors) || !errors) {
+                var onSuccess = function(resp) {
+                    $scope.creative = {};
+                    notification.success('Creative: {{name}}, has been updated.',
+                        {
+                            locals: {
+                                name: resp.data.name
+                            }
+                        });
+                    $modalInstance.dismiss('cancel');
+                };
+
+                if (record.isNew()) {
+                    newCreativeService($scope.creative)
+                        .then(function(url) {
+                            $scope.creative = {};
+                            $modalInstance.dismiss('cancel');
+                            $window.open(url, 'mixpo_studio');
+                        });
+                } else {
+                    record.save().then(onSuccess);
+                }
+            }
+            $scope.submitted = true;
+        }
+
+        //Before closing the modal save the state;
+        $scope.$on('$destroy', function() {
+            modalState.creative = $scope.creative;
+        });
     }]);
 });

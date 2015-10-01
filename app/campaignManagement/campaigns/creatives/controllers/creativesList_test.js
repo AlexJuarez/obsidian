@@ -14,10 +14,10 @@ define(function (require) {
                     headers: 'headers',
                     rules: 'rules',
                     data: [
-                        {type: 'IBV'},
-                        {type: 'RM'},
-                        {type: 'IS'},
-                        {type: 'IBV'}
+                        {type: 'inBannerVideo'},
+                        {type: 'richMedia'},
+                        {type: 'inStream'},
+                        {type: 'inBannerVideo'}
                     ]
                 };
             },
@@ -34,7 +34,7 @@ define(function (require) {
             inject(function ($controller, $httpBackend, $state, $rootScope) {
                 httpBackend = $httpBackend;
                 state = $state;
-                state.params.filter = 'IBV';
+                state.params.filter = 'inBannerVideo';
                 scope = $rootScope.$new();
                 rootScope = $rootScope;
                 list = $controller('creativesListCtrl', {$scope: scope, creatives: mockCreatives});
@@ -59,8 +59,8 @@ define(function (require) {
                 headers: 'headers',
                 rules: 'rules',
                 data: [
-                    {type: 'IBV'},
-                    {type: 'IBV'}
+                    {type: 'inBannerVideo'},
+                    {type: 'inBannerVideo'}
                 ]
             };
 

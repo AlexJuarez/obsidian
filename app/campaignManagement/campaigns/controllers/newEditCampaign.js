@@ -7,9 +7,9 @@ define(function (require) {
 
     app.controller('newEditCampaignCtrl', [
         '$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService',
-        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification',
+        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification', 'URL_REGEX', 'MONEY_REGEX', '$interpolate', '$filter',
         function ($scope, $q, $modalInstance, accounts, accountRecords, divisionRecords,
-                  clientRecords, campaignRecords, modalState, notification) {
+                  clientRecords, campaignRecords, modalState, notification, URL_REGEX, MONEY_REGEX, $interpolate, $filter) {
 
             //Datepicker functions
             $scope.format = 'MM/dd/yyyy';
@@ -21,10 +21,21 @@ define(function (require) {
                 maxMode: 'day'
             };
 
+            $scope.URL_REGEX = URL_REGEX;
+            $scope.MONEY_REGEX = MONEY_REGEX;
+
             //Modal functions
             $scope.ok = ok;
             $scope.cancel = cancel;
             $scope.action = modalState.action;
+            $scope.formatDate = formatDate;
+
+            var conversionEmbedSnippetTemplate = $interpolate('<img src="https://player1.mixpo.com/player/analytics/ct?event={{conversionEvent}} />');
+            $scope.$watch('campaign.conversionEvent', function() {
+                $scope.conversionEmbedSnippetText = conversionEmbedSnippetTemplate({
+                    conversionEvent: encodeURIComponent($scope.campaign && $scope.campaign.conversionEvent || 'default')
+                });
+            });
 
             accounts.observe(updateAccounts, $scope);
 
@@ -76,6 +87,16 @@ define(function (require) {
                 });
 
                 $scope.datePickers[name] = true;
+            }
+
+            function formatDate($event) {
+                var date = new Date($event.target.value);
+                if (isNaN( date.getTime() )) {
+
+                    // Date doesn't parse!
+                    date = new Date('Jan 1 2000');
+                }
+                $event.target.value = $filter('date')(date, 'M/d/yyyy');
             }
 
             function cancel() {

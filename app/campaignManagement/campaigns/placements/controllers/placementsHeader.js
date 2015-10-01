@@ -4,8 +4,8 @@ define(function(require) {
     var app = require('./../../../module');
 
     app.controller('placementsHeader', [
-        '$scope', '$modal', '$rootScope', '$q', '$interpolate', 'placements', 'adTagService', 'placementRecordService',
-        function($scope, $modal, $rootScope, $q, $interpolate, placements, adTagService, placementRecordService) {
+        '$scope', '$modal', '$rootScope', '$q', '$interpolate', '$state', 'placements', 'adTagService', 'placementRecordService',
+        function($scope, $modal, $rootScope, $q, $interpolate, $state, placements, adTagService, placementRecordService) {
 
             $scope.openNewPlacementModal = openNewPlacementModal;
             $scope.editPlacements = editPlacements;
@@ -17,7 +17,12 @@ define(function(require) {
             function openNewPlacementModal() {
                 if(! newPlacementModal) {
                     newPlacementModal = {
-                        action: 'New'
+                        action: 'New',
+                        originalPlacement: {
+                            campaignId: $state.params.campaignId,
+                            flightStart: new Date(),
+                            flightEnd: new Date()
+                        }
                     };
                 }
 
@@ -89,6 +94,10 @@ define(function(require) {
                     selectedPlacements = $scope.selectedPlacements;
                     editPlacementsModal = {
                         placementIds: $scope.selectedPlacements,
+                        originalPlacement: {
+                            flightStart: new Date(),
+                            flightEnd: new Date()
+                        },
                         action: 'Edit'
                     };
                 }
@@ -169,12 +178,12 @@ define(function(require) {
                 var placementPromises = [];
 
                 placementIds.forEach(function(placementId) {
-                    placementPromises.push(placementRecordService.getById(placementId));
+                    placementPromises.push(placementRecordService.fetch(placementId));
                 });
 
                 $q.all(placementPromises).then(function(placements) {
-                    placements.forEach(function(placement) {
-                        placement = placement.all();
+                    placements.forEach(function(resp) {
+                        var placement = resp.data;
                         tags += getPlacementTagText(placement);
                     });
 

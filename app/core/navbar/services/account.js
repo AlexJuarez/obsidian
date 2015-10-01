@@ -31,23 +31,20 @@ define(function (require) {
 
         function accountUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
                 var division = divisions.get(data.divisionId);
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    accounts.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned,
-                        division: {
-                            id: data.divisionId
-                        },
-                        client: {
-                            id: division.client.id
-                        }
-                    }]);
-                }
+                accounts.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned,
+                    division: {
+                        id: data.divisionId
+                    },
+                    client: {
+                        id: division.client.id
+                    }
+                }]);
             }
         }
 
