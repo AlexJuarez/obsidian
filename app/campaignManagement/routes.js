@@ -41,29 +41,6 @@ define(function (require) {
             });
 
         buildAnalyticsRoutes('analytics');
-        buildReportRoutes('reports');
-
-        function buildReportRoutes(base) {
-            $stateProvider
-                .state({
-                    name: base,
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.account',
-                    url: '/analytics/reports/account/:accountId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.detail',
-                    url: '/analytics/reports/campaign/:campaignId',
-                    template: '<ui-view />'
-                });
-        }
 
         function buildAnalyticsRoutes(base) {
             $stateProvider
@@ -78,8 +55,8 @@ define(function (require) {
                     templateUrl: 'campaignManagement/campaigns/index.html'
                 })
                 .state({
-                    name: base + '.campaigns.detail',
-                    url: '/campaign/:campaignId',
+                    name: base + '.wildcard',
+                    url: '/*path',
                     template: '<ui-view />'
                 });
         }
