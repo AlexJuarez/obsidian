@@ -13,7 +13,6 @@ define(function (require) {
             templateUrl: 'core/directives/noContent.html',
             controller: ['$rootScope', '$scope', '$state', '$timeout', 'clientSet', 'divisionSet', 'campaignsHeader', 'creatives', 'placements', function ($rootScope, $scope, $state, $timeout, clientSet, divisionSet, campaignsHeader, creatives, placements) {
                 
-
                 $scope.showAccountMsg = false;
                 $scope.showCampaignMsg = false;
                 $scope.showCreativeMsg = false;
@@ -58,6 +57,7 @@ define(function (require) {
                         var data = divisionSet.all().countAccounts;
                         var dataObj = {data};
                         $scope.showAccountMsg = hasContent(dataObj);
+                        
                     }
                 }
 
@@ -67,10 +67,9 @@ define(function (require) {
                         var dataObj = {data};
                         $scope.showAccountMsg = hasContent(dataObj);
                     }
+                    
                 }
                 
-
-
                 function assignObserver() {
                     if ($state.params.campaignId) {
                         
@@ -90,7 +89,7 @@ define(function (require) {
 
                         divisionSet.observe(updateDivisionMsg, $scope);
                     
-                    } else {
+                    } else if ($state.params.clientId) {
                         
                         clientSet.observe(updateClientMsg, $scope);
                     

@@ -36,9 +36,11 @@ define(function (require) {
                 'archived': 0
             };
 
-            for (var i = 0; i < datum.length; i++) {
-                var data = datum[i];
-                output[data.status] = data.metrics.count;
+            if (datum && datum.length) {
+                for (var i = 0; i < datum.length; i++) {
+                    var data = datum[i];
+                    output[data.status] = data.metrics.count;
+                }
             }
 
             return output;
