@@ -34,10 +34,9 @@
             <label
                 class="col-sm-3 form-label required"><span>Publisher</span></label>
 
-            <div class="col-sm-9 single-select-light">
-                <select name="types" class="single-select" chosen
+            <div class="col-sm-9">
+                <select name="types" select2
                         ng-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"
-                        disable-search-threshold="10"
                         ng-model="placement.publisherId" required>
                 </select>
 
@@ -129,10 +128,9 @@
             <label
                 class="col-sm-3 form-label"><span>Cost</span></label>
 
-            <div class="col-sm-3 single-select-light">
-                <select name="types" class="single-select" chosen
+            <div class="col-sm-3">
+                <select name="types" select2
                         ng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"
-                        disable-search-threshold="10"
                         ng-model="placement.rateType">
                 </select>
             </div>

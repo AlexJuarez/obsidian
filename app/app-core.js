@@ -3,7 +3,6 @@ define(function (require) {
 
     var ng = require('angular');
     require('ui-router');
-    require('angular-chosen');
     require('ng-perfect-scrollbar');
     require('ng-datepicker');
     require('./core/index');
@@ -17,7 +16,6 @@ define(function (require) {
         'perfect_scrollbar',
         'app.campaign-management',
         'app.analytics',
-        'localytics.directives',
         'tpl',
         'app.core',
         'app.tables',

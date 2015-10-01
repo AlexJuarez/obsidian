@@ -11,6 +11,7 @@ define(function(require) {
     require('./constants/moneyRegex');
     require('./creativePreview/index');
     require('./notifications/index');
+    require('./select2/index');
 
     services();
     filters();

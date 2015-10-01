@@ -18,11 +18,9 @@
              ng-class="{'has-error': newCreative.campaignId.$invalid && submitted}">
             <label
                 class="col-sm-3 form-label required"><span>Campaign</span></label>
-
-            <div class="col-sm-9 single-select-light">
-                <select name="campaignId" class="single-select" chosen
+            <div class="col-sm-9">
+                <select id="new-edit-creative-select-campaign" name="campaignId" select2
                         ng-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"
-                        disable-search-threshold="10"
                         ng-model="creative.campaignId" required>
                 </select>
 
@@ -41,7 +39,7 @@
             <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.name" type="text" name="name"
+                <input id="new-edit-creative-name-field" ng-model="creative.name" type="text" name="name"
                        class="form-control" id="inputName" placeholder="Name"
                        required/>
 
@@ -60,7 +58,7 @@
             <label for="clickthroughUrl" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.clickthroughUrl" type="text" ng-pattern="URL_REGEX"
+                <input id="new-edit-creative-clickthrough-url-field" ng-model="creative.clickthroughUrl" type="text" ng-pattern="URL_REGEX"
                        name="clickthroughUrl" class="form-control"
                        id="clickthroughUrl" placeholder="Clickthrough Url" required/>
 
@@ -78,11 +76,9 @@
         <div class="form-group row"
              ng-class="{'has-error': newCreative.type.$invalid && submitted}">
             <label ng-class="{disabled:editing}"class="col-sm-3 form-label required"><span>Creative Type</span></label>
-
-            <div class="col-sm-9 single-select-light">
-                <select ng-disabled="editing" name="type" class="single-select" chosen
+            <div class="col-sm-9">
+                <select id="new-edit-creative-select-creative-type" ng-disabled="editing" name="type" select2
                         ng-options="type as type.name for type in types track by type.id"
-                        disable-search-threshold="10"
                         ng-model="typeTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
                 <p ng-show="newCreative.type.$invalid && submitted"
@@ -98,11 +94,9 @@
         <div ng-if="environments" class="form-group row"
              ng-class="{'has-error': newCreative.environment.$invalid && submitted}">
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Environment</span></label>
-
-            <div class="col-sm-9 single-select-light">
-                <select ng-disabled="editing" name="environment" class="single-select" chosen
+            <div class="col-sm-9">
+                <select id="new-edit-creative-select-environment" ng-disabled="editing" name="environment" select2
                         ng-options="environment as environment.name for environment in environments track by environment.id"
-                        disable-search-threshold="10"
                         ng-model="environmentTransform" ng-model-options="{ getterSetter: true }" ng-required="!editing">
                 </select>
 
@@ -119,11 +113,9 @@
         <div ng-if="dimensions" class="form-group row"
              ng-class="{'has-error': (newCreative.dimensions.$invalid || newCreative.customDimensionsWidth.$invalid || newCreative.customDimensionsHeight.$invalid) && submitted}">
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Dimensions</span></label>
-
-            <div class="col-sm-3 single-select-light">
-                <select ng-disabled="editing" name="dimensions" class="single-select" chosen
+            <div class="col-sm-3">
+                <select id="new-edit-creative-select-dimensions" ng-disabled="editing" name="dimensions" select2
                         ng-options="dimension as dimension.name for dimension in dimensions track by dimension.id"
-                        disable-search-threshold="10"
                         ng-model="dimensionsTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
 
@@ -148,12 +140,12 @@
             </div>
             <div class="col-sm-6" ng-show="dimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.embedWidth" type="number"
+                    <input id="new-edit-creative-custom-width-field" ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.embedWidth" type="number"
                            class="form-control" id="customDimensionsWidth"
                            placeholder="Width" required/>
                 </div>
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.embedHeight" type="number"
+                    <input id="new-edit-creative-custom-height-field" ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.embedHeight" type="number"
                            class="form-control" id="customDimensionsHeight"
                            placeholder="Height" required/>
                 </div>
@@ -162,11 +154,9 @@
         <div ng-if="expandedDimensions" class="form-group row"
              ng-class="{'has-error': (newCreative.expandedDimensions.$invalid || newCreative.customExpandedDimensionsWidth.$invalid || newCreative.customExpandedDimensionsHeight.$invalid) && submitted}">
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>
-
-            <div class="col-sm-3 single-select-light">
-                <select ng-disabled="editing" name="expandedDimensions" class="single-select" chosen
+            <div class="col-sm-3">
+                <select id="new-edit-creative-select-exp-dimension" ng-disabled="editing" name="expandedDimensions" select2
                         ng-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
-                        disable-search-threshold="10"
                         ng-model="dimensionsExpandTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
 
@@ -191,12 +181,12 @@
             </div>
             <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
+                    <input id="new-edit-creative-custom-exp-width-field" ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
                            class="form-control" id="customExpandedDimensionsWidth"
                            placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
-                    <input ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
+                    <input id="new-edit-creative-custom-exp-height-field" ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
                            class="form-control" id="customExpandedDimensionsHeight"
                            placeholder="Height" required />
                 </div>
@@ -235,7 +225,7 @@
             <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="creative.keywords" type="text"
+                <input id="new-edit-creative-keywords-field" ng-model="creative.keywords" type="text"
                        class="form-control" id="keywords"
                        placeholder="Keywords"/>
             </div>
@@ -247,8 +237,8 @@
     </form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save
+    <button id="new-edit-creative-save-creative-btn" class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save
         Creative
     </button>
-    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
+    <button id="new-edit-creative-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>
 </div>

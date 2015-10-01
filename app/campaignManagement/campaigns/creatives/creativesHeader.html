@@ -1,22 +1,22 @@
 <nav class="row" role="form">
     <div class="form-group col-lg-5">
         <span style="font-size: 20px; padding-right: 20px;">
-            <a ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>
-            <a ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>
+            <a id="creatives-header-view-thumnails" ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>
+            <a id="creatives-header-view-list" ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>
         </span>
         <b>Filter:</b>
-        <a ui-sref=".({filter: ''})">all ({{creativesMeta.all}})</a>
-        <a ui-sref=".({filter: 'inBannerVideo'})">In-Banner ({{creativesMeta.inBannerVideo}})</a>
-        <a ui-sref=".({filter: 'inStream'})">In-Stream({{creativesMeta.inStream}})</a>
-        <a ui-sref=".({filter: 'richMedia'})">Rich Media({{creativesMeta.richMedia}})</a>
+        <a id="creatives-header-filter-all" ui-sref=".({filter: ''})">all ({{creativesMeta.all}})</a>
+        <a id="creatives-header-filter-ibv" ui-sref=".({filter: 'inBannerVideo'})">In-Banner ({{creativesMeta.inBannerVideo}})</a>
+        <a id="creatives-header-filter-is" ui-sref=".({filter: 'inStream'})">In-Stream({{creativesMeta.inStream}})</a>
+        <a id="creatives-header-filter-rm" ui-sref=".({filter: 'richMedia'})">Rich Media({{creativesMeta.richMedia}})</a>
     </div>
     <div class="form-group col-lg-2">
         <label class="form-label search">
-            <input class="input" placeholder="Search" type="search"/>
+            <input id="creatives-header-search-field" class="input" placeholder="Search" type="search"/>
         </label>
     </div>
     <div class="form-group col-lg-5 text-right-lg">
-        <button class="btn btn-default" ng-click="openNewCreativeModal()">New Creative</button>
-        <button class="btn btn-default">Set Trackers</button>
+        <button id="creatives-header-newcreative-btn" class="btn btn-default" ng-click="openNewCreativeModal()">New Creative</button>
+        <button id="creatives-header-settrackers-btn" class="btn btn-default">Set Trackers</button>
     </div>
 </nav>
