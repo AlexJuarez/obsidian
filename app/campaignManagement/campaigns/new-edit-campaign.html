@@ -70,7 +70,8 @@
                             <div class="col-sm-8">
                                 <div class="input-group">
                                     <input class="form-control" type="text"
-                                           class="form-control"
+                                           name="startDate"
+                                           ng-blur="formatDate($event)"
                                            datepicker-popup="{{format}}"
                                            ng-model="campaign.startDate"
                                            is-open="datePickers.startDateOpened"
@@ -97,8 +98,9 @@
                             <div class="col-sm-8">
                                 <div class="input-group">
                                     <input class="form-control" type="text"
-                                           class="form-control"
+                                           name="endDate"
                                            datepicker-popup="{{format}}"
+                                           ng-blur="formatDate($event)"
                                            ng-model="campaign.endDate"
                                            is-open="datePickers.endDateOpened"
                                            min-date="minDate"
@@ -127,7 +129,7 @@
             <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="campaign.budget" type="number" pattern="^\d+((\.|\,)\d{2})?$"
+                <input ng-model="campaign.budget" type="number" ng-pattern="MONEY_REGEX"
                        class="form-control" id="budget" name="budget"
                        placeholder="Enter your budget"/>
                 <p ng-show="newCampaign.budget.$invalid && submitted" class="help-block">
@@ -145,15 +147,24 @@
                 </label>
             </div>
         </div>
-        <div class="form-group row">
-            <div class="col-sm-offset-3 col-sm-9">
-                <label>
-                    <input ng-model="campaign.googleAnalyticsParams"
-                           type="checkbox" class="checkbox checkbox-light"/>
-                    <span>Add Google AnalyticsUTM Parameters to URLs</span>
-                </label>
-            </div>
-        </div>
+
+        <!--Disabled until after Alpha-->
+
+        <!--<div class="form-group row">-->
+            <!--<div class="col-sm-offset-3 col-sm-9">-->
+                <!--<label>-->
+                    <!--<input model="enableGeotargeting" type="checkbox" class="checkbox checkbox-light"/>-->
+                    <!--<span>Enable Geotargeting</span>-->
+                <!--</label>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!--<div class="form-group row">-->
+          <!--<label class="col-sm-3 form-label">Upload CSV file</label>-->
+
+          <!--<div class="col-sm-9 file-selection-wrapper">-->
+            <!--<div file-picker ng-model="campaign.csv"></div>-->
+          <!--</div>-->
+        <!--</div>-->
         <div class="form-group row">
             <div class="col-sm-offset-3 col-sm-9">
                 <label>
@@ -164,32 +175,35 @@
             </div>
         </div>
 
-        <div ng-if="campaign.conversionTracking">
-            <div class="form-group row">
-                <label for="conversionPageDomain"
+        <div ng-show="campaign.conversionTracking">
+            <div class="form-group row" ng-class="{'has-error': newCampaign.conversionDomain.$invalid && submitted}">
+                <label for="conversionDomain"
                        class="col-sm-3 form-label"><span>Conversion Page Domain</span></label>
 
                 <div class="col-sm-9">
-                    <input ng-model="campaign.conversionPageDomain" type="text"
-                           class="form-control" id="conversionPageDomain"
+                    <input ng-model="campaign.conversionDomain" type="text" name="conversionDomain"
+                           class="form-control" id="conversionDomain" ng-pattern="URL_REGEX"
                            placeholder="Conversion Page Domain"/>
+                    <p ng-show="newCampaign.conversionDomain.$invalid && submitted"
+                       class="help-block">
+                      conversion domain is invalid
+                    </p>
                 </div>
             </div>
             <div class="form-group row">
-                <label for="conversionEventName"
+                <label for="conversionEvent"
                        class="col-sm-3 form-label"><span>Conversion Event Name</span></label>
 
                 <div class="col-sm-9">
-                    <input ng-model="campaign.conversionEventName" type="text"
-                           class="form-control" id="conversionEventName"
+                    <input ng-model="campaign.conversionEvent" type="text"
+                           class="form-control" id="conversionEvent"
                            placeholder="Conversion Event Name"/>
                 </div>
             </div>
             <div class="form-group row">
                 <div class="col-sm-3 text-right-sm">Conversion Embed Snippet</div>
                 <div class="col-sm-9">
-                    <textarea ng-model="conversionEmbedSnippetText" class="form-control"
-                              placeholder="Enter some text"></textarea>
+                    <textarea disabled ng-model="conversionEmbedSnippetText" class="form-control"></textarea>
                 </div>
             </div>
         </div>
@@ -204,7 +218,7 @@
 
                 <p ng-show="newCampaign.repName.$invalid && submitted"
                    class="help-block">
-                    rep name is required
+                    rep name is invalid
                 </p>
                 <p ng-show="errors.repName && submitted" class="help-block">
                     {{errors.repName}}
@@ -216,18 +230,24 @@
             <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>
 
             <div class="col-sm-9">
-                <input ng-model="campaign.repEmail" type="text"
+                <input ng-model="campaign.repEmail" type="email"
                        class="form-control" name="repEmail" id="repEmail"
                        placeholder="Enter AE/Rep Email" ng-required="isRepInfoRequired"/>
 
                 <p ng-show="newCampaign.repEmail.$invalid && submitted"
                    class="help-block">
-                    rep email is required
+                    rep email is invalid
                 </p>
                 <p ng-show="errors.repEmail && submitted" class="help-block">
                     {{errors.repEmail}}
                 </p>
             </div>
+        </div>
+        <div class="form-group row">
+          <div class="col-sm-3 text-right-sm">Description</div>
+          <div class="col-sm-9">
+            <textarea ng-model="campaign.description" class="form-control"></textarea>
+          </div>
         </div>
     </form>
 </div>

@@ -16,6 +16,6 @@ define(function (require) {
 
 
     module.service('creativeRecordService', ['recordPoolFactory', function (recordPoolFactory) {
-        return recordPoolFactory(apiConfig);
+        return recordPoolFactory(apiConfig, { subtype: { ignore: true }});
     }]);
 });

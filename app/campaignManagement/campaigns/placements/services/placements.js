@@ -44,15 +44,12 @@ define(function (require) {
         {name: '', id: 'options'}
     ];
 
-    var typeTransform = {
-        'In-Banner': 'IBV',
-        'In-Stream': 'IS',
-        'Rich Media': 'RM',
-        'Display': 'DISPLAY'
-    };
-
-    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
-                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory',
+        'apiUriGenerator', 'placementsByAdType', 'placementsByCreative',
+        'placementsByPublisher', 'ENUMS',
+        function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
+        placementsByCreative, placementsByPublisher, ENUMS
+    ) {
         var placementCache = cache({
             transform: function(data) {
                 return data.placements;
@@ -95,7 +92,7 @@ define(function (require) {
                         delivering: placement.live,
                         startDate: placement.flightStart,
                         endDate: placement.flightEnd,
-                        type: typeTransform[placement.type],
+                        type: ENUMS.down.creativeTypes[placement.type],
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions

@@ -31,28 +31,25 @@ define(function (require) {
 
         function campaignUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
                 var account = accounts.get(data.accountId);
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    campaigns.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned,
-                        startDate: data.startDate,
-                        endDate: data.endDate,
-                        account: {
-                            id: data.accountId
-                        },
-                        division: {
-                            id: account.division.id
-                        },
-                        client: {
-                            id: account.client.id
-                        }
-                    }]);
-                }
+                campaigns.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned,
+                    startDate: data.startDate,
+                    endDate: data.endDate,
+                    account: {
+                        id: data.accountId
+                    },
+                    division: {
+                        id: account.division.id
+                    },
+                    client: {
+                        id: account.client.id
+                    }
+                }]);
             }
         }
 

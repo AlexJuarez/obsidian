@@ -5,18 +5,19 @@ define(function(require) {
     require('angularMocks');
 
     describe('creatives', function() {
-        var creativesService, httpBackend, state, apiGenerator, scope, records;
+        var creativesService, httpBackend, state, apiGenerator, scope, records, timeout;
 
         beforeEach(function() {
             module('app.campaign-management');
 
-            inject(function(creatives, $httpBackend, $state, apiUriGenerator, $rootScope, creativeRecordService) {
+            inject(function(creatives, $httpBackend, $state, apiUriGenerator, $rootScope, creativeRecordService, $timeout) {
                 creativesService = creatives;
                 httpBackend = $httpBackend;
                 state = $state;
                 apiGenerator = apiUriGenerator;
                 scope = $rootScope.$new();
                 records = creativeRecordService;
+                timeout = $timeout;
             });
         });
 
@@ -103,15 +104,19 @@ define(function(require) {
 
         it('should observe creativeRecordService', function () {
             var data = [];
+            var record = records.create();
+            record.set({ name: 'test' });
 
             httpBackend.when('GET', apiGenerator(creativesService._apiConfig())).respond({
                 creatives: data
             });
-
-            records.notifyObservers({ id: 1 });
+            creativesService.all();
             httpBackend.flush();
-            records.notifyObservers({ id: 1 });
+            httpBackend.when('POST', '/api/crud/creatives').respond({ id: 1, name: 'test' });
+            record.save();
+            httpBackend.flush();
 
+            expect(record.isNew()).toEqual(false);
             expect(creativesService._getCreative(1)).toEqual(jasmine.objectContaining({ id: 1 }));
         });
     });

@@ -111,12 +111,12 @@ define(function (require) {
                     }
 
                     function copyCreative(id) {
-                        creativeRecordService.fetch(id).then(function(creative) {
-                            creative = creative.all();
-                            var newCreative = ng.copy(creative);
-                            delete newCreative.id;
-                            newCreative = removeNulls(newCreative);
-                            creativeRecordService.create( transformCreativeData(newCreative) );
+                        creativeRecordService.fetch(id).then(function(resp) {
+                            var creative = ng.copy(resp.data);
+                            delete creative.id;
+                            creative = removeNulls(creative);
+                            var record = creativeRecordService.create( transformCreativeData(creative) );
+                            record.save();
                         });
                     }
 

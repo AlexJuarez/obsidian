@@ -9,7 +9,7 @@ define(function (require) {
     var module = require('./../module');
 
     module.factory('recordPoolFactory', ['recordFactory', 'observerFactory', '$q', function (recordFactory, observerFactory, $q) {
-        return function (apiConfig) {
+        return function (apiConfig, rules) {
             var observers = observerFactory();
             var records = {};
 
@@ -21,7 +21,7 @@ define(function (require) {
                 if (exists(id)) {
                     return records[id];
                 } else {
-                    var record = recordFactory({apiConfig: apiConfig, attributes: { id: id }});
+                    var record = recordFactory({apiConfig: apiConfig, rules: rules, attributes: { id: id }});
                     records[id] = record;
                     record.observe(observers.notifyObservers, undefined, true);
                     return record;
@@ -55,6 +55,7 @@ define(function (require) {
             function create(attrs) {
                 var record = recordFactory({
                     apiConfig: apiConfig,
+                    rules: rules,
                     successFn: function(resp) {
                         var data = resp.data;
                         records[data.id] = record;
