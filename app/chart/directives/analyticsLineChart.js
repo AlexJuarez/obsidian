@@ -179,7 +179,7 @@ define(function (require) {
                                 return {
                                     name: name,
                                     date: d[interval],
-                                    datum: +d.metrics[show],
+                                    datum: +(d.metrics[show] || 0),
                                     metrics: d.metrics
                                 }
                             })
