@@ -39,15 +39,9 @@ define(function(require) {
         {name: '', id: 'options'}
     ];
 
-    var typeTransform = {
-        'In-Banner': 'IBV',
-        'In-Stream': 'IS',
-        'Rich Media': 'RM',
-        'Display': 'DISPLAY'
-    };
-
     module.service('creatives', [
-        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
+        'cacheFactory', '$state', 'creativeRecordService', 'ENUMS', function(cacheFactory, $state, creativeRecordService, ENUMS) {
+
             var cache = cacheFactory({
                 transform: function(data) {
                     return data.creatives;
@@ -74,6 +68,7 @@ define(function(require) {
 
             function transformCrudRecord(updatedRecord, existingRecord) {
                 return {
+                    campaign: existingRecord.campaign,
                     deleted: updatedRecord.deleted,
                     embedHeight: updatedRecord.embedHeight,
                     expandedWidth: updatedRecord.expandedWidth,
@@ -116,7 +111,7 @@ define(function(require) {
                         checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                         creativeName: creative.name,
                         delivering: creative.live,
-                        type: typeTransform[creative.type],
+                        type: ENUMS.down.creativeTypes[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         campaignId: creative.campaign.id,

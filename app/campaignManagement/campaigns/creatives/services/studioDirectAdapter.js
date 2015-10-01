@@ -12,25 +12,27 @@ define(function(require) {
      * @name studioDirectAdapter
      * @ngInject
      */
-    module.service('studioDirectAdapter', [function () {
+    module.service('studioDirectAdapter', ['ENUMS', function (ENUMS) {
+        var types = ENUMS.up.creativeTypes;
+        var environments = ENUMS.up.creativeEnvironments;
         function getAdType(type, subtype, expandedWidth, expandedHeight) {
-            if(type === 'Display' && subtype === 'IMG') {
+            if(type === types.display && subtype === 'IMG') {
                 // Image
                 return 'IMG';
-            } else if(type === 'Display' && subtype === 'SWF') {
+            } else if(type === types.display && subtype === 'SWF') {
                 // SWF
                 return 'SWF';
-            }  else if(type === 'In-Stream') {
+            }  else if(type === types.inStream) {
                 // In-Stream Video
                 return 'IS';
-            } else if(type === 'Rich Media') {
+            } else if(type === types.richMedia) {
                 // 'Rich Media' AKA 'Interactive-Display'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDRM';
                 } else {
                     return 'ID';
                 }
-            } else if(type === 'In-Banner') {
+            } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDMLQ';
@@ -45,13 +47,13 @@ define(function(require) {
 
         function getAdEnvironment(env) {
             switch(env) {
-                case 'multidevice':
+                case environments.all:
                     return 'multiscreen';
-                case 'mobile':
+                case environments.mobile:
                     return 'tabletphone';
-                case 'tablet':
+                case environments.mraid:
                     return 'inappmraid';
-                case 'desktop':
+                case environments.desktop:
                     return 'desktop';
                 default:
                     // unknown
@@ -60,7 +62,7 @@ define(function(require) {
         }
 
         function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
-            if(type === 'In-Banner') {
+            if(type === types.inBannerVideo) {
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     // IDMLQ
                     params.idw = embedWidth;
@@ -72,7 +74,7 @@ define(function(require) {
                     params.tcw = embedWidth;
                     params.tch = embedHeight;
                 }
-            } else if(type === 'ISV') {
+            } else if(type === types.inStream) {
                 // IS
                 params.tcw = embedWidth;
                 params.tch = embedHeight;
@@ -87,7 +89,7 @@ define(function(require) {
         }
 
         function validate(creative) {
-            if(!!!creative) {
+            if(!creative) {
                 return false;
             }
 

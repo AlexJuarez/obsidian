@@ -16,7 +16,7 @@ define(function (require) {
             placementRecordService, campaignRecordService,
             accountRecordService, divisionRecordService,
             clientRecordService, clientPublisherRecordService,
-            modalState, creativeService) {
+    modalState, creativeService) {
 
         $scope.ok = ok;
         $scope.cancel = cancel;

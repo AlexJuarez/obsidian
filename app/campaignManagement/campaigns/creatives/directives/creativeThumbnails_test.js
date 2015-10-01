@@ -16,10 +16,10 @@ define(function (require) {
                     headers: 'headers',
                     rules: 'rules',
                     data: [
-                        {type: 'IBV'},
-                        {type: 'RM'},
-                        {type: 'IS'},
-                        {type: 'IBV'}
+                        {type: 'inBannerVideo'},
+                        {type: 'richMedia'},
+                        {type: 'inStream'},
+                        {type: 'inBannerVideo'}
                     ]
                 };
             },
@@ -64,10 +64,10 @@ define(function (require) {
             });
 
             it('should filter creatives by type based on state', function (){
-                state.params.filter = 'IBV';
+                state.params.filter = 'inBannerVideo';
                 var expected = [
-                    {type: 'IBV'},
-                    {type: 'IBV'}
+                    {type: 'inBannerVideo'},
+                    {type: 'inBannerVideo'}
                 ];
 
                 var scope = setUpScope();

@@ -123,7 +123,7 @@ define(function (require) {
         it('should return expected Interactive Display Rich Media adapted object', function () {
             var creative = {
                 type: 'Rich Media',
-                environment: 'tablet',
+                environment: 'mobile',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -148,7 +148,7 @@ define(function (require) {
         it('should return expected Interactive Display MLQ adapted object', function () {
             var creative = {
                 type: 'In-Banner',
-                environment: 'mobile',
+                environment: 'tablet',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -220,7 +220,7 @@ define(function (require) {
 
         it('should return null if unknown \'environment\'', function () {
             var creative = {
-                type: 'IBV',
+                type: 'inBannerVideo',
                 environment: 'foo',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
@@ -237,7 +237,7 @@ define(function (require) {
 
         it('should return null if unknown \'clickthroughUrl\'', function () {
             var creative = {
-                type: 'IBV',
+                type: 'inBannerVideo',
                 environment: 'foo',
                 name: 'El Title',
                 embedWidth: 160,
@@ -253,7 +253,7 @@ define(function (require) {
 
         it('should return null if unknown \'name\'', function () {
             var creative = {
-                type: 'IBV',
+                type: 'inBannerVideo',
                 environment: 'foo',
                 clickthroughUrl: 'lego.com',
                 embedWidth: 160,
