@@ -223,6 +223,7 @@ define(function(require){
                 function initOrUpdate() {
                     setDefaultText();
                     timer = $timeout(function() {
+                        var focused;
                         if (!select2) {
                             //init select2 once
                             select2 = element.select2(opts);
@@ -241,11 +242,21 @@ define(function(require){
                                     }
                                 });
 
+                                //focus is lost when change is triggered
+                                focused = $(':focus');
                                 element.val(values).trigger('change');
+                                if (focused.length) {
+                                    focused.focus();
+                                }
                             } else {
                                 var trackValue = trackValues.get(ngModel.$viewValue);
                                 if (trackValue) {
+                                    //focus is lost when change is triggered
+                                    focused = $(':focus');
                                     element.val(trackValue.index).trigger('change');
+                                    if (focused.length) {
+                                        focused.focus();
+                                    }
                                 }
                             }
                         }
