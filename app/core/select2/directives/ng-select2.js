@@ -90,6 +90,7 @@ define(function(require){
         return {
             restrict: 'A',
             require: '?ngModel',
+            priority: 1,
             terminal: true,
             link: function(scope, element, attr, ngModel) {
                 var trackValues = trackValuesFactory();
