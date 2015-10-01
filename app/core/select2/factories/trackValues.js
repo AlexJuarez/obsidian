@@ -25,7 +25,7 @@ define(function(require) {
             };
 
             Tracked.prototype.contains = function(index) {
-                return typeof get(index) !== 'undefined';
+                return typeof this.get(index) !== 'undefined';
             };
 
             Tracked.prototype.isEmpty = function(){

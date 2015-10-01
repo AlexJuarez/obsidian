@@ -20,6 +20,7 @@
     ".editorconfig"
   ],
   "devDependencies": {
+    "angular-mocks": "~1.4.0",
     "angular": "~1.4.0",
     "requirejs": "~2.1.16",
     "angular-ui-router": "https://github.com/AlexJuarez/ui-router.git#release",
@@ -28,7 +29,6 @@
     "almond": "~0.3.0",
     "d3": "~3.5.5",
     "highlightjs": "~8.5.0",
-    "angular-mocks": "~1.4.0",
     "jquery": ">=2.0",
     "angular-perfect-scrollbar": "~0.0.4",
     "Simple-Ajax-Uploader": "git://github.com/LPology/Simple-Ajax-Uploader.git",
