@@ -30,16 +30,16 @@ define(function (require) {
 
         $scope.types = creativeSettings.types;
 
-        function getTypeId(data){
-            var index;
+        function getType(data){
+            var type;
 
             ng.forEach(creativeSettings.types, function(d) {
                 if (data.type === d.dbName && data.subtype === d.subtype) {
-                    index = d.id;
+                    type = d;
                 }
             });
 
-            return index;
+            return type;
         }
 
         function typeTransform(type) {
@@ -51,8 +51,7 @@ define(function (require) {
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
-
-            return getTypeId(record.get());
+            return getType(record.get());
         }
 
         function updateEnvironments(enabledEnvironmentIds) {
@@ -100,10 +99,10 @@ define(function (require) {
             });
 
             if (!width || !height) {
-                return nonExpandingIndex;
+                return arry[nonExpandingIndex];
             }
 
-            return index == null ? customIndex : index;
+            return arry[index == null ? customIndex : index];
         }
 
         function dimensionsTransform(dimension) {
@@ -152,7 +151,7 @@ define(function (require) {
                 }
             });
 
-            return index;
+            return environments[index];
         }
 
         function environmentTransform(environment) {
@@ -178,20 +177,20 @@ define(function (require) {
         function update() {
             $scope.creative = record.get();
             $scope.errors = record.errors();
-            var typeId = getTypeId(record.get());
-            if (typeId) {
-                var settings = creativeSettings.typeSettings[typeId];
+            var type = getType(record.get());
+            if (type) {
+                var settings = creativeSettings.typeSettings[type.id];
                 updateEnvironments(settings.environments);
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
-            var dimensionId = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
-            if (dimensionId) {
-                $scope.dimensionsAreCustom = creativeSettings.dimensions[dimensionId].isCustom;
+            var dimension = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+            if (dimension) {
+                $scope.dimensionsAreCustom = dimension.isCustom;
             }
-            var dimensionExpandedId = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
-            if (dimensionExpandedId) {
-                $scope.expandedDimensionsAreCustom = creativeSettings.expandedDimensions[dimensionExpandedId].isCustom;
+            var dimensionExpanded = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+            if (dimensionExpanded) {
+                $scope.expandedDimensionsAreCustom = dimensionExpanded.isCustom;
             }
         }
 

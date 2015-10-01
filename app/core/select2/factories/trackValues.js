@@ -7,37 +7,32 @@ define(function(require) {
     module.factory('trackValuesFactory', [
     function() {
         return function() {
-            var tracked = {};
-
-            function reset() {
-                tracked = {};
-            }
-
-            function add(index, value) {
-                tracked[JSON.stringify(value)] = { index: index, value: value };
-                tracked[index] = { index: index, value: value };
-            }
-
-            function get(index) {
-                return tracked[index] || tracked[JSON.stringify(index)];
-            }
-
-            function contains(index) {
-                return typeof get(index) !== 'undefined';
-            }
-
-            function isEmpty(){
-                return ng.equals({}, tracked);
-            }
-
-            return {
-                reset: reset,
-                add: add,
-                get: get,
-                contains: contains,
-                isEmpty: isEmpty
+            var Tracked = function() {
+                this._data = {};
             };
 
+            Tracked.prototype.reset = function() {
+                this._data = {};
+            };
+
+            Tracked.prototype.add = function(index, value) {
+                this._data[JSON.stringify(value)] = { index: index, value: value };
+                this._data[index] = { index: index, value: value };
+            };
+
+            Tracked.prototype.get = function(index) {
+                return this._data[index] || this._data[JSON.stringify(index)];
+            };
+
+            Tracked.prototype.contains = function(index) {
+                return typeof get(index) !== 'undefined';
+            };
+
+            Tracked.prototype.isEmpty = function(){
+                return ng.equals({}, this._data);
+            };
+
+            return new Tracked();
         };
     }]);
 });
