@@ -299,9 +299,6 @@ define(function(require){
                     if (timer) {
                         $timeout.cancel(timer);
                     }
-                    if (select2) {
-                        element.select2('destroy');
-                    }
                 });
             }
         };

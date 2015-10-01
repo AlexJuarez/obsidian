@@ -55,12 +55,11 @@
 
         <div class="form-group row"
              ng-class="{'has-error': newCreative.clickthroughUrl.$invalid && submitted}">
-            <label for="clickthroughUrl" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>
+            <label for="new-edit-creative-clickthrough-url-field" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>
 
             <div class="col-sm-9">
                 <input id="new-edit-creative-clickthrough-url-field" ng-model="creative.clickthroughUrl" type="text" ng-pattern="URL_REGEX"
-                       name="clickthroughUrl" class="form-control"
-                       id="clickthroughUrl" placeholder="Clickthrough Url" required/>
+                       name="clickthroughUrl" class="form-control" placeholder="Clickthrough Url" required/>
 
                 <p ng-show="newCreative.clickthroughUrl.$invalid && submitted"
                    class="help-block">
@@ -75,7 +74,7 @@
 
         <div class="form-group row"
              ng-class="{'has-error': newCreative.type.$invalid && submitted}">
-            <label ng-class="{disabled:editing}"class="col-sm-3 form-label required"><span>Creative Type</span></label>
+            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Creative Type</span></label>
             <div class="col-sm-9">
                 <select id="new-edit-creative-select-creative-type" ng-disabled="editing" name="type" select2
                         ng-options="type as type.name for type in types track by type.id"
