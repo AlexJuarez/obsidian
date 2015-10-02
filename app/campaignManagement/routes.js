@@ -56,7 +56,7 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.wildcard',
-                    url: '/*path',
+                    url: '{ path: ^(?!(\/client|\/account|\/division)).*$ }',
                     template: '<ui-view />'
                 });
         }
