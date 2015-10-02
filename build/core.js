@@ -68717,6 +68717,11 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                     templateUrl: 'campaignManagement/campaigns/index.html'
                 })
                 .state({
+                    name: base + '.campaigns.detail',
+                    url: '/campaign/:campaignId*path',
+                    template: '<ui-view />'
+                })
+                .state({
                     name: base + '.wildcard',
                     url: '{ path: ^(?!(\/client|\/account|\/division)).*$ }',
                     template: '<ui-view />'
