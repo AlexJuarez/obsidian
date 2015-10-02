@@ -12,7 +12,11 @@ define(function(require) {
         function openNewCreativeModal() {
             if (!newCreativeModal) {
                 newCreativeModal = {
-                    action: 'New'
+                    action: 'New',
+                    creative: {
+                        expandedHeight: null,
+                        expandedWidth: null
+                    }
                 };
             }
 
@@ -38,9 +42,9 @@ define(function(require) {
 
                 var meta = {
                     all: 0,
-                    'IBV': 0,
-                    'RM': 0,
-                    'IS': 0
+                    inBannerVideo: 0,
+                    richMedia: 0,
+                    inStream: 0
                 };
 
                 for(var i = 0; i < allCreatives.length; i ++) {

@@ -16,10 +16,10 @@ define(function (require) {
             };
 
             var displayTypeMap = {
-                anyPlacementsDisplay: 'D',
-                anyPlacementsInBanner: 'IBV',
-                anyPlacementsRichmedia: 'RM',
-                anyPlacementsInStream: 'ISV'
+                anyPlacementsDisplay: 'display',
+                anyPlacementsInBanner: 'inBannerVideo',
+                anyPlacementsRichmedia: 'richMedia',
+                anyPlacementsInStream: 'inStreamVideo'
             };
 
             function sortRows(transformedRows) {

@@ -16,10 +16,10 @@ define(function (require) {
                     headers: 'headers',
                     rules: 'rules',
                     data: [
-                        {type: 'IBV'},
-                        {type: 'RM'},
-                        {type: 'IS'},
-                        {type: 'IBV'}
+                        {type: 'inBannerVideo'},
+                        {type: 'richMedia'},
+                        {type: 'inStream'},
+                        {type: 'inBannerVideo'}
                     ]
                 };
             },
@@ -64,10 +64,10 @@ define(function (require) {
             });
 
             it('should filter creatives by type based on state', function (){
-                state.params.filter = 'IBV';
+                state.params.filter = 'inBannerVideo';
                 var expected = [
-                    {type: 'IBV'},
-                    {type: 'IBV'}
+                    {type: 'inBannerVideo'},
+                    {type: 'inBannerVideo'}
                 ];
 
                 var scope = setUpScope();
@@ -142,16 +142,14 @@ define(function (require) {
 
             it('should create a creative', function () {
                 var scope = setUpScope();
-                spyOn(records, 'create');
+                spyOn(records, 'create').and.callThrough();
                 spyOn(records, 'fetch').and.callFake(function () {
                     return {
                         then: function(fn) {
                             fn({
-                                all: function() {
-                                    return {
-                                        id: 1,
-                                        keywords: []
-                                    };
+                                data: {
+                                    id: 1,
+                                    keywords: []
                                 }
                             });
                         }

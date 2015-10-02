@@ -57,9 +57,9 @@
             <input class="form-control" placeholder="Enter name" type="text">
         </label>
     </div>
-    <div class="form-group single-select-light">
+    <div class="form-group">
         <label class="form-label"><span class="sr-only">Select Options</span></label>
-        <select chosen ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+        <select select2 ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
     </div>
     <div class="form-group">
         <label>
@@ -81,7 +81,7 @@
     &lt;div class=&quot;form-group&quot;&gt;
         &lt;label class=&quot;form-label&quot;&gt;
             &lt;span class=&quot;sr-only&quot;&gt;Select Options&lt;/span&gt;
-            &lt;select chosen ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
+            &lt;select select2 ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
         &lt;/label&gt;
     &lt;/div&gt;
     &lt;div class=&quot;form-group&quot;&gt;
@@ -114,8 +114,8 @@
     </div>
     <div class="form-group row">
         <label class="col-sm-2 form-label required"><span>Channel</span></label>
-        <div class="col-sm-10 single-select-light">
-            <select class="single-select" chosen disable-search-threshold="10">
+        <div class="col-sm-10">
+            <select select2 ng-model="options">
                 <option>Option 1</option>
                 <option>Option 2</option>
                 <option>Option 3</option>
@@ -178,8 +178,8 @@
     &lt;/div&gt;
     &lt;div class=&quot;form-group row&quot;&gt;
         &lt;label class=&quot;col-sm-2 form-label required&quot;&gt;&lt;span&gt;Channel&lt;/span&gt;&lt;/label&gt;
-        &lt;div class=&quot;col-sm-10 single-select-light&quot;&gt;
-            &lt;select class=&quot;single-select&quot; chosen disable-search-threshold=&quot;10&quot;&gt;
+        &lt;div class=&quot;col-sm-10 &quot;&gt;
+            &lt;select select2 &gt;
                 &lt;option&gt;Option 1&lt;/option&gt;
                 &lt;option&gt;Option 2&lt;/option&gt;
                 &lt;option&gt;Option 3&lt;/option&gt;
@@ -261,17 +261,17 @@
 
 <form class="form" role="form">
     <div class="form-group">
-        <label class="form-label single-select-light"><span>Single Select w/o Search</span></label>
-        <div class="single-select-light">
-            <select chosen disable-search-threshold="10" ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+        <label class="form-label"><span>Single Select w/o Search</span></label>
+        <div>
+            <select select2 ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
         </div>
     </div>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
-&lt;label class=&quot;form-label single-select-light&quot;&gt;
+&lt;label class=&quot;form-label&quot;&gt;
     &lt;span&gt;Single Select w/o Search&lt;/span&gt;
-    &lt;select chosen disable-search-threshold=&quot;10&quot; ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
+    &lt;select select2 ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
 &lt;/label&gt;
 </code></pre>
 </div>
@@ -279,17 +279,17 @@
 
 <form class="form" role="form">
     <div class="form-group">
-        <label class="form-label single-select-light">
+        <label class="form-label">
             <span>Single Select w/ Search</span>
-            <select chosen ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+            <select select2 ng-model="selected" minimum-results-for-search="0" ng-options="item.name for item in select track by item.value"></select>
         </label>
     </div>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
-&lt;label class=&quot;form-label single-select-light&quot;&gt;
+&lt;label class=&quot;form-label&quot;&gt;
     &lt;span&gt;Single Select w/ Search&lt;/span&gt;
-    &lt;select chosen ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot; disable-search-threshold=&quot;10&quot;&gt;&lt;/select&gt;
+    &lt;select select2 ng-model=&quot;selected&quot; minimum-results-for-search=&quot;0&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
 &lt;/label&gt;
 </code></pre>
 </div>
@@ -297,17 +297,17 @@
 
 <form class="form" role="form">
     <div class="form-group">
-        <label class="form-label single-select-dark">
+        <label class="form-label theme-dark">
             <span>Dark Single Select w/ Search</span>
-            <select chosen ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+            <select select2 ng-model="selected2" minimum-results-for-search="0" ng-options="value for (key, value) in select2 track by key"></select>
         </label>
     </div>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
-&lt;label class=&quot;form-label single-select-dark&quot;&gt;
+&lt;label class=&quot;form-label theme-dark&quot;&gt;
     &lt;span&gt;Dark Single Select w/ Search&lt;/span&gt;
-    &lt;select chosen ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot; disable-search-threshold=&quot;10&quot;&gt;&lt;/select&gt;
+    &lt;select select2 ng-model=&quot;selected&quot; minimum-results-for-search=&quot;0&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
 &lt;/label&gt;
 </code></pre>
 </div>

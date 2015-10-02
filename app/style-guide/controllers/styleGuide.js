@@ -67,6 +67,14 @@ define(function (require) {
             }
         ];
 
+        $scope.select2 = {
+            1: 'First Choice',
+            2: 'Second',
+            3: 'Choice #3',
+            4: 'Pick me, pick me, pick me!',
+            5: 'Sheeple'
+        };
+
         $scope.multiselect = [
             {
                 name: 'First Choice',

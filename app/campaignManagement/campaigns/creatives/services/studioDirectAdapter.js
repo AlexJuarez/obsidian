@@ -12,25 +12,27 @@ define(function(require) {
      * @name studioDirectAdapter
      * @ngInject
      */
-    module.service('studioDirectAdapter', [function () {
-        function getAdType(type, expandedWidth, expandedHeight) {
-            if(type === 'IMG') {
+    module.service('studioDirectAdapter', ['ENUMS', function (ENUMS) {
+        var types = ENUMS.up.creativeTypes;
+        var environments = ENUMS.up.creativeEnvironments;
+        function getAdType(type, subtype, expandedWidth, expandedHeight) {
+            if(type === types.display && subtype === 'IMG') {
                 // Image
                 return 'IMG';
-            } else if(type === 'SWF') {
+            } else if(type === types.display && subtype === 'SWF') {
                 // SWF
                 return 'SWF';
-            }  else if(type === 'ISV') {
+            }  else if(type === types.inStream) {
                 // In-Stream Video
                 return 'IS';
-            } else if(type === 'RM') {
+            } else if(type === types.richMedia) {
                 // 'Rich Media' AKA 'Interactive-Display'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDRM';
                 } else {
                     return 'ID';
                 }
-            } else if(type === 'IBV') {
+            } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDMLQ';
@@ -45,13 +47,13 @@ define(function(require) {
 
         function getAdEnvironment(env) {
             switch(env) {
-                case 'multi-screen':
+                case environments.all:
                     return 'multiscreen';
-                case 'mobile':
+                case environments.mobile:
                     return 'tabletphone';
-                case 'mraid':
+                case environments.mraid:
                     return 'inappmraid';
-                case 'desktop':
+                case environments.desktop:
                     return 'desktop';
                 default:
                     // unknown
@@ -60,8 +62,8 @@ define(function(require) {
         }
 
         function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
-            if(type === 'IBV') {
-                if (!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+            if(type === types.inBannerVideo) {
+                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     // IDMLQ
                     params.idw = embedWidth;
                     params.idh = embedHeight;
@@ -72,7 +74,7 @@ define(function(require) {
                     params.tcw = embedWidth;
                     params.tch = embedHeight;
                 }
-            } else if(type === 'ISV') {
+            } else if(type === types.inStream) {
                 // IS
                 params.tcw = embedWidth;
                 params.tch = embedHeight;
@@ -87,10 +89,11 @@ define(function(require) {
         }
 
         function validate(creative) {
-            if(!!!creative) {
+            if(!creative) {
                 return false;
             }
-            if(getAdType(creative.type, creative.expandedWidth, creative.expandedHeight)===null) {
+
+            if(getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight)===null) {
                 return false;
             }
             if(getAdEnvironment(creative.environment)===null) {
@@ -111,7 +114,7 @@ define(function(require) {
             }
             var params = {};
             params.sdf = 'new';
-            params.ad = getAdType(creative.type, creative.expandedWidth, creative.expandedHeight);
+            params.ad = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight);
             params.env = getAdEnvironment(creative.environment);
             params.url = creative.clickthroughUrl;
             params.title = creative.name;

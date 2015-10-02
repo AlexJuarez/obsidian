@@ -3,7 +3,7 @@ define(function (require) {
 
     var app = require('./../../module');
 
-    app.controller('divisionCtrl', ['$scope', '$modal', 'navbarService', function ($scope, $modal, navbar) {
+    app.controller('divisionCtrl', ['$scope', '$modal', '$state', 'navbarService', function ($scope, $modal, $state, navbar) {
         $scope.openNewAccountModal = openNewAccountModal;
 
         function updateDivisionInfo() {
@@ -17,7 +17,7 @@ define(function (require) {
             if (!newAccountModal) {
                 newAccountModal = {
                     originalAccount: {
-                        divisionId: $scope.division.id
+                        divisionId: $state.params.divisionId
                     },
                     action: 'New'
                 };
