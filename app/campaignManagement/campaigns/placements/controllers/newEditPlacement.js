@@ -21,7 +21,7 @@ define(function (require) {
         $scope.ok = ok;
         $scope.cancel = cancel;
         $scope.action = modalState.action;
-        $scope.multiplePlacements = modalState.placementIds.length > 1;
+        $scope.multiplePlacements = modalState.placementIds && modalState.placementIds.length > 1;
         $scope.formatDate = formatDate;
 
         var records = [];
@@ -121,7 +121,7 @@ define(function (require) {
             }
 
             // Creating a new placement under a campaign
-            if (modalState.campaignId) {
+            if (modalState.originalPlacement.campaignId) {
                 record = placementRecordService.create(modalState.originalPlacement);
                 record.set(modalState.placement);
                 record.observe(update, $scope);

@@ -12,10 +12,10 @@ define(function (require) {
             all: function() {
                 return {
                     data: [
-                        {type: 'In-Banner'},
-                        {type: 'Rich Media'},
-                        {type: 'In-Stream'},
-                        {type: 'In-Banner'}
+                        {type: 'inBannerVideo'},
+                        {type: 'richMedia'},
+                        {type: 'inStream'},
+                        {type: 'inBannerVideo'}
                     ]
                 };
             },

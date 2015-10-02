@@ -51,7 +51,7 @@ define(function(require) {
 
                     meta.all ++;
                     if(creative.type) {
-                        meta[ENUMS.down.creativeTypes[creative.type]]++;
+                        meta[creative.type]++;
                     }
                 }
                 $scope.creativesMeta = meta;
