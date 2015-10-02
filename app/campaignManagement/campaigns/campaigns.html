@@ -1,3 +1,4 @@
+
 <div class="form-inline">
     <div class="form-group">
         View By: <a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></span>
@@ -16,7 +17,7 @@
         <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>
     </div>
 </div>
-<div class="tab-content" ui-view="tab-content">
+<div class="tab-content" ui-view="tab-content" style="position: relative;">
     <div ng-if="params.viewBy !== 'account'">
         <div campaigns-by-status></div>
     </div>
