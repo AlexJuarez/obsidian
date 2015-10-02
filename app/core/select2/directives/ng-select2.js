@@ -93,7 +93,6 @@ define(function(require){
             //priority: 1,
             //terminal: true,
             link: function(scope, element, attr, ngModel) {
-                var id = nextUid();
                 var trackValues = trackValuesFactory();
                 var match, valuesFn, trackBy, theme, select2, isMultiple, timer;
                 //set a flag to see if this is a multiselect instance

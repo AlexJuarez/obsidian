@@ -3,7 +3,7 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', 'ENUMS', function($scope, $rootScope, $state, $modal, creatives, ENUMS) {
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
 
         $scope.openNewCreativeModal = openNewCreativeModal;
 
