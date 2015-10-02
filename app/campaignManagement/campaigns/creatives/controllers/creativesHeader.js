@@ -6,7 +6,6 @@ define(function(require) {
     app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
 
         $scope.openNewCreativeModal = openNewCreativeModal;
-        $scope.hasCreatives = false;
 
         var newCreativeModal;
         function openNewCreativeModal() {
@@ -57,9 +56,6 @@ define(function(require) {
                 }
                 $scope.creativesMeta = meta;
 
-                if ($scope.creativesMeta.all !== 0) {
-                    $scope.hasCreatives = true;
-                }
 
             }
         }

@@ -9,7 +9,7 @@ define(function (require) {
         return {
             restrict: 'A',
             replace: false,
-            scope: true,
+            scope: false,
             templateUrl: 'core/directives/noContent.html',
             controller: ['$rootScope', '$scope', '$state', '$timeout', 'clientSet', 'divisionSet', 'campaignsHeader', 'creatives', 'placements', function ($rootScope, $scope, $state, $timeout, clientSet, divisionSet, campaignsHeader, creatives, placements) {
                 

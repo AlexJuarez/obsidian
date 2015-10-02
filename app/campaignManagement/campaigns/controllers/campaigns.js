@@ -17,13 +17,9 @@ define(function (require) {
         $scope.clearFilter = clearFilter;
         $scope.updateFilters = updateFilters;
 
-        $scope.hasCampaigns = false;
-
         campaignsHeader.observe(function() {
             if ( campaignsHeader.data().isLoaded() ) {
                 var data = campaignsHeader.all();
-
-                $scope.hasCampaigns = hasContent(data);
             }
 
         }, $scope);
@@ -36,15 +32,6 @@ define(function (require) {
             updateFilters($scope.filter);
         }, $scope, true);
 
-        function hasContent(data) {
-            var results = [];
-            ng.forEach(data, function(d) {
-                results.push(d != 0);
-            });
-            return results.some(function (d) {
-                return d;
-            });
-        }
 
         function filterBy(result) {
             campaignsByStatus.setFilter(result);
