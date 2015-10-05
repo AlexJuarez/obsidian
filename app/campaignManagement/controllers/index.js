@@ -39,10 +39,14 @@ define(function (require) {
             }
         });
 
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        var cleanup = $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router && toState.name === 'analytics.campaigns.detail') {
                 window.Router.handleURL($location.url());
             }
+        });
+
+        $scope.$on('$destroy', function() {
+            cleanup();
         });
     }]);
 });

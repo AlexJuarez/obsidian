@@ -34,8 +34,12 @@ define(function (require) {
 
                     creatives.observe(updateCreatives, $scope);
 
-                    $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+                    var cleanup = $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
                         $scope.filter = toParams.filter;
+                    });
+
+                    $scope.$on('$destroy', function() {
+                        cleanup();
                     });
 
                     function openPreviewPage(creative) {
@@ -136,7 +140,6 @@ define(function (require) {
 
                         $scope.creatives = duplicateCreatives;
                     }
-
             }]
         };
     }]);
