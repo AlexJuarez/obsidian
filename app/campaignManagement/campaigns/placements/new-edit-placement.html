@@ -29,91 +29,10 @@
                 </p>
             </div>
         </div>
-        <div class="form-group row"
-             ng-class="{'has-error': newPlacement.type.$invalid && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Publisher</span></label>
 
-            <div class="col-sm-9">
-                <select name="types" select2
-                        ng-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"
-                        ng-model="placement.publisherId" required>
-                </select>
+        <div assign-publisher placement="placement"></div>
 
-                <p ng-show="newPlacement.type.$invalid && submitted"
-                   class="help-block">
-                    publisher is required
-                </p>
-            </div>
-        </div>
-        <div class="form-group row"
-             ng-class="{'has-error': (newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Flight Dates</span></label>
-
-            <div class="col-sm-9">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <div class="row">
-                            <div class="col-sm-4">
-                                Start Date:
-                            </div>
-                            <div class="col-sm-8">
-                                <div class="input-group">
-                                    <input class="form-control" type="text"
-                                           datepicker-popup="{{format}}"
-                                           ng-model="placement.flightStart"
-                                           is-open="datePickers.startDateOpened"
-                                           min-date="minDate"
-                                           ng-blur="formatDate($event)"
-                                           datepicker-options="dateOptions"
-                                           date-disabled="false"
-                                           ng-required="true" close-text="Close"
-                                           show-weeks="false"/>
-                                    <span class="input-group-btn">
-                                        <button class="btn btn-inline"
-                                                ng-click="openPicker($event, 'startDateOpened')">
-                                            <i class="glyph-calendar"></i>
-                                        </button>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="row">
-                            <div class="col-sm-4">
-                                End Date:
-                            </div>
-                            <div class="col-sm-8">
-                                <div class="input-group">
-                                    <input class="form-control" type="text"
-                                           datepicker-popup="{{format}}"
-                                           ng-model="placement.flightEnd"
-                                           is-open="datePickers.endDateOpened"
-                                           min-date="minDate"
-                                           ng-blur="formatDate($event)"
-                                           datepicker-options="dateOptions"
-                                           date-disabled="false"
-                                           ng-required="true" close-text="Close"
-                                           show-weeks="false"/>
-                                    <span class="input-group-btn">
-                                        <button class="btn btn-inline"
-                                                ng-click="openPicker($event, 'endDateOpened')">
-                                            <i class="glyph-calendar"></i>
-                                        </button>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <p ng-show="(newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted"
-                       class="help-block">
-                        start and end dates are required
-                    </p>
-                </div>
-            </div>
-        </div>
+        <div start-end-dates placement="placement"></div>
 
         <div class="form-group row">
             <label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>
@@ -124,27 +43,7 @@
             </div>
         </div>
 
-        <div class="form-group row">
-            <label
-                class="col-sm-3 form-label"><span>Cost</span></label>
-
-            <div class="col-sm-3">
-                <select name="types" select2
-                        ng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"
-                        ng-model="placement.rateType">
-                </select>
-            </div>
-            <div class="col-sm-3" ng-if="showCostPer">
-                <input name="costPer" ng-model="placement.costPer" type="text"
-                       class="form-control" id="costPer"
-                       placeholder="Cost Per"/>
-            </div>
-            <div class="col-sm-3" ng-if="showTotalCost">
-                <input name="totalCost" ng-model="placement.totalCost" type="text"
-                       class="form-control" id="totalCost"
-                       placeholder="Total Cost"/>
-            </div>
-        </div>
+        <div rate-types></div>
 
         <div class="form-group row">
             <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>
@@ -156,27 +55,7 @@
             </div>
         </div>
 
-        <div expand-anchors-directions></div>
-
-        <div class="form-group row">
-            <label for="adtype" class="col-sm-3 form-label"><span>Ad Type</span></label>
-            <div class="col-sm-9">
-              <select id="adtype" select2
-                      ng-options="key as key for (key, value) in creativesByAdType track by key"
-                      ng-model="adType">
-              </select>
-            </div>
-        </div>
-
-        <div class="form-group row">
-          <label for="creative" class="col-sm-3 form-label"><span>Creative</span></label>
-          <div class="col-sm-9">
-            <select id="creative" select2
-                    ng-options="item as item.name for item in creativesByAdType[adType] track by item.id"
-                    ng-model="creative">
-            </select>
-          </div>
-        </div>
+        <div assign-creative placement="placement"></div>
     </form>
 </div>
 <div class="modal-footer">

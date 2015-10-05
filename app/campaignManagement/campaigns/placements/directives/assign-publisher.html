@@ -1,0 +1,17 @@
+<div class="form-group row"
+		 ng-class="{'has-error': newPlacement.type.$invalid && submitted}">
+	<label
+		class="col-sm-3 form-label required"><span>Publisher</span></label>
+
+	<div class="col-sm-9">
+		<select name="types" select2
+						ng-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"
+						ng-model="placement.publisherId" required>
+		</select>
+
+		<p ng-show="newPlacement.type.$invalid && submitted"
+			 class="help-block">
+			publisher is required
+		</p>
+	</div>
+</div>

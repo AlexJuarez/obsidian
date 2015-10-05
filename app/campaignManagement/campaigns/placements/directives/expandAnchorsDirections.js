@@ -3,7 +3,7 @@ define(function (require) {
 
     var app = require('./../../../module');
 
-    require('tpl!./expandAnchorsDirections.html');
+    require('tpl!./expand-anchors-directions.html');
 
     app.directive('expandAnchorsDirections', [function () {
         return {
@@ -13,7 +13,7 @@ define(function (require) {
                 expandAnchor: '=',
                 expandDirection: '='
             },
-            templateUrl: 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html',
+            templateUrl: 'campaignManagement/campaigns/placements/directives/expand-anchors-directions.html',
             controller: ['$scope', function ($scope) {
                 var imageDirectory = '/images/anchorsExpandDirections/';
                 $scope.expandAnchors = [];

@@ -1,0 +1,21 @@
+<div class="form-group row">
+	<label
+		class="col-sm-3 form-label"><span>Cost</span></label>
+
+	<div class="col-sm-3">
+		<select name="types" select2
+						ng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"
+						ng-model="placement.rateType">
+		</select>
+	</div>
+	<div class="col-sm-3" ng-if="showCostPer">
+		<input name="costPer" ng-model="placement.costPer" type="text"
+					 class="form-control" id="costPer"
+					 placeholder="Cost Per"/>
+	</div>
+	<div class="col-sm-3" ng-if="showTotalCost">
+		<input name="totalCost" ng-model="placement.totalCost" type="text"
+					 class="form-control" id="totalCost"
+					 placeholder="Total Cost"/>
+	</div>
+</div>
