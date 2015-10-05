@@ -6,6 +6,7 @@ define(function (require) {
     var ng = require('angular');
 
     module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification) {
+        //destroy, update, create, error, change
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */
@@ -109,6 +110,18 @@ define(function (require) {
                     }
 
                     return this._filter(_diff);
+                },
+                intersect: function(changed, original) {
+                    var _intersection = {}, val;
+
+                    for (var attr in changed) {
+                        val = changed[attr];
+                        if(ng.equals(original[attr], val)) {
+                            _intersection[attr] = val;
+                        }
+                    }
+
+                    return this._filter(_intersection);
                 },
                 ignore: function(key){
                     return this.rules[key] && this.rules[key].ignore;

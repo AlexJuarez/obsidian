@@ -18,8 +18,8 @@
         </div>
         <div class="form-group row">
             <label class="col-sm-3 form-label required"><span>Industry</span></label>
-            <div class="col-sm-9 single-select-light">
-                <select class="single-select" chosen ng-options="item.name for item in select track by item.value" disable-search-threshold="10" ng-model="selected">
+            <div class="col-sm-9">
+                <select select2 ng-options="item.name for item in select track by item.value" ng-model="selected">
                 </select>
             </div>
         </div>

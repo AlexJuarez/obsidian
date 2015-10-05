@@ -9643,7 +9643,7 @@ return jQuery;
 }));
 
 /**
- * @license AngularJS v1.4.3
+ * @license AngularJS v1.4.6
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -9701,7 +9701,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.3/' +
+    message += '\nhttp://errors.angularjs.org/1.4.6/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -10067,6 +10067,8 @@ function baseExtend(dst, objs, deep) {
       if (deep && isObject(src)) {
         if (isDate(src)) {
           dst[key] = new Date(src.valueOf());
+        } else if (isRegExp(src)) {
+          dst[key] = new RegExp(src);
         } else {
           if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
           baseExtend(dst[key], [src], true);
@@ -10536,6 +10538,8 @@ function copy(source, destination, stackSource, stackDest) {
       } else if (isRegExp(source)) {
         destination = new RegExp(source.source, source.toString().match(/[^\/]*$/)[0]);
         destination.lastIndex = source.lastIndex;
+      } else if (isFunction(source.cloneNode)) {
+          destination = source.cloneNode(true);
       } else {
         var emptyObject = Object.create(getPrototypeOf(source));
         return copy(source, emptyObject, stackSource, stackDest);
@@ -10686,7 +10690,7 @@ function equals(o1, o2) {
         for (key in o2) {
           if (!(key in keySet) &&
               key.charAt(0) !== '$' &&
-              o2[key] !== undefined &&
+              isDefined(o2[key]) &&
               !isFunction(o2[key])) return false;
         }
         return true;
@@ -10697,22 +10701,39 @@ function equals(o1, o2) {
 }
 
 var csp = function() {
-  if (isDefined(csp.isActive_)) return csp.isActive_;
+  if (!isDefined(csp.rules)) {
 
-  var active = !!(document.querySelector('[ng-csp]') ||
-                  document.querySelector('[data-ng-csp]'));
 
-  if (!active) {
+    var ngCspElement = (document.querySelector('[ng-csp]') ||
+                    document.querySelector('[data-ng-csp]'));
+
+    if (ngCspElement) {
+      var ngCspAttribute = ngCspElement.getAttribute('ng-csp') ||
+                    ngCspElement.getAttribute('data-ng-csp');
+      csp.rules = {
+        noUnsafeEval: !ngCspAttribute || (ngCspAttribute.indexOf('no-unsafe-eval') !== -1),
+        noInlineStyle: !ngCspAttribute || (ngCspAttribute.indexOf('no-inline-style') !== -1)
+      };
+    } else {
+      csp.rules = {
+        noUnsafeEval: noUnsafeEval(),
+        noInlineStyle: false
+      };
+    }
+  }
+
+  return csp.rules;
+
+  function noUnsafeEval() {
     try {
       /* jshint -W031, -W054 */
       new Function('');
       /* jshint +W031, +W054 */
+      return false;
     } catch (e) {
-      active = true;
+      return true;
     }
   }
-
-  return (csp.isActive_ = active);
 };
 
 /**
@@ -10944,13 +10965,19 @@ function tryDecodeURIComponent(value) {
  * @returns {Object.<string,boolean|Array>}
  */
 function parseKeyValue(/**string*/keyValue) {
-  var obj = {}, key_value, key;
+  var obj = {};
   forEach((keyValue || "").split('&'), function(keyValue) {
+    var splitPoint, key, val;
     if (keyValue) {
-      key_value = keyValue.replace(/\+/g,'%20').split('=');
-      key = tryDecodeURIComponent(key_value[0]);
+      key = keyValue = keyValue.replace(/\+/g,'%20');
+      splitPoint = keyValue.indexOf('=');
+      if (splitPoint !== -1) {
+        key = keyValue.substring(0, splitPoint);
+        val = keyValue.substring(splitPoint + 1);
+      }
+      key = tryDecodeURIComponent(key);
       if (isDefined(key)) {
-        var val = isDefined(key_value[1]) ? tryDecodeURIComponent(key_value[1]) : true;
+        val = isDefined(val) ? tryDecodeURIComponent(val) : true;
         if (!hasOwnProperty.call(obj, key)) {
           obj[key] = val;
         } else if (isArray(obj[key])) {
@@ -11359,10 +11386,9 @@ function bindJQuery() {
 
   // bind to jQuery if present;
   var jqName = jq();
-  jQuery = window.jQuery; // use default jQuery.
-  if (isDefined(jqName)) { // `ngJq` present
-    jQuery = jqName === null ? undefined : window[jqName]; // if empty; use jqLite. if not empty, use jQuery specified by `ngJq`.
-  }
+  jQuery = isUndefined(jqName) ? window.jQuery :   // use jQuery (if present)
+           !jqName             ? undefined     :   // use jqLite
+                                 window[jqName];   // use jQuery specified by `ngJq`
 
   // Use jQuery if it exists with proper functionality, otherwise default to us.
   // Angular 1.2+ requires jQuery 1.7+ for on()/off() support.
@@ -11467,22 +11493,24 @@ function getter(obj, path, bindFnToScope) {
 /**
  * Return the DOM siblings between the first and last node in the given array.
  * @param {Array} array like object
- * @returns {jqLite} jqLite collection containing the nodes
+ * @returns {Array} the inputted object or a jqLite collection containing the nodes
  */
 function getBlockNodes(nodes) {
-  // TODO(perf): just check if all items in `nodes` are siblings and if they are return the original
-  //             collection, otherwise update the original collection.
+  // TODO(perf): update `nodes` instead of creating a new object?
   var node = nodes[0];
   var endNode = nodes[nodes.length - 1];
-  var blockNodes = [node];
+  var blockNodes;
 
-  do {
-    node = node.nextSibling;
-    if (!node) break;
-    blockNodes.push(node);
-  } while (node !== endNode);
+  for (var i = 1; node !== endNode && (node = node.nextSibling); i++) {
+    if (blockNodes || nodes[i] !== node) {
+      if (!blockNodes) {
+        blockNodes = jqLite(slice.call(nodes, 0, i));
+      }
+      blockNodes.push(node);
+    }
+  }
 
-  return jqLite(blockNodes);
+  return blockNodes || nodes;
 }
 
 
@@ -11546,8 +11574,8 @@ function setupModuleLoader(window) {
      * All modules (angular core or 3rd party) that should be available to an application must be
      * registered using this mechanism.
      *
-     * When passed two or more arguments, a new module is created.  If passed only one argument, an
-     * existing module (the name passed as the first argument to `module`) is retrieved.
+     * Passing one argument retrieves an existing {@link angular.Module},
+     * whereas passing more than one argument creates a new {@link angular.Module}
      *
      *
      * # Module
@@ -11866,7 +11894,7 @@ function serializeObject(obj) {
     val = toJsonReplacer(key, val);
     if (isObject(val)) {
 
-      if (seen.indexOf(val) >= 0) return '<<already seen>>';
+      if (seen.indexOf(val) >= 0) return '...';
 
       seen.push(val);
     }
@@ -11877,7 +11905,7 @@ function serializeObject(obj) {
 function toDebugString(obj) {
   if (typeof obj === 'function') {
     return obj.toString().replace(/ \{[\s\S]*$/, '');
-  } else if (typeof obj === 'undefined') {
+  } else if (isUndefined(obj)) {
     return 'undefined';
   } else if (typeof obj !== 'string') {
     return serializeObject(obj);
@@ -11888,7 +11916,6 @@ function toDebugString(obj) {
 /* global angularModule: true,
   version: true,
 
-  $LocaleProvider,
   $CompileProvider,
 
   htmlAnchorDirective,
@@ -11905,7 +11932,6 @@ function toDebugString(obj) {
   ngClassDirective,
   ngClassEvenDirective,
   ngClassOddDirective,
-  ngCspDirective,
   ngCloakDirective,
   ngControllerDirective,
   ngFormDirective,
@@ -11942,6 +11968,7 @@ function toDebugString(obj) {
 
   $AnchorScrollProvider,
   $AnimateProvider,
+  $CoreAnimateCssProvider,
   $$CoreAnimateQueueProvider,
   $$CoreAnimateRunnerProvider,
   $BrowserProvider,
@@ -11950,6 +11977,7 @@ function toDebugString(obj) {
   $DocumentProvider,
   $ExceptionHandlerProvider,
   $FilterProvider,
+  $$ForceReflowProvider,
   $InterpolateProvider,
   $IntervalProvider,
   $$HashMapProvider,
@@ -11983,8 +12011,9 @@ function toDebugString(obj) {
  * @name angular.version
  * @module ng
  * @description
- * An object that contains information about the current AngularJS version. This object has the
- * following properties:
+ * An object that contains information about the current AngularJS version.
+ *
+ * This object has the following properties:
  *
  * - `full` – `{string}` – Full version string, such as "0.9.18".
  * - `major` – `{number}` – Major version number, such as "0".
@@ -11993,11 +12022,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.3',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.6',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 3,
-  codeName: 'foam-acceleration'
+  dot: 6,
+  codeName: 'multiplicative-elevation'
 };
 
 
@@ -12036,11 +12065,6 @@ function publishExternalAPI(angular) {
   });
 
   angularModule = setupModuleLoader(window);
-  try {
-    angularModule('ngLocale');
-  } catch (e) {
-    angularModule('ngLocale', []).provider('$locale', $LocaleProvider);
-  }
 
   angularModule('ng', ['ngLocale'], ['$provide',
     function ngModule($provide) {
@@ -12103,6 +12127,7 @@ function publishExternalAPI(angular) {
       $provide.provider({
         $anchorScroll: $AnchorScrollProvider,
         $animate: $AnimateProvider,
+        $animateCss: $CoreAnimateCssProvider,
         $$animateQueue: $$CoreAnimateQueueProvider,
         $$AnimateRunner: $$CoreAnimateRunnerProvider,
         $browser: $BrowserProvider,
@@ -12111,6 +12136,7 @@ function publishExternalAPI(angular) {
         $document: $DocumentProvider,
         $exceptionHandler: $ExceptionHandlerProvider,
         $filter: $FilterProvider,
+        $$forceReflow: $$ForceReflowProvider,
         $interpolate: $InterpolateProvider,
         $interval: $IntervalProvider,
         $http: $HttpProvider,
@@ -12205,7 +12231,7 @@ function publishExternalAPI(angular) {
  * - [`html()`](http://api.jquery.com/html/)
  * - [`next()`](http://api.jquery.com/next/) - Does not support selectors
  * - [`on()`](http://api.jquery.com/on/) - Does not support namespaces, selectors or eventData
- * - [`off()`](http://api.jquery.com/off/) - Does not support namespaces or selectors
+ * - [`off()`](http://api.jquery.com/off/) - Does not support namespaces, selectors or event object as parameter
  * - [`one()`](http://api.jquery.com/one/) - Does not support namespaces or selectors
  * - [`parent()`](http://api.jquery.com/parent/) - Does not support selectors
  * - [`prepend()`](http://api.jquery.com/prepend/)
@@ -12219,7 +12245,7 @@ function publishExternalAPI(angular) {
  * - [`text()`](http://api.jquery.com/text/)
  * - [`toggleClass()`](http://api.jquery.com/toggleClass/)
  * - [`triggerHandler()`](http://api.jquery.com/triggerHandler/) - Passes a dummy event object to handlers.
- * - [`unbind()`](http://api.jquery.com/unbind/) - Does not support namespaces
+ * - [`unbind()`](http://api.jquery.com/unbind/) - Does not support namespaces or event object as parameter
  * - [`val()`](http://api.jquery.com/val/)
  * - [`wrap()`](http://api.jquery.com/wrap/)
  *
@@ -12590,7 +12616,7 @@ function jqLiteInheritedData(element, name, value) {
 
   while (element) {
     for (var i = 0, ii = names.length; i < ii; i++) {
-      if ((value = jqLite.data(element, names[i])) !== undefined) return value;
+      if (isDefined(value = jqLite.data(element, names[i]))) return value;
     }
 
     // If dealing with a document fragment node with a host element, and no parent, use the host
@@ -12696,9 +12722,8 @@ function getBooleanAttrName(element, name) {
   return booleanAttr && BOOLEAN_ELEMENTS[nodeName_(element)] && booleanAttr;
 }
 
-function getAliasedAttrName(element, name) {
-  var nodeName = element.nodeName;
-  return (nodeName === 'INPUT' || nodeName === 'TEXTAREA') && ALIASED_ATTR[name];
+function getAliasedAttrName(name) {
+  return ALIASED_ATTR[name];
 }
 
 forEach({
@@ -12835,7 +12860,7 @@ forEach({
     // in a way that survives minification.
     // jqLiteEmpty takes no arguments but is a setter.
     if (fn !== jqLiteEmpty &&
-        (((fn.length == 2 && (fn !== jqLiteHasClass && fn !== jqLiteController)) ? arg1 : arg2) === undefined)) {
+        (isUndefined((fn.length == 2 && (fn !== jqLiteHasClass && fn !== jqLiteController)) ? arg1 : arg2))) {
       if (isObject(arg1)) {
 
         // we are a write, but the object properties are the key/values
@@ -12856,7 +12881,7 @@ forEach({
         // TODO: do we still need this?
         var value = fn.$dv;
         // Only if we have $dv do we iterate over all, otherwise it is just the first element.
-        var jj = (value === undefined) ? Math.min(nodeCount, 1) : nodeCount;
+        var jj = (isUndefined(value)) ? Math.min(nodeCount, 1) : nodeCount;
         for (var j = 0; j < jj; j++) {
           var nodeValue = fn(this[j], arg1, arg2);
           value = value ? value + nodeValue : nodeValue;
@@ -13330,7 +13355,7 @@ var $$HashMapProvider = [function() {
  * Implicit module which gets automatically added to each {@link auto.$injector $injector}.
  */
 
-var FN_ARGS = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
+var FN_ARGS = /^[^\(]*\(\s*([^\)]*)\)/m;
 var FN_ARG_SPLIT = /,/;
 var FN_ARG = /^\s*(_?)(\S+?)\1\s*$/;
 var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
@@ -13986,6 +14011,7 @@ function createInjector(modulesToLoad, strictDi) {
   // Module Loading
   ////////////////////////////////////
   function loadModules(modulesToLoad) {
+    assertArg(isUndefined(modulesToLoad) || isArray(modulesToLoad), 'modulesToLoad', 'not an array');
     var runBlocks = [], moduleFn;
     forEach(modulesToLoad, function(module) {
       if (loadedModules.get(module)) return;
@@ -14494,61 +14520,66 @@ var $$CoreAnimateQueueProvider = function() {
       }
     };
 
-    function addRemoveClassesPostDigest(element, add, remove) {
-      var data = postDigestQueue.get(element);
-      var classVal;
 
-      if (!data) {
-        postDigestQueue.put(element, data = {});
-        postDigestElements.push(element);
-      }
-
-      if (add) {
-        forEach(add.split(' '), function(className) {
+    function updateData(data, classes, value) {
+      var changed = false;
+      if (classes) {
+        classes = isString(classes) ? classes.split(' ') :
+                  isArray(classes) ? classes : [];
+        forEach(classes, function(className) {
           if (className) {
-            data[className] = true;
+            changed = true;
+            data[className] = value;
           }
         });
       }
+      return changed;
+    }
 
-      if (remove) {
-        forEach(remove.split(' '), function(className) {
-          if (className) {
-            data[className] = false;
-          }
-        });
-      }
-
-      if (postDigestElements.length > 1) return;
-
-      $rootScope.$$postDigest(function() {
-        forEach(postDigestElements, function(element) {
-          var data = postDigestQueue.get(element);
-          if (data) {
-            var existing = splitClasses(element.attr('class'));
-            var toAdd = '';
-            var toRemove = '';
-            forEach(data, function(status, className) {
-              var hasClass = !!existing[className];
-              if (status !== hasClass) {
-                if (status) {
-                  toAdd += (toAdd.length ? ' ' : '') + className;
-                } else {
-                  toRemove += (toRemove.length ? ' ' : '') + className;
-                }
+    function handleCSSClassChanges() {
+      forEach(postDigestElements, function(element) {
+        var data = postDigestQueue.get(element);
+        if (data) {
+          var existing = splitClasses(element.attr('class'));
+          var toAdd = '';
+          var toRemove = '';
+          forEach(data, function(status, className) {
+            var hasClass = !!existing[className];
+            if (status !== hasClass) {
+              if (status) {
+                toAdd += (toAdd.length ? ' ' : '') + className;
+              } else {
+                toRemove += (toRemove.length ? ' ' : '') + className;
               }
-            });
+            }
+          });
 
-            forEach(element, function(elm) {
-              toAdd    && jqLiteAddClass(elm, toAdd);
-              toRemove && jqLiteRemoveClass(elm, toRemove);
-            });
-            postDigestQueue.remove(element);
-          }
-        });
-
-        postDigestElements.length = 0;
+          forEach(element, function(elm) {
+            toAdd    && jqLiteAddClass(elm, toAdd);
+            toRemove && jqLiteRemoveClass(elm, toRemove);
+          });
+          postDigestQueue.remove(element);
+        }
       });
+      postDigestElements.length = 0;
+    }
+
+
+    function addRemoveClassesPostDigest(element, add, remove) {
+      var data = postDigestQueue.get(element) || {};
+
+      var classesAdded = updateData(data, add, true);
+      var classesRemoved = updateData(data, remove, false);
+
+      if (classesAdded || classesRemoved) {
+
+        postDigestQueue.put(element, data);
+        postDigestElements.push(element);
+
+        if (postDigestElements.length === 1) {
+          $rootScope.$$postDigest(handleCSSClassChanges);
+        }
+      }
     }
   }];
 };
@@ -14978,15 +15009,88 @@ var $AnimateProvider = ['$provide', function($provide) {
   }];
 }];
 
-function $$AsyncCallbackProvider() {
-  this.$get = ['$$rAF', '$timeout', function($$rAF, $timeout) {
-    return $$rAF.supported
-      ? function(fn) { return $$rAF(fn); }
-      : function(fn) {
-        return $timeout(fn, 0, false);
+/**
+ * @ngdoc service
+ * @name $animateCss
+ * @kind object
+ *
+ * @description
+ * This is the core version of `$animateCss`. By default, only when the `ngAnimate` is included,
+ * then the `$animateCss` service will actually perform animations.
+ *
+ * Click here {@link ngAnimate.$animateCss to read the documentation for $animateCss}.
+ */
+var $CoreAnimateCssProvider = function() {
+  this.$get = ['$$rAF', '$q', function($$rAF, $q) {
+
+    var RAFPromise = function() {};
+    RAFPromise.prototype = {
+      done: function(cancel) {
+        this.defer && this.defer[cancel === true ? 'reject' : 'resolve']();
+      },
+      end: function() {
+        this.done();
+      },
+      cancel: function() {
+        this.done(true);
+      },
+      getPromise: function() {
+        if (!this.defer) {
+          this.defer = $q.defer();
+        }
+        return this.defer.promise;
+      },
+      then: function(f1,f2) {
+        return this.getPromise().then(f1,f2);
+      },
+      'catch': function(f1) {
+        return this.getPromise()['catch'](f1);
+      },
+      'finally': function(f1) {
+        return this.getPromise()['finally'](f1);
+      }
+    };
+
+    return function(element, options) {
+      if (options.from) {
+        element.css(options.from);
+        options.from = null;
+      }
+
+      var closed, runner = new RAFPromise();
+      return {
+        start: run,
+        end: run
       };
+
+      function run() {
+        $$rAF(function() {
+          close();
+          if (!closed) {
+            runner.done();
+          }
+          closed = true;
+        });
+        return runner;
+      }
+
+      function close() {
+        if (options.addClass) {
+          element.addClass(options.addClass);
+          options.addClass = null;
+        }
+        if (options.removeClass) {
+          element.removeClass(options.removeClass);
+          options.removeClass = null;
+        }
+        if (options.to) {
+          element.css(options.to);
+          options.to = null;
+        }
+      }
+    };
   }];
-}
+};
 
 /* global stripHash: true */
 
@@ -15076,7 +15180,7 @@ function Browser(window, document, $log, $sniffer) {
   var cachedState, lastHistoryState,
       lastBrowserUrl = location.href,
       baseElement = document.find('base'),
-      reloadLocation = null;
+      pendingLocation = null;
 
   cacheState();
   lastHistoryState = cachedState;
@@ -15136,8 +15240,8 @@ function Browser(window, document, $log, $sniffer) {
         // Do the assignment again so that those two variables are referentially identical.
         lastHistoryState = cachedState;
       } else {
-        if (!sameBase || reloadLocation) {
-          reloadLocation = url;
+        if (!sameBase || pendingLocation) {
+          pendingLocation = url;
         }
         if (replace) {
           location.replace(url);
@@ -15146,14 +15250,18 @@ function Browser(window, document, $log, $sniffer) {
         } else {
           location.hash = getHash(url);
         }
+        if (location.href !== url) {
+          pendingLocation = url;
+        }
       }
       return self;
     // getter
     } else {
-      // - reloadLocation is needed as browsers don't allow to read out
-      //   the new location.href if a reload happened.
+      // - pendingLocation is needed as browsers don't allow to read out
+      //   the new location.href if a reload happened or if there is a bug like in iOS 9 (see
+      //   https://openradar.appspot.com/22186109).
       // - the replacement is a workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=407172
-      return reloadLocation || location.href.replace(/%27/g,"'");
+      return pendingLocation || location.href.replace(/%27/g,"'");
     }
   };
 
@@ -15175,6 +15283,7 @@ function Browser(window, document, $log, $sniffer) {
       urlChangeInit = false;
 
   function cacheStateAndFireUrlChange() {
+    pendingLocation = null;
     cacheState();
     fireUrlChange();
   }
@@ -15410,10 +15519,10 @@ function $BrowserProvider() {
            $scope.keys = [];
            $scope.cache = $cacheFactory('cacheId');
            $scope.put = function(key, value) {
-             if ($scope.cache.get(key) === undefined) {
+             if (isUndefined($scope.cache.get(key))) {
                $scope.keys.push(key);
              }
-             $scope.cache.put(key, value === undefined ? null : value);
+             $scope.cache.put(key, isUndefined(value) ? null : value);
            };
          }]);
      </file>
@@ -15889,18 +15998,24 @@ function $TemplateCacheProvider() {
  * and other directives used in the directive's template will also be excluded from execution.
  *
  * #### `scope`
- * **If set to `true`,** then a new scope will be created for this directive. If multiple directives on the
- * same element request a new scope, only one new scope is created. The new scope rule does not
- * apply for the root of the template since the root of the template always gets a new scope.
+ * The scope property can be `true`, an object or a falsy value:
  *
- * **If set to `{}` (object hash),** then a new "isolate" scope is created. The 'isolate' scope differs from
- * normal scope in that it does not prototypically inherit from the parent scope. This is useful
- * when creating reusable components, which should not accidentally read or modify data in the
- * parent scope.
+ * * **falsy:** No scope will be created for the directive. The directive will use its parent's scope.
  *
- * The 'isolate' scope takes an object hash which defines a set of local scope properties
- * derived from the parent scope. These local properties are useful for aliasing values for
- * templates. Locals definition is a hash of local scope property to its source:
+ * * **`true`:** A new child scope that prototypically inherits from its parent will be created for
+ * the directive's element. If multiple directives on the same element request a new scope,
+ * only one new scope is created. The new scope rule does not apply for the root of the template
+ * since the root of the template always gets a new scope.
+ *
+ * * **`{...}` (an object hash):** A new "isolate" scope is created for the directive's element. The
+ * 'isolate' scope differs from normal scope in that it does not prototypically inherit from its parent
+ * scope. This is useful when creating reusable components, which should not accidentally read or modify
+ * data in the parent scope.
+ *
+ * The 'isolate' scope object hash defines a set of local scope properties derived from attributes on the
+ * directive's element. These local properties are useful for aliasing values for templates. The keys in
+ * the object hash map to the name of the property on the isolate scope; the values define how the property
+ * is bound to the parent scope, via matching attributes on the directive's element:
  *
  * * `@` or `@attr` - bind a local scope property to the value of DOM attribute. The result is
  *   always a string since DOM attributes are strings. If no `attr` name is specified  then the
@@ -15933,6 +16048,20 @@ function $TemplateCacheProvider() {
  *   For example, if the expression is `increment(amount)` then we can specify the amount value
  *   by calling the `localFn` as `localFn({amount: 22})`.
  *
+ * In general it's possible to apply more than one directive to one element, but there might be limitations
+ * depending on the type of scope required by the directives. The following points will help explain these limitations.
+ * For simplicity only two directives are taken into account, but it is also applicable for several directives:
+ *
+ * * **no scope** + **no scope** => Two directives which don't require their own scope will use their parent's scope
+ * * **child scope** + **no scope** =>  Both directives will share one single child scope
+ * * **child scope** + **child scope** =>  Both directives will share one single child scope
+ * * **isolated scope** + **no scope** =>  The isolated directive will use it's own created isolated scope. The other directive will use
+ * its parent's scope
+ * * **isolated scope** + **child scope** =>  **Won't work!** Only one scope can be related to one element. Therefore these directives cannot
+ * be applied to the same element.
+ * * **isolated scope** + **isolated scope**  =>  **Won't work!** Only one scope can be related to one element. Therefore these directives
+ * cannot be applied to the same element.
+ *
  *
  * #### `bindToController`
  * When an isolate scope is used for a component (see above), and `controllerAs` is used, `bindToController: true` will
@@ -15941,7 +16070,7 @@ function $TemplateCacheProvider() {
  *
  * #### `controller`
  * Controller constructor function. The controller is instantiated before the
- * pre-linking phase and it is shared with other directives (see
+ * pre-linking phase and can be accessed by other directives (see
  * `require` attribute). This allows the directives to communicate with each other and augment
  * each other's behavior. The controller is injectable (and supports bracket notation) with the following locals:
  *
@@ -15981,9 +16110,10 @@ function $TemplateCacheProvider() {
  *
  * #### `controllerAs`
  * Identifier name for a reference to the controller in the directive's scope.
- * This allows the controller to be referenced from the directive template. The directive
- * needs to define a scope for this configuration to be used. Useful in the case when
- * directive is used as component.
+ * This allows the controller to be referenced from the directive template. This is especially
+ * useful when a directive is used as component, i.e. with an `isolate` scope. It's also possible
+ * to use it in a directive without an `isolate` / `new` scope, but you need to be aware that the
+ * `controllerAs` reference might overwrite a property that already exists on the parent scope.
  *
  *
  * #### `restrict`
@@ -16150,7 +16280,7 @@ function $TemplateCacheProvider() {
  *     otherwise the {@link error:$compile:ctreq Missing Required Controller} error is thrown.
  *
  *     Note that you can also require the directive's own controller - it will be made available like
- *     like any other controller.
+ *     any other controller.
  *
  *   * `transcludeFn` - A transclude linking function pre-bound to the correct transclusion scope.
  *     This is the same as the `$transclude`
@@ -16176,7 +16306,7 @@ function $TemplateCacheProvider() {
  *
  * ### Transclusion
  *
- * Transclusion is the process of extracting a collection of DOM element from one part of the DOM and
+ * Transclusion is the process of extracting a collection of DOM elements from one part of the DOM and
  * copying them to another part of the DOM, while maintaining their connection to the original AngularJS
  * scope from where they were taken.
  *
@@ -16820,7 +16950,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
         var node = this.$$element[0],
             booleanKey = getBooleanAttrName(node, key),
-            aliasedKey = getAliasedAttrName(node, key),
+            aliasedKey = getAliasedAttrName(key),
             observer = key,
             nodeName;
 
@@ -16887,7 +17017,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         }
 
         if (writeAttr !== false) {
-          if (value === null || value === undefined) {
+          if (value === null || isUndefined(value)) {
             this.$$element.removeAttr(attrName);
           } else {
             this.$$element.attr(attrName, value);
@@ -16931,7 +17061,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
         listeners.push(fn);
         $rootScope.$evalAsync(function() {
-          if (!listeners.$$inter && attrs.hasOwnProperty(key)) {
+          if (!listeners.$$inter && attrs.hasOwnProperty(key) && !isUndefined(attrs[key])) {
             // no one registered attribute interpolation function, so lets call it manually
             fn(attrs[key]);
           }
@@ -17853,7 +17983,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             i = 0, ii = directives.length; i < ii; i++) {
           try {
             directive = directives[i];
-            if ((maxPriority === undefined || maxPriority > directive.priority) &&
+            if ((isUndefined(maxPriority) || maxPriority > directive.priority) &&
                  directive.restrict.indexOf(location) != -1) {
               if (startAttrName) {
                 directive = inherit(directive, {$$start: startAttrName, $$end: endAttrName});
@@ -18310,24 +18440,19 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         lastValue,
         parentGet, parentSet, compare;
 
-        if (!hasOwnProperty.call(attrs, attrName)) {
-          // In the case of user defined a binding with the same name as a method in Object.prototype but didn't set
-          // the corresponding attribute. We need to make sure subsequent code won't access to the prototype function
-          attrs[attrName] = undefined;
-        }
-
         switch (mode) {
 
           case '@':
-            if (!attrs[attrName] && !optional) {
-              destination[scopeName] = undefined;
+            if (!optional && !hasOwnProperty.call(attrs, attrName)) {
+              destination[scopeName] = attrs[attrName] = void 0;
             }
-
             attrs.$observe(attrName, function(value) {
-              destination[scopeName] = value;
+              if (isString(value)) {
+                destination[scopeName] = value;
+              }
             });
             attrs.$$observers[attrName].$$scope = scope;
-            if (attrs[attrName]) {
+            if (isString(attrs[attrName])) {
               // If the attribute has been provided then we trigger an interpolation to ensure
               // the value is there for use in the link fn
               destination[scopeName] = $interpolate(attrs[attrName])(scope);
@@ -18335,11 +18460,13 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '=':
-            if (optional && !attrs[attrName]) {
-              return;
+            if (!hasOwnProperty.call(attrs, attrName)) {
+              if (optional) break;
+              attrs[attrName] = void 0;
             }
-            parentGet = $parse(attrs[attrName]);
+            if (optional && !attrs[attrName]) break;
 
+            parentGet = $parse(attrs[attrName]);
             if (parentGet.literal) {
               compare = equals;
             } else {
@@ -18378,7 +18505,8 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
-            parentGet = $parse(attrs[attrName]);
+            // Don't assign Object.prototype method to scope
+            parentGet = attrs.hasOwnProperty(attrName) ? $parse(attrs[attrName]) : noop;
 
             // Don't assign noop to destination if expression is not valid
             if (parentGet === noop && optional) break;
@@ -18755,6 +18883,29 @@ function $ExceptionHandlerProvider() {
   }];
 }
 
+var $$ForceReflowProvider = function() {
+  this.$get = ['$document', function($document) {
+    return function(domNode) {
+      //the line below will force the browser to perform a repaint so
+      //that all the animated elements within the animation frame will
+      //be properly updated and drawn on screen. This is required to
+      //ensure that the preparation animation is properly flushed so that
+      //the active state picks up from there. DO NOT REMOVE THIS LINE.
+      //DO NOT OPTIMIZE THIS LINE. THE MINIFIER WILL REMOVE IT OTHERWISE WHICH
+      //WILL RESULT IN AN UNPREDICTABLE BUG THAT IS VERY HARD TO TRACK DOWN AND
+      //WILL TAKE YEARS AWAY FROM YOUR LIFE.
+      if (domNode) {
+        if (!domNode.nodeType && domNode instanceof jqLite) {
+          domNode = domNode[0];
+        }
+      } else {
+        domNode = $document[0].body;
+      }
+      return domNode.offsetWidth + 1;
+    };
+  }];
+};
+
 var APPLICATION_JSON = 'application/json';
 var CONTENT_TYPE_APPLICATION_JSON = {'Content-Type': APPLICATION_JSON + ';charset=utf-8'};
 var JSON_START = /^\[|^\{(?!\{)/;
@@ -18763,6 +18914,12 @@ var JSON_ENDS = {
   '{': /}$/
 };
 var JSON_PROTECTION_PREFIX = /^\)\]\}',?\n/;
+var $httpMinErr = minErr('$http');
+var $httpMinErrLegacyFn = function(method) {
+  return function() {
+    throw $httpMinErr('legacy', 'The method `{0}` on the promise returned from `$http` has been disabled.', method);
+  };
+};
 
 function serializeValue(v) {
   if (isObject(v)) {
@@ -18863,8 +19020,8 @@ function $HttpParamSerializerJQLikeProvider() {
       function serialize(toSerialize, prefix, topLevel) {
         if (toSerialize === null || isUndefined(toSerialize)) return;
         if (isArray(toSerialize)) {
-          forEach(toSerialize, function(value) {
-            serialize(value, prefix + '[]');
+          forEach(toSerialize, function(value, index) {
+            serialize(value, prefix + '[' + (isObject(value) ? index : '') + ']');
           });
         } else if (isObject(toSerialize) && !isDate(toSerialize)) {
           forEachSorted(toSerialize, function(value, key) {
@@ -19085,6 +19242,30 @@ function $HttpProvider() {
     return useApplyAsync;
   };
 
+  var useLegacyPromise = true;
+  /**
+   * @ngdoc method
+   * @name $httpProvider#useLegacyPromiseExtensions
+   * @description
+   *
+   * Configure `$http` service to return promises without the shorthand methods `success` and `error`.
+   * This should be used to make sure that applications work without these methods.
+   *
+   * Defaults to false. If no value is specified, returns the current configured value.
+   *
+   * @param {boolean=} value If true, `$http` will return a normal promise without the `success` and `error` methods.
+   *
+   * @returns {boolean|Object} If a value is specified, returns the $httpProvider for chaining.
+   *    otherwise, returns the current configured value.
+   **/
+  this.useLegacyPromiseExtensions = function(value) {
+    if (isDefined(value)) {
+      useLegacyPromise = !!value;
+      return this;
+    }
+    return useLegacyPromise;
+  };
+
   /**
    * @ngdoc property
    * @name $httpProvider#interceptors
@@ -19151,17 +19332,15 @@ function $HttpProvider() {
      *
      * ## General usage
      * The `$http` service is a function which takes a single argument — a configuration object —
-     * that is used to generate an HTTP request and returns  a {@link ng.$q promise}
-     * with two $http specific methods: `success` and `error`.
+     * that is used to generate an HTTP request and returns  a {@link ng.$q promise}.
      *
      * ```js
      *   // Simple GET request example :
      *   $http.get('/someUrl').
-     *     success(function(data, status, headers, config) {
+     *     then(function(response) {
      *       // this callback will be called asynchronously
      *       // when the response is available
-     *     }).
-     *     error(function(data, status, headers, config) {
+     *     }, function(response) {
      *       // called asynchronously if an error occurs
      *       // or server returns response with an error status.
      *     });
@@ -19170,21 +19349,23 @@ function $HttpProvider() {
      * ```js
      *   // Simple POST request example (passing data) :
      *   $http.post('/someUrl', {msg:'hello word!'}).
-     *     success(function(data, status, headers, config) {
+     *     then(function(response) {
      *       // this callback will be called asynchronously
      *       // when the response is available
-     *     }).
-     *     error(function(data, status, headers, config) {
+     *     }, function(response) {
      *       // called asynchronously if an error occurs
      *       // or server returns response with an error status.
      *     });
      * ```
      *
+     * The response object has these properties:
      *
-     * Since the returned value of calling the $http function is a `promise`, you can also use
-     * the `then` method to register callbacks, and these callbacks will receive a single argument –
-     * an object representing the response. See the API signature and type info below for more
-     * details.
+     *   - **data** – `{string|Object}` – The response body transformed with the transform
+     *     functions.
+     *   - **status** – `{number}` – HTTP status code of the response.
+     *   - **headers** – `{function([headerName])}` – Header getter function.
+     *   - **config** – `{Object}` – The configuration object that was used to generate the request.
+     *   - **statusText** – `{string}` – HTTP status text of the response.
      *
      * A response status code between 200 and 299 is considered a success status and
      * will result in the success callback being called. Note that if the response is a redirect,
@@ -19208,8 +19389,8 @@ function $HttpProvider() {
      * request data must be passed in for POST/PUT requests.
      *
      * ```js
-     *   $http.get('/someUrl').success(successCallback);
-     *   $http.post('/someUrl', data).success(successCallback);
+     *   $http.get('/someUrl').then(successCallback);
+     *   $http.post('/someUrl', data).then(successCallback);
      * ```
      *
      * Complete list of shortcut methods:
@@ -19222,6 +19403,14 @@ function $HttpProvider() {
      * - {@link ng.$http#jsonp $http.jsonp}
      * - {@link ng.$http#patch $http.patch}
      *
+     *
+     * ## Deprecation Notice
+     * <div class="alert alert-danger">
+     *   The `$http` legacy promise methods `success` and `error` have been deprecated.
+     *   Use the standard `then` method instead.
+     *   If {@link $httpProvider#useLegacyPromiseExtensions `$httpProvider.useLegacyPromiseExtensions`} is set to
+     *   `false` then these methods will throw {@link $http:legacy `$http/legacy`} error.
+     * </div>
      *
      * ## Setting HTTP Headers
      *
@@ -19266,7 +19455,7 @@ function $HttpProvider() {
      *  data: { test: 'test' }
      * }
      *
-     * $http(req).success(function(){...}).error(function(){...});
+     * $http(req).then(function(){...}, function(){...});
      * ```
      *
      * ## Transforming Requests and Responses
@@ -19498,7 +19687,6 @@ function $HttpProvider() {
      * In order to prevent collisions in environments where multiple Angular apps share the
      * same domain or subdomain, we recommend that each application uses unique cookie name.
      *
-     *
      * @param {object} config Object describing the request to be made and how it should be
      *    processed. The object has following properties:
      *
@@ -19543,20 +19731,9 @@ function $HttpProvider() {
      *    - **responseType** - `{string}` - see
      *      [XMLHttpRequest.responseType](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#xmlhttprequest-responsetype).
      *
-     * @returns {HttpPromise} Returns a {@link ng.$q promise} object with the
-     *   standard `then` method and two http specific methods: `success` and `error`. The `then`
-     *   method takes two arguments a success and an error callback which will be called with a
-     *   response object. The `success` and `error` methods take a single argument - a function that
-     *   will be called when the request succeeds or fails respectively. The arguments passed into
-     *   these functions are destructured representation of the response object passed into the
-     *   `then` method. The response object has these properties:
+     * @returns {HttpPromise} Returns a {@link ng.$q `Promise}` that will be resolved to a response object
+     *                        when the request succeeds or fails.
      *
-     *   - **data** – `{string|Object}` – The response body transformed with the transform
-     *     functions.
-     *   - **status** – `{number}` – HTTP status code of the response.
-     *   - **headers** – `{function([headerName])}` – Header getter function.
-     *   - **config** – `{Object}` – The configuration object that was used to generate the request.
-     *   - **statusText** – `{string}` – HTTP status text of the response.
      *
      * @property {Array.<Object>} pendingRequests Array of config objects for currently pending
      *   requests. This is primarily meant to be used for debugging purposes.
@@ -19598,13 +19775,12 @@ function $HttpProvider() {
           $scope.response = null;
 
           $http({method: $scope.method, url: $scope.url, cache: $templateCache}).
-            success(function(data, status) {
-              $scope.status = status;
-              $scope.data = data;
-            }).
-            error(function(data, status) {
-              $scope.data = data || "Request failed";
-              $scope.status = status;
+            then(function(response) {
+              $scope.status = response.status;
+              $scope.data = response.data;
+            }, function(response) {
+              $scope.data = response.data || "Request failed";
+              $scope.status = response.status;
           });
         };
 
@@ -19709,23 +19885,28 @@ function $HttpProvider() {
         promise = promise.then(thenFn, rejectFn);
       }
 
-      promise.success = function(fn) {
-        assertArgFn(fn, 'fn');
+      if (useLegacyPromise) {
+        promise.success = function(fn) {
+          assertArgFn(fn, 'fn');
 
-        promise.then(function(response) {
-          fn(response.data, response.status, response.headers, config);
-        });
-        return promise;
-      };
+          promise.then(function(response) {
+            fn(response.data, response.status, response.headers, config);
+          });
+          return promise;
+        };
 
-      promise.error = function(fn) {
-        assertArgFn(fn, 'fn');
+        promise.error = function(fn) {
+          assertArgFn(fn, 'fn');
 
-        promise.then(null, function(response) {
-          fn(response.data, response.status, response.headers, config);
-        });
-        return promise;
-      };
+          promise.then(null, function(response) {
+            fn(response.data, response.status, response.headers, config);
+          });
+          return promise;
+        };
+      } else {
+        promise.success = $httpMinErrLegacyFn('success');
+        promise.error = $httpMinErrLegacyFn('error');
+      }
 
       return promise;
 
@@ -20014,8 +20195,8 @@ function $HttpProvider() {
        * Resolves the raw $http promise.
        */
       function resolvePromise(response, status, headers, statusText) {
-        // normalize internal statuses to 0
-        status = Math.max(status, 0);
+        //status: HTTP response status code, 0, -1 (aborted by timeout / promise)
+        status = status >= -1 ? status : 0;
 
         (isSuccess(status) ? deferred.resolve : deferred.reject)({
           data: response,
@@ -20104,7 +20285,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       xhr.onload = function requestLoaded() {
         var statusText = xhr.statusText || '';
 
-        // responseText is the old-school way of retrieving response (supported by IE8 & 9)
+        // responseText is the old-school way of retrieving response (supported by IE9)
         // response/responseType properties were introduced in XHR Level2 spec (supported by IE10)
         var response = ('response' in xhr) ? xhr.response : xhr.responseText;
 
@@ -20155,7 +20336,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
         }
       }
 
-      xhr.send(post);
+      xhr.send(isUndefined(post) ? null : post);
     }
 
     if (timeout > 0) {
@@ -20172,7 +20353,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
 
     function completeRequest(callback, status, response, headersString, statusText) {
       // cancel timeout and subsequent timeout promise resolution
-      if (timeoutId !== undefined) {
+      if (isDefined(timeoutId)) {
         $browserDefer.cancel(timeoutId);
       }
       jsonpDone = xhr = null;
@@ -20358,7 +20539,7 @@ function $InterpolateProvider() {
      * ```js
      *   var $interpolate = ...; // injected
      *   var exp = $interpolate('Hello {{name | uppercase}}!');
-     *   expect(exp({name:'Angular'}).toEqual('Hello ANGULAR!');
+     *   expect(exp({name:'Angular'})).toEqual('Hello ANGULAR!');
      * ```
      *
      * `$interpolate` takes an optional fourth argument, `allOrNothing`. If `allOrNothing` is
@@ -20742,7 +20923,7 @@ function $IntervalProvider() {
       * @description
       * Cancels a task associated with the `promise`.
       *
-      * @param {promise} promise returned by the `$interval` function.
+      * @param {Promise=} promise returned by the `$interval` function.
       * @returns {boolean} Returns `true` if the task was successfully canceled.
       */
     interval.cancel = function(promise) {
@@ -20769,75 +20950,6 @@ function $IntervalProvider() {
  *
  * * `id` – `{string}` – locale id formatted as `languageId-countryId` (e.g. `en-us`)
  */
-function $LocaleProvider() {
-  this.$get = function() {
-    return {
-      id: 'en-us',
-
-      NUMBER_FORMATS: {
-        DECIMAL_SEP: '.',
-        GROUP_SEP: ',',
-        PATTERNS: [
-          { // Decimal Pattern
-            minInt: 1,
-            minFrac: 0,
-            maxFrac: 3,
-            posPre: '',
-            posSuf: '',
-            negPre: '-',
-            negSuf: '',
-            gSize: 3,
-            lgSize: 3
-          },{ //Currency Pattern
-            minInt: 1,
-            minFrac: 2,
-            maxFrac: 2,
-            posPre: '\u00A4',
-            posSuf: '',
-            negPre: '(\u00A4',
-            negSuf: ')',
-            gSize: 3,
-            lgSize: 3
-          }
-        ],
-        CURRENCY_SYM: '$'
-      },
-
-      DATETIME_FORMATS: {
-        MONTH:
-            'January,February,March,April,May,June,July,August,September,October,November,December'
-            .split(','),
-        SHORTMONTH:  'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec'.split(','),
-        DAY: 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'.split(','),
-        SHORTDAY: 'Sun,Mon,Tue,Wed,Thu,Fri,Sat'.split(','),
-        AMPMS: ['AM','PM'],
-        medium: 'MMM d, y h:mm:ss a',
-        'short': 'M/d/yy h:mm a',
-        fullDate: 'EEEE, MMMM d, y',
-        longDate: 'MMMM d, y',
-        mediumDate: 'MMM d, y',
-        shortDate: 'M/d/yy',
-        mediumTime: 'h:mm:ss a',
-        shortTime: 'h:mm a',
-        ERANAMES: [
-          "Before Christ",
-          "Anno Domini"
-        ],
-        ERAS: [
-          "BC",
-          "AD"
-        ]
-      },
-
-      pluralCat: function(num) {
-        if (num === 1) {
-          return 'one';
-        }
-        return 'other';
-      }
-    };
-  };
-}
 
 var PATH_MATCH = /^([^\?#]*)(\?([^#]*))?(#(.*))?$/,
     DEFAULT_PORTS = {'http': 80, 'https': 443, 'ftp': 21};
@@ -20928,12 +21040,12 @@ function serverBase(url) {
  *
  * @constructor
  * @param {string} appBase application base URL
+ * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} basePrefix url path prefix
  */
-function LocationHtml5Url(appBase, basePrefix) {
+function LocationHtml5Url(appBase, appBaseNoFile, basePrefix) {
   this.$$html5 = true;
   basePrefix = basePrefix || '';
-  var appBaseNoFile = stripFile(appBase);
   parseAbsoluteUrl(appBase, this);
 
 
@@ -20980,14 +21092,14 @@ function LocationHtml5Url(appBase, basePrefix) {
     var appUrl, prevAppUrl;
     var rewrittenUrl;
 
-    if ((appUrl = beginsWith(appBase, url)) !== undefined) {
+    if (isDefined(appUrl = beginsWith(appBase, url))) {
       prevAppUrl = appUrl;
-      if ((appUrl = beginsWith(basePrefix, appUrl)) !== undefined) {
+      if (isDefined(appUrl = beginsWith(basePrefix, appUrl))) {
         rewrittenUrl = appBaseNoFile + (beginsWith('/', appUrl) || appUrl);
       } else {
         rewrittenUrl = appBase + prevAppUrl;
       }
-    } else if ((appUrl = beginsWith(appBaseNoFile, url)) !== undefined) {
+    } else if (isDefined(appUrl = beginsWith(appBaseNoFile, url))) {
       rewrittenUrl = appBaseNoFile + appUrl;
     } else if (appBaseNoFile == url + '/') {
       rewrittenUrl = appBaseNoFile;
@@ -21007,10 +21119,10 @@ function LocationHtml5Url(appBase, basePrefix) {
  *
  * @constructor
  * @param {string} appBase application base URL
+ * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} hashPrefix hashbang prefix
  */
-function LocationHashbangUrl(appBase, hashPrefix) {
-  var appBaseNoFile = stripFile(appBase);
+function LocationHashbangUrl(appBase, appBaseNoFile, hashPrefix) {
 
   parseAbsoluteUrl(appBase, this);
 
@@ -21119,13 +21231,12 @@ function LocationHashbangUrl(appBase, hashPrefix) {
  *
  * @constructor
  * @param {string} appBase application base URL
+ * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} hashPrefix hashbang prefix
  */
-function LocationHashbangInHtml5Url(appBase, hashPrefix) {
+function LocationHashbangInHtml5Url(appBase, appBaseNoFile, hashPrefix) {
   this.$$html5 = true;
   LocationHashbangUrl.apply(this, arguments);
-
-  var appBaseNoFile = stripFile(appBase);
 
   this.$$parseLinkUrl = function(url, relHref) {
     if (relHref && relHref[0] === '#') {
@@ -21156,7 +21267,7 @@ function LocationHashbangInHtml5Url(appBase, hashPrefix) {
         hash = this.$$hash ? '#' + encodeUriSegment(this.$$hash) : '';
 
     this.$$url = encodePath(this.$$path) + (search ? '?' + search : '') + hash;
-    // include hashPrefix in $$absUrl when $$url is empty so IE8 & 9 do not reload page because of removal of '#'
+    // include hashPrefix in $$absUrl when $$url is empty so IE9 does not reload page because of removal of '#'
     this.$$absUrl = appBase + hashPrefix + this.$$url;
   };
 
@@ -21665,7 +21776,9 @@ function $LocationProvider() {
       appBase = stripHash(initialUrl);
       LocationMode = LocationHashbangUrl;
     }
-    $location = new LocationMode(appBase, '#' + hashPrefix);
+    var appBaseNoFile = stripFile(appBase);
+
+    $location = new LocationMode(appBase, appBaseNoFile, '#' + hashPrefix);
     $location.$$parseLinkUrl(initialUrl, initialUrl);
 
     $location.$$state = $browser.state();
@@ -21745,6 +21858,13 @@ function $LocationProvider() {
 
     // update $location when $browser url changes
     $browser.onUrlChange(function(newUrl, newState) {
+
+      if (isUndefined(beginsWith(appBaseNoFile, newUrl))) {
+        // If we are navigating outside of the app then force a reload
+        $window.location.href = newUrl;
+        return;
+      }
+
       $rootScope.$evalAsync(function() {
         var oldUrl = $location.absUrl();
         var oldState = $location.$$state;
@@ -22022,6 +22142,15 @@ var $parseMinErr = minErr('$parse');
 
 
 function ensureSafeMemberName(name, fullExpression) {
+  // From the JavaScript docs:
+  // Property names must be strings. This means that non-string objects cannot be used
+  // as keys in an object. Any non-string object, including a number, is typecasted
+  // into a string via the toString method.
+  //
+  // So, to ensure that we are checking the same `name` that JavaScript would use,
+  // we cast it to a string, if possible
+  name =  (isObject(name) && name.toString) ? name.toString() : name;
+
   if (name === "__defineGetter__" || name === "__defineSetter__"
       || name === "__lookupGetter__" || name === "__lookupSetter__"
       || name === "__proto__") {
@@ -22758,6 +22887,7 @@ ASTCompiler.prototype = {
       this.state.computing = 'assign';
       var result = this.nextId();
       this.recurse(assignable, result);
+      this.return_(result);
       extra = 'fn.assign=' + this.generateFunction('assign', 's,v,l');
     }
     var toWatch = getInputs(ast.body);
@@ -23594,29 +23724,6 @@ Parser.prototype = {
   }
 };
 
-//////////////////////////////////////////////////
-// Parser helper functions
-//////////////////////////////////////////////////
-
-function setter(obj, path, setValue, fullExp) {
-  ensureSafeObject(obj, fullExp);
-
-  var element = path.split('.'), key;
-  for (var i = 0; element.length > 1; i++) {
-    key = ensureSafeMemberName(element.shift(), fullExp);
-    var propertyObj = ensureSafeObject(obj[key], fullExp);
-    if (!propertyObj) {
-      propertyObj = {};
-      obj[key] = propertyObj;
-    }
-    obj = propertyObj;
-  }
-  key = ensureSafeMemberName(element.shift(), fullExp);
-  ensureSafeObject(obj[key], fullExp);
-  obj[key] = setValue;
-  return setValue;
-}
-
 var getterFnCacheDefault = createMap();
 var getterFnCacheExpensive = createMap();
 
@@ -23685,13 +23792,14 @@ function $ParseProvider() {
   var cacheDefault = createMap();
   var cacheExpensive = createMap();
 
-  this.$get = ['$filter', '$sniffer', function($filter, $sniffer) {
+  this.$get = ['$filter', function($filter) {
+    var noUnsafeEval = csp().noUnsafeEval;
     var $parseOptions = {
-          csp: $sniffer.csp,
+          csp: noUnsafeEval,
           expensiveChecks: false
         },
         $parseOptionsExpensive = {
-          csp: $sniffer.csp,
+          csp: noUnsafeEval,
           expensiveChecks: true
         };
 
@@ -24166,8 +24274,11 @@ function qFactory(nextTick, exceptionHandler) {
     this.$$state = { status: 0 };
   }
 
-  Promise.prototype = {
+  extend(Promise.prototype, {
     then: function(onFulfilled, onRejected, progressBack) {
+      if (isUndefined(onFulfilled) && isUndefined(onRejected) && isUndefined(progressBack)) {
+        return this;
+      }
       var result = new Deferred();
 
       this.$$state.pending = this.$$state.pending || [];
@@ -24188,7 +24299,7 @@ function qFactory(nextTick, exceptionHandler) {
         return handleCallback(error, false, callback);
       }, progressBack);
     }
-  };
+  });
 
   //Faster, more basic than angular.bind http://jsperf.com/angular-bind-vs-custom-vs-native
   function simpleBind(context, fn) {
@@ -24235,7 +24346,7 @@ function qFactory(nextTick, exceptionHandler) {
     this.notify = simpleBind(this, this.notify);
   }
 
-  Deferred.prototype = {
+  extend(Deferred.prototype, {
     resolve: function(val) {
       if (this.promise.$$state.status) return;
       if (val === this.promise) {
@@ -24298,7 +24409,7 @@ function qFactory(nextTick, exceptionHandler) {
         });
       }
     }
-  };
+  });
 
   /**
    * @ngdoc method
@@ -24381,6 +24492,9 @@ function qFactory(nextTick, exceptionHandler) {
    * the promise comes from a source that can't be trusted.
    *
    * @param {*} value Value or a promise
+   * @param {Function=} successCallback
+   * @param {Function=} errorCallback
+   * @param {Function=} progressCallback
    * @returns {Promise} Returns a promise of the passed value or promise
    */
 
@@ -24400,6 +24514,9 @@ function qFactory(nextTick, exceptionHandler) {
    * Alias of {@link ng.$q#when when} to maintain naming consistency with ES6.
    *
    * @param {*} value Value or a promise
+   * @param {Function=} successCallback
+   * @param {Function=} errorCallback
+   * @param {Function=} progressCallback
    * @returns {Promise} Returns a promise of the passed value or promise
    */
   var resolve = when;
@@ -24488,7 +24605,7 @@ function $$RAFProvider() { //rAF
                                $window.webkitCancelRequestAnimationFrame;
 
     var rafSupported = !!requestAnimationFrame;
-    var rafFn = rafSupported
+    var raf = rafSupported
       ? function(fn) {
           var id = requestAnimationFrame(fn);
           return function() {
@@ -24502,47 +24619,9 @@ function $$RAFProvider() { //rAF
           };
         };
 
-    queueFn.supported = rafSupported;
+    raf.supported = rafSupported;
 
-    var cancelLastRAF;
-    var taskCount = 0;
-    var taskQueue = [];
-    return queueFn;
-
-    function flush() {
-      for (var i = 0; i < taskQueue.length; i++) {
-        var task = taskQueue[i];
-        if (task) {
-          taskQueue[i] = null;
-          task();
-        }
-      }
-      taskCount = taskQueue.length = 0;
-    }
-
-    function queueFn(asyncFn) {
-      var index = taskQueue.length;
-
-      taskCount++;
-      taskQueue.push(asyncFn);
-
-      if (index === 0) {
-        cancelLastRAF = rafFn(flush);
-      }
-
-      return function cancelQueueFn() {
-        if (index >= 0) {
-          taskQueue[index] = null;
-          index = null;
-
-          if (--taskCount === 0 && cancelLastRAF) {
-            cancelLastRAF();
-            cancelLastRAF = null;
-            taskQueue.length = 0;
-          }
-        }
-      };
-    }
+    return raf;
   }];
 }
 
@@ -24655,12 +24734,9 @@ function $RootScopeProvider() {
      * A root scope can be retrieved using the {@link ng.$rootScope $rootScope} key from the
      * {@link auto.$injector $injector}. Child scopes are created using the
      * {@link ng.$rootScope.Scope#$new $new()} method. (Most scopes are created automatically when
-     * compiled HTML template is executed.)
+     * compiled HTML template is executed.) See also the {@link guide/scope Scopes guide} for
+     * an in-depth introduction and usage examples.
      *
-     * Here is a simple scope snippet to show how you can interact with the scope.
-     * ```html
-     * <file src="./test/ng/rootScopeSpec.js" tag="docs1" />
-     * ```
      *
      * # Inheritance
      * A scope can inherit from a parent scope, as in this example:
@@ -24802,10 +24878,10 @@ function $RootScopeProvider() {
        * Registers a `listener` callback to be executed whenever the `watchExpression` changes.
        *
        * - The `watchExpression` is called on every call to {@link ng.$rootScope.Scope#$digest
-       *   $digest()} and should return the value that will be watched. (Since
-       *   {@link ng.$rootScope.Scope#$digest $digest()} reruns when it detects changes the
-       *   `watchExpression` can execute multiple times per
-       *   {@link ng.$rootScope.Scope#$digest $digest()} and should be idempotent.)
+       *   $digest()} and should return the value that will be watched. (`watchExpression` should not change
+       *   its value when executed multiple times with the same input because it may be executed multiple
+       *   times by {@link ng.$rootScope.Scope#$digest $digest()}. That is, `watchExpression` should be
+       *   [idempotent](http://en.wikipedia.org/wiki/Idempotence).
        * - The `listener` is called only when the value from the current `watchExpression` and the
        *   previous call to `watchExpression` are not equal (with the exception of the initial run,
        *   see below). Inequality is determined according to reference inequality,
@@ -24822,9 +24898,9 @@ function $RootScopeProvider() {
        *
        *
        * If you want to be notified whenever {@link ng.$rootScope.Scope#$digest $digest} is called,
-       * you can register a `watchExpression` function with no `listener`. (Since `watchExpression`
-       * can execute multiple times per {@link ng.$rootScope.Scope#$digest $digest} cycle when a
-       * change is detected, be prepared for multiple calls to your listener.)
+       * you can register a `watchExpression` function with no `listener`. (Be prepared for
+       * multiple calls to your `watchExpression` because it will execute multiple times in a
+       * single {@link ng.$rootScope.Scope#$digest $digest} cycle if a change is detected.)
        *
        * After a watcher is registered with the scope, the `listener` fn is called asynchronously
        * (via {@link ng.$rootScope.Scope#$evalAsync $evalAsync}) to initialize the
@@ -25154,7 +25230,7 @@ function $RootScopeProvider() {
             // copy the items to oldValue and look for changes.
             newLength = 0;
             for (key in newValue) {
-              if (newValue.hasOwnProperty(key)) {
+              if (hasOwnProperty.call(newValue, key)) {
                 newLength++;
                 newItem = newValue[key];
                 oldItem = oldValue[key];
@@ -25176,7 +25252,7 @@ function $RootScopeProvider() {
               // we used to have more keys, need to find them and destroy them.
               changeDetected++;
               for (key in oldValue) {
-                if (!newValue.hasOwnProperty(key)) {
+                if (!hasOwnProperty.call(newValue, key)) {
                   oldLength--;
                   delete oldValue[key];
                 }
@@ -25586,11 +25662,14 @@ function $RootScopeProvider() {
       $apply: function(expr) {
         try {
           beginPhase('$apply');
-          return this.$eval(expr);
+          try {
+            return this.$eval(expr);
+          } finally {
+            clearPhase();
+          }
         } catch (e) {
           $exceptionHandler(e);
         } finally {
-          clearPhase();
           try {
             $rootScope.$digest();
           } catch (e) {
@@ -26258,7 +26337,7 @@ function $SceDelegateProvider() {
             'Attempted to trust a value in invalid context. Context: {0}; Value: {1}',
             type, trustedValue);
       }
-      if (trustedValue === null || trustedValue === undefined || trustedValue === '') {
+      if (trustedValue === null || isUndefined(trustedValue) || trustedValue === '') {
         return trustedValue;
       }
       // All the current contexts in SCE_CONTEXTS happen to be strings.  In order to avoid trusting
@@ -26313,7 +26392,7 @@ function $SceDelegateProvider() {
      *     `$sceDelegate.trustAs`} if valid in this context.  Otherwise, throws an exception.
      */
     function getTrusted(type, maybeTrusted) {
-      if (maybeTrusted === null || maybeTrusted === undefined || maybeTrusted === '') {
+      if (maybeTrusted === null || isUndefined(maybeTrusted) || maybeTrusted === '') {
         return maybeTrusted;
       }
       var constructor = (byType.hasOwnProperty(type) ? byType[type] : null);
@@ -26506,10 +26585,10 @@ function $SceDelegateProvider() {
  *    - There are exactly **two wildcard sequences** - `*` and `**`.  All other characters
  *      match themselves.
  *    - `*`: matches zero or more occurrences of any character other than one of the following 6
- *      characters: '`:`', '`/`', '`.`', '`?`', '`&`' and ';'.  It's a useful wildcard for use
+ *      characters: '`:`', '`/`', '`.`', '`?`', '`&`' and '`;`'.  It's a useful wildcard for use
  *      in a whitelist.
  *    - `**`: matches zero or more occurrences of *any* character.  As such, it's not
- *      not appropriate to use in for a scheme, domain, etc. as it would match too much.  (e.g.
+ *      appropriate for use in a scheme, domain, etc. as it would match too much.  (e.g.
  *      http://**.example.com/ would match http://evil.com/?ignore=.example.com/ and that might
  *      not have been the intention.)  Its usage at the very end of the path is ok.  (e.g.
  *      http://foo.example.com/templates/**).
@@ -26517,11 +26596,11 @@ function $SceDelegateProvider() {
  *    - *Caveat*:  While regular expressions are powerful and offer great flexibility,  their syntax
  *      (and all the inevitable escaping) makes them *harder to maintain*.  It's easy to
  *      accidentally introduce a bug when one updates a complex expression (imho, all regexes should
- *      have good test coverage.).  For instance, the use of `.` in the regex is correct only in a
+ *      have good test coverage).  For instance, the use of `.` in the regex is correct only in a
  *      small number of cases.  A `.` character in the regex used when matching the scheme or a
  *      subdomain could be matched against a `:` or literal `.` that was likely not intended.   It
  *      is highly recommended to use the string patterns and only fall back to regular expressions
- *      if they as a last resort.
+ *      as a last resort.
  *    - The regular expression must be an instance of RegExp (i.e. not a string.)  It is
  *      matched against the **entire** *normalized / absolute URL* of the resource being tested
  *      (even when the RegExp did not have the `^` and `$` codes.)  In addition, any flags
@@ -26531,7 +26610,7 @@ function $SceDelegateProvider() {
  *      remember to escape your regular expression (and be aware that you might need more than
  *      one level of escaping depending on your templating engine and the way you interpolated
  *      the value.)  Do make use of your platform's escaping mechanism as it might be good
- *      enough before coding your own.  e.g. Ruby has
+ *      enough before coding your own.  E.g. Ruby has
  *      [Regexp.escape(str)](http://www.ruby-doc.org/core-2.0.0/Regexp.html#method-c-escape)
  *      and Python has [re.escape](http://docs.python.org/library/re.html#re.escape).
  *      Javascript lacks a similar built in function for escaping.  Take a look at Google
@@ -27419,19 +27498,12 @@ var originUrl = urlResolve(window.location.href);
  *
  * Implementation Notes for IE
  * ---------------------------
- * IE >= 8 and <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
  * browsers.  However, the parsed components will not be set if the URL assigned did not specify
  * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
  * work around that by performing the parsing in a 2nd step by taking a previously normalized
  * URL (e.g. by assigning to a.href) and assigning it a.href again.  This correctly populates the
  * properties such as protocol, hostname, port, etc.
- *
- * IE7 does not normalize the URL when assigned to an anchor node.  (Apparently, it does, if one
- * uses the inner HTML approach to assign the URL as part of an HTML snippet -
- * http://stackoverflow.com/a/472729)  However, setting img[src] does normalize the URL.
- * Unfortunately, setting img[src] to something like "javascript:foo" on IE throws an exception.
- * Since the primary usage for normalizing URLs is to sanitize such URLs, we can't use that
- * method and IE < 8 is unsupported.
  *
  * References:
  *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
@@ -27581,7 +27653,7 @@ function $$CookieReader($document) {
           // the first value that is seen for a cookie is the most
           // specific one.  values for the same cookie name that
           // follow are for less specific paths.
-          if (lastCookies[name] === undefined) {
+          if (isUndefined(lastCookies[name])) {
             lastCookies[name] = safeDecodeURIComponent(cookie.substring(index + 1));
           }
         }
@@ -27712,6 +27784,7 @@ function $FilterProvider($provide) {
    *    your filters, then you can use capitalization (`myappSubsectionFilterx`) or underscores
    *    (`myapp_subsection_filterx`).
    *    </div>
+    * @param {Function} factory If the first argument was a string, a factory function for the filter to be registered.
    * @returns {Object} Registered filter instance, or if a map of filters was provided then a map
    *    of the registered filter instances.
    */
@@ -28059,9 +28132,9 @@ function getTypeForFilter(val) {
          }
          element(by.model('amount')).clear();
          element(by.model('amount')).sendKeys('-1234');
-         expect(element(by.id('currency-default')).getText()).toBe('($1,234.00)');
-         expect(element(by.id('currency-custom')).getText()).toBe('(USD$1,234.00)');
-         expect(element(by.id('currency-no-fractions')).getText()).toBe('(USD$1,234)');
+         expect(element(by.id('currency-default')).getText()).toBe('-$1,234.00');
+         expect(element(by.id('currency-custom')).getText()).toBe('-USD$1,234.00');
+         expect(element(by.id('currency-no-fractions')).getText()).toBe('-USD$1,234');
        });
      </file>
    </example>
@@ -28901,6 +28974,10 @@ function orderByFilter($parse) {
     if (sortPredicate.length === 0) { sortPredicate = ['+']; }
 
     var predicates = processPredicates(sortPredicate, reverseOrder);
+    // Add a predicate at the end that evaluates to the element index. This makes the
+    // sort stable as it works as a tie-breaker when all the input predicates cannot
+    // distinguish between two elements.
+    predicates.push({ get: function() { return {}; }, descending: reverseOrder ? -1 : 1});
 
     // The next three lines are a version of a Swartzian Transform idiom from Perl
     // (sometimes called the Decorate-Sort-Undecorate idiom)
@@ -29522,6 +29599,7 @@ function nullFormRenameControl(control, name) {
  * @property {boolean} $dirty True if user has already interacted with the form.
  * @property {boolean} $valid True if all of the containing forms and controls are valid.
  * @property {boolean} $invalid True if at least one containing control or form is invalid.
+ * @property {boolean} $pending True if at least one containing control or form is pending.
  * @property {boolean} $submitted True if user has submitted the form even if its invalid.
  *
  * @property {Object} $error Is an object hash, containing references to controls or
@@ -29561,8 +29639,6 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
   var form = this,
       controls = [];
 
-  var parentForm = form.$$parentForm = element.parent().controller('form') || nullFormCtrl;
-
   // init state
   form.$error = {};
   form.$$success = {};
@@ -29573,8 +29649,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
   form.$valid = true;
   form.$invalid = false;
   form.$submitted = false;
-
-  parentForm.$addControl(form);
+  form.$$parentForm = nullFormCtrl;
 
   /**
    * @ngdoc method
@@ -29613,11 +29688,23 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
   /**
    * @ngdoc method
    * @name form.FormController#$addControl
+   * @param {object} control control object, either a {@link form.FormController} or an
+   * {@link ngModel.NgModelController}
    *
    * @description
-   * Register a control with the form.
+   * Register a control with the form. Input elements using ngModelController do this automatically
+   * when they are linked.
    *
-   * Input elements using ngModelController do this automatically when they are linked.
+   * Note that the current state of the control will not be reflected on the new parent form. This
+   * is not an issue with normal use, as freshly compiled and linked controls are in a `$pristine`
+   * state.
+   *
+   * However, if the method is used programmatically, for example by adding dynamically created controls,
+   * or controls that have been previously removed without destroying their corresponding DOM element,
+   * it's the developers responsiblity to make sure the current state propagates to the parent form.
+   *
+   * For example, if an input control is added that is already `$dirty` and has `$error` properties,
+   * calling `$setDirty()` and `$validate()` afterwards will propagate the state to the parent form.
    */
   form.$addControl = function(control) {
     // Breaking change - before, inputs whose name was "hasOwnProperty" were quietly ignored
@@ -29628,6 +29715,8 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
     if (control.$name) {
       form[control.$name] = control;
     }
+
+    control.$$parentForm = form;
   };
 
   // Private API: rename a form control
@@ -29644,11 +29733,18 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
   /**
    * @ngdoc method
    * @name form.FormController#$removeControl
+   * @param {object} control control object, either a {@link form.FormController} or an
+   * {@link ngModel.NgModelController}
    *
    * @description
    * Deregister a control from the form.
    *
    * Input elements using ngModelController do this automatically when they are destroyed.
+   *
+   * Note that only the removed control's validation state (`$errors`etc.) will be removed from the
+   * form. `$dirty`, `$submitted` states will not be changed, because the expected behavior can be
+   * different from case to case. For example, removing the only `$dirty` control from a form may or
+   * may not mean that the form is still `$dirty`.
    */
   form.$removeControl = function(control) {
     if (control.$name && form[control.$name] === control) {
@@ -29665,6 +29761,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
     });
 
     arrayRemove(controls, control);
+    control.$$parentForm = nullFormCtrl;
   };
 
 
@@ -29701,7 +29798,6 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
         delete object[property];
       }
     },
-    parentForm: parentForm,
     $animate: $animate
   });
 
@@ -29720,7 +29816,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
     $animate.addClass(element, DIRTY_CLASS);
     form.$dirty = true;
     form.$pristine = false;
-    parentForm.$setDirty();
+    form.$$parentForm.$setDirty();
   };
 
   /**
@@ -29776,7 +29872,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
   form.$setSubmitted = function() {
     $animate.addClass(element, SUBMITTED_CLASS);
     form.$submitted = true;
-    parentForm.$setSubmitted();
+    form.$$parentForm.$setSubmitted();
   };
 }
 
@@ -29826,6 +29922,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
  * # CSS classes
  *  - `ng-valid` is set if the form is valid.
  *  - `ng-invalid` is set if the form is invalid.
+ *  - `ng-pending` is set if the form is pending.
  *  - `ng-pristine` is set if the form is pristine.
  *  - `ng-dirty` is set if the form is dirty.
  *  - `ng-submitted` is set if the form was submitted.
@@ -29901,7 +29998,6 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
        </script>
        <style>
         .my-form {
-          -webkit-transition:all linear 0.5s;
           transition:all linear 0.5s;
           background: transparent;
         }
@@ -29946,10 +30042,11 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
  *                       related scope, under this name.
  */
 var formDirectiveFactory = function(isNgForm) {
-  return ['$timeout', function($timeout) {
+  return ['$timeout', '$parse', function($timeout, $parse) {
     var formDirective = {
       name: 'form',
       restrict: isNgForm ? 'EAC' : 'E',
+      require: ['form', '^^?form'], //first is the form's own ctrl, second is an optional parent form
       controller: FormController,
       compile: function ngFormCompile(formElement, attr) {
         // Setup initial state of the control
@@ -29958,7 +30055,9 @@ var formDirectiveFactory = function(isNgForm) {
         var nameAttr = attr.name ? 'name' : (isNgForm && attr.ngForm ? 'ngForm' : false);
 
         return {
-          pre: function ngFormPreLink(scope, formElement, attr, controller) {
+          pre: function ngFormPreLink(scope, formElement, attr, ctrls) {
+            var controller = ctrls[0];
+
             // if `action` attr is not present on the form, prevent the default action (submission)
             if (!('action' in attr)) {
               // we can't use jq events because if a form is destroyed during submission the default
@@ -29987,22 +30086,24 @@ var formDirectiveFactory = function(isNgForm) {
               });
             }
 
-            var parentFormCtrl = controller.$$parentForm;
+            var parentFormCtrl = ctrls[1] || controller.$$parentForm;
+            parentFormCtrl.$addControl(controller);
+
+            var setter = nameAttr ? getSetter(controller.$name) : noop;
 
             if (nameAttr) {
-              setter(scope, controller.$name, controller, controller.$name);
+              setter(scope, controller);
               attr.$observe(nameAttr, function(newValue) {
                 if (controller.$name === newValue) return;
-                setter(scope, controller.$name, undefined, controller.$name);
-                parentFormCtrl.$$renameControl(controller, newValue);
-                setter(scope, controller.$name, controller, controller.$name);
+                setter(scope, undefined);
+                controller.$$parentForm.$$renameControl(controller, newValue);
+                setter = getSetter(controller.$name);
+                setter(scope, controller);
               });
             }
             formElement.on('$destroy', function() {
-              parentFormCtrl.$removeControl(controller);
-              if (nameAttr) {
-                setter(scope, attr[nameAttr], undefined, controller.$name);
-              }
+              controller.$$parentForm.$removeControl(controller);
+              setter(scope, undefined);
               extend(controller, nullFormCtrl); //stop propagating child destruction handlers upwards
             });
           }
@@ -30011,6 +30112,14 @@ var formDirectiveFactory = function(isNgForm) {
     };
 
     return formDirective;
+
+    function getSetter(expression) {
+      if (expression === '') {
+        //create an assignable expression, so forms with an empty name can be renamed later
+        return $parse('this[""]').assign;
+      }
+      return $parse(expression).assign || noop;
+    }
   }];
 };
 
@@ -30023,7 +30132,7 @@ var ngFormDirective = formDirectiveFactory(true);
   DIRTY_CLASS: false,
   UNTOUCHED_CLASS: false,
   TOUCHED_CLASS: false,
-  $ngModelMinErr: false,
+  ngModelMinErr: false,
 */
 
 // Regex code is obtained from SO: https://stackoverflow.com/questions/3143070/javascript-regex-iso-datetime#answer-3143231
@@ -30155,9 +30264,17 @@ var inputType = {
      * @param {string} ngModel Assignable angular expression to data-bind to.
      * @param {string=} name Property name of the form under which the control is published.
      * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`. This must be a
-     * valid ISO date string (yyyy-MM-dd).
+     *   valid ISO date string (yyyy-MM-dd). You can also use interpolation inside this attribute
+     *   (e.g. `min="{{minDate | date:'yyyy-MM-dd'}}"`). Note that `min` will also add native HTML5
+     *   constraint validation.
      * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`. This must be
-     * a valid ISO date string (yyyy-MM-dd).
+     *   a valid ISO date string (yyyy-MM-dd). You can also use interpolation inside this attribute
+     *   (e.g. `max="{{maxDate | date:'yyyy-MM-dd'}}"`). Note that `max` will also add native HTML5
+     *   constraint validation.
+     * @param {(date|string)=} ngMin Sets the `min` validation constraint to the Date / ISO date string
+     *   the `ngMin` expression evaluates to. Note that it does not set the `min` attribute.
+     * @param {(date|string)=} ngMax Sets the `max` validation constraint to the Date / ISO date string
+     *   the `ngMax` expression evaluates to. Note that it does not set the `max` attribute.
      * @param {string=} required Sets `required` validation error key if the value is not entered.
      * @param {string=} ngRequired Adds `required` attribute and `required` validation constraint to
      *    the element when the ngRequired expression evaluates to true. Use `ngRequired` instead of
@@ -30249,10 +30366,18 @@ var inputType = {
     *
     * @param {string} ngModel Assignable angular expression to data-bind to.
     * @param {string=} name Property name of the form under which the control is published.
-    * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`. This must be a
-    * valid ISO datetime format (yyyy-MM-ddTHH:mm:ss).
-    * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`. This must be
-    * a valid ISO datetime format (yyyy-MM-ddTHH:mm:ss).
+    * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`.
+    *   This must be a valid ISO datetime format (yyyy-MM-ddTHH:mm:ss). You can also use interpolation
+    *   inside this attribute (e.g. `min="{{minDatetimeLocal | date:'yyyy-MM-ddTHH:mm:ss'}}"`).
+    *   Note that `min` will also add native HTML5 constraint validation.
+    * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`.
+    *   This must be a valid ISO datetime format (yyyy-MM-ddTHH:mm:ss). You can also use interpolation
+    *   inside this attribute (e.g. `max="{{maxDatetimeLocal | date:'yyyy-MM-ddTHH:mm:ss'}}"`).
+    *   Note that `max` will also add native HTML5 constraint validation.
+    * @param {(date|string)=} ngMin Sets the `min` validation error key to the Date / ISO datetime string
+    *   the `ngMin` expression evaluates to. Note that it does not set the `min` attribute.
+    * @param {(date|string)=} ngMax Sets the `max` validation error key to the Date / ISO datetime string
+    *   the `ngMax` expression evaluates to. Note that it does not set the `max` attribute.
     * @param {string=} required Sets `required` validation error key if the value is not entered.
     * @param {string=} ngRequired Adds `required` attribute and `required` validation constraint to
     *    the element when the ngRequired expression evaluates to true. Use `ngRequired` instead of
@@ -30345,10 +30470,18 @@ var inputType = {
    *
    * @param {string} ngModel Assignable angular expression to data-bind to.
    * @param {string=} name Property name of the form under which the control is published.
-   * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`. This must be a
-   * valid ISO time format (HH:mm:ss).
-   * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`. This must be a
-   * valid ISO time format (HH:mm:ss).
+   * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`.
+   *   This must be a valid ISO time format (HH:mm:ss). You can also use interpolation inside this
+   *   attribute (e.g. `min="{{minTime | date:'HH:mm:ss'}}"`). Note that `min` will also add
+   *   native HTML5 constraint validation.
+   * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`.
+   *   This must be a valid ISO time format (HH:mm:ss). You can also use interpolation inside this
+   *   attribute (e.g. `max="{{maxTime | date:'HH:mm:ss'}}"`). Note that `max` will also add
+   *   native HTML5 constraint validation.
+   * @param {(date|string)=} ngMin Sets the `min` validation constraint to the Date / ISO time string the
+   *   `ngMin` expression evaluates to. Note that it does not set the `min` attribute.
+   * @param {(date|string)=} ngMax Sets the `max` validation constraint to the Date / ISO time string the
+   *   `ngMax` expression evaluates to. Note that it does not set the `max` attribute.
    * @param {string=} required Sets `required` validation error key if the value is not entered.
    * @param {string=} ngRequired Adds `required` attribute and `required` validation constraint to
    *    the element when the ngRequired expression evaluates to true. Use `ngRequired` instead of
@@ -30440,10 +30573,18 @@ var inputType = {
     *
     * @param {string} ngModel Assignable angular expression to data-bind to.
     * @param {string=} name Property name of the form under which the control is published.
-    * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`. This must be a
-    * valid ISO week format (yyyy-W##).
-    * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`. This must be
-    * a valid ISO week format (yyyy-W##).
+    * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`.
+    *   This must be a valid ISO week format (yyyy-W##). You can also use interpolation inside this
+    *   attribute (e.g. `min="{{minWeek | date:'yyyy-Www'}}"`). Note that `min` will also add
+    *   native HTML5 constraint validation.
+    * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`.
+    *   This must be a valid ISO week format (yyyy-W##). You can also use interpolation inside this
+    *   attribute (e.g. `max="{{maxWeek | date:'yyyy-Www'}}"`). Note that `max` will also add
+    *   native HTML5 constraint validation.
+    * @param {(date|string)=} ngMin Sets the `min` validation constraint to the Date / ISO week string
+    *   the `ngMin` expression evaluates to. Note that it does not set the `min` attribute.
+    * @param {(date|string)=} ngMax Sets the `max` validation constraint to the Date / ISO week string
+    *   the `ngMax` expression evaluates to. Note that it does not set the `max` attribute.
     * @param {string=} required Sets `required` validation error key if the value is not entered.
     * @param {string=} ngRequired Adds `required` attribute and `required` validation constraint to
     *    the element when the ngRequired expression evaluates to true. Use `ngRequired` instead of
@@ -30537,10 +30678,19 @@ var inputType = {
    *
    * @param {string} ngModel Assignable angular expression to data-bind to.
    * @param {string=} name Property name of the form under which the control is published.
-   * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`. This must be
-   * a valid ISO month format (yyyy-MM).
-   * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`. This must
-   * be a valid ISO month format (yyyy-MM).
+   * @param {string=} min Sets the `min` validation error key if the value entered is less than `min`.
+   *   This must be a valid ISO month format (yyyy-MM). You can also use interpolation inside this
+   *   attribute (e.g. `min="{{minMonth | date:'yyyy-MM'}}"`). Note that `min` will also add
+   *   native HTML5 constraint validation.
+   * @param {string=} max Sets the `max` validation error key if the value entered is greater than `max`.
+   *   This must be a valid ISO month format (yyyy-MM). You can also use interpolation inside this
+   *   attribute (e.g. `max="{{maxMonth | date:'yyyy-MM'}}"`). Note that `max` will also add
+   *   native HTML5 constraint validation.
+   * @param {(date|string)=} ngMin Sets the `min` validation constraint to the Date / ISO week string
+   *   the `ngMin` expression evaluates to. Note that it does not set the `min` attribute.
+   * @param {(date|string)=} ngMax Sets the `max` validation constraint to the Date / ISO week string
+   *   the `ngMax` expression evaluates to. Note that it does not set the `max` attribute.
+
    * @param {string=} required Sets `required` validation error key if the value is not entered.
    * @param {string=} ngRequired Adds `required` attribute and `required` validation constraint to
    *    the element when the ngRequired expression evaluates to true. Use `ngRequired` instead of
@@ -31145,7 +31295,11 @@ function baseInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   element.on('change', listener);
 
   ctrl.$render = function() {
-    element.val(ctrl.$isEmpty(ctrl.$viewValue) ? '' : ctrl.$viewValue);
+    // Workaround for Firefox validation #12102.
+    var value = ctrl.$isEmpty(ctrl.$viewValue) ? '' : ctrl.$viewValue;
+    if (element.val() !== value) {
+      element.val(value);
+    }
   };
 }
 
@@ -31256,7 +31410,7 @@ function createDateInputType(type, regexp, parseDate, format) {
 
     ctrl.$formatters.push(function(value) {
       if (value && !isDate(value)) {
-        throw $ngModelMinErr('datefmt', 'Expected `{0}` to be a date', value);
+        throw ngModelMinErr('datefmt', 'Expected `{0}` to be a date', value);
       }
       if (isValidDate(value)) {
         previousDate = value;
@@ -31298,7 +31452,7 @@ function createDateInputType(type, regexp, parseDate, format) {
     }
 
     function parseObservedDateValue(val) {
-      return isDefined(val) ? (isDate(val) ? val : parseDate(val)) : undefined;
+      return isDefined(val) && !isDate(val) ? parseDate(val) || undefined : val;
     }
   };
 }
@@ -31332,7 +31486,7 @@ function numberInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   ctrl.$formatters.push(function(value) {
     if (!ctrl.$isEmpty(value)) {
       if (!isNumber(value)) {
-        throw $ngModelMinErr('numfmt', 'Expected `{0}` to be a number', value);
+        throw ngModelMinErr('numfmt', 'Expected `{0}` to be a number', value);
       }
       value = value.toString();
     }
@@ -31425,7 +31579,7 @@ function parseConstantExpr($parse, context, name, expression, fallback) {
   if (isDefined(expression)) {
     parseFn = $parse(expression);
     if (!parseFn.constant) {
-      throw minErr('ngModel')('constexpr', 'Expected constant expression for `{0}`, but saw ' +
+      throw ngModelMinErr('constexpr', 'Expected constant expression for `{0}`, but saw ' +
                                    '`{1}`.', name, expression);
     }
     return parseFn(context);
@@ -31793,7 +31947,7 @@ var ngBindDirective = ['$compile', function($compile) {
         $compile.$$addBindingInfo(element, attr.ngBind);
         element = element[0];
         scope.$watch(attr.ngBind, function ngBindWatchAction(value) {
-          element.textContent = value === undefined ? '' : value;
+          element.textContent = isUndefined(value) ? '' : value;
         });
       };
     }
@@ -31861,7 +32015,7 @@ var ngBindTemplateDirective = ['$interpolate', '$compile', function($interpolate
         $compile.$$addBindingInfo(element, interpolateFn.expressions);
         element = element[0];
         attr.$observe('ngBindTemplate', function(value) {
-          element.textContent = value === undefined ? '' : value;
+          element.textContent = isUndefined(value) ? '' : value;
         });
       };
     }
@@ -32278,7 +32432,6 @@ function classDirective(name, selector) {
      </file>
      <file name="style.css">
        .base-class {
-         -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
          transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
        }
 
@@ -32711,27 +32864,29 @@ var ngControllerDirective = [function() {
  *
  * @element html
  * @description
- * Enables [CSP (Content Security Policy)](https://developer.mozilla.org/en/Security/CSP) support.
+ *
+ * Angular has some features that can break certain
+ * [CSP (Content Security Policy)](https://developer.mozilla.org/en/Security/CSP) rules.
+ *
+ * If you intend to implement these rules then you must tell Angular not to use these features.
  *
  * This is necessary when developing things like Google Chrome Extensions or Universal Windows Apps.
  *
- * CSP forbids apps to use `eval` or `Function(string)` generated functions (among other things).
- * For Angular to be CSP compatible there are only two things that we need to do differently:
  *
- * - don't use `Function` constructor to generate optimized value getters
- * - don't inject custom stylesheet into the document
+ * The following rules affect Angular:
  *
- * AngularJS uses `Function(string)` generated functions as a speed optimization. Applying the `ngCsp`
- * directive will cause Angular to use CSP compatibility mode. When this mode is on AngularJS will
- * evaluate all expressions up to 30% slower than in non-CSP mode, but no security violations will
- * be raised.
+ * * `unsafe-eval`: this rule forbids apps to use `eval` or `Function(string)` generated functions
+ * (among other things). Angular makes use of this in the {@link $parse} service to provide a 30%
+ * increase in the speed of evaluating Angular expressions.
  *
- * CSP forbids JavaScript to inline stylesheet rules. In non CSP mode Angular automatically
- * includes some CSS rules (e.g. {@link ng.directive:ngCloak ngCloak}).
- * To make those directives work in CSP mode, include the `angular-csp.css` manually.
+ * * `unsafe-inline`: this rule forbids apps from inject custom styles into the document. Angular
+ * makes use of this to include some CSS rules (e.g. {@link ngCloak} and {@link ngHide}).
+ * To make these directives work when a CSP rule is blocking inline styles, you must link to the
+ * `angular-csp.css` in your HTML manually.
  *
- * Angular tries to autodetect if CSP is active and automatically turn on the CSP-safe mode. This
- * autodetection however triggers a CSP error to be logged in the console:
+ * If you do not provide `ngCsp` then Angular tries to autodetect if CSP is blocking unsafe-eval
+ * and automatically deactivates this feature in the {@link $parse} service. This autodetection,
+ * however, triggers a CSP error to be logged in the console:
  *
  * ```
  * Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of
@@ -32740,10 +32895,38 @@ var ngControllerDirective = [function() {
  * ```
  *
  * This error is harmless but annoying. To prevent the error from showing up, put the `ngCsp`
- * directive on the root element of the application or on the `angular.js` script tag, whichever
- * appears first in the html document.
+ * directive on an element of the HTML document that appears before the `<script>` tag that loads
+ * the `angular.js` file.
  *
  * *Note: This directive is only available in the `ng-csp` and `data-ng-csp` attribute form.*
+ *
+ * You can specify which of the CSP related Angular features should be deactivated by providing
+ * a value for the `ng-csp` attribute. The options are as follows:
+ *
+ * * no-inline-style: this stops Angular from injecting CSS styles into the DOM
+ *
+ * * no-unsafe-eval: this stops Angular from optimising $parse with unsafe eval of strings
+ *
+ * You can use these values in the following combinations:
+ *
+ *
+ * * No declaration means that Angular will assume that you can do inline styles, but it will do
+ * a runtime check for unsafe-eval. E.g. `<body>`. This is backwardly compatible with previous versions
+ * of Angular.
+ *
+ * * A simple `ng-csp` (or `data-ng-csp`) attribute will tell Angular to deactivate both inline
+ * styles and unsafe eval. E.g. `<body ng-csp>`. This is backwardly compatible with previous versions
+ * of Angular.
+ *
+ * * Specifying only `no-unsafe-eval` tells Angular that we must not use eval, but that we can inject
+ * inline styles. E.g. `<body ng-csp="no-unsafe-eval">`.
+ *
+ * * Specifying only `no-inline-style` tells Angular that we must not inject styles, but that we can
+ * run eval - no automcatic check for unsafe eval will occur. E.g. `<body ng-csp="no-inline-style">`
+ *
+ * * Specifying both `no-unsafe-eval` and `no-inline-style` tells Angular that we must not inject
+ * styles nor use eval, which is the same as an empty: ng-csp.
+ * E.g.`<body ng-csp="no-inline-style;no-unsafe-eval">`
  *
  * @example
  * This example shows how to apply the `ngCsp` directive to the `html` tag.
@@ -32876,7 +33059,7 @@ var ngControllerDirective = [function() {
 
 // ngCsp is not implemented as a proper directive any more, because we need it be processed while we
 // bootstrap the system (before $parse is instantiated), for this reason we just have
-// the csp.isActive() fn that looks for ng-csp attribute anywhere in the current doc
+// the csp() fn that looks for the `ng-csp` attribute anywhere in the current doc
 
 /**
  * @ngdoc directive
@@ -33423,7 +33606,6 @@ forEach(
       }
 
       .animate-if.ng-enter, .animate-if.ng-leave {
-        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
         transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
       }
 
@@ -33572,7 +33754,6 @@ var ngIfDirective = ['$animate', function($animate) {
       }
 
       .slide-animate.ng-enter, .slide-animate.ng-leave {
-        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
         transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
 
         position:absolute;
@@ -33791,16 +33972,18 @@ var ngIncludeFillContentDirective = ['$compile',
  * current scope.
  *
  * <div class="alert alert-danger">
- * The only appropriate use of `ngInit` is for aliasing special properties of
- * {@link ng.directive:ngRepeat `ngRepeat`}, as seen in the demo below. Besides this case, you
- * should use {@link guide/controller controllers} rather than `ngInit`
- * to initialize values on a scope.
+ * This directive can be abused to add unnecessary amounts of logic into your templates.
+ * There are only a few appropriate uses of `ngInit`, such as for aliasing special properties of
+ * {@link ng.directive:ngRepeat `ngRepeat`}, as seen in the demo below; and for injecting data via
+ * server side scripting. Besides these few cases, you should use {@link guide/controller controllers}
+ * rather than `ngInit` to initialize values on a scope.
  * </div>
+ *
  * <div class="alert alert-warning">
- * **Note**: If you have assignment in `ngInit` along with {@link ng.$filter `$filter`}, make
- * sure you have parenthesis for correct precedence:
+ * **Note**: If you have assignment in `ngInit` along with a {@link ng.$filter `filter`}, make
+ * sure you have parentheses to ensure correct operator precedence:
  * <pre class="prettyprint">
- * `<div ng-init="test1 = (data | orderBy:'name')"></div>`
+ * `<div ng-init="test1 = ($index | toString)"></div>`
  * </pre>
  * </div>
  *
@@ -33992,8 +34175,7 @@ var VALID_CLASS = 'ng-valid',
     TOUCHED_CLASS = 'ng-touched',
     PENDING_CLASS = 'ng-pending';
 
-
-var $ngModelMinErr = new minErr('ngModel');
+var ngModelMinErr = minErr('ngModel');
 
 /**
  * @ngdoc type
@@ -34213,7 +34395,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
   this.$$success = {}; // keep valid keys here
   this.$pending = undefined; // keep pending keys here
   this.$name = $interpolate($attr.name || '', false)($scope);
-
+  this.$$parentForm = nullFormCtrl;
 
   var parsedNgModel = $parse($attr.ngModel),
       parsedNgModelAssign = parsedNgModel.assign,
@@ -34244,7 +34426,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
         }
       };
     } else if (!parsedNgModel.assign) {
-      throw $ngModelMinErr('nonassign', "Expression '{0}' is non-assignable. Element: {1}",
+      throw ngModelMinErr('nonassign', "Expression '{0}' is non-assignable. Element: {1}",
           $attr.ngModel, startingTag($element));
     }
   };
@@ -34293,8 +34475,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
     return isUndefined(value) || value === '' || value === null || value !== value;
   };
 
-  var parentForm = $element.inheritedData('$formController') || nullFormCtrl,
-      currentValidationRunId = 0;
+  var currentValidationRunId = 0;
 
   /**
    * @ngdoc method
@@ -34327,7 +34508,6 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
     unset: function(object, property) {
       delete object[property];
     },
-    parentForm: parentForm,
     $animate: $animate
   });
 
@@ -34365,7 +34545,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
     ctrl.$pristine = false;
     $animate.removeClass($element, PRISTINE_CLASS);
     $animate.addClass($element, DIRTY_CLASS);
-    parentForm.$setDirty();
+    ctrl.$$parentForm.$setDirty();
   };
 
   /**
@@ -34535,7 +34715,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
 
     function processParseErrors() {
       var errorKey = ctrl.$$parserName || 'parse';
-      if (parserValid === undefined) {
+      if (isUndefined(parserValid)) {
         setValidity(errorKey, null);
       } else {
         if (!parserValid) {
@@ -34575,7 +34755,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
       forEach(ctrl.$asyncValidators, function(validator, name) {
         var promise = validator(modelValue, viewValue);
         if (!isPromiseLike(promise)) {
-          throw $ngModelMinErr("$asyncValidators",
+          throw ngModelMinErr("$asyncValidators",
             "Expected asynchronous validator to return a promise but got '{0}' instead.", promise);
         }
         setValidity(name, undefined);
@@ -34705,37 +34885,47 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    * @description
    * Update the view value.
    *
-   * This method should be called when an input directive want to change the view value; typically,
-   * this is done from within a DOM event handler.
+   * This method should be called when a control wants to change the view value; typically,
+   * this is done from within a DOM event handler. For example, the {@link ng.directive:input input}
+   * directive calls it when the value of the input changes and {@link ng.directive:select select}
+   * calls it when an option is selected.
    *
-   * For example {@link ng.directive:input input} calls it when the value of the input changes and
-   * {@link ng.directive:select select} calls it when an option is selected.
-   *
-   * If the new `value` is an object (rather than a string or a number), we should make a copy of the
-   * object before passing it to `$setViewValue`.  This is because `ngModel` does not perform a deep
-   * watch of objects, it only looks for a change of identity. If you only change the property of
-   * the object then ngModel will not realise that the object has changed and will not invoke the
-   * `$parsers` and `$validators` pipelines.
-   *
-   * For this reason, you should not change properties of the copy once it has been passed to
-   * `$setViewValue`. Otherwise you may cause the model value on the scope to change incorrectly.
-   *
-   * When this method is called, the new `value` will be staged for committing through the `$parsers`
+   * When `$setViewValue` is called, the new `value` will be staged for committing through the `$parsers`
    * and `$validators` pipelines. If there are no special {@link ngModelOptions} specified then the staged
    * value sent directly for processing, finally to be applied to `$modelValue` and then the
-   * **expression** specified in the `ng-model` attribute.
-   *
-   * Lastly, all the registered change listeners, in the `$viewChangeListeners` list, are called.
+   * **expression** specified in the `ng-model` attribute. Lastly, all the registered change listeners,
+   * in the `$viewChangeListeners` list, are called.
    *
    * In case the {@link ng.directive:ngModelOptions ngModelOptions} directive is used with `updateOn`
    * and the `default` trigger is not listed, all those actions will remain pending until one of the
    * `updateOn` events is triggered on the DOM element.
    * All these actions will be debounced if the {@link ng.directive:ngModelOptions ngModelOptions}
    * directive is used with a custom debounce for this particular event.
+   * Note that a `$digest` is only triggered once the `updateOn` events are fired, or if `debounce`
+   * is specified, once the timer runs out.
    *
-   * Note that calling this function does not trigger a `$digest`.
+   * When used with standard inputs, the view value will always be a string (which is in some cases
+   * parsed into another type, such as a `Date` object for `input[date]`.)
+   * However, custom controls might also pass objects to this method. In this case, we should make
+   * a copy of the object before passing it to `$setViewValue`. This is because `ngModel` does not
+   * perform a deep watch of objects, it only looks for a change of identity. If you only change
+   * the property of the object then ngModel will not realise that the object has changed and
+   * will not invoke the `$parsers` and `$validators` pipelines. For this reason, you should
+   * not change properties of the copy once it has been passed to `$setViewValue`.
+   * Otherwise you may cause the model value on the scope to change incorrectly.
    *
-   * @param {string} value Value from the view.
+   * <div class="alert alert-info">
+   * In any case, the value passed to the method should always reflect the current value
+   * of the control. For example, if you are calling `$setViewValue` for an input element,
+   * you should pass the input DOM value. Otherwise, the control and the scope model become
+   * out of sync. It's also important to note that `$setViewValue` does not call `$render` or change
+   * the control's DOM value in any way. If we want to change the control's DOM value
+   * programmatically, we should update the `ngModel` scope expression. Its new value will be
+   * picked up by the model controller, which will run it through the `$formatters`, `$render` it
+   * to update the DOM, and finally call `$validate` on it.
+   * </div>
+   *
+   * @param {*} value value from the view.
    * @param {string} trigger Event that triggered the update.
    */
   this.$setViewValue = function(value, trigger) {
@@ -34912,7 +35102,6 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
        </script>
        <style>
          .my-input {
-           -webkit-transition:all linear 0.5s;
            transition:all linear 0.5s;
            background: transparent;
          }
@@ -34999,7 +35188,7 @@ var ngModelDirective = ['$rootScope', function($rootScope) {
       return {
         pre: function ngModelPreLink(scope, element, attr, ctrls) {
           var modelCtrl = ctrls[0],
-              formCtrl = ctrls[1] || nullFormCtrl;
+              formCtrl = ctrls[1] || modelCtrl.$$parentForm;
 
           modelCtrl.$$setOptions(ctrls[2] && ctrls[2].$options);
 
@@ -35008,12 +35197,12 @@ var ngModelDirective = ['$rootScope', function($rootScope) {
 
           attr.$observe('name', function(newValue) {
             if (modelCtrl.$name !== newValue) {
-              formCtrl.$$renameControl(modelCtrl, newValue);
+              modelCtrl.$$parentForm.$$renameControl(modelCtrl, newValue);
             }
           });
 
           scope.$on('$destroy', function() {
-            formCtrl.$removeControl(modelCtrl);
+            modelCtrl.$$parentForm.$removeControl(modelCtrl);
           });
         },
         post: function ngModelPostLink(scope, element, attr, ctrls) {
@@ -35208,7 +35397,7 @@ var ngModelOptionsDirective = function() {
       var that = this;
       this.$options = copy($scope.$eval($attrs.ngModelOptions));
       // Allow adding/overriding bound events
-      if (this.$options.updateOn !== undefined) {
+      if (isDefined(this.$options.updateOn)) {
         this.$options.updateOnDefault = false;
         // extract "default" pseudo-event from list of events that can trigger a model update
         this.$options.updateOn = trim(this.$options.updateOn.replace(DEFAULT_REGEXP, function() {
@@ -35231,7 +35420,6 @@ function addSetValidityMethod(context) {
       classCache = {},
       set = context.set,
       unset = context.unset,
-      parentForm = context.parentForm,
       $animate = context.$animate;
 
   classCache[INVALID_CLASS] = !(classCache[VALID_CLASS] = $element.hasClass(VALID_CLASS));
@@ -35239,7 +35427,7 @@ function addSetValidityMethod(context) {
   ctrl.$setValidity = setValidity;
 
   function setValidity(validationErrorKey, state, controller) {
-    if (state === undefined) {
+    if (isUndefined(state)) {
       createAndSet('$pending', validationErrorKey, controller);
     } else {
       unsetAndCleanup('$pending', validationErrorKey, controller);
@@ -35283,7 +35471,7 @@ function addSetValidityMethod(context) {
     }
 
     toggleValidationCss(validationErrorKey, combinedState);
-    parentForm.$setValidity(validationErrorKey, combinedState, ctrl);
+    ctrl.$$parentForm.$setValidity(validationErrorKey, combinedState, ctrl);
   }
 
   function createAndSet(name, value, controller) {
@@ -35429,7 +35617,7 @@ var ngOptionsMinErr = minErr('ngOptions');
  * Consider the following example:
  *
  * ```html
- * <select ng-options="item.subItem as item.label for item in values track by item.id" ng-model="selected">
+ * <select ng-options="item.subItem as item.label for item in values track by item.id" ng-model="selected"></select>
  * ```
  *
  * ```js
@@ -35891,7 +36079,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
           forEach(selectedValues, function(value) {
             var option = options.selectValueMap[value];
-            if (!option.disabled) selections.push(options.getViewValueFromOption(option));
+            if (option && !option.disabled) selections.push(options.getViewValueFromOption(option));
           });
 
           return selections;
@@ -36351,8 +36539,10 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
  * | `$even`   | {@type boolean} | true if the iterator position `$index` is even (otherwise false).           |
  * | `$odd`    | {@type boolean} | true if the iterator position `$index` is odd (otherwise false).            |
  *
- * Creating aliases for these properties is possible with {@link ng.directive:ngInit `ngInit`}.
- * This may be useful when, for instance, nesting ngRepeats.
+ * <div class="alert alert-info">
+ *   Creating aliases for these properties is possible with {@link ng.directive:ngInit `ngInit`}.
+ *   This may be useful when, for instance, nesting ngRepeats.
+ * </div>
  *
  *
  * # Iterating over object properties
@@ -36586,7 +36776,6 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
       .animate-repeat.ng-move,
       .animate-repeat.ng-enter,
       .animate-repeat.ng-leave {
-        -webkit-transition:all linear 0.5s;
         transition:all linear 0.5s;
       }
 
@@ -36758,7 +36947,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
             // if object, extract keys, in enumeration order, unsorted
             collectionKeys = [];
             for (var itemKey in collection) {
-              if (collection.hasOwnProperty(itemKey) && itemKey.charAt(0) !== '$') {
+              if (hasOwnProperty.call(collection, itemKey) && itemKey.charAt(0) !== '$') {
                 collectionKeys.push(itemKey);
               }
             }
@@ -36983,9 +37172,7 @@ var NG_HIDE_IN_PROGRESS_CLASS = 'ng-hide-animate';
         background: white;
       }
 
-      .animate-show.ng-hide-add.ng-hide-add-active,
-      .animate-show.ng-hide-remove.ng-hide-remove-active {
-        -webkit-transition: all linear 0.5s;
+      .animate-show.ng-hide-add, .animate-show.ng-hide-remove {
         transition: all linear 0.5s;
       }
 
@@ -37142,7 +37329,6 @@ var ngShowDirective = ['$animate', function($animate) {
     </file>
     <file name="animations.css">
       .animate-hide {
-        -webkit-transition: all linear 0.5s;
         transition: all linear 0.5s;
         line-height: 20px;
         opacity: 1;
@@ -37341,7 +37527,6 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
       }
 
       .animate-switch.ng-animate {
-        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
         transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
 
         position:absolute;
@@ -37682,31 +37867,162 @@ var SelectController =
  * @description
  * HTML `SELECT` element with angular data-binding.
  *
- * In many cases, `ngRepeat` can be used on `<option>` elements instead of {@link ng.directive:ngOptions
- * ngOptions} to achieve a similar result. However, `ngOptions` provides some benefits such as reducing
- * memory and increasing speed by not creating a new scope for each repeated instance, as well as providing
- * more flexibility in how the `<select>`'s model is assigned via the `select` **`as`** part of the
- * comprehension expression.
+ * The `select` directive is used together with {@link ngModel `ngModel`} to provide data-binding
+ * between the scope and the `<select>` control (including setting default values).
+ * Ìt also handles dynamic `<option>` elements, which can be added using the {@link ngRepeat `ngRepeat}` or
+ * {@link ngOptions `ngOptions`} directives.
  *
- * When an item in the `<select>` menu is selected, the array element or object property
- * represented by the selected option will be bound to the model identified by the `ngModel`
- * directive.
+ * When an item in the `<select>` menu is selected, the value of the selected option will be bound
+ * to the model identified by the `ngModel` directive. With static or repeated options, this is
+ * the content of the `value` attribute or the textContent of the `<option>`, if the value attribute is missing.
+ * If you want dynamic value attributes, you can use interpolation inside the value attribute.
  *
- * If the viewValue contains a value that doesn't match any of the options then the control
- * will automatically add an "unknown" option, which it then removes when this is resolved.
+ * <div class="alert alert-warning">
+ * Note that the value of a `select` directive used without `ngOptions` is always a string.
+ * When the model needs to be bound to a non-string value, you must either explictly convert it
+ * using a directive (see example below) or use `ngOptions` to specify the set of options.
+ * This is because an option element can only be bound to string values at present.
+ * </div>
+ *
+ * If the viewValue of `ngModel` does not match any of the options, then the control
+ * will automatically add an "unknown" option, which it then removes when the mismatch is resolved.
  *
  * Optionally, a single hard-coded `<option>` element, with the value set to an empty string, can
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
  * <div class="alert alert-info">
- * The value of a `select` directive used without `ngOptions` is always a string.
- * When the model needs to be bound to a non-string value, you must either explictly convert it
- * using a directive (see example below) or use `ngOptions` to specify the set of options.
- * This is because an option element can only be bound to string values at present.
+ * In many cases, `ngRepeat` can be used on `<option>` elements instead of {@link ng.directive:ngOptions
+ * ngOptions} to achieve a similar result. However, `ngOptions` provides some benefits, such as
+ * more flexibility in how the `<select>`'s model is assigned via the `select` **`as`** part of the
+ * comprehension expression, and additionally in reducing memory and increasing speed by not creating
+ * a new scope for each repeated instance.
  * </div>
  *
- * ### Example (binding `select` to a non-string value)
+ *
+ * @param {string} ngModel Assignable angular expression to data-bind to.
+ * @param {string=} name Property name of the form under which the control is published.
+ * @param {string=} required Sets `required` validation error key if the value is not entered.
+ * @param {string=} ngRequired Adds required attribute and required validation constraint to
+ * the element when the ngRequired expression evaluates to true. Use ngRequired instead of required
+ * when you want to data-bind to the required attribute.
+ * @param {string=} ngChange Angular expression to be executed when selected option(s) changes due to user
+ *    interaction with the select element.
+ * @param {string=} ngOptions sets the options that the select is populated with and defines what is
+ * set on the model on selection. See {@link ngOptions `ngOptions`}.
+ *
+ * @example
+ * ### Simple `select` elements with static options
+ *
+ * <example name="static-select" module="staticSelect">
+ * <file name="index.html">
+ * <div ng-controller="ExampleController">
+ *   <form name="myForm">
+ *     <label for="singleSelect"> Single select: </label><br>
+ *     <select name="singleSelect" ng-model="data.singleSelect">
+ *       <option value="option-1">Option 1</option>
+ *       <option value="option-2">Option 2</option>
+ *     </select><br>
+ *
+ *     <label for="singleSelect"> Single select with "not selected" option and dynamic option values: </label><br>
+ *     <select name="singleSelect" ng-model="data.singleSelect">
+ *       <option value="">---Please select---</option> <!-- not selected / blank option -->
+ *       <option value="{{data.option1}}">Option 1</option> <!-- interpolation -->
+ *       <option value="option-2">Option 2</option>
+ *     </select><br>
+ *     <button ng-click="forceUnknownOption()">Force unknown option</button><br>
+ *     <tt>singleSelect = {{data.singleSelect}}</tt>
+ *
+ *     <hr>
+ *     <label for="multipleSelect"> Multiple select: </label><br>
+ *     <select name="multipleSelect" id="multipleSelect" ng-model="data.multipleSelect" multiple>
+ *       <option value="option-1">Option 1</option>
+ *       <option value="option-2">Option 2</option>
+ *       <option value="option-3">Option 3</option>
+ *     </select><br>
+ *     <tt>multipleSelect = {{data.multipleSelect}}</tt><br/>
+ *   </form>
+ * </div>
+ * </file>
+ * <file name="app.js">
+ *  angular.module('staticSelect', [])
+ *    .controller('ExampleController', ['$scope', function($scope) {
+ *      $scope.data = {
+ *       singleSelect: null,
+ *       multipleSelect: [],
+ *       option1: 'option-1',
+ *      };
+ *
+ *      $scope.forceUnknownOption = function() {
+ *        $scope.data.singleSelect = 'nonsense';
+ *      };
+ *   }]);
+ * </file>
+ *</example>
+ *
+ * ### Using `ngRepeat` to generate `select` options
+ * <example name="ngrepeat-select" module="ngrepeatSelect">
+ * <file name="index.html">
+ * <div ng-controller="ExampleController">
+ *   <form name="myForm">
+ *     <label for="repeatSelect"> Repeat select: </label>
+ *     <select name="repeatSelect" ng-model="data.repeatSelect">
+ *       <option ng-repeat="option in data.availableOptions" value="{{option.id}}">{{option.name}}</option>
+ *     </select>
+ *   </form>
+ *   <hr>
+ *   <tt>repeatSelect = {{data.repeatSelect}}</tt><br/>
+ * </div>
+ * </file>
+ * <file name="app.js">
+ *  angular.module('ngrepeatSelect', [])
+ *    .controller('ExampleController', ['$scope', function($scope) {
+ *      $scope.data = {
+ *       singleSelect: null,
+ *       availableOptions: [
+ *         {id: '1', name: 'Option A'},
+ *         {id: '2', name: 'Option B'},
+ *         {id: '3', name: 'Option C'}
+ *       ],
+ *      };
+ *   }]);
+ * </file>
+ *</example>
+ *
+ *
+ * ### Using `select` with `ngOptions` and setting a default value
+ * See the {@link ngOptions ngOptions documentation} for more `ngOptions` usage examples.
+ *
+ * <example name="select-with-default-values" module="defaultValueSelect">
+ * <file name="index.html">
+ * <div ng-controller="ExampleController">
+ *   <form name="myForm">
+ *     <label for="mySelect">Make a choice:</label>
+ *     <select name="mySelect" id="mySelect"
+ *       ng-options="option.name for option in data.availableOptions track by option.id"
+ *       ng-model="data.selectedOption"></select>
+ *   </form>
+ *   <hr>
+ *   <tt>option = {{data.selectedOption}}</tt><br/>
+ * </div>
+ * </file>
+ * <file name="app.js">
+ *  angular.module('defaultValueSelect', [])
+ *    .controller('ExampleController', ['$scope', function($scope) {
+ *      $scope.data = {
+ *       availableOptions: [
+ *         {id: '1', name: 'Option A'},
+ *         {id: '2', name: 'Option B'},
+ *         {id: '3', name: 'Option C'}
+ *       ],
+ *       selectedOption: {id: '3', name: 'Option C'} //This sets the default value of the select in the ui
+ *       };
+ *   }]);
+ * </file>
+ *</example>
+ *
+ *
+ * ### Binding `select` to a non-string value via `ngModel` parsing / formatting
  *
  * <example name="select-with-non-string-options" module="nonStringSelect">
  *   <file name="index.html">
@@ -37844,9 +38160,12 @@ var optionDirective = ['$interpolate', function($interpolate) {
     priority: 100,
     compile: function(element, attr) {
 
-      // If the value attribute is not defined then we fall back to the
-      // text content of the option element, which may be interpolated
-      if (isUndefined(attr.value)) {
+      if (isDefined(attr.value)) {
+        // If the value attribute is defined, check if it contains an interpolation
+        var valueInterpolated = $interpolate(attr.value, true);
+      } else {
+        // If the value attribute is not defined then we fall back to the
+        // text content of the option element, which may be interpolated
         var interpolateFn = $interpolate(element.text(), true);
         if (!interpolateFn) {
           attr.$set('value', element.text());
@@ -37862,24 +38181,38 @@ var optionDirective = ['$interpolate', function($interpolate) {
             selectCtrl = parent.data(selectCtrlName) ||
               parent.parent().data(selectCtrlName); // in case we are in optgroup
 
+        function addOption(optionValue) {
+          selectCtrl.addOption(optionValue, element);
+          selectCtrl.ngModelCtrl.$render();
+          chromeHack(element);
+        }
+
         // Only update trigger option updates if this is an option within a `select`
         // that also has `ngModel` attached
         if (selectCtrl && selectCtrl.ngModelCtrl) {
 
-          if (interpolateFn) {
+          if (valueInterpolated) {
+            // The value attribute is interpolated
+            var oldVal;
+            attr.$observe('value', function valueAttributeObserveAction(newVal) {
+              if (isDefined(oldVal)) {
+                selectCtrl.removeOption(oldVal);
+              }
+              oldVal = newVal;
+              addOption(newVal);
+            });
+          } else if (interpolateFn) {
+            // The text content is interpolated
             scope.$watch(interpolateFn, function interpolateWatchAction(newVal, oldVal) {
               attr.$set('value', newVal);
               if (oldVal !== newVal) {
                 selectCtrl.removeOption(oldVal);
               }
-              selectCtrl.addOption(newVal, element);
-              selectCtrl.ngModelCtrl.$render();
-              chromeHack(element);
+              addOption(newVal);
             });
           } else {
-            selectCtrl.addOption(attr.value, element);
-            selectCtrl.ngModelCtrl.$render();
-            chromeHack(element);
+            // The value attribute is static
+            addOption(attr.value);
           }
 
           element.on('$destroy', function() {
@@ -37940,8 +38273,9 @@ var patternDirective = function() {
         ctrl.$validate();
       });
 
-      ctrl.$validators.pattern = function(value) {
-        return ctrl.$isEmpty(value) || isUndefined(regexp) || regexp.test(value);
+      ctrl.$validators.pattern = function(modelValue, viewValue) {
+        // HTML5 pattern constraint validates the input value, so we validate the viewValue
+        return ctrl.$isEmpty(viewValue) || isUndefined(regexp) || regexp.test(viewValue);
       };
     }
   };
@@ -37987,17 +38321,145 @@ var minlengthDirective = function() {
   };
 };
 
-  if (window.angular.bootstrap) {
-    //AngularJS is already loaded, so we can return here...
-    console.log('WARNING: Tried to load angular more than once.');
-    return;
+if (window.angular.bootstrap) {
+  //AngularJS is already loaded, so we can return here...
+  console.log('WARNING: Tried to load angular more than once.');
+  return;
+}
+
+//try to bind to jquery now so that one can write jqLite(document).ready()
+//but we will rebind on bootstrap again.
+bindJQuery();
+
+publishExternalAPI(angular);
+
+angular.module("ngLocale", [], ["$provide", function($provide) {
+var PLURAL_CATEGORY = {ZERO: "zero", ONE: "one", TWO: "two", FEW: "few", MANY: "many", OTHER: "other"};
+function getDecimals(n) {
+  n = n + '';
+  var i = n.indexOf('.');
+  return (i == -1) ? 0 : n.length - i - 1;
+}
+
+function getVF(n, opt_precision) {
+  var v = opt_precision;
+
+  if (undefined === v) {
+    v = Math.min(getDecimals(n), 3);
   }
 
-  //try to bind to jquery now so that one can write jqLite(document).ready()
-  //but we will rebind on bootstrap again.
-  bindJQuery();
+  var base = Math.pow(10, v);
+  var f = ((n * base) | 0) % base;
+  return {v: v, f: f};
+}
 
-  publishExternalAPI(angular);
+$provide.value("$locale", {
+  "DATETIME_FORMATS": {
+    "AMPMS": [
+      "AM",
+      "PM"
+    ],
+    "DAY": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "ERANAMES": [
+      "Before Christ",
+      "Anno Domini"
+    ],
+    "ERAS": [
+      "BC",
+      "AD"
+    ],
+    "FIRSTDAYOFWEEK": 6,
+    "MONTH": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "SHORTDAY": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "SHORTMONTH": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ],
+    "WEEKENDRANGE": [
+      5,
+      6
+    ],
+    "fullDate": "EEEE, MMMM d, y",
+    "longDate": "MMMM d, y",
+    "medium": "MMM d, y h:mm:ss a",
+    "mediumDate": "MMM d, y",
+    "mediumTime": "h:mm:ss a",
+    "short": "M/d/yy h:mm a",
+    "shortDate": "M/d/yy",
+    "shortTime": "h:mm a"
+  },
+  "NUMBER_FORMATS": {
+    "CURRENCY_SYM": "$",
+    "DECIMAL_SEP": ".",
+    "GROUP_SEP": ",",
+    "PATTERNS": [
+      {
+        "gSize": 3,
+        "lgSize": 3,
+        "maxFrac": 3,
+        "minFrac": 0,
+        "minInt": 1,
+        "negPre": "-",
+        "negSuf": "",
+        "posPre": "",
+        "posSuf": ""
+      },
+      {
+        "gSize": 3,
+        "lgSize": 3,
+        "maxFrac": 2,
+        "minFrac": 2,
+        "minInt": 1,
+        "negPre": "-\u00a4",
+        "negSuf": "",
+        "posPre": "\u00a4",
+        "posSuf": ""
+      }
+    ]
+  },
+  "id": "en-us",
+  "pluralCat": function(n, opt_precision) {  var i = n | 0;  var vf = getVF(n, opt_precision);  if (i == 1 && vf.v == 0) {    return PLURAL_CATEGORY.ONE;  }  return PLURAL_CATEGORY.OTHER;}
+});
+}]);
 
   jqLite(document).ready(function() {
     angularInit(document, bootstrap);
@@ -38005,7 +38467,7 @@ var minlengthDirective = function() {
 
 })(window, document);
 
-!window.angular.$$csp() && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
+!window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
 define("angular", ["jquery"], (function (global) {
     return function () {
         var ret, fn;
@@ -42386,1346 +42848,6 @@ angular.module('ui.router.state')
 
 define("ui-router", ["angular"], function(){});
 
-/*!
-Chosen, a Select Box Enhancer for jQuery and Prototype
-by Patrick Filler for Harvest, http://getharvest.com
-
-Version 1.1.0
-Full source at https://github.com/harvesthq/chosen
-Copyright (c) 2011 Harvest http://getharvest.com
-
-MIT License, https://github.com/harvesthq/chosen/blob/master/LICENSE.md
-This file is generated by `grunt build`, do not edit it by hand.
-*/
-
-(function() {
-  var $, AbstractChosen, Chosen, SelectParser, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  SelectParser = (function() {
-    function SelectParser() {
-      this.options_index = 0;
-      this.parsed = [];
-    }
-
-    SelectParser.prototype.add_node = function(child) {
-      if (child.nodeName.toUpperCase() === "OPTGROUP") {
-        return this.add_group(child);
-      } else {
-        return this.add_option(child);
-      }
-    };
-
-    SelectParser.prototype.add_group = function(group) {
-      var group_position, option, _i, _len, _ref, _results;
-      group_position = this.parsed.length;
-      this.parsed.push({
-        array_index: group_position,
-        group: true,
-        label: this.escapeExpression(group.label),
-        children: 0,
-        disabled: group.disabled
-      });
-      _ref = group.childNodes;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        option = _ref[_i];
-        _results.push(this.add_option(option, group_position, group.disabled));
-      }
-      return _results;
-    };
-
-    SelectParser.prototype.add_option = function(option, group_position, group_disabled) {
-      if (option.nodeName.toUpperCase() === "OPTION") {
-        if (option.text !== "") {
-          if (group_position != null) {
-            this.parsed[group_position].children += 1;
-          }
-          this.parsed.push({
-            array_index: this.parsed.length,
-            options_index: this.options_index,
-            value: option.value,
-            text: option.text,
-            html: option.innerHTML,
-            selected: option.selected,
-            disabled: group_disabled === true ? group_disabled : option.disabled,
-            group_array_index: group_position,
-            classes: option.className,
-            style: option.style.cssText
-          });
-        } else {
-          this.parsed.push({
-            array_index: this.parsed.length,
-            options_index: this.options_index,
-            empty: true
-          });
-        }
-        return this.options_index += 1;
-      }
-    };
-
-    SelectParser.prototype.escapeExpression = function(text) {
-      var map, unsafe_chars;
-      if ((text == null) || text === false) {
-        return "";
-      }
-      if (!/[\&\<\>\"\'\`]/.test(text)) {
-        return text;
-      }
-      map = {
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#x27;",
-        "`": "&#x60;"
-      };
-      unsafe_chars = /&(?!\w+;)|[\<\>\"\'\`]/g;
-      return text.replace(unsafe_chars, function(chr) {
-        return map[chr] || "&amp;";
-      });
-    };
-
-    return SelectParser;
-
-  })();
-
-  SelectParser.select_to_array = function(select) {
-    var child, parser, _i, _len, _ref;
-    parser = new SelectParser();
-    _ref = select.childNodes;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      child = _ref[_i];
-      parser.add_node(child);
-    }
-    return parser.parsed;
-  };
-
-  AbstractChosen = (function() {
-    function AbstractChosen(form_field, options) {
-      this.form_field = form_field;
-      this.options = options != null ? options : {};
-      if (!AbstractChosen.browser_is_supported()) {
-        return;
-      }
-      this.is_multiple = this.form_field.multiple;
-      this.set_default_text();
-      this.set_default_values();
-      this.setup();
-      this.set_up_html();
-      this.register_observers();
-    }
-
-    AbstractChosen.prototype.set_default_values = function() {
-      var _this = this;
-      this.click_test_action = function(evt) {
-        return _this.test_active_click(evt);
-      };
-      this.activate_action = function(evt) {
-        return _this.activate_field(evt);
-      };
-      this.active_field = false;
-      this.mouse_on_container = false;
-      this.results_showing = false;
-      this.result_highlighted = null;
-      this.allow_single_deselect = (this.options.allow_single_deselect != null) && (this.form_field.options[0] != null) && this.form_field.options[0].text === "" ? this.options.allow_single_deselect : false;
-      this.disable_search_threshold = this.options.disable_search_threshold || 0;
-      this.disable_search = this.options.disable_search || false;
-      this.enable_split_word_search = this.options.enable_split_word_search != null ? this.options.enable_split_word_search : true;
-      this.group_search = this.options.group_search != null ? this.options.group_search : true;
-      this.search_contains = this.options.search_contains || false;
-      this.single_backstroke_delete = this.options.single_backstroke_delete != null ? this.options.single_backstroke_delete : true;
-      this.max_selected_options = this.options.max_selected_options || Infinity;
-      this.inherit_select_classes = this.options.inherit_select_classes || false;
-      this.display_selected_options = this.options.display_selected_options != null ? this.options.display_selected_options : true;
-      return this.display_disabled_options = this.options.display_disabled_options != null ? this.options.display_disabled_options : true;
-    };
-
-    AbstractChosen.prototype.set_default_text = function() {
-      if (this.form_field.getAttribute("data-placeholder")) {
-        this.default_text = this.form_field.getAttribute("data-placeholder");
-      } else if (this.is_multiple) {
-        this.default_text = this.options.placeholder_text_multiple || this.options.placeholder_text || AbstractChosen.default_multiple_text;
-      } else {
-        this.default_text = this.options.placeholder_text_single || this.options.placeholder_text || AbstractChosen.default_single_text;
-      }
-      return this.results_none_found = this.form_field.getAttribute("data-no_results_text") || this.options.no_results_text || AbstractChosen.default_no_result_text;
-    };
-
-    AbstractChosen.prototype.mouse_enter = function() {
-      return this.mouse_on_container = true;
-    };
-
-    AbstractChosen.prototype.mouse_leave = function() {
-      return this.mouse_on_container = false;
-    };
-
-    AbstractChosen.prototype.input_focus = function(evt) {
-      var _this = this;
-      if (this.is_multiple) {
-        if (!this.active_field) {
-          return setTimeout((function() {
-            return _this.container_mousedown();
-          }), 50);
-        }
-      } else {
-        if (!this.active_field) {
-          return this.activate_field();
-        }
-      }
-    };
-
-    AbstractChosen.prototype.input_blur = function(evt) {
-      var _this = this;
-      if (!this.mouse_on_container) {
-        this.active_field = false;
-        return setTimeout((function() {
-          return _this.blur_test();
-        }), 100);
-      }
-    };
-
-    AbstractChosen.prototype.results_option_build = function(options) {
-      var content, data, _i, _len, _ref;
-      content = '';
-      _ref = this.results_data;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        data = _ref[_i];
-        if (data.group) {
-          content += this.result_add_group(data);
-        } else {
-          content += this.result_add_option(data);
-        }
-        if (options != null ? options.first : void 0) {
-          if (data.selected && this.is_multiple) {
-            this.choice_build(data);
-          } else if (data.selected && !this.is_multiple) {
-            this.single_set_selected_text(data.text);
-          }
-        }
-      }
-      return content;
-    };
-
-    AbstractChosen.prototype.result_add_option = function(option) {
-      var classes, option_el;
-      if (!option.search_match) {
-        return '';
-      }
-      if (!this.include_option_in_results(option)) {
-        return '';
-      }
-      classes = [];
-      if (!option.disabled && !(option.selected && this.is_multiple)) {
-        classes.push("active-result");
-      }
-      if (option.disabled && !(option.selected && this.is_multiple)) {
-        classes.push("disabled-result");
-      }
-      if (option.selected) {
-        classes.push("result-selected");
-      }
-      if (option.group_array_index != null) {
-        classes.push("group-option");
-      }
-      if (option.classes !== "") {
-        classes.push(option.classes);
-      }
-      option_el = document.createElement("li");
-      option_el.className = classes.join(" ");
-      option_el.style.cssText = option.style;
-      option_el.setAttribute("data-option-array-index", option.array_index);
-      option_el.innerHTML = option.search_text;
-      return this.outerHTML(option_el);
-    };
-
-    AbstractChosen.prototype.result_add_group = function(group) {
-      var group_el;
-      if (!(group.search_match || group.group_match)) {
-        return '';
-      }
-      if (!(group.active_options > 0)) {
-        return '';
-      }
-      group_el = document.createElement("li");
-      group_el.className = "group-result";
-      group_el.innerHTML = group.search_text;
-      return this.outerHTML(group_el);
-    };
-
-    AbstractChosen.prototype.results_update_field = function() {
-      this.set_default_text();
-      if (!this.is_multiple) {
-        this.results_reset_cleanup();
-      }
-      this.result_clear_highlight();
-      this.results_build();
-      if (this.results_showing) {
-        return this.winnow_results();
-      }
-    };
-
-    AbstractChosen.prototype.reset_single_select_options = function() {
-      var result, _i, _len, _ref, _results;
-      _ref = this.results_data;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        result = _ref[_i];
-        if (result.selected) {
-          _results.push(result.selected = false);
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    AbstractChosen.prototype.results_toggle = function() {
-      if (this.results_showing) {
-        return this.results_hide();
-      } else {
-        return this.results_show();
-      }
-    };
-
-    AbstractChosen.prototype.results_search = function(evt) {
-      if (this.results_showing) {
-        return this.winnow_results();
-      } else {
-        return this.results_show();
-      }
-    };
-
-    AbstractChosen.prototype.winnow_results = function() {
-      var escapedSearchText, option, regex, regexAnchor, results, results_group, searchText, startpos, text, zregex, _i, _len, _ref;
-      this.no_results_clear();
-      results = 0;
-      searchText = this.get_search_text();
-      escapedSearchText = searchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-      regexAnchor = this.search_contains ? "" : "^";
-      regex = new RegExp(regexAnchor + escapedSearchText, 'i');
-      zregex = new RegExp(escapedSearchText, 'i');
-      _ref = this.results_data;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        option = _ref[_i];
-        option.search_match = false;
-        results_group = null;
-        if (this.include_option_in_results(option)) {
-          if (option.group) {
-            option.group_match = false;
-            option.active_options = 0;
-          }
-          if ((option.group_array_index != null) && this.results_data[option.group_array_index]) {
-            results_group = this.results_data[option.group_array_index];
-            if (results_group.active_options === 0 && results_group.search_match) {
-              results += 1;
-            }
-            results_group.active_options += 1;
-          }
-          if (!(option.group && !this.group_search)) {
-            option.search_text = option.group ? option.label : option.html;
-            option.search_match = this.search_string_match(option.search_text, regex);
-            if (option.search_match && !option.group) {
-              results += 1;
-            }
-            if (option.search_match) {
-              if (searchText.length) {
-                startpos = option.search_text.search(zregex);
-                text = option.search_text.substr(0, startpos + searchText.length) + '</em>' + option.search_text.substr(startpos + searchText.length);
-                option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos);
-              }
-              if (results_group != null) {
-                results_group.group_match = true;
-              }
-            } else if ((option.group_array_index != null) && this.results_data[option.group_array_index].search_match) {
-              option.search_match = true;
-            }
-          }
-        }
-      }
-      this.result_clear_highlight();
-      if (results < 1 && searchText.length) {
-        this.update_results_content("");
-        return this.no_results(searchText);
-      } else {
-        this.update_results_content(this.results_option_build());
-        return this.winnow_results_set_highlight();
-      }
-    };
-
-    AbstractChosen.prototype.search_string_match = function(search_string, regex) {
-      var part, parts, _i, _len;
-      if (regex.test(search_string)) {
-        return true;
-      } else if (this.enable_split_word_search && (search_string.indexOf(" ") >= 0 || search_string.indexOf("[") === 0)) {
-        parts = search_string.replace(/\[|\]/g, "").split(" ");
-        if (parts.length) {
-          for (_i = 0, _len = parts.length; _i < _len; _i++) {
-            part = parts[_i];
-            if (regex.test(part)) {
-              return true;
-            }
-          }
-        }
-      }
-    };
-
-    AbstractChosen.prototype.choices_count = function() {
-      var option, _i, _len, _ref;
-      if (this.selected_option_count != null) {
-        return this.selected_option_count;
-      }
-      this.selected_option_count = 0;
-      _ref = this.form_field.options;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        option = _ref[_i];
-        if (option.selected) {
-          this.selected_option_count += 1;
-        }
-      }
-      return this.selected_option_count;
-    };
-
-    AbstractChosen.prototype.choices_click = function(evt) {
-      evt.preventDefault();
-      if (!(this.results_showing || this.is_disabled)) {
-        return this.results_show();
-      }
-    };
-
-    AbstractChosen.prototype.keyup_checker = function(evt) {
-      var stroke, _ref;
-      stroke = (_ref = evt.which) != null ? _ref : evt.keyCode;
-      this.search_field_scale();
-      switch (stroke) {
-        case 8:
-          if (this.is_multiple && this.backstroke_length < 1 && this.choices_count() > 0) {
-            return this.keydown_backstroke();
-          } else if (!this.pending_backstroke) {
-            this.result_clear_highlight();
-            return this.results_search();
-          }
-          break;
-        case 13:
-          evt.preventDefault();
-          if (this.results_showing) {
-            return this.result_select(evt);
-          }
-          break;
-        case 27:
-          if (this.results_showing) {
-            this.results_hide();
-          }
-          return true;
-        case 9:
-        case 38:
-        case 40:
-        case 16:
-        case 91:
-        case 17:
-          break;
-        default:
-          return this.results_search();
-      }
-    };
-
-    AbstractChosen.prototype.clipboard_event_checker = function(evt) {
-      var _this = this;
-      return setTimeout((function() {
-        return _this.results_search();
-      }), 50);
-    };
-
-    AbstractChosen.prototype.container_width = function() {
-      if (this.options.width != null) {
-        return this.options.width;
-      } else {
-        return "" + this.form_field.offsetWidth + "px";
-      }
-    };
-
-    AbstractChosen.prototype.include_option_in_results = function(option) {
-      if (this.is_multiple && (!this.display_selected_options && option.selected)) {
-        return false;
-      }
-      if (!this.display_disabled_options && option.disabled) {
-        return false;
-      }
-      if (option.empty) {
-        return false;
-      }
-      return true;
-    };
-
-    AbstractChosen.prototype.search_results_touchstart = function(evt) {
-      this.touch_started = true;
-      return this.search_results_mouseover(evt);
-    };
-
-    AbstractChosen.prototype.search_results_touchmove = function(evt) {
-      this.touch_started = false;
-      return this.search_results_mouseout(evt);
-    };
-
-    AbstractChosen.prototype.search_results_touchend = function(evt) {
-      if (this.touch_started) {
-        return this.search_results_mouseup(evt);
-      }
-    };
-
-    AbstractChosen.prototype.outerHTML = function(element) {
-      var tmp;
-      if (element.outerHTML) {
-        return element.outerHTML;
-      }
-      tmp = document.createElement("div");
-      tmp.appendChild(element);
-      return tmp.innerHTML;
-    };
-
-    AbstractChosen.browser_is_supported = function() {
-      if (window.navigator.appName === "Microsoft Internet Explorer") {
-        return document.documentMode >= 8;
-      }
-      if (/iP(od|hone)/i.test(window.navigator.userAgent)) {
-        return false;
-      }
-      if (/Android/i.test(window.navigator.userAgent)) {
-        if (/Mobile/i.test(window.navigator.userAgent)) {
-          return false;
-        }
-      }
-      return true;
-    };
-
-    AbstractChosen.default_multiple_text = "Select Some Options";
-
-    AbstractChosen.default_single_text = "Select an Option";
-
-    AbstractChosen.default_no_result_text = "No results match";
-
-    return AbstractChosen;
-
-  })();
-
-  $ = jQuery;
-
-  $.fn.extend({
-    chosen: function(options) {
-      if (!AbstractChosen.browser_is_supported()) {
-        return this;
-      }
-      return this.each(function(input_field) {
-        var $this, chosen;
-        $this = $(this);
-        chosen = $this.data('chosen');
-        if (options === 'destroy' && chosen) {
-          chosen.destroy();
-        } else if (!chosen) {
-          $this.data('chosen', new Chosen(this, options));
-        }
-      });
-    }
-  });
-
-  Chosen = (function(_super) {
-    __extends(Chosen, _super);
-
-    function Chosen() {
-      _ref = Chosen.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    Chosen.prototype.setup = function() {
-      this.form_field_jq = $(this.form_field);
-      this.current_selectedIndex = this.form_field.selectedIndex;
-      return this.is_rtl = this.form_field_jq.hasClass("chosen-rtl");
-    };
-
-    Chosen.prototype.set_up_html = function() {
-      var container_classes, container_props;
-      container_classes = ["chosen-container"];
-      container_classes.push("chosen-container-" + (this.is_multiple ? "multi" : "single"));
-      if (this.inherit_select_classes && this.form_field.className) {
-        container_classes.push(this.form_field.className);
-      }
-      if (this.is_rtl) {
-        container_classes.push("chosen-rtl");
-      }
-      container_props = {
-        'class': container_classes.join(' '),
-        'style': "width: " + (this.container_width()) + ";",
-        'title': this.form_field.title
-      };
-      if (this.form_field.id.length) {
-        container_props.id = this.form_field.id.replace(/[^\w]/g, '_') + "_chosen";
-      }
-      this.container = $("<div />", container_props);
-      if (this.is_multiple) {
-        this.container.html('<ul class="chosen-choices"><li class="search-field"><input type="text" value="' + this.default_text + '" class="default" autocomplete="off" style="width:25px;" /></li></ul><div class="chosen-drop"><ul class="chosen-results"></ul></div>');
-      } else {
-        this.container.html('<a class="chosen-single chosen-default" tabindex="-1"><span>' + this.default_text + '</span><div><b></b></div></a><div class="chosen-drop"><div class="chosen-search"><input type="text" autocomplete="off" /></div><ul class="chosen-results"></ul></div>');
-      }
-      this.form_field_jq.hide().after(this.container);
-      this.dropdown = this.container.find('div.chosen-drop').first();
-      this.search_field = this.container.find('input').first();
-      this.search_results = this.container.find('ul.chosen-results').first();
-      this.search_field_scale();
-      this.search_no_results = this.container.find('li.no-results').first();
-      if (this.is_multiple) {
-        this.search_choices = this.container.find('ul.chosen-choices').first();
-        this.search_container = this.container.find('li.search-field').first();
-      } else {
-        this.search_container = this.container.find('div.chosen-search').first();
-        this.selected_item = this.container.find('.chosen-single').first();
-      }
-      this.results_build();
-      this.set_tab_index();
-      this.set_label_behavior();
-      return this.form_field_jq.trigger("chosen:ready", {
-        chosen: this
-      });
-    };
-
-    Chosen.prototype.register_observers = function() {
-      var _this = this;
-      this.container.bind('mousedown.chosen', function(evt) {
-        _this.container_mousedown(evt);
-      });
-      this.container.bind('mouseup.chosen', function(evt) {
-        _this.container_mouseup(evt);
-      });
-      this.container.bind('mouseenter.chosen', function(evt) {
-        _this.mouse_enter(evt);
-      });
-      this.container.bind('mouseleave.chosen', function(evt) {
-        _this.mouse_leave(evt);
-      });
-      this.search_results.bind('mouseup.chosen', function(evt) {
-        _this.search_results_mouseup(evt);
-      });
-      this.search_results.bind('mouseover.chosen', function(evt) {
-        _this.search_results_mouseover(evt);
-      });
-      this.search_results.bind('mouseout.chosen', function(evt) {
-        _this.search_results_mouseout(evt);
-      });
-      this.search_results.bind('mousewheel.chosen DOMMouseScroll.chosen', function(evt) {
-        _this.search_results_mousewheel(evt);
-      });
-      this.search_results.bind('touchstart.chosen', function(evt) {
-        _this.search_results_touchstart(evt);
-      });
-      this.search_results.bind('touchmove.chosen', function(evt) {
-        _this.search_results_touchmove(evt);
-      });
-      this.search_results.bind('touchend.chosen', function(evt) {
-        _this.search_results_touchend(evt);
-      });
-      this.form_field_jq.bind("chosen:updated.chosen", function(evt) {
-        _this.results_update_field(evt);
-      });
-      this.form_field_jq.bind("chosen:activate.chosen", function(evt) {
-        _this.activate_field(evt);
-      });
-      this.form_field_jq.bind("chosen:open.chosen", function(evt) {
-        _this.container_mousedown(evt);
-      });
-      this.form_field_jq.bind("chosen:close.chosen", function(evt) {
-        _this.input_blur(evt);
-      });
-      this.search_field.bind('blur.chosen', function(evt) {
-        _this.input_blur(evt);
-      });
-      this.search_field.bind('keyup.chosen', function(evt) {
-        _this.keyup_checker(evt);
-      });
-      this.search_field.bind('keydown.chosen', function(evt) {
-        _this.keydown_checker(evt);
-      });
-      this.search_field.bind('focus.chosen', function(evt) {
-        _this.input_focus(evt);
-      });
-      this.search_field.bind('cut.chosen', function(evt) {
-        _this.clipboard_event_checker(evt);
-      });
-      this.search_field.bind('paste.chosen', function(evt) {
-        _this.clipboard_event_checker(evt);
-      });
-      if (this.is_multiple) {
-        return this.search_choices.bind('click.chosen', function(evt) {
-          _this.choices_click(evt);
-        });
-      } else {
-        return this.container.bind('click.chosen', function(evt) {
-          evt.preventDefault();
-        });
-      }
-    };
-
-    Chosen.prototype.destroy = function() {
-      $(this.container[0].ownerDocument).unbind("click.chosen", this.click_test_action);
-      if (this.search_field[0].tabIndex) {
-        this.form_field_jq[0].tabIndex = this.search_field[0].tabIndex;
-      }
-      this.container.remove();
-      this.form_field_jq.removeData('chosen');
-      return this.form_field_jq.show();
-    };
-
-    Chosen.prototype.search_field_disabled = function() {
-      this.is_disabled = this.form_field_jq[0].disabled;
-      if (this.is_disabled) {
-        this.container.addClass('chosen-disabled');
-        this.search_field[0].disabled = true;
-        if (!this.is_multiple) {
-          this.selected_item.unbind("focus.chosen", this.activate_action);
-        }
-        return this.close_field();
-      } else {
-        this.container.removeClass('chosen-disabled');
-        this.search_field[0].disabled = false;
-        if (!this.is_multiple) {
-          return this.selected_item.bind("focus.chosen", this.activate_action);
-        }
-      }
-    };
-
-    Chosen.prototype.container_mousedown = function(evt) {
-      if (!this.is_disabled) {
-        if (evt && evt.type === "mousedown" && !this.results_showing) {
-          evt.preventDefault();
-        }
-        if (!((evt != null) && ($(evt.target)).hasClass("search-choice-close"))) {
-          if (!this.active_field) {
-            if (this.is_multiple) {
-              this.search_field.val("");
-            }
-            $(this.container[0].ownerDocument).bind('click.chosen', this.click_test_action);
-            this.results_show();
-          } else if (!this.is_multiple && evt && (($(evt.target)[0] === this.selected_item[0]) || $(evt.target).parents("a.chosen-single").length)) {
-            evt.preventDefault();
-            this.results_toggle();
-          }
-          return this.activate_field();
-        }
-      }
-    };
-
-    Chosen.prototype.container_mouseup = function(evt) {
-      if (evt.target.nodeName === "ABBR" && !this.is_disabled) {
-        return this.results_reset(evt);
-      }
-    };
-
-    Chosen.prototype.search_results_mousewheel = function(evt) {
-      var delta;
-      if (evt.originalEvent) {
-        delta = -evt.originalEvent.wheelDelta || evt.originalEvent.detail;
-      }
-      if (delta != null) {
-        evt.preventDefault();
-        if (evt.type === 'DOMMouseScroll') {
-          delta = delta * 40;
-        }
-        return this.search_results.scrollTop(delta + this.search_results.scrollTop());
-      }
-    };
-
-    Chosen.prototype.blur_test = function(evt) {
-      if (!this.active_field && this.container.hasClass("chosen-container-active")) {
-        return this.close_field();
-      }
-    };
-
-    Chosen.prototype.close_field = function() {
-      $(this.container[0].ownerDocument).unbind("click.chosen", this.click_test_action);
-      this.active_field = false;
-      this.results_hide();
-      this.container.removeClass("chosen-container-active");
-      this.clear_backstroke();
-      this.show_search_field_default();
-      return this.search_field_scale();
-    };
-
-    Chosen.prototype.activate_field = function() {
-      this.container.addClass("chosen-container-active");
-      this.active_field = true;
-      this.search_field.val(this.search_field.val());
-      return this.search_field.focus();
-    };
-
-    Chosen.prototype.test_active_click = function(evt) {
-      var active_container;
-      active_container = $(evt.target).closest('.chosen-container');
-      if (active_container.length && this.container[0] === active_container[0]) {
-        return this.active_field = true;
-      } else {
-        return this.close_field();
-      }
-    };
-
-    Chosen.prototype.results_build = function() {
-      this.parsing = true;
-      this.selected_option_count = null;
-      this.results_data = SelectParser.select_to_array(this.form_field);
-      if (this.is_multiple) {
-        this.search_choices.find("li.search-choice").remove();
-      } else if (!this.is_multiple) {
-        this.single_set_selected_text();
-        if (this.disable_search || this.form_field.options.length <= this.disable_search_threshold) {
-          this.search_field[0].readOnly = true;
-          this.container.addClass("chosen-container-single-nosearch");
-        } else {
-          this.search_field[0].readOnly = false;
-          this.container.removeClass("chosen-container-single-nosearch");
-        }
-      }
-      this.update_results_content(this.results_option_build({
-        first: true
-      }));
-      this.search_field_disabled();
-      this.show_search_field_default();
-      this.search_field_scale();
-      return this.parsing = false;
-    };
-
-    Chosen.prototype.result_do_highlight = function(el) {
-      var high_bottom, high_top, maxHeight, visible_bottom, visible_top;
-      if (el.length) {
-        this.result_clear_highlight();
-        this.result_highlight = el;
-        this.result_highlight.addClass("highlighted");
-        maxHeight = parseInt(this.search_results.css("maxHeight"), 10);
-        visible_top = this.search_results.scrollTop();
-        visible_bottom = maxHeight + visible_top;
-        high_top = this.result_highlight.position().top + this.search_results.scrollTop();
-        high_bottom = high_top + this.result_highlight.outerHeight();
-        if (high_bottom >= visible_bottom) {
-          return this.search_results.scrollTop((high_bottom - maxHeight) > 0 ? high_bottom - maxHeight : 0);
-        } else if (high_top < visible_top) {
-          return this.search_results.scrollTop(high_top);
-        }
-      }
-    };
-
-    Chosen.prototype.result_clear_highlight = function() {
-      if (this.result_highlight) {
-        this.result_highlight.removeClass("highlighted");
-      }
-      return this.result_highlight = null;
-    };
-
-    Chosen.prototype.results_show = function() {
-      if (this.is_multiple && this.max_selected_options <= this.choices_count()) {
-        this.form_field_jq.trigger("chosen:maxselected", {
-          chosen: this
-        });
-        return false;
-      }
-      this.container.addClass("chosen-with-drop");
-      this.results_showing = true;
-      this.search_field.focus();
-      this.search_field.val(this.search_field.val());
-      this.winnow_results();
-      return this.form_field_jq.trigger("chosen:showing_dropdown", {
-        chosen: this
-      });
-    };
-
-    Chosen.prototype.update_results_content = function(content) {
-      return this.search_results.html(content);
-    };
-
-    Chosen.prototype.results_hide = function() {
-      if (this.results_showing) {
-        this.result_clear_highlight();
-        this.container.removeClass("chosen-with-drop");
-        this.form_field_jq.trigger("chosen:hiding_dropdown", {
-          chosen: this
-        });
-      }
-      return this.results_showing = false;
-    };
-
-    Chosen.prototype.set_tab_index = function(el) {
-      var ti;
-      if (this.form_field.tabIndex) {
-        ti = this.form_field.tabIndex;
-        this.form_field.tabIndex = -1;
-        return this.search_field[0].tabIndex = ti;
-      }
-    };
-
-    Chosen.prototype.set_label_behavior = function() {
-      var _this = this;
-      this.form_field_label = this.form_field_jq.parents("label");
-      if (!this.form_field_label.length && this.form_field.id.length) {
-        this.form_field_label = $("label[for='" + this.form_field.id + "']");
-      }
-      if (this.form_field_label.length > 0) {
-        return this.form_field_label.bind('click.chosen', function(evt) {
-          if (_this.is_multiple) {
-            return _this.container_mousedown(evt);
-          } else {
-            return _this.activate_field();
-          }
-        });
-      }
-    };
-
-    Chosen.prototype.show_search_field_default = function() {
-      if (this.is_multiple && this.choices_count() < 1 && !this.active_field) {
-        this.search_field.val(this.default_text);
-        return this.search_field.addClass("default");
-      } else {
-        this.search_field.val("");
-        return this.search_field.removeClass("default");
-      }
-    };
-
-    Chosen.prototype.search_results_mouseup = function(evt) {
-      var target;
-      target = $(evt.target).hasClass("active-result") ? $(evt.target) : $(evt.target).parents(".active-result").first();
-      if (target.length) {
-        this.result_highlight = target;
-        this.result_select(evt);
-        return this.search_field.focus();
-      }
-    };
-
-    Chosen.prototype.search_results_mouseover = function(evt) {
-      var target;
-      target = $(evt.target).hasClass("active-result") ? $(evt.target) : $(evt.target).parents(".active-result").first();
-      if (target) {
-        return this.result_do_highlight(target);
-      }
-    };
-
-    Chosen.prototype.search_results_mouseout = function(evt) {
-      if ($(evt.target).hasClass("active-result" || $(evt.target).parents('.active-result').first())) {
-        return this.result_clear_highlight();
-      }
-    };
-
-    Chosen.prototype.choice_build = function(item) {
-      var choice, close_link,
-        _this = this;
-      choice = $('<li />', {
-        "class": "search-choice"
-      }).html("<span>" + item.html + "</span>");
-      if (item.disabled) {
-        choice.addClass('search-choice-disabled');
-      } else {
-        close_link = $('<a />', {
-          "class": 'search-choice-close',
-          'data-option-array-index': item.array_index
-        });
-        close_link.bind('click.chosen', function(evt) {
-          return _this.choice_destroy_link_click(evt);
-        });
-        choice.append(close_link);
-      }
-      return this.search_container.before(choice);
-    };
-
-    Chosen.prototype.choice_destroy_link_click = function(evt) {
-      evt.preventDefault();
-      evt.stopPropagation();
-      if (!this.is_disabled) {
-        return this.choice_destroy($(evt.target));
-      }
-    };
-
-    Chosen.prototype.choice_destroy = function(link) {
-      if (this.result_deselect(link[0].getAttribute("data-option-array-index"))) {
-        this.show_search_field_default();
-        if (this.is_multiple && this.choices_count() > 0 && this.search_field.val().length < 1) {
-          this.results_hide();
-        }
-        link.parents('li').first().remove();
-        return this.search_field_scale();
-      }
-    };
-
-    Chosen.prototype.results_reset = function() {
-      this.reset_single_select_options();
-      this.form_field.options[0].selected = true;
-      this.single_set_selected_text();
-      this.show_search_field_default();
-      this.results_reset_cleanup();
-      this.form_field_jq.trigger("change");
-      if (this.active_field) {
-        return this.results_hide();
-      }
-    };
-
-    Chosen.prototype.results_reset_cleanup = function() {
-      this.current_selectedIndex = this.form_field.selectedIndex;
-      return this.selected_item.find("abbr").remove();
-    };
-
-    Chosen.prototype.result_select = function(evt) {
-      var high, item;
-      if (this.result_highlight) {
-        high = this.result_highlight;
-        this.result_clear_highlight();
-        if (this.is_multiple && this.max_selected_options <= this.choices_count()) {
-          this.form_field_jq.trigger("chosen:maxselected", {
-            chosen: this
-          });
-          return false;
-        }
-        if (this.is_multiple) {
-          high.removeClass("active-result");
-        } else {
-          this.reset_single_select_options();
-        }
-        item = this.results_data[high[0].getAttribute("data-option-array-index")];
-        item.selected = true;
-        this.form_field.options[item.options_index].selected = true;
-        this.selected_option_count = null;
-        if (this.is_multiple) {
-          this.choice_build(item);
-        } else {
-          this.single_set_selected_text(item.text);
-        }
-        if (!((evt.metaKey || evt.ctrlKey) && this.is_multiple)) {
-          this.results_hide();
-        }
-        this.search_field.val("");
-        if (this.is_multiple || this.form_field.selectedIndex !== this.current_selectedIndex) {
-          this.form_field_jq.trigger("change", {
-            'selected': this.form_field.options[item.options_index].value
-          });
-        }
-        this.current_selectedIndex = this.form_field.selectedIndex;
-        return this.search_field_scale();
-      }
-    };
-
-    Chosen.prototype.single_set_selected_text = function(text) {
-      if (text == null) {
-        text = this.default_text;
-      }
-      if (text === this.default_text) {
-        this.selected_item.addClass("chosen-default");
-      } else {
-        this.single_deselect_control_build();
-        this.selected_item.removeClass("chosen-default");
-      }
-      return this.selected_item.find("span").text(text);
-    };
-
-    Chosen.prototype.result_deselect = function(pos) {
-      var result_data;
-      result_data = this.results_data[pos];
-      if (!this.form_field.options[result_data.options_index].disabled) {
-        result_data.selected = false;
-        this.form_field.options[result_data.options_index].selected = false;
-        this.selected_option_count = null;
-        this.result_clear_highlight();
-        if (this.results_showing) {
-          this.winnow_results();
-        }
-        this.form_field_jq.trigger("change", {
-          deselected: this.form_field.options[result_data.options_index].value
-        });
-        this.search_field_scale();
-        return true;
-      } else {
-        return false;
-      }
-    };
-
-    Chosen.prototype.single_deselect_control_build = function() {
-      if (!this.allow_single_deselect) {
-        return;
-      }
-      if (!this.selected_item.find("abbr").length) {
-        this.selected_item.find("span").first().after("<abbr class=\"search-choice-close\"></abbr>");
-      }
-      return this.selected_item.addClass("chosen-single-with-deselect");
-    };
-
-    Chosen.prototype.get_search_text = function() {
-      if (this.search_field.val() === this.default_text) {
-        return "";
-      } else {
-        return $('<div/>').text($.trim(this.search_field.val())).html();
-      }
-    };
-
-    Chosen.prototype.winnow_results_set_highlight = function() {
-      var do_high, selected_results;
-      selected_results = !this.is_multiple ? this.search_results.find(".result-selected.active-result") : [];
-      do_high = selected_results.length ? selected_results.first() : this.search_results.find(".active-result").first();
-      if (do_high != null) {
-        return this.result_do_highlight(do_high);
-      }
-    };
-
-    Chosen.prototype.no_results = function(terms) {
-      var no_results_html;
-      no_results_html = $('<li class="no-results">' + this.results_none_found + ' "<span></span>"</li>');
-      no_results_html.find("span").first().html(terms);
-      this.search_results.append(no_results_html);
-      return this.form_field_jq.trigger("chosen:no_results", {
-        chosen: this
-      });
-    };
-
-    Chosen.prototype.no_results_clear = function() {
-      return this.search_results.find(".no-results").remove();
-    };
-
-    Chosen.prototype.keydown_arrow = function() {
-      var next_sib;
-      if (this.results_showing && this.result_highlight) {
-        next_sib = this.result_highlight.nextAll("li.active-result").first();
-        if (next_sib) {
-          return this.result_do_highlight(next_sib);
-        }
-      } else {
-        return this.results_show();
-      }
-    };
-
-    Chosen.prototype.keyup_arrow = function() {
-      var prev_sibs;
-      if (!this.results_showing && !this.is_multiple) {
-        return this.results_show();
-      } else if (this.result_highlight) {
-        prev_sibs = this.result_highlight.prevAll("li.active-result");
-        if (prev_sibs.length) {
-          return this.result_do_highlight(prev_sibs.first());
-        } else {
-          if (this.choices_count() > 0) {
-            this.results_hide();
-          }
-          return this.result_clear_highlight();
-        }
-      }
-    };
-
-    Chosen.prototype.keydown_backstroke = function() {
-      var next_available_destroy;
-      if (this.pending_backstroke) {
-        this.choice_destroy(this.pending_backstroke.find("a").first());
-        return this.clear_backstroke();
-      } else {
-        next_available_destroy = this.search_container.siblings("li.search-choice").last();
-        if (next_available_destroy.length && !next_available_destroy.hasClass("search-choice-disabled")) {
-          this.pending_backstroke = next_available_destroy;
-          if (this.single_backstroke_delete) {
-            return this.keydown_backstroke();
-          } else {
-            return this.pending_backstroke.addClass("search-choice-focus");
-          }
-        }
-      }
-    };
-
-    Chosen.prototype.clear_backstroke = function() {
-      if (this.pending_backstroke) {
-        this.pending_backstroke.removeClass("search-choice-focus");
-      }
-      return this.pending_backstroke = null;
-    };
-
-    Chosen.prototype.keydown_checker = function(evt) {
-      var stroke, _ref1;
-      stroke = (_ref1 = evt.which) != null ? _ref1 : evt.keyCode;
-      this.search_field_scale();
-      if (stroke !== 8 && this.pending_backstroke) {
-        this.clear_backstroke();
-      }
-      switch (stroke) {
-        case 8:
-          this.backstroke_length = this.search_field.val().length;
-          break;
-        case 9:
-          if (this.results_showing && !this.is_multiple) {
-            this.result_select(evt);
-          }
-          this.mouse_on_container = false;
-          break;
-        case 13:
-          evt.preventDefault();
-          break;
-        case 38:
-          evt.preventDefault();
-          this.keyup_arrow();
-          break;
-        case 40:
-          evt.preventDefault();
-          this.keydown_arrow();
-          break;
-      }
-    };
-
-    Chosen.prototype.search_field_scale = function() {
-      var div, f_width, h, style, style_block, styles, w, _i, _len;
-      if (this.is_multiple) {
-        h = 0;
-        w = 0;
-        style_block = "position:absolute; left: -1000px; top: -1000px; display:none;";
-        styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
-        for (_i = 0, _len = styles.length; _i < _len; _i++) {
-          style = styles[_i];
-          style_block += style + ":" + this.search_field.css(style) + ";";
-        }
-        div = $('<div />', {
-          'style': style_block
-        });
-        div.text(this.search_field.val());
-        $('body').append(div);
-        w = div.width() + 25;
-        div.remove();
-        f_width = this.container.outerWidth();
-        if (w > f_width - 10) {
-          w = f_width - 10;
-        }
-        return this.search_field.css({
-          'width': w + 'px'
-        });
-      }
-    };
-
-    return Chosen;
-
-  })(AbstractChosen);
-
-}).call(this);
-
-define("chosen", ["jquery"], function(){});
-
-// Generated by CoffeeScript 1.8.0
-(function() {
-  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-  angular.module('localytics.directives', []);
-
-  angular.module('localytics.directives').directive('chosen', [
-    '$timeout', function($timeout) {
-      var CHOSEN_OPTION_WHITELIST, NG_OPTIONS_REGEXP, isEmpty, snakeCase;
-      NG_OPTIONS_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?(?:\s+group\s+by\s+(.*))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+(.*?)(?:\s+track\s+by\s+(.*?))?$/;
-      CHOSEN_OPTION_WHITELIST = ['noResultsText', 'allowSingleDeselect', 'disableSearchThreshold', 'disableSearch', 'enableSplitWordSearch', 'inheritSelectClasses', 'maxSelectedOptions', 'placeholderTextMultiple', 'placeholderTextSingle', 'searchContains', 'singleBackstrokeDelete', 'displayDisabledOptions', 'displaySelectedOptions', 'width'];
-      snakeCase = function(input) {
-        return input.replace(/[A-Z]/g, function($1) {
-          return "_" + ($1.toLowerCase());
-        });
-      };
-      isEmpty = function(value) {
-        var key;
-        if (angular.isArray(value)) {
-          return value.length === 0;
-        } else if (angular.isObject(value)) {
-          for (key in value) {
-            if (value.hasOwnProperty(key)) {
-              return false;
-            }
-          }
-        }
-        return true;
-      };
-      return {
-        restrict: 'A',
-        require: '?ngModel',
-        terminal: true,
-        link: function(scope, element, attr, ngModel) {
-          var chosen, defaultText, disableWithMessage, empty, initOrUpdate, match, options, origRender, removeEmptyMessage, startLoading, stopLoading, valuesExpr, viewWatch;
-          element.addClass('localytics-chosen');
-          options = scope.$eval(attr.chosen) || {};
-          angular.forEach(attr, function(value, key) {
-            if (__indexOf.call(CHOSEN_OPTION_WHITELIST, key) >= 0) {
-              return options[snakeCase(key)] = scope.$eval(value);
-            }
-          });
-          startLoading = function() {
-            return element.addClass('loading').attr('disabled', true).trigger('chosen:updated');
-          };
-          stopLoading = function() {
-            return element.removeClass('loading').attr('disabled', false).trigger('chosen:updated');
-          };
-          chosen = null;
-          defaultText = null;
-          empty = false;
-          initOrUpdate = function(selectedValue) {
-            if (chosen) {
-              if (selectedValue) {
-                 element.val(selectedValue);
-              }
-              return element.trigger('chosen:updated');
-            } else {
-              chosen = element.chosen(options).data('chosen');
-              if (angular.isObject(chosen)) {
-                return defaultText = chosen.default_text;
-              }
-            }
-          };
-          removeEmptyMessage = function() {
-            empty = false;
-            return element.attr('data-placeholder', defaultText);
-          };
-          disableWithMessage = function() {
-            empty = true;
-            return element.attr('data-placeholder', chosen.results_none_found).attr('disabled', true).trigger('chosen:updated');
-          };
-          if (ngModel) {
-            origRender = ngModel.$render;
-            ngModel.$render = function() {
-              origRender();
-              if (attr.multiple) {
-                return initOrUpdate();
-              } else {
-                return initOrUpdate(ngModel.$viewValue);
-              }
-            };
-            viewWatch = function() {
-              return ngModel.$viewValue;
-            };
-            scope.$watch(viewWatch, ngModel.$render, true);
-          } else {
-            initOrUpdate();
-          }
-          attr.$observe('disabled', function() {
-            return element.trigger('chosen:updated');
-          });
-          if (attr.ngOptions && ngModel) {
-            match = attr.ngOptions.match(NG_OPTIONS_REGEXP);
-            valuesExpr = match[7];
-            scope.$watchCollection(valuesExpr, function(newVal, oldVal) {
-              var timer;
-              return timer = $timeout(function() {
-                if (angular.isUndefined(newVal)) {
-                  return startLoading();
-                } else {
-                  if (empty) {
-                    removeEmptyMessage();
-                  }
-                  stopLoading();
-                  if (isEmpty(newVal)) {
-                    return disableWithMessage();
-                  }
-                }
-              });
-            });
-            return scope.$on('$destroy', function(event) {
-              if (typeof timer !== "undefined" && timer !== null) {
-                return $timeout.cancel(timer);
-              }
-            });
-          }
-        }
-      };
-    }
-  ]);
-
-}).call(this);
-
-define("angular-chosen", ["angular","chosen"], function(){});
-
 /* Copyright (c) 2015 Hyunje Alex Jun and other contributors
  * Licensed under the MIT License
  */
@@ -47010,19 +46132,16 @@ define('core/navbar/services/division',['require','./../../module','./util'],fun
 
         function divisionUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    divisions.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned,
-                        client: {
-                            id: data.clientId
-                        }
-                    }]);
-                }
+                divisions.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned,
+                    client: {
+                        id: data.clientId
+                    }
+                }]);
             }
         }
 
@@ -47147,28 +46266,25 @@ define('core/navbar/services/campaign',['require','./../../module','./util'],fun
 
         function campaignUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
                 var account = accounts.get(data.accountId);
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    campaigns.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned,
-                        startDate: data.startDate,
-                        endDate: data.endDate,
-                        account: {
-                            id: data.accountId
-                        },
-                        division: {
-                            id: account.division.id
-                        },
-                        client: {
-                            id: account.client.id
-                        }
-                    }]);
-                }
+                campaigns.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned,
+                    startDate: data.startDate,
+                    endDate: data.endDate,
+                    account: {
+                        id: data.accountId
+                    },
+                    division: {
+                        id: account.division.id
+                    },
+                    client: {
+                        id: account.client.id
+                    }
+                }]);
             }
         }
 
@@ -47370,16 +46486,13 @@ define('core/navbar/services/client',['require','./../../module','./util'],funct
 
         function clientUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    clients.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned
-                    }]);
-                }
+                clients.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned
+                }]);
             }
         }
 
@@ -47466,23 +46579,20 @@ define('core/navbar/services/account',['require','./../../module','./util'],func
 
         function accountUpdate(event, record) {
             if (event === 'create' || event === 'update') {
-                var olddata = get(record.id);
                 var data = record.get();
                 var division = divisions.get(data.divisionId);
 
-                if (olddata && olddata.pinned !== data.pinned || !olddata){
-                    accounts.addData([{
-                        id: data.id,
-                        name: data.name,
-                        pinned: data.pinned,
-                        division: {
-                            id: data.divisionId
-                        },
-                        client: {
-                            id: division.client.id
-                        }
-                    }]);
-                }
+                accounts.addData([{
+                    id: data.id,
+                    name: data.name,
+                    pinned: data.pinned,
+                    division: {
+                        id: data.divisionId
+                    },
+                    client: {
+                        id: division.client.id
+                    }
+                }]);
             }
         }
 
@@ -47969,6 +47079,186 @@ define('core/constants/apiURI',['require','./../module'],function (require) {
     module.constant('API_URI', apiURI);
 });
 
+/**
+ * Interface between database enum names and frontend enum names
+ */
+
+define('core/constants/enums',['require','./../module'],function (require) {
+	'use strict';
+
+	var module = require('./../module');
+
+	var up = {
+		creativeTypes: {
+			inBannerVideo: 'In-Banner',
+			richMedia: 'Rich Media',
+			inStream: 'In-Stream',
+			display: 'Display'
+		},
+		creativeEnvironments: {
+			all: 'multidevice',
+			desktop: 'desktop',
+			mobile: 'tablet',
+			mraid: 'mobile'
+		}
+	};
+
+	// Invert up, place in down
+	var down = {};
+	var currDownKey, currUpValue;
+	for (var outerKey in up) {
+		currDownKey = down[outerKey] = {};
+		for (var innerKey in up[outerKey]) {
+			currUpValue = up[outerKey][innerKey];
+			currDownKey[currUpValue] = innerKey;
+		}
+	}
+
+	var ENUMS = {
+		up: up,
+		down: down
+	};
+	module.constant('ENUMS', ENUMS);
+	return ENUMS;
+});
+
+/**
+ * Describe the relationships between creative types, environments, dimensions
+ * and expanded dimensions
+ */
+
+define('core/constants/creativeSettings',['require','./../module','./enums'],function(require) {
+	'use strict';
+
+	var module = require('./../module');
+
+	var creativeTypes = require('./enums').up.creativeTypes;
+
+	module.constant('CREATIVE_SETTINGS', {
+		types: [
+			{id: 'IBV', name: 'In-Banner Video', dbName: creativeTypes.inBannerVideo},
+			{id: 'ISV', name: 'In-Stream Video', dbName: creativeTypes.inStream},
+			{id: 'RM', name: 'Rich Media', dbName: creativeTypes.richMedia},
+			{id: 'SWF', name: 'Display: SWF', subtype: 'SWF', dbName: creativeTypes.display},
+			{id: 'IMG', name: 'Display: Image', subtype: 'IMG', dbName: creativeTypes.display}
+		],
+
+		typeSettings: {
+			IBV: {
+				environments: [1, 2, 3, 4],
+				dimensions: [1, 2, 3, 4, 11, 12, 13, 14],
+				expandedDimensions: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+			},
+			ISV: {
+				environments: [1, 2],
+				dimensions: [6, 7, 8, 9, 10, 14],
+				expandedDimensions: undefined
+			},
+			RM: {
+				environments: [1, 2, 3, 4],
+				dimensions: [1, 2, 3, 4, 11, 12, 13, 14],
+				expandedDimensions: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+			},
+			SWF: {
+				environments: [2],
+				dimensions: undefined,
+				expandedDimensions: undefined
+			},
+			IMG: {
+				environments: [1, 2, 3, 4],
+				dimensions: undefined,
+				expandedDimensions: undefined
+			}
+		},
+
+		environments: {
+			1: {id: 1, dbName: 'multidevice', name: 'Multi-Screen (Desktop, Tablet and Phone)'},
+			2: {id: 2, dbName: 'desktop', name: 'Desktop'},
+			3: {id: 3, dbName: 'tablet', name: 'Tablet & Phone'},
+			4: {id: 4, dbName: 'mobile', name: 'Tablet & Phone (In-App/MRAID)'}
+		},
+
+		dimensions: {
+			1: {id: 1, width: 160, height: 600, name: '160x600'},
+			2: {id: 2, width: 180, height: 150, name: '180x150'},
+			3: {id: 3, width: 300, height: 250, name: '300x250'},
+			4: {id: 4, width: 300, height: 600, name: '300x600'},
+			6: {id: 6, width: 480, height: 360, name: '480x360 (4:3)'},
+			7: {id: 7, width: 533, height: 300, name: '533x300 (16:9)'},
+			8: {id: 8, width: 640, height: 360, name: '640x360 (16:9)'},
+			9: {id: 9, width: 640, height: 480, name: '640x480 (4:3)'},
+			10: {id: 10, width: 768, height: 432, name: '768x432 (16:9)'},
+			11: {id: 11, width: 728, height: 90, name: '728x90'},
+			12: {id: 12, width: 970, height: 90, name: '970x90'},
+			13: {id: 13, width: 1, height: 1, name: 'Interstitial 1x1'},
+			14: {id: 14, isCustom: true, name: 'Custom'}
+		},
+
+		expandedDimensions: {
+			1: {id: 1, isNonExpanding: true, name: 'Non-Expanding'},
+			2: {id: 2, width: 300, height: 600, name: '300x600'},
+			3: {id: 3, width: 560, height: 300, name: '560x300'},
+			4: {id: 4, width: 600, height: 250, name: '600x250'},
+			5: {id: 5, width: 600, height: 600, name: '600x600'},
+			6: {id: 6, width: 728, height: 315, name: '728x315'},
+			7: {id: 7, width: 970, height: 250, name: '970x250'},
+			8: {id: 8, width: 970, height: 415, name: '970x415'},
+			9: {id: 9, isCustom: true, name: 'Custom'}
+		}
+	});
+});
+
+define('core/constants/urlRegex',['require','./../module'],function (require) {
+	'use strict';
+
+	var module = require('./../module');
+
+	module.constant('URL_REGEX', new RegExp(
+		'^' +
+			// protocol identifier
+		'(?:(?:https?|ftp)://)?' +
+			// user:pass authentication
+		'(?:\\S+(?::\\S*)?@)?' +
+		'(?:' +
+			// IP address exclusion
+			// private & local networks
+		'(?!(?:10|127)(?:\\.\\d{1,3}){3})' +
+		'(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})' +
+		'(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})' +
+			// IP address dotted notation octets
+			// excludes loopback network 0.0.0.0
+			// excludes reserved space >= 224.0.0.0
+			// excludes network & broacast addresses
+			// (first & last IP address of each class)
+		'(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])' +
+		'(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}' +
+		'(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))' +
+		'|' +
+			// host name
+		'(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)' +
+			// domain name
+		'(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
+			// TLD identifier
+		'(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))' +
+			// TLD may end with dot
+		'\\.?' +
+		')' +
+			// port number
+		'(?::\\d{2,5})?' +
+			// resource path
+		'(?:[/?#]\\S*)?' +
+		'$', 'i'
+	));
+});
+
+define('core/constants/moneyRegex',['require','./../module'],function (require) {
+	'use strict';
+
+	var module = require('./../module');
+
+	module.constant('MONEY_REGEX', new RegExp('^\\d+((\\.|\\,)\\d{2})?$'));
+});
+
 
 define('tpl!core/creativePreview/directives/preview.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/creativePreview/directives/preview.html', '<div class="creative-preview">\n\t<div class="preview-modal-header">\n\t\t<a ng-click="previewInPage()" class="preview-link" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a>\n\t\t<a ng-click="openInStudio()" class="edit-link" title="Edit in Studio"><i class="glyph-edit"></i>Edit in Studio</a>\n\t\t<a class="close" ng-click="close()" title="Close"><i class="glyph-close"></i></a>\n\t</div>\n\n\t<div class="thumbnail-wrapper">\n\t\t<div ng-class="{\'loading\': !creative}" class="ratio-box">\n\t\t\t<!-- <div ng-click="previewInPage()" class="preview-overlay"><span><i class="glyph-view"></i>Preview in Page</span></div> -->\n\t\t\t<img ng-src="https://swf.mixpo.com{{creative.thumbnailUrlPrefix}}JPG320.jpg" class="preview-thumbnail"/>\n\t\t</div>\n\t</div>\n\t<table class="preview-info">\n\t\t<tbody>\n\t\t\t<tr>\n\t\t\t\t<td>Ad Type</td>\n\t\t\t\t<td>{{creative.type}}</td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td>Size</td>\n\t\t\t\t<td ng-hide="!creative">{{creative.embedWidth}}px <i>x</i> {{creative.embedHeight}}px > {{creative.expandedWidth}}px <i>x</i> {{creative.expandedHeight}}px</td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td>Creative ID</td>\n\t\t\t\t<td>{{creative.id}}</td>\n\t\t\t</tr>\n\t\t</tbody>\n\t</table>\n\n</div>\n'); });
 
@@ -48354,6 +47644,6474 @@ define('core/notifications/index',['require','./factories/notification','./servi
     require('./providers/notification');
 });
 
+/*!
+ * Select2 4.0.0
+ * https://select2.github.io
+ *
+ * Released under the MIT license
+ * https://github.com/select2/select2/blob/master/LICENSE.md
+ */
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('select2',['jquery'], factory);
+  } else if (typeof exports === 'object') {
+    // Node/CommonJS
+    factory(require('jquery'));
+  } else {
+    // Browser globals
+    factory(jQuery);
+  }
+}(function (jQuery) {
+  // This is needed so we can catch the AMD loader configuration and use it
+  // The inner file should be wrapped (by `banner.start.js`) in a function that
+  // returns the AMD loader references.
+  var S2 =
+(function () {
+  // Restore the Select2 AMD loader so it can be used
+  // Needed mostly in the language files, where the loader is not inserted
+  if (jQuery && jQuery.fn && jQuery.fn.select2 && jQuery.fn.select2.amd) {
+    var S2 = jQuery.fn.select2.amd;
+  }
+var S2;(function () { if (!S2 || !S2.requirejs) {
+if (!S2) { S2 = {}; } else { require = S2; }
+/**
+ * @license almond 0.2.9 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/jrburke/almond for details
+ */
+//Going sloppy to avoid 'use strict' string cost, but strict practices should
+//be followed.
+/*jslint sloppy: true */
+/*global setTimeout: false */
+
+var requirejs, require, define;
+(function (undef) {
+    var main, req, makeMap, handlers,
+        defined = {},
+        waiting = {},
+        config = {},
+        defining = {},
+        hasOwn = Object.prototype.hasOwnProperty,
+        aps = [].slice,
+        jsSuffixRegExp = /\.js$/;
+
+    function hasProp(obj, prop) {
+        return hasOwn.call(obj, prop);
+    }
+
+    /**
+     * Given a relative module name, like ./something, normalize it to
+     * a real name that can be mapped to a path.
+     * @param {String} name the relative name
+     * @param {String} baseName a real name that the name arg is relative
+     * to.
+     * @returns {String} normalized name
+     */
+    function normalize(name, baseName) {
+        var nameParts, nameSegment, mapValue, foundMap, lastIndex,
+            foundI, foundStarMap, starI, i, j, part,
+            baseParts = baseName && baseName.split("/"),
+            map = config.map,
+            starMap = (map && map['*']) || {};
+
+        //Adjust any relative paths.
+        if (name && name.charAt(0) === ".") {
+            //If have a base name, try to normalize against it,
+            //otherwise, assume it is a top-level require that will
+            //be relative to baseUrl in the end.
+            if (baseName) {
+                //Convert baseName to array, and lop off the last part,
+                //so that . matches that "directory" and not name of the baseName's
+                //module. For instance, baseName of "one/two/three", maps to
+                //"one/two/three.js", but we want the directory, "one/two" for
+                //this normalization.
+                baseParts = baseParts.slice(0, baseParts.length - 1);
+                name = name.split('/');
+                lastIndex = name.length - 1;
+
+                // Node .js allowance:
+                if (config.nodeIdCompat && jsSuffixRegExp.test(name[lastIndex])) {
+                    name[lastIndex] = name[lastIndex].replace(jsSuffixRegExp, '');
+                }
+
+                name = baseParts.concat(name);
+
+                //start trimDots
+                for (i = 0; i < name.length; i += 1) {
+                    part = name[i];
+                    if (part === ".") {
+                        name.splice(i, 1);
+                        i -= 1;
+                    } else if (part === "..") {
+                        if (i === 1 && (name[2] === '..' || name[0] === '..')) {
+                            //End of the line. Keep at least one non-dot
+                            //path segment at the front so it can be mapped
+                            //correctly to disk. Otherwise, there is likely
+                            //no path mapping for a path starting with '..'.
+                            //This can still fail, but catches the most reasonable
+                            //uses of ..
+                            break;
+                        } else if (i > 0) {
+                            name.splice(i - 1, 2);
+                            i -= 2;
+                        }
+                    }
+                }
+                //end trimDots
+
+                name = name.join("/");
+            } else if (name.indexOf('./') === 0) {
+                // No baseName, so this is ID is resolved relative
+                // to baseUrl, pull off the leading dot.
+                name = name.substring(2);
+            }
+        }
+
+        //Apply map config if available.
+        if ((baseParts || starMap) && map) {
+            nameParts = name.split('/');
+
+            for (i = nameParts.length; i > 0; i -= 1) {
+                nameSegment = nameParts.slice(0, i).join("/");
+
+                if (baseParts) {
+                    //Find the longest baseName segment match in the config.
+                    //So, do joins on the biggest to smallest lengths of baseParts.
+                    for (j = baseParts.length; j > 0; j -= 1) {
+                        mapValue = map[baseParts.slice(0, j).join('/')];
+
+                        //baseName segment has  config, find if it has one for
+                        //this name.
+                        if (mapValue) {
+                            mapValue = mapValue[nameSegment];
+                            if (mapValue) {
+                                //Match, update name to the new value.
+                                foundMap = mapValue;
+                                foundI = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (foundMap) {
+                    break;
+                }
+
+                //Check for a star map match, but just hold on to it,
+                //if there is a shorter segment match later in a matching
+                //config, then favor over this star map.
+                if (!foundStarMap && starMap && starMap[nameSegment]) {
+                    foundStarMap = starMap[nameSegment];
+                    starI = i;
+                }
+            }
+
+            if (!foundMap && foundStarMap) {
+                foundMap = foundStarMap;
+                foundI = starI;
+            }
+
+            if (foundMap) {
+                nameParts.splice(0, foundI, foundMap);
+                name = nameParts.join('/');
+            }
+        }
+
+        return name;
+    }
+
+    function makeRequire(relName, forceSync) {
+        return function () {
+            //A version of a require function that passes a moduleName
+            //value for items that may need to
+            //look up paths relative to the moduleName
+            return req.apply(undef, aps.call(arguments, 0).concat([relName, forceSync]));
+        };
+    }
+
+    function makeNormalize(relName) {
+        return function (name) {
+            return normalize(name, relName);
+        };
+    }
+
+    function makeLoad(depName) {
+        return function (value) {
+            defined[depName] = value;
+        };
+    }
+
+    function callDep(name) {
+        if (hasProp(waiting, name)) {
+            var args = waiting[name];
+            delete waiting[name];
+            defining[name] = true;
+            main.apply(undef, args);
+        }
+
+        if (!hasProp(defined, name) && !hasProp(defining, name)) {
+            throw new Error('No ' + name);
+        }
+        return defined[name];
+    }
+
+    //Turns a plugin!resource to [plugin, resource]
+    //with the plugin being undefined if the name
+    //did not have a plugin prefix.
+    function splitPrefix(name) {
+        var prefix,
+            index = name ? name.indexOf('!') : -1;
+        if (index > -1) {
+            prefix = name.substring(0, index);
+            name = name.substring(index + 1, name.length);
+        }
+        return [prefix, name];
+    }
+
+    /**
+     * Makes a name map, normalizing the name, and using a plugin
+     * for normalization if necessary. Grabs a ref to plugin
+     * too, as an optimization.
+     */
+    makeMap = function (name, relName) {
+        var plugin,
+            parts = splitPrefix(name),
+            prefix = parts[0];
+
+        name = parts[1];
+
+        if (prefix) {
+            prefix = normalize(prefix, relName);
+            plugin = callDep(prefix);
+        }
+
+        //Normalize according
+        if (prefix) {
+            if (plugin && plugin.normalize) {
+                name = plugin.normalize(name, makeNormalize(relName));
+            } else {
+                name = normalize(name, relName);
+            }
+        } else {
+            name = normalize(name, relName);
+            parts = splitPrefix(name);
+            prefix = parts[0];
+            name = parts[1];
+            if (prefix) {
+                plugin = callDep(prefix);
+            }
+        }
+
+        //Using ridiculous property names for space reasons
+        return {
+            f: prefix ? prefix + '!' + name : name, //fullName
+            n: name,
+            pr: prefix,
+            p: plugin
+        };
+    };
+
+    function makeConfig(name) {
+        return function () {
+            return (config && config.config && config.config[name]) || {};
+        };
+    }
+
+    handlers = {
+        require: function (name) {
+            return makeRequire(name);
+        },
+        exports: function (name) {
+            var e = defined[name];
+            if (typeof e !== 'undefined') {
+                return e;
+            } else {
+                return (defined[name] = {});
+            }
+        },
+        module: function (name) {
+            return {
+                id: name,
+                uri: '',
+                exports: defined[name],
+                config: makeConfig(name)
+            };
+        }
+    };
+
+    main = function (name, deps, callback, relName) {
+        var cjsModule, depName, ret, map, i,
+            args = [],
+            callbackType = typeof callback,
+            usingExports;
+
+        //Use name if no relName
+        relName = relName || name;
+
+        //Call the callback to define the module, if necessary.
+        if (callbackType === 'undefined' || callbackType === 'function') {
+            //Pull out the defined dependencies and pass the ordered
+            //values to the callback.
+            //Default to [require, exports, module] if no deps
+            deps = !deps.length && callback.length ? ['require', 'exports', 'module'] : deps;
+            for (i = 0; i < deps.length; i += 1) {
+                map = makeMap(deps[i], relName);
+                depName = map.f;
+
+                //Fast path CommonJS standard dependencies.
+                if (depName === "require") {
+                    args[i] = handlers.require(name);
+                } else if (depName === "exports") {
+                    //CommonJS module spec 1.1
+                    args[i] = handlers.exports(name);
+                    usingExports = true;
+                } else if (depName === "module") {
+                    //CommonJS module spec 1.1
+                    cjsModule = args[i] = handlers.module(name);
+                } else if (hasProp(defined, depName) ||
+                           hasProp(waiting, depName) ||
+                           hasProp(defining, depName)) {
+                    args[i] = callDep(depName);
+                } else if (map.p) {
+                    map.p.load(map.n, makeRequire(relName, true), makeLoad(depName), {});
+                    args[i] = defined[depName];
+                } else {
+                    throw new Error(name + ' missing ' + depName);
+                }
+            }
+
+            ret = callback ? callback.apply(defined[name], args) : undefined;
+
+            if (name) {
+                //If setting exports via "module" is in play,
+                //favor that over return value and exports. After that,
+                //favor a non-undefined return value over exports use.
+                if (cjsModule && cjsModule.exports !== undef &&
+                        cjsModule.exports !== defined[name]) {
+                    defined[name] = cjsModule.exports;
+                } else if (ret !== undef || !usingExports) {
+                    //Use the return value from the function.
+                    defined[name] = ret;
+                }
+            }
+        } else if (name) {
+            //May just be an object definition for the module. Only
+            //worry about defining if have a module name.
+            defined[name] = callback;
+        }
+    };
+
+    requirejs = require = req = function (deps, callback, relName, forceSync, alt) {
+        if (typeof deps === "string") {
+            if (handlers[deps]) {
+                //callback in this case is really relName
+                return handlers[deps](callback);
+            }
+            //Just return the module wanted. In this scenario, the
+            //deps arg is the module name, and second arg (if passed)
+            //is just the relName.
+            //Normalize module name, if it contains . or ..
+            return callDep(makeMap(deps, callback).f);
+        } else if (!deps.splice) {
+            //deps is a config object, not an array.
+            config = deps;
+            if (config.deps) {
+                req(config.deps, config.callback);
+            }
+            if (!callback) {
+                return;
+            }
+
+            if (callback.splice) {
+                //callback is an array, which means it is a dependency list.
+                //Adjust args if there are dependencies
+                deps = callback;
+                callback = relName;
+                relName = null;
+            } else {
+                deps = undef;
+            }
+        }
+
+        //Support require(['a'])
+        callback = callback || function () {};
+
+        //If relName is a function, it is an errback handler,
+        //so remove it.
+        if (typeof relName === 'function') {
+            relName = forceSync;
+            forceSync = alt;
+        }
+
+        //Simulate async callback;
+        if (forceSync) {
+            main(undef, deps, callback, relName);
+        } else {
+            //Using a non-zero value because of concern for what old browsers
+            //do, and latest browsers "upgrade" to 4 if lower value is used:
+            //http://www.whatwg.org/specs/web-apps/current-work/multipage/timers.html#dom-windowtimers-settimeout:
+            //If want a value immediately, use require('id') instead -- something
+            //that works in almond on the global level, but not guaranteed and
+            //unlikely to work in other AMD implementations.
+            setTimeout(function () {
+                main(undef, deps, callback, relName);
+            }, 4);
+        }
+
+        return req;
+    };
+
+    /**
+     * Just drops the config on the floor, but returns req in case
+     * the config return value is used.
+     */
+    req.config = function (cfg) {
+        return req(cfg);
+    };
+
+    /**
+     * Expose module registry for debugging and tooling
+     */
+    requirejs._defined = defined;
+
+    define = function (name, deps, callback) {
+
+        //This module may not have dependencies
+        if (!deps.splice) {
+            //deps is not an array, so probably means
+            //an object literal or factory function for
+            //the value. Adjust args.
+            callback = deps;
+            deps = [];
+        }
+
+        if (!hasProp(defined, name) && !hasProp(waiting, name)) {
+            waiting[name] = [name, deps, callback];
+        }
+    };
+
+    define.amd = {
+        jQuery: true
+    };
+}());
+
+S2.requirejs = requirejs;S2.require = require;S2.define = define;
+}
+}());
+S2.define("almond", function(){});
+
+/* global jQuery:false, $:false */
+S2.define('jquery',[],function () {
+  var _$ = jQuery || $;
+
+  if (_$ == null && console && console.error) {
+    console.error(
+      'Select2: An instance of jQuery or a jQuery-compatible library was not ' +
+      'found. Make sure that you are including jQuery before Select2 on your ' +
+      'web page.'
+    );
+  }
+
+  return _$;
+});
+
+S2.define('select2/utils',[
+  'jquery'
+], function ($) {
+  var Utils = {};
+
+  Utils.Extend = function (ChildClass, SuperClass) {
+    var __hasProp = {}.hasOwnProperty;
+
+    function BaseConstructor () {
+      this.constructor = ChildClass;
+    }
+
+    for (var key in SuperClass) {
+      if (__hasProp.call(SuperClass, key)) {
+        ChildClass[key] = SuperClass[key];
+      }
+    }
+
+    BaseConstructor.prototype = SuperClass.prototype;
+    ChildClass.prototype = new BaseConstructor();
+    ChildClass.__super__ = SuperClass.prototype;
+
+    return ChildClass;
+  };
+
+  function getMethods (theClass) {
+    var proto = theClass.prototype;
+
+    var methods = [];
+
+    for (var methodName in proto) {
+      var m = proto[methodName];
+
+      if (typeof m !== 'function') {
+        continue;
+      }
+
+      if (methodName === 'constructor') {
+        continue;
+      }
+
+      methods.push(methodName);
+    }
+
+    return methods;
+  }
+
+  Utils.Decorate = function (SuperClass, DecoratorClass) {
+    var decoratedMethods = getMethods(DecoratorClass);
+    var superMethods = getMethods(SuperClass);
+
+    function DecoratedClass () {
+      var unshift = Array.prototype.unshift;
+
+      var argCount = DecoratorClass.prototype.constructor.length;
+
+      var calledConstructor = SuperClass.prototype.constructor;
+
+      if (argCount > 0) {
+        unshift.call(arguments, SuperClass.prototype.constructor);
+
+        calledConstructor = DecoratorClass.prototype.constructor;
+      }
+
+      calledConstructor.apply(this, arguments);
+    }
+
+    DecoratorClass.displayName = SuperClass.displayName;
+
+    function ctr () {
+      this.constructor = DecoratedClass;
+    }
+
+    DecoratedClass.prototype = new ctr();
+
+    for (var m = 0; m < superMethods.length; m++) {
+        var superMethod = superMethods[m];
+
+        DecoratedClass.prototype[superMethod] =
+          SuperClass.prototype[superMethod];
+    }
+
+    var calledMethod = function (methodName) {
+      // Stub out the original method if it's not decorating an actual method
+      var originalMethod = function () {};
+
+      if (methodName in DecoratedClass.prototype) {
+        originalMethod = DecoratedClass.prototype[methodName];
+      }
+
+      var decoratedMethod = DecoratorClass.prototype[methodName];
+
+      return function () {
+        var unshift = Array.prototype.unshift;
+
+        unshift.call(arguments, originalMethod);
+
+        return decoratedMethod.apply(this, arguments);
+      };
+    };
+
+    for (var d = 0; d < decoratedMethods.length; d++) {
+      var decoratedMethod = decoratedMethods[d];
+
+      DecoratedClass.prototype[decoratedMethod] = calledMethod(decoratedMethod);
+    }
+
+    return DecoratedClass;
+  };
+
+  var Observable = function () {
+    this.listeners = {};
+  };
+
+  Observable.prototype.on = function (event, callback) {
+    this.listeners = this.listeners || {};
+
+    if (event in this.listeners) {
+      this.listeners[event].push(callback);
+    } else {
+      this.listeners[event] = [callback];
+    }
+  };
+
+  Observable.prototype.trigger = function (event) {
+    var slice = Array.prototype.slice;
+
+    this.listeners = this.listeners || {};
+
+    if (event in this.listeners) {
+      this.invoke(this.listeners[event], slice.call(arguments, 1));
+    }
+
+    if ('*' in this.listeners) {
+      this.invoke(this.listeners['*'], arguments);
+    }
+  };
+
+  Observable.prototype.invoke = function (listeners, params) {
+    for (var i = 0, len = listeners.length; i < len; i++) {
+      listeners[i].apply(this, params);
+    }
+  };
+
+  Utils.Observable = Observable;
+
+  Utils.generateChars = function (length) {
+    var chars = '';
+
+    for (var i = 0; i < length; i++) {
+      var randomChar = Math.floor(Math.random() * 36);
+      chars += randomChar.toString(36);
+    }
+
+    return chars;
+  };
+
+  Utils.bind = function (func, context) {
+    return function () {
+      func.apply(context, arguments);
+    };
+  };
+
+  Utils._convertData = function (data) {
+    for (var originalKey in data) {
+      var keys = originalKey.split('-');
+
+      var dataLevel = data;
+
+      if (keys.length === 1) {
+        continue;
+      }
+
+      for (var k = 0; k < keys.length; k++) {
+        var key = keys[k];
+
+        // Lowercase the first letter
+        // By default, dash-separated becomes camelCase
+        key = key.substring(0, 1).toLowerCase() + key.substring(1);
+
+        if (!(key in dataLevel)) {
+          dataLevel[key] = {};
+        }
+
+        if (k == keys.length - 1) {
+          dataLevel[key] = data[originalKey];
+        }
+
+        dataLevel = dataLevel[key];
+      }
+
+      delete data[originalKey];
+    }
+
+    return data;
+  };
+
+  Utils.hasScroll = function (index, el) {
+    // Adapted from the function created by @ShadowScripter
+    // and adapted by @BillBarry on the Stack Exchange Code Review website.
+    // The original code can be found at
+    // http://codereview.stackexchange.com/q/13338
+    // and was designed to be used with the Sizzle selector engine.
+
+    var $el = $(el);
+    var overflowX = el.style.overflowX;
+    var overflowY = el.style.overflowY;
+
+    //Check both x and y declarations
+    if (overflowX === overflowY &&
+        (overflowY === 'hidden' || overflowY === 'visible')) {
+      return false;
+    }
+
+    if (overflowX === 'scroll' || overflowY === 'scroll') {
+      return true;
+    }
+
+    return ($el.innerHeight() < el.scrollHeight ||
+      $el.innerWidth() < el.scrollWidth);
+  };
+
+  Utils.escapeMarkup = function (markup) {
+    var replaceMap = {
+      '\\': '&#92;',
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      '\'': '&#39;',
+      '/': '&#47;'
+    };
+
+    // Do not try to escape the markup if it's not a string
+    if (typeof markup !== 'string') {
+      return markup;
+    }
+
+    return String(markup).replace(/[&<>"'\/\\]/g, function (match) {
+      return replaceMap[match];
+    });
+  };
+
+  // Append an array of jQuery nodes to a given element.
+  Utils.appendMany = function ($element, $nodes) {
+    // jQuery 1.7.x does not support $.fn.append() with an array
+    // Fall back to a jQuery object collection using $.fn.add()
+    if ($.fn.jquery.substr(0, 3) === '1.7') {
+      var $jqNodes = $();
+
+      $.map($nodes, function (node) {
+        $jqNodes = $jqNodes.add(node);
+      });
+
+      $nodes = $jqNodes;
+    }
+
+    $element.append($nodes);
+  };
+
+  return Utils;
+});
+
+S2.define('select2/results',[
+  'jquery',
+  './utils'
+], function ($, Utils) {
+  function Results ($element, options, dataAdapter) {
+    this.$element = $element;
+    this.data = dataAdapter;
+    this.options = options;
+
+    Results.__super__.constructor.call(this);
+  }
+
+  Utils.Extend(Results, Utils.Observable);
+
+  Results.prototype.render = function () {
+    var $results = $(
+      '<ul class="select2-results__options" role="tree"></ul>'
+    );
+
+    if (this.options.get('multiple')) {
+      $results.attr('aria-multiselectable', 'true');
+    }
+
+    this.$results = $results;
+
+    return $results;
+  };
+
+  Results.prototype.clear = function () {
+    this.$results.empty();
+  };
+
+  Results.prototype.displayMessage = function (params) {
+    var escapeMarkup = this.options.get('escapeMarkup');
+
+    this.clear();
+    this.hideLoading();
+
+    var $message = $(
+      '<li role="treeitem" class="select2-results__option"></li>'
+    );
+
+    var message = this.options.get('translations').get(params.message);
+
+    $message.append(
+      escapeMarkup(
+        message(params.args)
+      )
+    );
+
+    this.$results.append($message);
+  };
+
+  Results.prototype.append = function (data) {
+    this.hideLoading();
+
+    var $options = [];
+
+    if (data.results == null || data.results.length === 0) {
+      if (this.$results.children().length === 0) {
+        this.trigger('results:message', {
+          message: 'noResults'
+        });
+      }
+
+      return;
+    }
+
+    data.results = this.sort(data.results);
+
+    for (var d = 0; d < data.results.length; d++) {
+      var item = data.results[d];
+
+      var $option = this.option(item);
+
+      $options.push($option);
+    }
+
+    this.$results.append($options);
+  };
+
+  Results.prototype.position = function ($results, $dropdown) {
+    var $resultsContainer = $dropdown.find('.select2-results');
+    $resultsContainer.append($results);
+  };
+
+  Results.prototype.sort = function (data) {
+    var sorter = this.options.get('sorter');
+
+    return sorter(data);
+  };
+
+  Results.prototype.setClasses = function () {
+    var self = this;
+
+    this.data.current(function (selected) {
+      var selectedIds = $.map(selected, function (s) {
+        return s.id.toString();
+      });
+
+      var $options = self.$results
+        .find('.select2-results__option[aria-selected]');
+
+      $options.each(function () {
+        var $option = $(this);
+
+        var item = $.data(this, 'data');
+
+        // id needs to be converted to a string when comparing
+        var id = '' + item.id;
+
+        if ((item.element != null && item.element.selected) ||
+            (item.element == null && $.inArray(id, selectedIds) > -1)) {
+          $option.attr('aria-selected', 'true');
+        } else {
+          $option.attr('aria-selected', 'false');
+        }
+      });
+
+      var $selected = $options.filter('[aria-selected=true]');
+
+      // Check if there are any selected options
+      if ($selected.length > 0) {
+        // If there are selected options, highlight the first
+        $selected.first().trigger('mouseenter');
+      } else {
+        // If there are no selected options, highlight the first option
+        // in the dropdown
+        $options.first().trigger('mouseenter');
+      }
+    });
+  };
+
+  Results.prototype.showLoading = function (params) {
+    this.hideLoading();
+
+    var loadingMore = this.options.get('translations').get('searching');
+
+    var loading = {
+      disabled: true,
+      loading: true,
+      text: loadingMore(params)
+    };
+    var $loading = this.option(loading);
+    $loading.className += ' loading-results';
+
+    this.$results.prepend($loading);
+  };
+
+  Results.prototype.hideLoading = function () {
+    this.$results.find('.loading-results').remove();
+  };
+
+  Results.prototype.option = function (data) {
+    var option = document.createElement('li');
+    option.className = 'select2-results__option';
+
+    var attrs = {
+      'role': 'treeitem',
+      'aria-selected': 'false'
+    };
+
+    if (data.disabled) {
+      delete attrs['aria-selected'];
+      attrs['aria-disabled'] = 'true';
+    }
+
+    if (data.id == null) {
+      delete attrs['aria-selected'];
+    }
+
+    if (data._resultId != null) {
+      option.id = data._resultId;
+    }
+
+    if (data.title) {
+      option.title = data.title;
+    }
+
+    if (data.children) {
+      attrs.role = 'group';
+      attrs['aria-label'] = data.text;
+      delete attrs['aria-selected'];
+    }
+
+    for (var attr in attrs) {
+      var val = attrs[attr];
+
+      option.setAttribute(attr, val);
+    }
+
+    if (data.children) {
+      var $option = $(option);
+
+      var label = document.createElement('strong');
+      label.className = 'select2-results__group';
+
+      var $label = $(label);
+      this.template(data, label);
+
+      var $children = [];
+
+      for (var c = 0; c < data.children.length; c++) {
+        var child = data.children[c];
+
+        var $child = this.option(child);
+
+        $children.push($child);
+      }
+
+      var $childrenContainer = $('<ul></ul>', {
+        'class': 'select2-results__options select2-results__options--nested'
+      });
+
+      $childrenContainer.append($children);
+
+      $option.append(label);
+      $option.append($childrenContainer);
+    } else {
+      this.template(data, option);
+    }
+
+    $.data(option, 'data', data);
+
+    return option;
+  };
+
+  Results.prototype.bind = function (container, $container) {
+    var self = this;
+
+    var id = container.id + '-results';
+
+    this.$results.attr('id', id);
+
+    container.on('results:all', function (params) {
+      self.clear();
+      self.append(params.data);
+
+      if (container.isOpen()) {
+        self.setClasses();
+      }
+    });
+
+    container.on('results:append', function (params) {
+      self.append(params.data);
+
+      if (container.isOpen()) {
+        self.setClasses();
+      }
+    });
+
+    container.on('query', function (params) {
+      self.showLoading(params);
+    });
+
+    container.on('select', function () {
+      if (!container.isOpen()) {
+        return;
+      }
+
+      self.setClasses();
+    });
+
+    container.on('unselect', function () {
+      if (!container.isOpen()) {
+        return;
+      }
+
+      self.setClasses();
+    });
+
+    container.on('open', function () {
+      // When the dropdown is open, aria-expended="true"
+      self.$results.attr('aria-expanded', 'true');
+      self.$results.attr('aria-hidden', 'false');
+
+      self.setClasses();
+      self.ensureHighlightVisible();
+    });
+
+    container.on('close', function () {
+      // When the dropdown is closed, aria-expended="false"
+      self.$results.attr('aria-expanded', 'false');
+      self.$results.attr('aria-hidden', 'true');
+      self.$results.removeAttr('aria-activedescendant');
+    });
+
+    container.on('results:toggle', function () {
+      var $highlighted = self.getHighlightedResults();
+
+      if ($highlighted.length === 0) {
+        return;
+      }
+
+      $highlighted.trigger('mouseup');
+    });
+
+    container.on('results:select', function () {
+      var $highlighted = self.getHighlightedResults();
+
+      if ($highlighted.length === 0) {
+        return;
+      }
+
+      var data = $highlighted.data('data');
+
+      if ($highlighted.attr('aria-selected') == 'true') {
+        self.trigger('close');
+      } else {
+        self.trigger('select', {
+          data: data
+        });
+      }
+    });
+
+    container.on('results:previous', function () {
+      var $highlighted = self.getHighlightedResults();
+
+      var $options = self.$results.find('[aria-selected]');
+
+      var currentIndex = $options.index($highlighted);
+
+      // If we are already at te top, don't move further
+      if (currentIndex === 0) {
+        return;
+      }
+
+      var nextIndex = currentIndex - 1;
+
+      // If none are highlighted, highlight the first
+      if ($highlighted.length === 0) {
+        nextIndex = 0;
+      }
+
+      var $next = $options.eq(nextIndex);
+
+      $next.trigger('mouseenter');
+
+      var currentOffset = self.$results.offset().top;
+      var nextTop = $next.offset().top;
+      var nextOffset = self.$results.scrollTop() + (nextTop - currentOffset);
+
+      if (nextIndex === 0) {
+        self.$results.scrollTop(0);
+      } else if (nextTop - currentOffset < 0) {
+        self.$results.scrollTop(nextOffset);
+      }
+    });
+
+    container.on('results:next', function () {
+      var $highlighted = self.getHighlightedResults();
+
+      var $options = self.$results.find('[aria-selected]');
+
+      var currentIndex = $options.index($highlighted);
+
+      var nextIndex = currentIndex + 1;
+
+      // If we are at the last option, stay there
+      if (nextIndex >= $options.length) {
+        return;
+      }
+
+      var $next = $options.eq(nextIndex);
+
+      $next.trigger('mouseenter');
+
+      var currentOffset = self.$results.offset().top +
+        self.$results.outerHeight(false);
+      var nextBottom = $next.offset().top + $next.outerHeight(false);
+      var nextOffset = self.$results.scrollTop() + nextBottom - currentOffset;
+
+      if (nextIndex === 0) {
+        self.$results.scrollTop(0);
+      } else if (nextBottom > currentOffset) {
+        self.$results.scrollTop(nextOffset);
+      }
+    });
+
+    container.on('results:focus', function (params) {
+      params.element.addClass('select2-results__option--highlighted');
+    });
+
+    container.on('results:message', function (params) {
+      self.displayMessage(params);
+    });
+
+    if ($.fn.mousewheel) {
+      this.$results.on('mousewheel', function (e) {
+        var top = self.$results.scrollTop();
+
+        var bottom = (
+          self.$results.get(0).scrollHeight -
+          self.$results.scrollTop() +
+          e.deltaY
+        );
+
+        var isAtTop = e.deltaY > 0 && top - e.deltaY <= 0;
+        var isAtBottom = e.deltaY < 0 && bottom <= self.$results.height();
+
+        if (isAtTop) {
+          self.$results.scrollTop(0);
+
+          e.preventDefault();
+          e.stopPropagation();
+        } else if (isAtBottom) {
+          self.$results.scrollTop(
+            self.$results.get(0).scrollHeight - self.$results.height()
+          );
+
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    }
+
+    this.$results.on('mouseup', '.select2-results__option[aria-selected]',
+      function (evt) {
+      var $this = $(this);
+
+      var data = $this.data('data');
+
+      if ($this.attr('aria-selected') === 'true') {
+        if (self.options.get('multiple')) {
+          self.trigger('unselect', {
+            originalEvent: evt,
+            data: data
+          });
+        } else {
+          self.trigger('close');
+        }
+
+        return;
+      }
+
+      self.trigger('select', {
+        originalEvent: evt,
+        data: data
+      });
+    });
+
+    this.$results.on('mouseenter', '.select2-results__option[aria-selected]',
+      function (evt) {
+      var data = $(this).data('data');
+
+      self.getHighlightedResults()
+          .removeClass('select2-results__option--highlighted');
+
+      self.trigger('results:focus', {
+        data: data,
+        element: $(this)
+      });
+    });
+  };
+
+  Results.prototype.getHighlightedResults = function () {
+    var $highlighted = this.$results
+    .find('.select2-results__option--highlighted');
+
+    return $highlighted;
+  };
+
+  Results.prototype.destroy = function () {
+    this.$results.remove();
+  };
+
+  Results.prototype.ensureHighlightVisible = function () {
+    var $highlighted = this.getHighlightedResults();
+
+    if ($highlighted.length === 0) {
+      return;
+    }
+
+    var $options = this.$results.find('[aria-selected]');
+
+    var currentIndex = $options.index($highlighted);
+
+    var currentOffset = this.$results.offset().top;
+    var nextTop = $highlighted.offset().top;
+    var nextOffset = this.$results.scrollTop() + (nextTop - currentOffset);
+
+    var offsetDelta = nextTop - currentOffset;
+    nextOffset -= $highlighted.outerHeight(false) * 2;
+
+    if (currentIndex <= 2) {
+      this.$results.scrollTop(0);
+    } else if (offsetDelta > this.$results.outerHeight() || offsetDelta < 0) {
+      this.$results.scrollTop(nextOffset);
+    }
+  };
+
+  Results.prototype.template = function (result, container) {
+    var template = this.options.get('templateResult');
+    var escapeMarkup = this.options.get('escapeMarkup');
+
+    var content = template(result);
+
+    if (content == null) {
+      container.style.display = 'none';
+    } else if (typeof content === 'string') {
+      container.innerHTML = escapeMarkup(content);
+    } else {
+      $(container).append(content);
+    }
+  };
+
+  return Results;
+});
+
+S2.define('select2/keys',[
+
+], function () {
+  var KEYS = {
+    BACKSPACE: 8,
+    TAB: 9,
+    ENTER: 13,
+    SHIFT: 16,
+    CTRL: 17,
+    ALT: 18,
+    ESC: 27,
+    SPACE: 32,
+    PAGE_UP: 33,
+    PAGE_DOWN: 34,
+    END: 35,
+    HOME: 36,
+    LEFT: 37,
+    UP: 38,
+    RIGHT: 39,
+    DOWN: 40,
+    DELETE: 46
+  };
+
+  return KEYS;
+});
+
+S2.define('select2/selection/base',[
+  'jquery',
+  '../utils',
+  '../keys'
+], function ($, Utils, KEYS) {
+  function BaseSelection ($element, options) {
+    this.$element = $element;
+    this.options = options;
+
+    BaseSelection.__super__.constructor.call(this);
+  }
+
+  Utils.Extend(BaseSelection, Utils.Observable);
+
+  BaseSelection.prototype.render = function () {
+    var $selection = $(
+      '<span class="select2-selection" role="combobox" ' +
+      'aria-autocomplete="list" aria-haspopup="true" aria-expanded="false">' +
+      '</span>'
+    );
+
+    this._tabindex = 0;
+
+    if (this.$element.data('old-tabindex') != null) {
+      this._tabindex = this.$element.data('old-tabindex');
+    } else if (this.$element.attr('tabindex') != null) {
+      this._tabindex = this.$element.attr('tabindex');
+    }
+
+    $selection.attr('title', this.$element.attr('title'));
+    $selection.attr('tabindex', this._tabindex);
+
+    this.$selection = $selection;
+
+    return $selection;
+  };
+
+  BaseSelection.prototype.bind = function (container, $container) {
+    var self = this;
+
+    var id = container.id + '-container';
+    var resultsId = container.id + '-results';
+
+    this.container = container;
+
+    this.$selection.on('focus', function (evt) {
+      self.trigger('focus', evt);
+    });
+
+    this.$selection.on('blur', function (evt) {
+      self.trigger('blur', evt);
+    });
+
+    this.$selection.on('keydown', function (evt) {
+      self.trigger('keypress', evt);
+
+      if (evt.which === KEYS.SPACE) {
+        evt.preventDefault();
+      }
+    });
+
+    container.on('results:focus', function (params) {
+      self.$selection.attr('aria-activedescendant', params.data._resultId);
+    });
+
+    container.on('selection:update', function (params) {
+      self.update(params.data);
+    });
+
+    container.on('open', function () {
+      // When the dropdown is open, aria-expanded="true"
+      self.$selection.attr('aria-expanded', 'true');
+      self.$selection.attr('aria-owns', resultsId);
+
+      self._attachCloseHandler(container);
+    });
+
+    container.on('close', function () {
+      // When the dropdown is closed, aria-expanded="false"
+      self.$selection.attr('aria-expanded', 'false');
+      self.$selection.removeAttr('aria-activedescendant');
+      self.$selection.removeAttr('aria-owns');
+
+      self.$selection.focus();
+
+      self._detachCloseHandler(container);
+    });
+
+    container.on('enable', function () {
+      self.$selection.attr('tabindex', self._tabindex);
+    });
+
+    container.on('disable', function () {
+      self.$selection.attr('tabindex', '-1');
+    });
+  };
+
+  BaseSelection.prototype._attachCloseHandler = function (container) {
+    var self = this;
+
+    $(document.body).on('mousedown.select2.' + container.id, function (e) {
+      var $target = $(e.target);
+
+      var $select = $target.closest('.select2');
+
+      var $all = $('.select2.select2-container--open');
+
+      $all.each(function () {
+        var $this = $(this);
+
+        if (this == $select[0]) {
+          return;
+        }
+
+        var $element = $this.data('element');
+
+        $element.select2('close');
+      });
+    });
+  };
+
+  BaseSelection.prototype._detachCloseHandler = function (container) {
+    $(document.body).off('mousedown.select2.' + container.id);
+  };
+
+  BaseSelection.prototype.position = function ($selection, $container) {
+    var $selectionContainer = $container.find('.selection');
+    $selectionContainer.append($selection);
+  };
+
+  BaseSelection.prototype.destroy = function () {
+    this._detachCloseHandler(this.container);
+  };
+
+  BaseSelection.prototype.update = function (data) {
+    throw new Error('The `update` method must be defined in child classes.');
+  };
+
+  return BaseSelection;
+});
+
+S2.define('select2/selection/single',[
+  'jquery',
+  './base',
+  '../utils',
+  '../keys'
+], function ($, BaseSelection, Utils, KEYS) {
+  function SingleSelection () {
+    SingleSelection.__super__.constructor.apply(this, arguments);
+  }
+
+  Utils.Extend(SingleSelection, BaseSelection);
+
+  SingleSelection.prototype.render = function () {
+    var $selection = SingleSelection.__super__.render.call(this);
+
+    $selection.addClass('select2-selection--single');
+
+    $selection.html(
+      '<span class="select2-selection__rendered"></span>' +
+      '<span class="select2-selection__arrow" role="presentation">' +
+        '<b role="presentation"></b>' +
+      '</span>'
+    );
+
+    return $selection;
+  };
+
+  SingleSelection.prototype.bind = function (container, $container) {
+    var self = this;
+
+    SingleSelection.__super__.bind.apply(this, arguments);
+
+    var id = container.id + '-container';
+
+    this.$selection.find('.select2-selection__rendered').attr('id', id);
+    this.$selection.attr('aria-labelledby', id);
+
+    this.$selection.on('mousedown', function (evt) {
+      // Only respond to left clicks
+      if (evt.which !== 1) {
+        return;
+      }
+
+      self.trigger('toggle', {
+        originalEvent: evt
+      });
+    });
+
+    this.$selection.on('focus', function (evt) {
+      // User focuses on the container
+    });
+
+    this.$selection.on('blur', function (evt) {
+      // User exits the container
+    });
+
+    container.on('selection:update', function (params) {
+      self.update(params.data);
+    });
+  };
+
+  SingleSelection.prototype.clear = function () {
+    this.$selection.find('.select2-selection__rendered').empty();
+  };
+
+  SingleSelection.prototype.display = function (data) {
+    var template = this.options.get('templateSelection');
+    var escapeMarkup = this.options.get('escapeMarkup');
+
+    return escapeMarkup(template(data));
+  };
+
+  SingleSelection.prototype.selectionContainer = function () {
+    return $('<span></span>');
+  };
+
+  SingleSelection.prototype.update = function (data) {
+    if (data.length === 0) {
+      this.clear();
+      return;
+    }
+
+    var selection = data[0];
+
+    var formatted = this.display(selection);
+
+    var $rendered = this.$selection.find('.select2-selection__rendered');
+    $rendered.empty().append(formatted);
+    $rendered.prop('title', selection.title || selection.text);
+  };
+
+  return SingleSelection;
+});
+
+S2.define('select2/selection/multiple',[
+  'jquery',
+  './base',
+  '../utils'
+], function ($, BaseSelection, Utils) {
+  function MultipleSelection ($element, options) {
+    MultipleSelection.__super__.constructor.apply(this, arguments);
+  }
+
+  Utils.Extend(MultipleSelection, BaseSelection);
+
+  MultipleSelection.prototype.render = function () {
+    var $selection = MultipleSelection.__super__.render.call(this);
+
+    $selection.addClass('select2-selection--multiple');
+
+    $selection.html(
+      '<ul class="select2-selection__rendered"></ul>'
+    );
+
+    return $selection;
+  };
+
+  MultipleSelection.prototype.bind = function (container, $container) {
+    var self = this;
+
+    MultipleSelection.__super__.bind.apply(this, arguments);
+
+    this.$selection.on('click', function (evt) {
+      self.trigger('toggle', {
+        originalEvent: evt
+      });
+    });
+
+    this.$selection.on('click', '.select2-selection__choice__remove',
+      function (evt) {
+      var $remove = $(this);
+      var $selection = $remove.parent();
+
+      var data = $selection.data('data');
+
+      self.trigger('unselect', {
+        originalEvent: evt,
+        data: data
+      });
+    });
+  };
+
+  MultipleSelection.prototype.clear = function () {
+    this.$selection.find('.select2-selection__rendered').empty();
+  };
+
+  MultipleSelection.prototype.display = function (data) {
+    var template = this.options.get('templateSelection');
+    var escapeMarkup = this.options.get('escapeMarkup');
+
+    return escapeMarkup(template(data));
+  };
+
+  MultipleSelection.prototype.selectionContainer = function () {
+    var $container = $(
+      '<li class="select2-selection__choice">' +
+        '<span class="select2-selection__choice__remove" role="presentation">' +
+          '&times;' +
+        '</span>' +
+      '</li>'
+    );
+
+    return $container;
+  };
+
+  MultipleSelection.prototype.update = function (data) {
+    this.clear();
+
+    if (data.length === 0) {
+      return;
+    }
+
+    var $selections = [];
+
+    for (var d = 0; d < data.length; d++) {
+      var selection = data[d];
+
+      var formatted = this.display(selection);
+      var $selection = this.selectionContainer();
+
+      $selection.append(formatted);
+      $selection.prop('title', selection.title || selection.text);
+
+      $selection.data('data', selection);
+
+      $selections.push($selection);
+    }
+
+    var $rendered = this.$selection.find('.select2-selection__rendered');
+
+    Utils.appendMany($rendered, $selections);
+  };
+
+  return MultipleSelection;
+});
+
+S2.define('select2/selection/placeholder',[
+  '../utils'
+], function (Utils) {
+  function Placeholder (decorated, $element, options) {
+    this.placeholder = this.normalizePlaceholder(options.get('placeholder'));
+
+    decorated.call(this, $element, options);
+  }
+
+  Placeholder.prototype.normalizePlaceholder = function (_, placeholder) {
+    if (typeof placeholder === 'string') {
+      placeholder = {
+        id: '',
+        text: placeholder
+      };
+    }
+
+    return placeholder;
+  };
+
+  Placeholder.prototype.createPlaceholder = function (decorated, placeholder) {
+    var $placeholder = this.selectionContainer();
+
+    $placeholder.html(this.display(placeholder));
+    $placeholder.addClass('select2-selection__placeholder')
+                .removeClass('select2-selection__choice');
+
+    return $placeholder;
+  };
+
+  Placeholder.prototype.update = function (decorated, data) {
+    var singlePlaceholder = (
+      data.length == 1 && data[0].id != this.placeholder.id
+    );
+    var multipleSelections = data.length > 1;
+
+    if (multipleSelections || singlePlaceholder) {
+      return decorated.call(this, data);
+    }
+
+    this.clear();
+
+    var $placeholder = this.createPlaceholder(this.placeholder);
+
+    this.$selection.find('.select2-selection__rendered').append($placeholder);
+  };
+
+  return Placeholder;
+});
+
+S2.define('select2/selection/allowClear',[
+  'jquery',
+  '../keys'
+], function ($, KEYS) {
+  function AllowClear () { }
+
+  AllowClear.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    decorated.call(this, container, $container);
+
+    if (this.placeholder == null) {
+      if (this.options.get('debug') && window.console && console.error) {
+        console.error(
+          'Select2: The `allowClear` option should be used in combination ' +
+          'with the `placeholder` option.'
+        );
+      }
+    }
+
+    this.$selection.on('mousedown', '.select2-selection__clear',
+      function (evt) {
+        self._handleClear(evt);
+    });
+
+    container.on('keypress', function (evt) {
+      self._handleKeyboardClear(evt, container);
+    });
+  };
+
+  AllowClear.prototype._handleClear = function (_, evt) {
+    // Ignore the event if it is disabled
+    if (this.options.get('disabled')) {
+      return;
+    }
+
+    var $clear = this.$selection.find('.select2-selection__clear');
+
+    // Ignore the event if nothing has been selected
+    if ($clear.length === 0) {
+      return;
+    }
+
+    evt.stopPropagation();
+
+    var data = $clear.data('data');
+
+    for (var d = 0; d < data.length; d++) {
+      var unselectData = {
+        data: data[d]
+      };
+
+      // Trigger the `unselect` event, so people can prevent it from being
+      // cleared.
+      this.trigger('unselect', unselectData);
+
+      // If the event was prevented, don't clear it out.
+      if (unselectData.prevented) {
+        return;
+      }
+    }
+
+    this.$element.val(this.placeholder.id).trigger('change');
+
+    this.trigger('toggle');
+  };
+
+  AllowClear.prototype._handleKeyboardClear = function (_, evt, container) {
+    if (container.isOpen()) {
+      return;
+    }
+
+    if (evt.which == KEYS.DELETE || evt.which == KEYS.BACKSPACE) {
+      this._handleClear(evt);
+    }
+  };
+
+  AllowClear.prototype.update = function (decorated, data) {
+    decorated.call(this, data);
+
+    if (this.$selection.find('.select2-selection__placeholder').length > 0 ||
+        data.length === 0) {
+      return;
+    }
+
+    var $remove = $(
+      '<span class="select2-selection__clear">' +
+        '&times;' +
+      '</span>'
+    );
+    $remove.data('data', data);
+
+    this.$selection.find('.select2-selection__rendered').prepend($remove);
+  };
+
+  return AllowClear;
+});
+
+S2.define('select2/selection/search',[
+  'jquery',
+  '../utils',
+  '../keys'
+], function ($, Utils, KEYS) {
+  function Search (decorated, $element, options) {
+    decorated.call(this, $element, options);
+  }
+
+  Search.prototype.render = function (decorated) {
+    var $search = $(
+      '<li class="select2-search select2-search--inline">' +
+        '<input class="select2-search__field" type="search" tabindex="-1"' +
+        ' autocomplete="off" autocorrect="off" autocapitalize="off"' +
+        ' spellcheck="false" role="textbox" />' +
+      '</li>'
+    );
+
+    this.$searchContainer = $search;
+    this.$search = $search.find('input');
+
+    var $rendered = decorated.call(this);
+
+    return $rendered;
+  };
+
+  Search.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    decorated.call(this, container, $container);
+
+    container.on('open', function () {
+      self.$search.attr('tabindex', 0);
+
+      self.$search.focus();
+    });
+
+    container.on('close', function () {
+      self.$search.attr('tabindex', -1);
+
+      self.$search.val('');
+      self.$search.focus();
+    });
+
+    container.on('enable', function () {
+      self.$search.prop('disabled', false);
+    });
+
+    container.on('disable', function () {
+      self.$search.prop('disabled', true);
+    });
+
+    this.$selection.on('focusin', '.select2-search--inline', function (evt) {
+      self.trigger('focus', evt);
+    });
+
+    this.$selection.on('focusout', '.select2-search--inline', function (evt) {
+      self.trigger('blur', evt);
+    });
+
+    this.$selection.on('keydown', '.select2-search--inline', function (evt) {
+      evt.stopPropagation();
+
+      self.trigger('keypress', evt);
+
+      self._keyUpPrevented = evt.isDefaultPrevented();
+
+      var key = evt.which;
+
+      if (key === KEYS.BACKSPACE && self.$search.val() === '') {
+        var $previousChoice = self.$searchContainer
+          .prev('.select2-selection__choice');
+
+        if ($previousChoice.length > 0) {
+          var item = $previousChoice.data('data');
+
+          self.searchRemoveChoice(item);
+
+          evt.preventDefault();
+        }
+      }
+    });
+
+    // Workaround for browsers which do not support the `input` event
+    // This will prevent double-triggering of events for browsers which support
+    // both the `keyup` and `input` events.
+    this.$selection.on('input', '.select2-search--inline', function (evt) {
+      // Unbind the duplicated `keyup` event
+      self.$selection.off('keyup.search');
+    });
+
+    this.$selection.on('keyup.search input', '.select2-search--inline',
+        function (evt) {
+      self.handleSearch(evt);
+    });
+  };
+
+  Search.prototype.createPlaceholder = function (decorated, placeholder) {
+    this.$search.attr('placeholder', placeholder.text);
+  };
+
+  Search.prototype.update = function (decorated, data) {
+    this.$search.attr('placeholder', '');
+
+    decorated.call(this, data);
+
+    this.$selection.find('.select2-selection__rendered')
+                   .append(this.$searchContainer);
+
+    this.resizeSearch();
+  };
+
+  Search.prototype.handleSearch = function () {
+    this.resizeSearch();
+
+    if (!this._keyUpPrevented) {
+      var input = this.$search.val();
+
+      this.trigger('query', {
+        term: input
+      });
+    }
+
+    this._keyUpPrevented = false;
+  };
+
+  Search.prototype.searchRemoveChoice = function (decorated, item) {
+    this.trigger('unselect', {
+      data: item
+    });
+
+    this.trigger('open');
+
+    this.$search.val(item.text + ' ');
+  };
+
+  Search.prototype.resizeSearch = function () {
+    this.$search.css('width', '25px');
+
+    var width = '';
+
+    if (this.$search.attr('placeholder') !== '') {
+      width = this.$selection.find('.select2-selection__rendered').innerWidth();
+    } else {
+      var minimumWidth = this.$search.val().length + 1;
+
+      width = (minimumWidth * 0.75) + 'em';
+    }
+
+    this.$search.css('width', width);
+  };
+
+  return Search;
+});
+
+S2.define('select2/selection/eventRelay',[
+  'jquery'
+], function ($) {
+  function EventRelay () { }
+
+  EventRelay.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+    var relayEvents = [
+      'open', 'opening',
+      'close', 'closing',
+      'select', 'selecting',
+      'unselect', 'unselecting'
+    ];
+
+    var preventableEvents = ['opening', 'closing', 'selecting', 'unselecting'];
+
+    decorated.call(this, container, $container);
+
+    container.on('*', function (name, params) {
+      // Ignore events that should not be relayed
+      if ($.inArray(name, relayEvents) === -1) {
+        return;
+      }
+
+      // The parameters should always be an object
+      params = params || {};
+
+      // Generate the jQuery event for the Select2 event
+      var evt = $.Event('select2:' + name, {
+        params: params
+      });
+
+      self.$element.trigger(evt);
+
+      // Only handle preventable events if it was one
+      if ($.inArray(name, preventableEvents) === -1) {
+        return;
+      }
+
+      params.prevented = evt.isDefaultPrevented();
+    });
+  };
+
+  return EventRelay;
+});
+
+S2.define('select2/translation',[
+  'jquery',
+  'require'
+], function ($, require) {
+  function Translation (dict) {
+    this.dict = dict || {};
+  }
+
+  Translation.prototype.all = function () {
+    return this.dict;
+  };
+
+  Translation.prototype.get = function (key) {
+    return this.dict[key];
+  };
+
+  Translation.prototype.extend = function (translation) {
+    this.dict = $.extend({}, translation.all(), this.dict);
+  };
+
+  // Static functions
+
+  Translation._cache = {};
+
+  Translation.loadPath = function (path) {
+    if (!(path in Translation._cache)) {
+      var translations = require(path);
+
+      Translation._cache[path] = translations;
+    }
+
+    return new Translation(Translation._cache[path]);
+  };
+
+  return Translation;
+});
+
+S2.define('select2/diacritics',[
+
+], function () {
+  var diacritics = {
+    '\u24B6': 'A',
+    '\uFF21': 'A',
+    '\u00C0': 'A',
+    '\u00C1': 'A',
+    '\u00C2': 'A',
+    '\u1EA6': 'A',
+    '\u1EA4': 'A',
+    '\u1EAA': 'A',
+    '\u1EA8': 'A',
+    '\u00C3': 'A',
+    '\u0100': 'A',
+    '\u0102': 'A',
+    '\u1EB0': 'A',
+    '\u1EAE': 'A',
+    '\u1EB4': 'A',
+    '\u1EB2': 'A',
+    '\u0226': 'A',
+    '\u01E0': 'A',
+    '\u00C4': 'A',
+    '\u01DE': 'A',
+    '\u1EA2': 'A',
+    '\u00C5': 'A',
+    '\u01FA': 'A',
+    '\u01CD': 'A',
+    '\u0200': 'A',
+    '\u0202': 'A',
+    '\u1EA0': 'A',
+    '\u1EAC': 'A',
+    '\u1EB6': 'A',
+    '\u1E00': 'A',
+    '\u0104': 'A',
+    '\u023A': 'A',
+    '\u2C6F': 'A',
+    '\uA732': 'AA',
+    '\u00C6': 'AE',
+    '\u01FC': 'AE',
+    '\u01E2': 'AE',
+    '\uA734': 'AO',
+    '\uA736': 'AU',
+    '\uA738': 'AV',
+    '\uA73A': 'AV',
+    '\uA73C': 'AY',
+    '\u24B7': 'B',
+    '\uFF22': 'B',
+    '\u1E02': 'B',
+    '\u1E04': 'B',
+    '\u1E06': 'B',
+    '\u0243': 'B',
+    '\u0182': 'B',
+    '\u0181': 'B',
+    '\u24B8': 'C',
+    '\uFF23': 'C',
+    '\u0106': 'C',
+    '\u0108': 'C',
+    '\u010A': 'C',
+    '\u010C': 'C',
+    '\u00C7': 'C',
+    '\u1E08': 'C',
+    '\u0187': 'C',
+    '\u023B': 'C',
+    '\uA73E': 'C',
+    '\u24B9': 'D',
+    '\uFF24': 'D',
+    '\u1E0A': 'D',
+    '\u010E': 'D',
+    '\u1E0C': 'D',
+    '\u1E10': 'D',
+    '\u1E12': 'D',
+    '\u1E0E': 'D',
+    '\u0110': 'D',
+    '\u018B': 'D',
+    '\u018A': 'D',
+    '\u0189': 'D',
+    '\uA779': 'D',
+    '\u01F1': 'DZ',
+    '\u01C4': 'DZ',
+    '\u01F2': 'Dz',
+    '\u01C5': 'Dz',
+    '\u24BA': 'E',
+    '\uFF25': 'E',
+    '\u00C8': 'E',
+    '\u00C9': 'E',
+    '\u00CA': 'E',
+    '\u1EC0': 'E',
+    '\u1EBE': 'E',
+    '\u1EC4': 'E',
+    '\u1EC2': 'E',
+    '\u1EBC': 'E',
+    '\u0112': 'E',
+    '\u1E14': 'E',
+    '\u1E16': 'E',
+    '\u0114': 'E',
+    '\u0116': 'E',
+    '\u00CB': 'E',
+    '\u1EBA': 'E',
+    '\u011A': 'E',
+    '\u0204': 'E',
+    '\u0206': 'E',
+    '\u1EB8': 'E',
+    '\u1EC6': 'E',
+    '\u0228': 'E',
+    '\u1E1C': 'E',
+    '\u0118': 'E',
+    '\u1E18': 'E',
+    '\u1E1A': 'E',
+    '\u0190': 'E',
+    '\u018E': 'E',
+    '\u24BB': 'F',
+    '\uFF26': 'F',
+    '\u1E1E': 'F',
+    '\u0191': 'F',
+    '\uA77B': 'F',
+    '\u24BC': 'G',
+    '\uFF27': 'G',
+    '\u01F4': 'G',
+    '\u011C': 'G',
+    '\u1E20': 'G',
+    '\u011E': 'G',
+    '\u0120': 'G',
+    '\u01E6': 'G',
+    '\u0122': 'G',
+    '\u01E4': 'G',
+    '\u0193': 'G',
+    '\uA7A0': 'G',
+    '\uA77D': 'G',
+    '\uA77E': 'G',
+    '\u24BD': 'H',
+    '\uFF28': 'H',
+    '\u0124': 'H',
+    '\u1E22': 'H',
+    '\u1E26': 'H',
+    '\u021E': 'H',
+    '\u1E24': 'H',
+    '\u1E28': 'H',
+    '\u1E2A': 'H',
+    '\u0126': 'H',
+    '\u2C67': 'H',
+    '\u2C75': 'H',
+    '\uA78D': 'H',
+    '\u24BE': 'I',
+    '\uFF29': 'I',
+    '\u00CC': 'I',
+    '\u00CD': 'I',
+    '\u00CE': 'I',
+    '\u0128': 'I',
+    '\u012A': 'I',
+    '\u012C': 'I',
+    '\u0130': 'I',
+    '\u00CF': 'I',
+    '\u1E2E': 'I',
+    '\u1EC8': 'I',
+    '\u01CF': 'I',
+    '\u0208': 'I',
+    '\u020A': 'I',
+    '\u1ECA': 'I',
+    '\u012E': 'I',
+    '\u1E2C': 'I',
+    '\u0197': 'I',
+    '\u24BF': 'J',
+    '\uFF2A': 'J',
+    '\u0134': 'J',
+    '\u0248': 'J',
+    '\u24C0': 'K',
+    '\uFF2B': 'K',
+    '\u1E30': 'K',
+    '\u01E8': 'K',
+    '\u1E32': 'K',
+    '\u0136': 'K',
+    '\u1E34': 'K',
+    '\u0198': 'K',
+    '\u2C69': 'K',
+    '\uA740': 'K',
+    '\uA742': 'K',
+    '\uA744': 'K',
+    '\uA7A2': 'K',
+    '\u24C1': 'L',
+    '\uFF2C': 'L',
+    '\u013F': 'L',
+    '\u0139': 'L',
+    '\u013D': 'L',
+    '\u1E36': 'L',
+    '\u1E38': 'L',
+    '\u013B': 'L',
+    '\u1E3C': 'L',
+    '\u1E3A': 'L',
+    '\u0141': 'L',
+    '\u023D': 'L',
+    '\u2C62': 'L',
+    '\u2C60': 'L',
+    '\uA748': 'L',
+    '\uA746': 'L',
+    '\uA780': 'L',
+    '\u01C7': 'LJ',
+    '\u01C8': 'Lj',
+    '\u24C2': 'M',
+    '\uFF2D': 'M',
+    '\u1E3E': 'M',
+    '\u1E40': 'M',
+    '\u1E42': 'M',
+    '\u2C6E': 'M',
+    '\u019C': 'M',
+    '\u24C3': 'N',
+    '\uFF2E': 'N',
+    '\u01F8': 'N',
+    '\u0143': 'N',
+    '\u00D1': 'N',
+    '\u1E44': 'N',
+    '\u0147': 'N',
+    '\u1E46': 'N',
+    '\u0145': 'N',
+    '\u1E4A': 'N',
+    '\u1E48': 'N',
+    '\u0220': 'N',
+    '\u019D': 'N',
+    '\uA790': 'N',
+    '\uA7A4': 'N',
+    '\u01CA': 'NJ',
+    '\u01CB': 'Nj',
+    '\u24C4': 'O',
+    '\uFF2F': 'O',
+    '\u00D2': 'O',
+    '\u00D3': 'O',
+    '\u00D4': 'O',
+    '\u1ED2': 'O',
+    '\u1ED0': 'O',
+    '\u1ED6': 'O',
+    '\u1ED4': 'O',
+    '\u00D5': 'O',
+    '\u1E4C': 'O',
+    '\u022C': 'O',
+    '\u1E4E': 'O',
+    '\u014C': 'O',
+    '\u1E50': 'O',
+    '\u1E52': 'O',
+    '\u014E': 'O',
+    '\u022E': 'O',
+    '\u0230': 'O',
+    '\u00D6': 'O',
+    '\u022A': 'O',
+    '\u1ECE': 'O',
+    '\u0150': 'O',
+    '\u01D1': 'O',
+    '\u020C': 'O',
+    '\u020E': 'O',
+    '\u01A0': 'O',
+    '\u1EDC': 'O',
+    '\u1EDA': 'O',
+    '\u1EE0': 'O',
+    '\u1EDE': 'O',
+    '\u1EE2': 'O',
+    '\u1ECC': 'O',
+    '\u1ED8': 'O',
+    '\u01EA': 'O',
+    '\u01EC': 'O',
+    '\u00D8': 'O',
+    '\u01FE': 'O',
+    '\u0186': 'O',
+    '\u019F': 'O',
+    '\uA74A': 'O',
+    '\uA74C': 'O',
+    '\u01A2': 'OI',
+    '\uA74E': 'OO',
+    '\u0222': 'OU',
+    '\u24C5': 'P',
+    '\uFF30': 'P',
+    '\u1E54': 'P',
+    '\u1E56': 'P',
+    '\u01A4': 'P',
+    '\u2C63': 'P',
+    '\uA750': 'P',
+    '\uA752': 'P',
+    '\uA754': 'P',
+    '\u24C6': 'Q',
+    '\uFF31': 'Q',
+    '\uA756': 'Q',
+    '\uA758': 'Q',
+    '\u024A': 'Q',
+    '\u24C7': 'R',
+    '\uFF32': 'R',
+    '\u0154': 'R',
+    '\u1E58': 'R',
+    '\u0158': 'R',
+    '\u0210': 'R',
+    '\u0212': 'R',
+    '\u1E5A': 'R',
+    '\u1E5C': 'R',
+    '\u0156': 'R',
+    '\u1E5E': 'R',
+    '\u024C': 'R',
+    '\u2C64': 'R',
+    '\uA75A': 'R',
+    '\uA7A6': 'R',
+    '\uA782': 'R',
+    '\u24C8': 'S',
+    '\uFF33': 'S',
+    '\u1E9E': 'S',
+    '\u015A': 'S',
+    '\u1E64': 'S',
+    '\u015C': 'S',
+    '\u1E60': 'S',
+    '\u0160': 'S',
+    '\u1E66': 'S',
+    '\u1E62': 'S',
+    '\u1E68': 'S',
+    '\u0218': 'S',
+    '\u015E': 'S',
+    '\u2C7E': 'S',
+    '\uA7A8': 'S',
+    '\uA784': 'S',
+    '\u24C9': 'T',
+    '\uFF34': 'T',
+    '\u1E6A': 'T',
+    '\u0164': 'T',
+    '\u1E6C': 'T',
+    '\u021A': 'T',
+    '\u0162': 'T',
+    '\u1E70': 'T',
+    '\u1E6E': 'T',
+    '\u0166': 'T',
+    '\u01AC': 'T',
+    '\u01AE': 'T',
+    '\u023E': 'T',
+    '\uA786': 'T',
+    '\uA728': 'TZ',
+    '\u24CA': 'U',
+    '\uFF35': 'U',
+    '\u00D9': 'U',
+    '\u00DA': 'U',
+    '\u00DB': 'U',
+    '\u0168': 'U',
+    '\u1E78': 'U',
+    '\u016A': 'U',
+    '\u1E7A': 'U',
+    '\u016C': 'U',
+    '\u00DC': 'U',
+    '\u01DB': 'U',
+    '\u01D7': 'U',
+    '\u01D5': 'U',
+    '\u01D9': 'U',
+    '\u1EE6': 'U',
+    '\u016E': 'U',
+    '\u0170': 'U',
+    '\u01D3': 'U',
+    '\u0214': 'U',
+    '\u0216': 'U',
+    '\u01AF': 'U',
+    '\u1EEA': 'U',
+    '\u1EE8': 'U',
+    '\u1EEE': 'U',
+    '\u1EEC': 'U',
+    '\u1EF0': 'U',
+    '\u1EE4': 'U',
+    '\u1E72': 'U',
+    '\u0172': 'U',
+    '\u1E76': 'U',
+    '\u1E74': 'U',
+    '\u0244': 'U',
+    '\u24CB': 'V',
+    '\uFF36': 'V',
+    '\u1E7C': 'V',
+    '\u1E7E': 'V',
+    '\u01B2': 'V',
+    '\uA75E': 'V',
+    '\u0245': 'V',
+    '\uA760': 'VY',
+    '\u24CC': 'W',
+    '\uFF37': 'W',
+    '\u1E80': 'W',
+    '\u1E82': 'W',
+    '\u0174': 'W',
+    '\u1E86': 'W',
+    '\u1E84': 'W',
+    '\u1E88': 'W',
+    '\u2C72': 'W',
+    '\u24CD': 'X',
+    '\uFF38': 'X',
+    '\u1E8A': 'X',
+    '\u1E8C': 'X',
+    '\u24CE': 'Y',
+    '\uFF39': 'Y',
+    '\u1EF2': 'Y',
+    '\u00DD': 'Y',
+    '\u0176': 'Y',
+    '\u1EF8': 'Y',
+    '\u0232': 'Y',
+    '\u1E8E': 'Y',
+    '\u0178': 'Y',
+    '\u1EF6': 'Y',
+    '\u1EF4': 'Y',
+    '\u01B3': 'Y',
+    '\u024E': 'Y',
+    '\u1EFE': 'Y',
+    '\u24CF': 'Z',
+    '\uFF3A': 'Z',
+    '\u0179': 'Z',
+    '\u1E90': 'Z',
+    '\u017B': 'Z',
+    '\u017D': 'Z',
+    '\u1E92': 'Z',
+    '\u1E94': 'Z',
+    '\u01B5': 'Z',
+    '\u0224': 'Z',
+    '\u2C7F': 'Z',
+    '\u2C6B': 'Z',
+    '\uA762': 'Z',
+    '\u24D0': 'a',
+    '\uFF41': 'a',
+    '\u1E9A': 'a',
+    '\u00E0': 'a',
+    '\u00E1': 'a',
+    '\u00E2': 'a',
+    '\u1EA7': 'a',
+    '\u1EA5': 'a',
+    '\u1EAB': 'a',
+    '\u1EA9': 'a',
+    '\u00E3': 'a',
+    '\u0101': 'a',
+    '\u0103': 'a',
+    '\u1EB1': 'a',
+    '\u1EAF': 'a',
+    '\u1EB5': 'a',
+    '\u1EB3': 'a',
+    '\u0227': 'a',
+    '\u01E1': 'a',
+    '\u00E4': 'a',
+    '\u01DF': 'a',
+    '\u1EA3': 'a',
+    '\u00E5': 'a',
+    '\u01FB': 'a',
+    '\u01CE': 'a',
+    '\u0201': 'a',
+    '\u0203': 'a',
+    '\u1EA1': 'a',
+    '\u1EAD': 'a',
+    '\u1EB7': 'a',
+    '\u1E01': 'a',
+    '\u0105': 'a',
+    '\u2C65': 'a',
+    '\u0250': 'a',
+    '\uA733': 'aa',
+    '\u00E6': 'ae',
+    '\u01FD': 'ae',
+    '\u01E3': 'ae',
+    '\uA735': 'ao',
+    '\uA737': 'au',
+    '\uA739': 'av',
+    '\uA73B': 'av',
+    '\uA73D': 'ay',
+    '\u24D1': 'b',
+    '\uFF42': 'b',
+    '\u1E03': 'b',
+    '\u1E05': 'b',
+    '\u1E07': 'b',
+    '\u0180': 'b',
+    '\u0183': 'b',
+    '\u0253': 'b',
+    '\u24D2': 'c',
+    '\uFF43': 'c',
+    '\u0107': 'c',
+    '\u0109': 'c',
+    '\u010B': 'c',
+    '\u010D': 'c',
+    '\u00E7': 'c',
+    '\u1E09': 'c',
+    '\u0188': 'c',
+    '\u023C': 'c',
+    '\uA73F': 'c',
+    '\u2184': 'c',
+    '\u24D3': 'd',
+    '\uFF44': 'd',
+    '\u1E0B': 'd',
+    '\u010F': 'd',
+    '\u1E0D': 'd',
+    '\u1E11': 'd',
+    '\u1E13': 'd',
+    '\u1E0F': 'd',
+    '\u0111': 'd',
+    '\u018C': 'd',
+    '\u0256': 'd',
+    '\u0257': 'd',
+    '\uA77A': 'd',
+    '\u01F3': 'dz',
+    '\u01C6': 'dz',
+    '\u24D4': 'e',
+    '\uFF45': 'e',
+    '\u00E8': 'e',
+    '\u00E9': 'e',
+    '\u00EA': 'e',
+    '\u1EC1': 'e',
+    '\u1EBF': 'e',
+    '\u1EC5': 'e',
+    '\u1EC3': 'e',
+    '\u1EBD': 'e',
+    '\u0113': 'e',
+    '\u1E15': 'e',
+    '\u1E17': 'e',
+    '\u0115': 'e',
+    '\u0117': 'e',
+    '\u00EB': 'e',
+    '\u1EBB': 'e',
+    '\u011B': 'e',
+    '\u0205': 'e',
+    '\u0207': 'e',
+    '\u1EB9': 'e',
+    '\u1EC7': 'e',
+    '\u0229': 'e',
+    '\u1E1D': 'e',
+    '\u0119': 'e',
+    '\u1E19': 'e',
+    '\u1E1B': 'e',
+    '\u0247': 'e',
+    '\u025B': 'e',
+    '\u01DD': 'e',
+    '\u24D5': 'f',
+    '\uFF46': 'f',
+    '\u1E1F': 'f',
+    '\u0192': 'f',
+    '\uA77C': 'f',
+    '\u24D6': 'g',
+    '\uFF47': 'g',
+    '\u01F5': 'g',
+    '\u011D': 'g',
+    '\u1E21': 'g',
+    '\u011F': 'g',
+    '\u0121': 'g',
+    '\u01E7': 'g',
+    '\u0123': 'g',
+    '\u01E5': 'g',
+    '\u0260': 'g',
+    '\uA7A1': 'g',
+    '\u1D79': 'g',
+    '\uA77F': 'g',
+    '\u24D7': 'h',
+    '\uFF48': 'h',
+    '\u0125': 'h',
+    '\u1E23': 'h',
+    '\u1E27': 'h',
+    '\u021F': 'h',
+    '\u1E25': 'h',
+    '\u1E29': 'h',
+    '\u1E2B': 'h',
+    '\u1E96': 'h',
+    '\u0127': 'h',
+    '\u2C68': 'h',
+    '\u2C76': 'h',
+    '\u0265': 'h',
+    '\u0195': 'hv',
+    '\u24D8': 'i',
+    '\uFF49': 'i',
+    '\u00EC': 'i',
+    '\u00ED': 'i',
+    '\u00EE': 'i',
+    '\u0129': 'i',
+    '\u012B': 'i',
+    '\u012D': 'i',
+    '\u00EF': 'i',
+    '\u1E2F': 'i',
+    '\u1EC9': 'i',
+    '\u01D0': 'i',
+    '\u0209': 'i',
+    '\u020B': 'i',
+    '\u1ECB': 'i',
+    '\u012F': 'i',
+    '\u1E2D': 'i',
+    '\u0268': 'i',
+    '\u0131': 'i',
+    '\u24D9': 'j',
+    '\uFF4A': 'j',
+    '\u0135': 'j',
+    '\u01F0': 'j',
+    '\u0249': 'j',
+    '\u24DA': 'k',
+    '\uFF4B': 'k',
+    '\u1E31': 'k',
+    '\u01E9': 'k',
+    '\u1E33': 'k',
+    '\u0137': 'k',
+    '\u1E35': 'k',
+    '\u0199': 'k',
+    '\u2C6A': 'k',
+    '\uA741': 'k',
+    '\uA743': 'k',
+    '\uA745': 'k',
+    '\uA7A3': 'k',
+    '\u24DB': 'l',
+    '\uFF4C': 'l',
+    '\u0140': 'l',
+    '\u013A': 'l',
+    '\u013E': 'l',
+    '\u1E37': 'l',
+    '\u1E39': 'l',
+    '\u013C': 'l',
+    '\u1E3D': 'l',
+    '\u1E3B': 'l',
+    '\u017F': 'l',
+    '\u0142': 'l',
+    '\u019A': 'l',
+    '\u026B': 'l',
+    '\u2C61': 'l',
+    '\uA749': 'l',
+    '\uA781': 'l',
+    '\uA747': 'l',
+    '\u01C9': 'lj',
+    '\u24DC': 'm',
+    '\uFF4D': 'm',
+    '\u1E3F': 'm',
+    '\u1E41': 'm',
+    '\u1E43': 'm',
+    '\u0271': 'm',
+    '\u026F': 'm',
+    '\u24DD': 'n',
+    '\uFF4E': 'n',
+    '\u01F9': 'n',
+    '\u0144': 'n',
+    '\u00F1': 'n',
+    '\u1E45': 'n',
+    '\u0148': 'n',
+    '\u1E47': 'n',
+    '\u0146': 'n',
+    '\u1E4B': 'n',
+    '\u1E49': 'n',
+    '\u019E': 'n',
+    '\u0272': 'n',
+    '\u0149': 'n',
+    '\uA791': 'n',
+    '\uA7A5': 'n',
+    '\u01CC': 'nj',
+    '\u24DE': 'o',
+    '\uFF4F': 'o',
+    '\u00F2': 'o',
+    '\u00F3': 'o',
+    '\u00F4': 'o',
+    '\u1ED3': 'o',
+    '\u1ED1': 'o',
+    '\u1ED7': 'o',
+    '\u1ED5': 'o',
+    '\u00F5': 'o',
+    '\u1E4D': 'o',
+    '\u022D': 'o',
+    '\u1E4F': 'o',
+    '\u014D': 'o',
+    '\u1E51': 'o',
+    '\u1E53': 'o',
+    '\u014F': 'o',
+    '\u022F': 'o',
+    '\u0231': 'o',
+    '\u00F6': 'o',
+    '\u022B': 'o',
+    '\u1ECF': 'o',
+    '\u0151': 'o',
+    '\u01D2': 'o',
+    '\u020D': 'o',
+    '\u020F': 'o',
+    '\u01A1': 'o',
+    '\u1EDD': 'o',
+    '\u1EDB': 'o',
+    '\u1EE1': 'o',
+    '\u1EDF': 'o',
+    '\u1EE3': 'o',
+    '\u1ECD': 'o',
+    '\u1ED9': 'o',
+    '\u01EB': 'o',
+    '\u01ED': 'o',
+    '\u00F8': 'o',
+    '\u01FF': 'o',
+    '\u0254': 'o',
+    '\uA74B': 'o',
+    '\uA74D': 'o',
+    '\u0275': 'o',
+    '\u01A3': 'oi',
+    '\u0223': 'ou',
+    '\uA74F': 'oo',
+    '\u24DF': 'p',
+    '\uFF50': 'p',
+    '\u1E55': 'p',
+    '\u1E57': 'p',
+    '\u01A5': 'p',
+    '\u1D7D': 'p',
+    '\uA751': 'p',
+    '\uA753': 'p',
+    '\uA755': 'p',
+    '\u24E0': 'q',
+    '\uFF51': 'q',
+    '\u024B': 'q',
+    '\uA757': 'q',
+    '\uA759': 'q',
+    '\u24E1': 'r',
+    '\uFF52': 'r',
+    '\u0155': 'r',
+    '\u1E59': 'r',
+    '\u0159': 'r',
+    '\u0211': 'r',
+    '\u0213': 'r',
+    '\u1E5B': 'r',
+    '\u1E5D': 'r',
+    '\u0157': 'r',
+    '\u1E5F': 'r',
+    '\u024D': 'r',
+    '\u027D': 'r',
+    '\uA75B': 'r',
+    '\uA7A7': 'r',
+    '\uA783': 'r',
+    '\u24E2': 's',
+    '\uFF53': 's',
+    '\u00DF': 's',
+    '\u015B': 's',
+    '\u1E65': 's',
+    '\u015D': 's',
+    '\u1E61': 's',
+    '\u0161': 's',
+    '\u1E67': 's',
+    '\u1E63': 's',
+    '\u1E69': 's',
+    '\u0219': 's',
+    '\u015F': 's',
+    '\u023F': 's',
+    '\uA7A9': 's',
+    '\uA785': 's',
+    '\u1E9B': 's',
+    '\u24E3': 't',
+    '\uFF54': 't',
+    '\u1E6B': 't',
+    '\u1E97': 't',
+    '\u0165': 't',
+    '\u1E6D': 't',
+    '\u021B': 't',
+    '\u0163': 't',
+    '\u1E71': 't',
+    '\u1E6F': 't',
+    '\u0167': 't',
+    '\u01AD': 't',
+    '\u0288': 't',
+    '\u2C66': 't',
+    '\uA787': 't',
+    '\uA729': 'tz',
+    '\u24E4': 'u',
+    '\uFF55': 'u',
+    '\u00F9': 'u',
+    '\u00FA': 'u',
+    '\u00FB': 'u',
+    '\u0169': 'u',
+    '\u1E79': 'u',
+    '\u016B': 'u',
+    '\u1E7B': 'u',
+    '\u016D': 'u',
+    '\u00FC': 'u',
+    '\u01DC': 'u',
+    '\u01D8': 'u',
+    '\u01D6': 'u',
+    '\u01DA': 'u',
+    '\u1EE7': 'u',
+    '\u016F': 'u',
+    '\u0171': 'u',
+    '\u01D4': 'u',
+    '\u0215': 'u',
+    '\u0217': 'u',
+    '\u01B0': 'u',
+    '\u1EEB': 'u',
+    '\u1EE9': 'u',
+    '\u1EEF': 'u',
+    '\u1EED': 'u',
+    '\u1EF1': 'u',
+    '\u1EE5': 'u',
+    '\u1E73': 'u',
+    '\u0173': 'u',
+    '\u1E77': 'u',
+    '\u1E75': 'u',
+    '\u0289': 'u',
+    '\u24E5': 'v',
+    '\uFF56': 'v',
+    '\u1E7D': 'v',
+    '\u1E7F': 'v',
+    '\u028B': 'v',
+    '\uA75F': 'v',
+    '\u028C': 'v',
+    '\uA761': 'vy',
+    '\u24E6': 'w',
+    '\uFF57': 'w',
+    '\u1E81': 'w',
+    '\u1E83': 'w',
+    '\u0175': 'w',
+    '\u1E87': 'w',
+    '\u1E85': 'w',
+    '\u1E98': 'w',
+    '\u1E89': 'w',
+    '\u2C73': 'w',
+    '\u24E7': 'x',
+    '\uFF58': 'x',
+    '\u1E8B': 'x',
+    '\u1E8D': 'x',
+    '\u24E8': 'y',
+    '\uFF59': 'y',
+    '\u1EF3': 'y',
+    '\u00FD': 'y',
+    '\u0177': 'y',
+    '\u1EF9': 'y',
+    '\u0233': 'y',
+    '\u1E8F': 'y',
+    '\u00FF': 'y',
+    '\u1EF7': 'y',
+    '\u1E99': 'y',
+    '\u1EF5': 'y',
+    '\u01B4': 'y',
+    '\u024F': 'y',
+    '\u1EFF': 'y',
+    '\u24E9': 'z',
+    '\uFF5A': 'z',
+    '\u017A': 'z',
+    '\u1E91': 'z',
+    '\u017C': 'z',
+    '\u017E': 'z',
+    '\u1E93': 'z',
+    '\u1E95': 'z',
+    '\u01B6': 'z',
+    '\u0225': 'z',
+    '\u0240': 'z',
+    '\u2C6C': 'z',
+    '\uA763': 'z',
+    '\u0386': '\u0391',
+    '\u0388': '\u0395',
+    '\u0389': '\u0397',
+    '\u038A': '\u0399',
+    '\u03AA': '\u0399',
+    '\u038C': '\u039F',
+    '\u038E': '\u03A5',
+    '\u03AB': '\u03A5',
+    '\u038F': '\u03A9',
+    '\u03AC': '\u03B1',
+    '\u03AD': '\u03B5',
+    '\u03AE': '\u03B7',
+    '\u03AF': '\u03B9',
+    '\u03CA': '\u03B9',
+    '\u0390': '\u03B9',
+    '\u03CC': '\u03BF',
+    '\u03CD': '\u03C5',
+    '\u03CB': '\u03C5',
+    '\u03B0': '\u03C5',
+    '\u03C9': '\u03C9',
+    '\u03C2': '\u03C3'
+  };
+
+  return diacritics;
+});
+
+S2.define('select2/data/base',[
+  '../utils'
+], function (Utils) {
+  function BaseAdapter ($element, options) {
+    BaseAdapter.__super__.constructor.call(this);
+  }
+
+  Utils.Extend(BaseAdapter, Utils.Observable);
+
+  BaseAdapter.prototype.current = function (callback) {
+    throw new Error('The `current` method must be defined in child classes.');
+  };
+
+  BaseAdapter.prototype.query = function (params, callback) {
+    throw new Error('The `query` method must be defined in child classes.');
+  };
+
+  BaseAdapter.prototype.bind = function (container, $container) {
+    // Can be implemented in subclasses
+  };
+
+  BaseAdapter.prototype.destroy = function () {
+    // Can be implemented in subclasses
+  };
+
+  BaseAdapter.prototype.generateResultId = function (container, data) {
+    var id = container.id + '-result-';
+
+    id += Utils.generateChars(4);
+
+    if (data.id != null) {
+      id += '-' + data.id.toString();
+    } else {
+      id += '-' + Utils.generateChars(4);
+    }
+    return id;
+  };
+
+  return BaseAdapter;
+});
+
+S2.define('select2/data/select',[
+  './base',
+  '../utils',
+  'jquery'
+], function (BaseAdapter, Utils, $) {
+  function SelectAdapter ($element, options) {
+    this.$element = $element;
+    this.options = options;
+
+    SelectAdapter.__super__.constructor.call(this);
+  }
+
+  Utils.Extend(SelectAdapter, BaseAdapter);
+
+  SelectAdapter.prototype.current = function (callback) {
+    var data = [];
+    var self = this;
+
+    this.$element.find(':selected').each(function () {
+      var $option = $(this);
+
+      var option = self.item($option);
+
+      data.push(option);
+    });
+
+    callback(data);
+  };
+
+  SelectAdapter.prototype.select = function (data) {
+    var self = this;
+
+    data.selected = true;
+
+    // If data.element is a DOM node, use it instead
+    if ($(data.element).is('option')) {
+      data.element.selected = true;
+
+      this.$element.trigger('change');
+
+      return;
+    }
+
+    if (this.$element.prop('multiple')) {
+      this.current(function (currentData) {
+        var val = [];
+
+        data = [data];
+        data.push.apply(data, currentData);
+
+        for (var d = 0; d < data.length; d++) {
+          var id = data[d].id;
+
+          if ($.inArray(id, val) === -1) {
+            val.push(id);
+          }
+        }
+
+        self.$element.val(val);
+        self.$element.trigger('change');
+      });
+    } else {
+      var val = data.id;
+
+      this.$element.val(val);
+      this.$element.trigger('change');
+    }
+  };
+
+  SelectAdapter.prototype.unselect = function (data) {
+    var self = this;
+
+    if (!this.$element.prop('multiple')) {
+      return;
+    }
+
+    data.selected = false;
+
+    if ($(data.element).is('option')) {
+      data.element.selected = false;
+
+      this.$element.trigger('change');
+
+      return;
+    }
+
+    this.current(function (currentData) {
+      var val = [];
+
+      for (var d = 0; d < currentData.length; d++) {
+        var id = currentData[d].id;
+
+        if (id !== data.id && $.inArray(id, val) === -1) {
+          val.push(id);
+        }
+      }
+
+      self.$element.val(val);
+
+      self.$element.trigger('change');
+    });
+  };
+
+  SelectAdapter.prototype.bind = function (container, $container) {
+    var self = this;
+
+    this.container = container;
+
+    container.on('select', function (params) {
+      self.select(params.data);
+    });
+
+    container.on('unselect', function (params) {
+      self.unselect(params.data);
+    });
+  };
+
+  SelectAdapter.prototype.destroy = function () {
+    // Remove anything added to child elements
+    this.$element.find('*').each(function () {
+      // Remove any custom data set by Select2
+      $.removeData(this, 'data');
+    });
+  };
+
+  SelectAdapter.prototype.query = function (params, callback) {
+    var data = [];
+    var self = this;
+
+    var $options = this.$element.children();
+
+    $options.each(function () {
+      var $option = $(this);
+
+      if (!$option.is('option') && !$option.is('optgroup')) {
+        return;
+      }
+
+      var option = self.item($option);
+
+      var matches = self.matches(params, option);
+
+      if (matches !== null) {
+        data.push(matches);
+      }
+    });
+
+    callback({
+      results: data
+    });
+  };
+
+  SelectAdapter.prototype.addOptions = function ($options) {
+    Utils.appendMany(this.$element, $options);
+  };
+
+  SelectAdapter.prototype.option = function (data) {
+    var option;
+
+    if (data.children) {
+      option = document.createElement('optgroup');
+      option.label = data.text;
+    } else {
+      option = document.createElement('option');
+
+      if (option.textContent !== undefined) {
+        option.textContent = data.text;
+      } else {
+        option.innerText = data.text;
+      }
+    }
+
+    if (data.id) {
+      option.value = data.id;
+    }
+
+    if (data.disabled) {
+      option.disabled = true;
+    }
+
+    if (data.selected) {
+      option.selected = true;
+    }
+
+    if (data.title) {
+      option.title = data.title;
+    }
+
+    var $option = $(option);
+
+    var normalizedData = this._normalizeItem(data);
+    normalizedData.element = option;
+
+    // Override the option's data with the combined data
+    $.data(option, 'data', normalizedData);
+
+    return $option;
+  };
+
+  SelectAdapter.prototype.item = function ($option) {
+    var data = {};
+
+    data = $.data($option[0], 'data');
+
+    if (data != null) {
+      return data;
+    }
+
+    if ($option.is('option')) {
+      data = {
+        id: $option.val(),
+        text: $option.text(),
+        disabled: $option.prop('disabled'),
+        selected: $option.prop('selected'),
+        title: $option.prop('title')
+      };
+    } else if ($option.is('optgroup')) {
+      data = {
+        text: $option.prop('label'),
+        children: [],
+        title: $option.prop('title')
+      };
+
+      var $children = $option.children('option');
+      var children = [];
+
+      for (var c = 0; c < $children.length; c++) {
+        var $child = $($children[c]);
+
+        var child = this.item($child);
+
+        children.push(child);
+      }
+
+      data.children = children;
+    }
+
+    data = this._normalizeItem(data);
+    data.element = $option[0];
+
+    $.data($option[0], 'data', data);
+
+    return data;
+  };
+
+  SelectAdapter.prototype._normalizeItem = function (item) {
+    if (!$.isPlainObject(item)) {
+      item = {
+        id: item,
+        text: item
+      };
+    }
+
+    item = $.extend({}, {
+      text: ''
+    }, item);
+
+    var defaults = {
+      selected: false,
+      disabled: false
+    };
+
+    if (item.id != null) {
+      item.id = item.id.toString();
+    }
+
+    if (item.text != null) {
+      item.text = item.text.toString();
+    }
+
+    if (item._resultId == null && item.id && this.container != null) {
+      item._resultId = this.generateResultId(this.container, item);
+    }
+
+    return $.extend({}, defaults, item);
+  };
+
+  SelectAdapter.prototype.matches = function (params, data) {
+    var matcher = this.options.get('matcher');
+
+    return matcher(params, data);
+  };
+
+  return SelectAdapter;
+});
+
+S2.define('select2/data/array',[
+  './select',
+  '../utils',
+  'jquery'
+], function (SelectAdapter, Utils, $) {
+  function ArrayAdapter ($element, options) {
+    var data = options.get('data') || [];
+
+    ArrayAdapter.__super__.constructor.call(this, $element, options);
+
+    this.addOptions(this.convertToOptions(data));
+  }
+
+  Utils.Extend(ArrayAdapter, SelectAdapter);
+
+  ArrayAdapter.prototype.select = function (data) {
+    var $option = this.$element.find('option').filter(function (i, elm) {
+      return elm.value == data.id.toString();
+    });
+
+    if ($option.length === 0) {
+      $option = this.option(data);
+
+      this.addOptions($option);
+    }
+
+    ArrayAdapter.__super__.select.call(this, data);
+  };
+
+  ArrayAdapter.prototype.convertToOptions = function (data) {
+    var self = this;
+
+    var $existing = this.$element.find('option');
+    var existingIds = $existing.map(function () {
+      return self.item($(this)).id;
+    }).get();
+
+    var $options = [];
+
+    // Filter out all items except for the one passed in the argument
+    function onlyItem (item) {
+      return function () {
+        return $(this).val() == item.id;
+      };
+    }
+
+    for (var d = 0; d < data.length; d++) {
+      var item = this._normalizeItem(data[d]);
+
+      // Skip items which were pre-loaded, only merge the data
+      if ($.inArray(item.id, existingIds) >= 0) {
+        var $existingOption = $existing.filter(onlyItem(item));
+
+        var existingData = this.item($existingOption);
+        var newData = $.extend(true, {}, existingData, item);
+
+        var $newOption = this.option(existingData);
+
+        $existingOption.replaceWith($newOption);
+
+        continue;
+      }
+
+      var $option = this.option(item);
+
+      if (item.children) {
+        var $children = this.convertToOptions(item.children);
+
+        Utils.appendMany($option, $children);
+      }
+
+      $options.push($option);
+    }
+
+    return $options;
+  };
+
+  return ArrayAdapter;
+});
+
+S2.define('select2/data/ajax',[
+  './array',
+  '../utils',
+  'jquery'
+], function (ArrayAdapter, Utils, $) {
+  function AjaxAdapter ($element, options) {
+    this.ajaxOptions = this._applyDefaults(options.get('ajax'));
+
+    if (this.ajaxOptions.processResults != null) {
+      this.processResults = this.ajaxOptions.processResults;
+    }
+
+    ArrayAdapter.__super__.constructor.call(this, $element, options);
+  }
+
+  Utils.Extend(AjaxAdapter, ArrayAdapter);
+
+  AjaxAdapter.prototype._applyDefaults = function (options) {
+    var defaults = {
+      data: function (params) {
+        return {
+          q: params.term
+        };
+      },
+      transport: function (params, success, failure) {
+        var $request = $.ajax(params);
+
+        $request.then(success);
+        $request.fail(failure);
+
+        return $request;
+      }
+    };
+
+    return $.extend({}, defaults, options, true);
+  };
+
+  AjaxAdapter.prototype.processResults = function (results) {
+    return results;
+  };
+
+  AjaxAdapter.prototype.query = function (params, callback) {
+    var matches = [];
+    var self = this;
+
+    if (this._request != null) {
+      // JSONP requests cannot always be aborted
+      if ($.isFunction(this._request.abort)) {
+        this._request.abort();
+      }
+
+      this._request = null;
+    }
+
+    var options = $.extend({
+      type: 'GET'
+    }, this.ajaxOptions);
+
+    if (typeof options.url === 'function') {
+      options.url = options.url(params);
+    }
+
+    if (typeof options.data === 'function') {
+      options.data = options.data(params);
+    }
+
+    function request () {
+      var $request = options.transport(options, function (data) {
+        var results = self.processResults(data, params);
+
+        if (self.options.get('debug') && window.console && console.error) {
+          // Check to make sure that the response included a `results` key.
+          if (!results || !results.results || !$.isArray(results.results)) {
+            console.error(
+              'Select2: The AJAX results did not return an array in the ' +
+              '`results` key of the response.'
+            );
+          }
+        }
+
+        callback(results);
+      }, function () {
+        // TODO: Handle AJAX errors
+      });
+
+      self._request = $request;
+    }
+
+    if (this.ajaxOptions.delay && params.term !== '') {
+      if (this._queryTimeout) {
+        window.clearTimeout(this._queryTimeout);
+      }
+
+      this._queryTimeout = window.setTimeout(request, this.ajaxOptions.delay);
+    } else {
+      request();
+    }
+  };
+
+  return AjaxAdapter;
+});
+
+S2.define('select2/data/tags',[
+  'jquery'
+], function ($) {
+  function Tags (decorated, $element, options) {
+    var tags = options.get('tags');
+
+    var createTag = options.get('createTag');
+
+    if (createTag !== undefined) {
+      this.createTag = createTag;
+    }
+
+    decorated.call(this, $element, options);
+
+    if ($.isArray(tags)) {
+      for (var t = 0; t < tags.length; t++) {
+        var tag = tags[t];
+        var item = this._normalizeItem(tag);
+
+        var $option = this.option(item);
+
+        this.$element.append($option);
+      }
+    }
+  }
+
+  Tags.prototype.query = function (decorated, params, callback) {
+    var self = this;
+
+    this._removeOldTags();
+
+    if (params.term == null || params.page != null) {
+      decorated.call(this, params, callback);
+      return;
+    }
+
+    function wrapper (obj, child) {
+      var data = obj.results;
+
+      for (var i = 0; i < data.length; i++) {
+        var option = data[i];
+
+        var checkChildren = (
+          option.children != null &&
+          !wrapper({
+            results: option.children
+          }, true)
+        );
+
+        var checkText = option.text === params.term;
+
+        if (checkText || checkChildren) {
+          if (child) {
+            return false;
+          }
+
+          obj.data = data;
+          callback(obj);
+
+          return;
+        }
+      }
+
+      if (child) {
+        return true;
+      }
+
+      var tag = self.createTag(params);
+
+      if (tag != null) {
+        var $option = self.option(tag);
+        $option.attr('data-select2-tag', true);
+
+        self.addOptions([$option]);
+
+        self.insertTag(data, tag);
+      }
+
+      obj.results = data;
+
+      callback(obj);
+    }
+
+    decorated.call(this, params, wrapper);
+  };
+
+  Tags.prototype.createTag = function (decorated, params) {
+    var term = $.trim(params.term);
+
+    if (term === '') {
+      return null;
+    }
+
+    return {
+      id: term,
+      text: term
+    };
+  };
+
+  Tags.prototype.insertTag = function (_, data, tag) {
+    data.unshift(tag);
+  };
+
+  Tags.prototype._removeOldTags = function (_) {
+    var tag = this._lastTag;
+
+    var $options = this.$element.find('option[data-select2-tag]');
+
+    $options.each(function () {
+      if (this.selected) {
+        return;
+      }
+
+      $(this).remove();
+    });
+  };
+
+  return Tags;
+});
+
+S2.define('select2/data/tokenizer',[
+  'jquery'
+], function ($) {
+  function Tokenizer (decorated, $element, options) {
+    var tokenizer = options.get('tokenizer');
+
+    if (tokenizer !== undefined) {
+      this.tokenizer = tokenizer;
+    }
+
+    decorated.call(this, $element, options);
+  }
+
+  Tokenizer.prototype.bind = function (decorated, container, $container) {
+    decorated.call(this, container, $container);
+
+    this.$search =  container.dropdown.$search || container.selection.$search ||
+      $container.find('.select2-search__field');
+  };
+
+  Tokenizer.prototype.query = function (decorated, params, callback) {
+    var self = this;
+
+    function select (data) {
+      self.select(data);
+    }
+
+    params.term = params.term || '';
+
+    var tokenData = this.tokenizer(params, this.options, select);
+
+    if (tokenData.term !== params.term) {
+      // Replace the search term if we have the search box
+      if (this.$search.length) {
+        this.$search.val(tokenData.term);
+        this.$search.focus();
+      }
+
+      params.term = tokenData.term;
+    }
+
+    decorated.call(this, params, callback);
+  };
+
+  Tokenizer.prototype.tokenizer = function (_, params, options, callback) {
+    var separators = options.get('tokenSeparators') || [];
+    var term = params.term;
+    var i = 0;
+
+    var createTag = this.createTag || function (params) {
+      return {
+        id: params.term,
+        text: params.term
+      };
+    };
+
+    while (i < term.length) {
+      var termChar = term[i];
+
+      if ($.inArray(termChar, separators) === -1) {
+        i++;
+
+        continue;
+      }
+
+      var part = term.substr(0, i);
+      var partParams = $.extend({}, params, {
+        term: part
+      });
+
+      var data = createTag(partParams);
+
+      callback(data);
+
+      // Reset the term to not include the tokenized portion
+      term = term.substr(i + 1) || '';
+      i = 0;
+    }
+
+    return {
+      term: term
+    };
+  };
+
+  return Tokenizer;
+});
+
+S2.define('select2/data/minimumInputLength',[
+
+], function () {
+  function MinimumInputLength (decorated, $e, options) {
+    this.minimumInputLength = options.get('minimumInputLength');
+
+    decorated.call(this, $e, options);
+  }
+
+  MinimumInputLength.prototype.query = function (decorated, params, callback) {
+    params.term = params.term || '';
+
+    if (params.term.length < this.minimumInputLength) {
+      this.trigger('results:message', {
+        message: 'inputTooShort',
+        args: {
+          minimum: this.minimumInputLength,
+          input: params.term,
+          params: params
+        }
+      });
+
+      return;
+    }
+
+    decorated.call(this, params, callback);
+  };
+
+  return MinimumInputLength;
+});
+
+S2.define('select2/data/maximumInputLength',[
+
+], function () {
+  function MaximumInputLength (decorated, $e, options) {
+    this.maximumInputLength = options.get('maximumInputLength');
+
+    decorated.call(this, $e, options);
+  }
+
+  MaximumInputLength.prototype.query = function (decorated, params, callback) {
+    params.term = params.term || '';
+
+    if (this.maximumInputLength > 0 &&
+        params.term.length > this.maximumInputLength) {
+      this.trigger('results:message', {
+        message: 'inputTooLong',
+        args: {
+          maximum: this.maximumInputLength,
+          input: params.term,
+          params: params
+        }
+      });
+
+      return;
+    }
+
+    decorated.call(this, params, callback);
+  };
+
+  return MaximumInputLength;
+});
+
+S2.define('select2/data/maximumSelectionLength',[
+
+], function (){
+  function MaximumSelectionLength (decorated, $e, options) {
+    this.maximumSelectionLength = options.get('maximumSelectionLength');
+
+    decorated.call(this, $e, options);
+  }
+
+  MaximumSelectionLength.prototype.query =
+    function (decorated, params, callback) {
+      var self = this;
+
+      this.current(function (currentData) {
+        var count = currentData != null ? currentData.length : 0;
+        if (self.maximumSelectionLength > 0 &&
+          count >= self.maximumSelectionLength) {
+          self.trigger('results:message', {
+            message: 'maximumSelected',
+            args: {
+              maximum: self.maximumSelectionLength
+            }
+          });
+          return;
+        }
+        decorated.call(self, params, callback);
+      });
+  };
+
+  return MaximumSelectionLength;
+});
+
+S2.define('select2/dropdown',[
+  'jquery',
+  './utils'
+], function ($, Utils) {
+  function Dropdown ($element, options) {
+    this.$element = $element;
+    this.options = options;
+
+    Dropdown.__super__.constructor.call(this);
+  }
+
+  Utils.Extend(Dropdown, Utils.Observable);
+
+  Dropdown.prototype.render = function () {
+    var $dropdown = $(
+      '<span class="select2-dropdown">' +
+        '<span class="select2-results"></span>' +
+      '</span>'
+    );
+
+    $dropdown.attr('dir', this.options.get('dir'));
+
+    this.$dropdown = $dropdown;
+
+    return $dropdown;
+  };
+
+  Dropdown.prototype.position = function ($dropdown, $container) {
+    // Should be implmented in subclasses
+  };
+
+  Dropdown.prototype.destroy = function () {
+    // Remove the dropdown from the DOM
+    this.$dropdown.remove();
+  };
+
+  return Dropdown;
+});
+
+S2.define('select2/dropdown/search',[
+  'jquery',
+  '../utils'
+], function ($, Utils) {
+  function Search () { }
+
+  Search.prototype.render = function (decorated) {
+    var $rendered = decorated.call(this);
+
+    var $search = $(
+      '<span class="select2-search select2-search--dropdown">' +
+        '<input class="select2-search__field" type="search" tabindex="-1"' +
+        ' autocomplete="off" autocorrect="off" autocapitalize="off"' +
+        ' spellcheck="false" role="textbox" />' +
+      '</span>'
+    );
+
+    this.$searchContainer = $search;
+    this.$search = $search.find('input');
+
+    $rendered.prepend($search);
+
+    return $rendered;
+  };
+
+  Search.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    decorated.call(this, container, $container);
+
+    this.$search.on('keydown', function (evt) {
+      self.trigger('keypress', evt);
+
+      self._keyUpPrevented = evt.isDefaultPrevented();
+    });
+
+    // Workaround for browsers which do not support the `input` event
+    // This will prevent double-triggering of events for browsers which support
+    // both the `keyup` and `input` events.
+    this.$search.on('input', function (evt) {
+      // Unbind the duplicated `keyup` event
+      $(this).off('keyup');
+    });
+
+    this.$search.on('keyup input', function (evt) {
+      self.handleSearch(evt);
+    });
+
+    container.on('open', function () {
+      self.$search.attr('tabindex', 0);
+
+      self.$search.focus();
+
+      window.setTimeout(function () {
+        self.$search.focus();
+      }, 0);
+    });
+
+    container.on('close', function () {
+      self.$search.attr('tabindex', -1);
+
+      self.$search.val('');
+    });
+
+    container.on('results:all', function (params) {
+      if (params.query.term == null || params.query.term === '') {
+        var showSearch = self.showSearch(params);
+
+        if (showSearch) {
+          self.$searchContainer.removeClass('select2-search--hide');
+        } else {
+          self.$searchContainer.addClass('select2-search--hide');
+        }
+      }
+    });
+  };
+
+  Search.prototype.handleSearch = function (evt) {
+    if (!this._keyUpPrevented) {
+      var input = this.$search.val();
+
+      this.trigger('query', {
+        term: input
+      });
+    }
+
+    this._keyUpPrevented = false;
+  };
+
+  Search.prototype.showSearch = function (_, params) {
+    return true;
+  };
+
+  return Search;
+});
+
+S2.define('select2/dropdown/hidePlaceholder',[
+
+], function () {
+  function HidePlaceholder (decorated, $element, options, dataAdapter) {
+    this.placeholder = this.normalizePlaceholder(options.get('placeholder'));
+
+    decorated.call(this, $element, options, dataAdapter);
+  }
+
+  HidePlaceholder.prototype.append = function (decorated, data) {
+    data.results = this.removePlaceholder(data.results);
+
+    decorated.call(this, data);
+  };
+
+  HidePlaceholder.prototype.normalizePlaceholder = function (_, placeholder) {
+    if (typeof placeholder === 'string') {
+      placeholder = {
+        id: '',
+        text: placeholder
+      };
+    }
+
+    return placeholder;
+  };
+
+  HidePlaceholder.prototype.removePlaceholder = function (_, data) {
+    var modifiedData = data.slice(0);
+
+    for (var d = data.length - 1; d >= 0; d--) {
+      var item = data[d];
+
+      if (this.placeholder.id === item.id) {
+        modifiedData.splice(d, 1);
+      }
+    }
+
+    return modifiedData;
+  };
+
+  return HidePlaceholder;
+});
+
+S2.define('select2/dropdown/infiniteScroll',[
+  'jquery'
+], function ($) {
+  function InfiniteScroll (decorated, $element, options, dataAdapter) {
+    this.lastParams = {};
+
+    decorated.call(this, $element, options, dataAdapter);
+
+    this.$loadingMore = this.createLoadingMore();
+    this.loading = false;
+  }
+
+  InfiniteScroll.prototype.append = function (decorated, data) {
+    this.$loadingMore.remove();
+    this.loading = false;
+
+    decorated.call(this, data);
+
+    if (this.showLoadingMore(data)) {
+      this.$results.append(this.$loadingMore);
+    }
+  };
+
+  InfiniteScroll.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    decorated.call(this, container, $container);
+
+    container.on('query', function (params) {
+      self.lastParams = params;
+      self.loading = true;
+    });
+
+    container.on('query:append', function (params) {
+      self.lastParams = params;
+      self.loading = true;
+    });
+
+    this.$results.on('scroll', function () {
+      var isLoadMoreVisible = $.contains(
+        document.documentElement,
+        self.$loadingMore[0]
+      );
+
+      if (self.loading || !isLoadMoreVisible) {
+        return;
+      }
+
+      var currentOffset = self.$results.offset().top +
+        self.$results.outerHeight(false);
+      var loadingMoreOffset = self.$loadingMore.offset().top +
+        self.$loadingMore.outerHeight(false);
+
+      if (currentOffset + 50 >= loadingMoreOffset) {
+        self.loadMore();
+      }
+    });
+  };
+
+  InfiniteScroll.prototype.loadMore = function () {
+    this.loading = true;
+
+    var params = $.extend({}, {page: 1}, this.lastParams);
+
+    params.page++;
+
+    this.trigger('query:append', params);
+  };
+
+  InfiniteScroll.prototype.showLoadingMore = function (_, data) {
+    return data.pagination && data.pagination.more;
+  };
+
+  InfiniteScroll.prototype.createLoadingMore = function () {
+    var $option = $(
+      '<li class="option load-more" role="treeitem"></li>'
+    );
+
+    var message = this.options.get('translations').get('loadingMore');
+
+    $option.html(message(this.lastParams));
+
+    return $option;
+  };
+
+  return InfiniteScroll;
+});
+
+S2.define('select2/dropdown/attachBody',[
+  'jquery',
+  '../utils'
+], function ($, Utils) {
+  function AttachBody (decorated, $element, options) {
+    this.$dropdownParent = options.get('dropdownParent') || document.body;
+
+    decorated.call(this, $element, options);
+  }
+
+  AttachBody.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    var setupResultsEvents = false;
+
+    decorated.call(this, container, $container);
+
+    container.on('open', function () {
+      self._showDropdown();
+      self._attachPositioningHandler(container);
+
+      if (!setupResultsEvents) {
+        setupResultsEvents = true;
+
+        container.on('results:all', function () {
+          self._positionDropdown();
+          self._resizeDropdown();
+        });
+
+        container.on('results:append', function () {
+          self._positionDropdown();
+          self._resizeDropdown();
+        });
+      }
+    });
+
+    container.on('close', function () {
+      self._hideDropdown();
+      self._detachPositioningHandler(container);
+    });
+
+    this.$dropdownContainer.on('mousedown', function (evt) {
+      evt.stopPropagation();
+    });
+  };
+
+  AttachBody.prototype.position = function (decorated, $dropdown, $container) {
+    // Clone all of the container classes
+    $dropdown.attr('class', $container.attr('class'));
+
+    $dropdown.removeClass('select2');
+    $dropdown.addClass('select2-container--open');
+
+    $dropdown.css({
+      position: 'absolute',
+      top: -999999
+    });
+
+    this.$container = $container;
+  };
+
+  AttachBody.prototype.render = function (decorated) {
+    var $container = $('<span></span>');
+
+    var $dropdown = decorated.call(this);
+    $container.append($dropdown);
+
+    this.$dropdownContainer = $container;
+
+    return $container;
+  };
+
+  AttachBody.prototype._hideDropdown = function (decorated) {
+    this.$dropdownContainer.detach();
+  };
+
+  AttachBody.prototype._attachPositioningHandler = function (container) {
+    var self = this;
+
+    var scrollEvent = 'scroll.select2.' + container.id;
+    var resizeEvent = 'resize.select2.' + container.id;
+    var orientationEvent = 'orientationchange.select2.' + container.id;
+
+    var $watchers = this.$container.parents().filter(Utils.hasScroll);
+    $watchers.each(function () {
+      $(this).data('select2-scroll-position', {
+        x: $(this).scrollLeft(),
+        y: $(this).scrollTop()
+      });
+    });
+
+    $watchers.on(scrollEvent, function (ev) {
+      var position = $(this).data('select2-scroll-position');
+      $(this).scrollTop(position.y);
+    });
+
+    $(window).on(scrollEvent + ' ' + resizeEvent + ' ' + orientationEvent,
+      function (e) {
+      self._positionDropdown();
+      self._resizeDropdown();
+    });
+  };
+
+  AttachBody.prototype._detachPositioningHandler = function (container) {
+    var scrollEvent = 'scroll.select2.' + container.id;
+    var resizeEvent = 'resize.select2.' + container.id;
+    var orientationEvent = 'orientationchange.select2.' + container.id;
+
+    var $watchers = this.$container.parents().filter(Utils.hasScroll);
+    $watchers.off(scrollEvent);
+
+    $(window).off(scrollEvent + ' ' + resizeEvent + ' ' + orientationEvent);
+  };
+
+  AttachBody.prototype._positionDropdown = function () {
+    var $window = $(window);
+
+    var isCurrentlyAbove = this.$dropdown.hasClass('select2-dropdown--above');
+    var isCurrentlyBelow = this.$dropdown.hasClass('select2-dropdown--below');
+
+    var newDirection = null;
+
+    var position = this.$container.position();
+    var offset = this.$container.offset();
+
+    offset.bottom = offset.top + this.$container.outerHeight(false);
+
+    var container = {
+      height: this.$container.outerHeight(false)
+    };
+
+    container.top = offset.top;
+    container.bottom = offset.top + container.height;
+
+    var dropdown = {
+      height: this.$dropdown.outerHeight(false)
+    };
+
+    var viewport = {
+      top: $window.scrollTop(),
+      bottom: $window.scrollTop() + $window.height()
+    };
+
+    var enoughRoomAbove = viewport.top < (offset.top - dropdown.height);
+    var enoughRoomBelow = viewport.bottom > (offset.bottom + dropdown.height);
+
+    var css = {
+      left: offset.left,
+      top: container.bottom
+    };
+
+    if (!isCurrentlyAbove && !isCurrentlyBelow) {
+      newDirection = 'below';
+    }
+
+    if (!enoughRoomBelow && enoughRoomAbove && !isCurrentlyAbove) {
+      newDirection = 'above';
+    } else if (!enoughRoomAbove && enoughRoomBelow && isCurrentlyAbove) {
+      newDirection = 'below';
+    }
+
+    if (newDirection == 'above' ||
+      (isCurrentlyAbove && newDirection !== 'below')) {
+      css.top = container.top - dropdown.height;
+    }
+
+    if (newDirection != null) {
+      this.$dropdown
+        .removeClass('select2-dropdown--below select2-dropdown--above')
+        .addClass('select2-dropdown--' + newDirection);
+      this.$container
+        .removeClass('select2-container--below select2-container--above')
+        .addClass('select2-container--' + newDirection);
+    }
+
+    this.$dropdownContainer.css(css);
+  };
+
+  AttachBody.prototype._resizeDropdown = function () {
+    this.$dropdownContainer.width();
+
+    var css = {
+      width: this.$container.outerWidth(false) + 'px'
+    };
+
+    if (this.options.get('dropdownAutoWidth')) {
+      css.minWidth = css.width;
+      css.width = 'auto';
+    }
+
+    this.$dropdown.css(css);
+  };
+
+  AttachBody.prototype._showDropdown = function (decorated) {
+    this.$dropdownContainer.appendTo(this.$dropdownParent);
+
+    this._positionDropdown();
+    this._resizeDropdown();
+  };
+
+  return AttachBody;
+});
+
+S2.define('select2/dropdown/minimumResultsForSearch',[
+
+], function () {
+  function countResults (data) {
+    var count = 0;
+
+    for (var d = 0; d < data.length; d++) {
+      var item = data[d];
+
+      if (item.children) {
+        count += countResults(item.children);
+      } else {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
+  function MinimumResultsForSearch (decorated, $element, options, dataAdapter) {
+    this.minimumResultsForSearch = options.get('minimumResultsForSearch');
+
+    if (this.minimumResultsForSearch < 0) {
+      this.minimumResultsForSearch = Infinity;
+    }
+
+    decorated.call(this, $element, options, dataAdapter);
+  }
+
+  MinimumResultsForSearch.prototype.showSearch = function (decorated, params) {
+    if (countResults(params.data.results) < this.minimumResultsForSearch) {
+      return false;
+    }
+
+    return decorated.call(this, params);
+  };
+
+  return MinimumResultsForSearch;
+});
+
+S2.define('select2/dropdown/selectOnClose',[
+
+], function () {
+  function SelectOnClose () { }
+
+  SelectOnClose.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    decorated.call(this, container, $container);
+
+    container.on('close', function () {
+      self._handleSelectOnClose();
+    });
+  };
+
+  SelectOnClose.prototype._handleSelectOnClose = function () {
+    var $highlightedResults = this.getHighlightedResults();
+
+    if ($highlightedResults.length < 1) {
+      return;
+    }
+
+    this.trigger('select', {
+        data: $highlightedResults.data('data')
+    });
+  };
+
+  return SelectOnClose;
+});
+
+S2.define('select2/dropdown/closeOnSelect',[
+
+], function () {
+  function CloseOnSelect () { }
+
+  CloseOnSelect.prototype.bind = function (decorated, container, $container) {
+    var self = this;
+
+    decorated.call(this, container, $container);
+
+    container.on('select', function (evt) {
+      self._selectTriggered(evt);
+    });
+
+    container.on('unselect', function (evt) {
+      self._selectTriggered(evt);
+    });
+  };
+
+  CloseOnSelect.prototype._selectTriggered = function (_, evt) {
+    var originalEvent = evt.originalEvent;
+
+    // Don't close if the control key is being held
+    if (originalEvent && originalEvent.ctrlKey) {
+      return;
+    }
+
+    this.trigger('close');
+  };
+
+  return CloseOnSelect;
+});
+
+S2.define('select2/i18n/en',[],function () {
+  // English
+  return {
+    errorLoading: function () {
+      return 'The results could not be loaded.';
+    },
+    inputTooLong: function (args) {
+      var overChars = args.input.length - args.maximum;
+
+      var message = 'Please delete ' + overChars + ' character';
+
+      if (overChars != 1) {
+        message += 's';
+      }
+
+      return message;
+    },
+    inputTooShort: function (args) {
+      var remainingChars = args.minimum - args.input.length;
+
+      var message = 'Please enter ' + remainingChars + ' or more characters';
+
+      return message;
+    },
+    loadingMore: function () {
+      return 'Loading more results…';
+    },
+    maximumSelected: function (args) {
+      var message = 'You can only select ' + args.maximum + ' item';
+
+      if (args.maximum != 1) {
+        message += 's';
+      }
+
+      return message;
+    },
+    noResults: function () {
+      return 'No results found';
+    },
+    searching: function () {
+      return 'Searching…';
+    }
+  };
+});
+
+S2.define('select2/defaults',[
+  'jquery',
+  'require',
+
+  './results',
+
+  './selection/single',
+  './selection/multiple',
+  './selection/placeholder',
+  './selection/allowClear',
+  './selection/search',
+  './selection/eventRelay',
+
+  './utils',
+  './translation',
+  './diacritics',
+
+  './data/select',
+  './data/array',
+  './data/ajax',
+  './data/tags',
+  './data/tokenizer',
+  './data/minimumInputLength',
+  './data/maximumInputLength',
+  './data/maximumSelectionLength',
+
+  './dropdown',
+  './dropdown/search',
+  './dropdown/hidePlaceholder',
+  './dropdown/infiniteScroll',
+  './dropdown/attachBody',
+  './dropdown/minimumResultsForSearch',
+  './dropdown/selectOnClose',
+  './dropdown/closeOnSelect',
+
+  './i18n/en'
+], function ($, require,
+
+             ResultsList,
+
+             SingleSelection, MultipleSelection, Placeholder, AllowClear,
+             SelectionSearch, EventRelay,
+
+             Utils, Translation, DIACRITICS,
+
+             SelectData, ArrayData, AjaxData, Tags, Tokenizer,
+             MinimumInputLength, MaximumInputLength, MaximumSelectionLength,
+
+             Dropdown, DropdownSearch, HidePlaceholder, InfiniteScroll,
+             AttachBody, MinimumResultsForSearch, SelectOnClose, CloseOnSelect,
+
+             EnglishTranslation) {
+  function Defaults () {
+    this.reset();
+  }
+
+  Defaults.prototype.apply = function (options) {
+    options = $.extend({}, this.defaults, options);
+
+    if (options.dataAdapter == null) {
+      if (options.ajax != null) {
+        options.dataAdapter = AjaxData;
+      } else if (options.data != null) {
+        options.dataAdapter = ArrayData;
+      } else {
+        options.dataAdapter = SelectData;
+      }
+
+      if (options.minimumInputLength > 0) {
+        options.dataAdapter = Utils.Decorate(
+          options.dataAdapter,
+          MinimumInputLength
+        );
+      }
+
+      if (options.maximumInputLength > 0) {
+        options.dataAdapter = Utils.Decorate(
+          options.dataAdapter,
+          MaximumInputLength
+        );
+      }
+
+      if (options.maximumSelectionLength > 0) {
+        options.dataAdapter = Utils.Decorate(
+          options.dataAdapter,
+          MaximumSelectionLength
+        );
+      }
+
+      if (options.tags) {
+        options.dataAdapter = Utils.Decorate(options.dataAdapter, Tags);
+      }
+
+      if (options.tokenSeparators != null || options.tokenizer != null) {
+        options.dataAdapter = Utils.Decorate(
+          options.dataAdapter,
+          Tokenizer
+        );
+      }
+
+      if (options.query != null) {
+        var Query = require(options.amdBase + 'compat/query');
+
+        options.dataAdapter = Utils.Decorate(
+          options.dataAdapter,
+          Query
+        );
+      }
+
+      if (options.initSelection != null) {
+        var InitSelection = require(options.amdBase + 'compat/initSelection');
+
+        options.dataAdapter = Utils.Decorate(
+          options.dataAdapter,
+          InitSelection
+        );
+      }
+    }
+
+    if (options.resultsAdapter == null) {
+      options.resultsAdapter = ResultsList;
+
+      if (options.ajax != null) {
+        options.resultsAdapter = Utils.Decorate(
+          options.resultsAdapter,
+          InfiniteScroll
+        );
+      }
+
+      if (options.placeholder != null) {
+        options.resultsAdapter = Utils.Decorate(
+          options.resultsAdapter,
+          HidePlaceholder
+        );
+      }
+
+      if (options.selectOnClose) {
+        options.resultsAdapter = Utils.Decorate(
+          options.resultsAdapter,
+          SelectOnClose
+        );
+      }
+    }
+
+    if (options.dropdownAdapter == null) {
+      if (options.multiple) {
+        options.dropdownAdapter = Dropdown;
+      } else {
+        var SearchableDropdown = Utils.Decorate(Dropdown, DropdownSearch);
+
+        options.dropdownAdapter = SearchableDropdown;
+      }
+
+      if (options.minimumResultsForSearch !== 0) {
+        options.dropdownAdapter = Utils.Decorate(
+          options.dropdownAdapter,
+          MinimumResultsForSearch
+        );
+      }
+
+      if (options.closeOnSelect) {
+        options.dropdownAdapter = Utils.Decorate(
+          options.dropdownAdapter,
+          CloseOnSelect
+        );
+      }
+
+      if (
+        options.dropdownCssClass != null ||
+        options.dropdownCss != null ||
+        options.adaptDropdownCssClass != null
+      ) {
+        var DropdownCSS = require(options.amdBase + 'compat/dropdownCss');
+
+        options.dropdownAdapter = Utils.Decorate(
+          options.dropdownAdapter,
+          DropdownCSS
+        );
+      }
+
+      options.dropdownAdapter = Utils.Decorate(
+        options.dropdownAdapter,
+        AttachBody
+      );
+    }
+
+    if (options.selectionAdapter == null) {
+      if (options.multiple) {
+        options.selectionAdapter = MultipleSelection;
+      } else {
+        options.selectionAdapter = SingleSelection;
+      }
+
+      // Add the placeholder mixin if a placeholder was specified
+      if (options.placeholder != null) {
+        options.selectionAdapter = Utils.Decorate(
+          options.selectionAdapter,
+          Placeholder
+        );
+      }
+
+      if (options.allowClear) {
+        options.selectionAdapter = Utils.Decorate(
+          options.selectionAdapter,
+          AllowClear
+        );
+      }
+
+      if (options.multiple) {
+        options.selectionAdapter = Utils.Decorate(
+          options.selectionAdapter,
+          SelectionSearch
+        );
+      }
+
+      if (
+        options.containerCssClass != null ||
+        options.containerCss != null ||
+        options.adaptContainerCssClass != null
+      ) {
+        var ContainerCSS = require(options.amdBase + 'compat/containerCss');
+
+        options.selectionAdapter = Utils.Decorate(
+          options.selectionAdapter,
+          ContainerCSS
+        );
+      }
+
+      options.selectionAdapter = Utils.Decorate(
+        options.selectionAdapter,
+        EventRelay
+      );
+    }
+
+    if (typeof options.language === 'string') {
+      // Check if the language is specified with a region
+      if (options.language.indexOf('-') > 0) {
+        // Extract the region information if it is included
+        var languageParts = options.language.split('-');
+        var baseLanguage = languageParts[0];
+
+        options.language = [options.language, baseLanguage];
+      } else {
+        options.language = [options.language];
+      }
+    }
+
+    if ($.isArray(options.language)) {
+      var languages = new Translation();
+      options.language.push('en');
+
+      var languageNames = options.language;
+
+      for (var l = 0; l < languageNames.length; l++) {
+        var name = languageNames[l];
+        var language = {};
+
+        try {
+          // Try to load it with the original name
+          language = Translation.loadPath(name);
+        } catch (e) {
+          try {
+            // If we couldn't load it, check if it wasn't the full path
+            name = this.defaults.amdLanguageBase + name;
+            language = Translation.loadPath(name);
+          } catch (ex) {
+            // The translation could not be loaded at all. Sometimes this is
+            // because of a configuration problem, other times this can be
+            // because of how Select2 helps load all possible translation files.
+            if (options.debug && window.console && console.warn) {
+              console.warn(
+                'Select2: The language file for "' + name + '" could not be ' +
+                'automatically loaded. A fallback will be used instead.'
+              );
+            }
+
+            continue;
+          }
+        }
+
+        languages.extend(language);
+      }
+
+      options.translations = languages;
+    } else {
+      var baseTranslation = Translation.loadPath(
+        this.defaults.amdLanguageBase + 'en'
+      );
+      var customTranslation = new Translation(options.language);
+
+      customTranslation.extend(baseTranslation);
+
+      options.translations = customTranslation;
+    }
+
+    return options;
+  };
+
+  Defaults.prototype.reset = function () {
+    function stripDiacritics (text) {
+      // Used 'uni range + named function' from http://jsperf.com/diacritics/18
+      function match(a) {
+        return DIACRITICS[a] || a;
+      }
+
+      return text.replace(/[^\u0000-\u007E]/g, match);
+    }
+
+    function matcher (params, data) {
+      // Always return the object if there is nothing to compare
+      if ($.trim(params.term) === '') {
+        return data;
+      }
+
+      // Do a recursive check for options with children
+      if (data.children && data.children.length > 0) {
+        // Clone the data object if there are children
+        // This is required as we modify the object to remove any non-matches
+        var match = $.extend(true, {}, data);
+
+        // Check each child of the option
+        for (var c = data.children.length - 1; c >= 0; c--) {
+          var child = data.children[c];
+
+          var matches = matcher(params, child);
+
+          // If there wasn't a match, remove the object in the array
+          if (matches == null) {
+            match.children.splice(c, 1);
+          }
+        }
+
+        // If any children matched, return the new object
+        if (match.children.length > 0) {
+          return match;
+        }
+
+        // If there were no matching children, check just the plain object
+        return matcher(params, match);
+      }
+
+      var original = stripDiacritics(data.text).toUpperCase();
+      var term = stripDiacritics(params.term).toUpperCase();
+
+      // Check if the text contains the term
+      if (original.indexOf(term) > -1) {
+        return data;
+      }
+
+      // If it doesn't contain the term, don't return anything
+      return null;
+    }
+
+    this.defaults = {
+      amdBase: './',
+      amdLanguageBase: './i18n/',
+      closeOnSelect: true,
+      debug: false,
+      dropdownAutoWidth: false,
+      escapeMarkup: Utils.escapeMarkup,
+      language: EnglishTranslation,
+      matcher: matcher,
+      minimumInputLength: 0,
+      maximumInputLength: 0,
+      maximumSelectionLength: 0,
+      minimumResultsForSearch: 0,
+      selectOnClose: false,
+      sorter: function (data) {
+        return data;
+      },
+      templateResult: function (result) {
+        return result.text;
+      },
+      templateSelection: function (selection) {
+        return selection.text;
+      },
+      theme: 'default',
+      width: 'resolve'
+    };
+  };
+
+  Defaults.prototype.set = function (key, value) {
+    var camelKey = $.camelCase(key);
+
+    var data = {};
+    data[camelKey] = value;
+
+    var convertedData = Utils._convertData(data);
+
+    $.extend(this.defaults, convertedData);
+  };
+
+  var defaults = new Defaults();
+
+  return defaults;
+});
+
+S2.define('select2/options',[
+  'require',
+  'jquery',
+  './defaults',
+  './utils'
+], function (require, $, Defaults, Utils) {
+  function Options (options, $element) {
+    this.options = options;
+
+    if ($element != null) {
+      this.fromElement($element);
+    }
+
+    this.options = Defaults.apply(this.options);
+
+    if ($element && $element.is('input')) {
+      var InputCompat = require(this.get('amdBase') + 'compat/inputData');
+
+      this.options.dataAdapter = Utils.Decorate(
+        this.options.dataAdapter,
+        InputCompat
+      );
+    }
+  }
+
+  Options.prototype.fromElement = function ($e) {
+    var excludedData = ['select2'];
+
+    if (this.options.multiple == null) {
+      this.options.multiple = $e.prop('multiple');
+    }
+
+    if (this.options.disabled == null) {
+      this.options.disabled = $e.prop('disabled');
+    }
+
+    if (this.options.language == null) {
+      if ($e.prop('lang')) {
+        this.options.language = $e.prop('lang').toLowerCase();
+      } else if ($e.closest('[lang]').prop('lang')) {
+        this.options.language = $e.closest('[lang]').prop('lang');
+      }
+    }
+
+    if (this.options.dir == null) {
+      if ($e.prop('dir')) {
+        this.options.dir = $e.prop('dir');
+      } else if ($e.closest('[dir]').prop('dir')) {
+        this.options.dir = $e.closest('[dir]').prop('dir');
+      } else {
+        this.options.dir = 'ltr';
+      }
+    }
+
+    $e.prop('disabled', this.options.disabled);
+    $e.prop('multiple', this.options.multiple);
+
+    if ($e.data('select2Tags')) {
+      if (this.options.debug && window.console && console.warn) {
+        console.warn(
+          'Select2: The `data-select2-tags` attribute has been changed to ' +
+          'use the `data-data` and `data-tags="true"` attributes and will be ' +
+          'removed in future versions of Select2.'
+        );
+      }
+
+      $e.data('data', $e.data('select2Tags'));
+      $e.data('tags', true);
+    }
+
+    if ($e.data('ajaxUrl')) {
+      if (this.options.debug && window.console && console.warn) {
+        console.warn(
+          'Select2: The `data-ajax-url` attribute has been changed to ' +
+          '`data-ajax--url` and support for the old attribute will be removed' +
+          ' in future versions of Select2.'
+        );
+      }
+
+      $e.attr('ajax--url', $e.data('ajaxUrl'));
+      $e.data('ajax--url', $e.data('ajaxUrl'));
+    }
+
+    var dataset = {};
+
+    // Prefer the element's `dataset` attribute if it exists
+    // jQuery 1.x does not correctly handle data attributes with multiple dashes
+    if ($.fn.jquery && $.fn.jquery.substr(0, 2) == '1.' && $e[0].dataset) {
+      dataset = $.extend(true, {}, $e[0].dataset, $e.data());
+    } else {
+      dataset = $e.data();
+    }
+
+    var data = $.extend(true, {}, dataset);
+
+    data = Utils._convertData(data);
+
+    for (var key in data) {
+      if ($.inArray(key, excludedData) > -1) {
+        continue;
+      }
+
+      if ($.isPlainObject(this.options[key])) {
+        $.extend(this.options[key], data[key]);
+      } else {
+        this.options[key] = data[key];
+      }
+    }
+
+    return this;
+  };
+
+  Options.prototype.get = function (key) {
+    return this.options[key];
+  };
+
+  Options.prototype.set = function (key, val) {
+    this.options[key] = val;
+  };
+
+  return Options;
+});
+
+S2.define('select2/core',[
+  'jquery',
+  './options',
+  './utils',
+  './keys'
+], function ($, Options, Utils, KEYS) {
+  var Select2 = function ($element, options) {
+    if ($element.data('select2') != null) {
+      $element.data('select2').destroy();
+    }
+
+    this.$element = $element;
+
+    this.id = this._generateId($element);
+
+    options = options || {};
+
+    this.options = new Options(options, $element);
+
+    Select2.__super__.constructor.call(this);
+
+    // Set up the tabindex
+
+    var tabindex = $element.attr('tabindex') || 0;
+    $element.data('old-tabindex', tabindex);
+    $element.attr('tabindex', '-1');
+
+    // Set up containers and adapters
+
+    var DataAdapter = this.options.get('dataAdapter');
+    this.dataAdapter = new DataAdapter($element, this.options);
+
+    var $container = this.render();
+
+    this._placeContainer($container);
+
+    var SelectionAdapter = this.options.get('selectionAdapter');
+    this.selection = new SelectionAdapter($element, this.options);
+    this.$selection = this.selection.render();
+
+    this.selection.position(this.$selection, $container);
+
+    var DropdownAdapter = this.options.get('dropdownAdapter');
+    this.dropdown = new DropdownAdapter($element, this.options);
+    this.$dropdown = this.dropdown.render();
+
+    this.dropdown.position(this.$dropdown, $container);
+
+    var ResultsAdapter = this.options.get('resultsAdapter');
+    this.results = new ResultsAdapter($element, this.options, this.dataAdapter);
+    this.$results = this.results.render();
+
+    this.results.position(this.$results, this.$dropdown);
+
+    // Bind events
+
+    var self = this;
+
+    // Bind the container to all of the adapters
+    this._bindAdapters();
+
+    // Register any DOM event handlers
+    this._registerDomEvents();
+
+    // Register any internal event handlers
+    this._registerDataEvents();
+    this._registerSelectionEvents();
+    this._registerDropdownEvents();
+    this._registerResultsEvents();
+    this._registerEvents();
+
+    // Set the initial state
+    this.dataAdapter.current(function (initialData) {
+      self.trigger('selection:update', {
+        data: initialData
+      });
+    });
+
+    // Hide the original select
+    $element.addClass('select2-hidden-accessible');
+	$element.attr('aria-hidden', 'true');
+
+    // Synchronize any monitored attributes
+    this._syncAttributes();
+
+    $element.data('select2', this);
+  };
+
+  Utils.Extend(Select2, Utils.Observable);
+
+  Select2.prototype._generateId = function ($element) {
+    var id = '';
+
+    if ($element.attr('id') != null) {
+      id = $element.attr('id');
+    } else if ($element.attr('name') != null) {
+      id = $element.attr('name') + '-' + Utils.generateChars(2);
+    } else {
+      id = Utils.generateChars(4);
+    }
+
+    id = 'select2-' + id;
+
+    return id;
+  };
+
+  Select2.prototype._placeContainer = function ($container) {
+    $container.insertAfter(this.$element);
+
+    var width = this._resolveWidth(this.$element, this.options.get('width'));
+
+    if (width != null) {
+      $container.css('width', width);
+    }
+  };
+
+  Select2.prototype._resolveWidth = function ($element, method) {
+    var WIDTH = /^width:(([-+]?([0-9]*\.)?[0-9]+)(px|em|ex|%|in|cm|mm|pt|pc))/i;
+
+    if (method == 'resolve') {
+      var styleWidth = this._resolveWidth($element, 'style');
+
+      if (styleWidth != null) {
+        return styleWidth;
+      }
+
+      return this._resolveWidth($element, 'element');
+    }
+
+    if (method == 'element') {
+      var elementWidth = $element.outerWidth(false);
+
+      if (elementWidth <= 0) {
+        return 'auto';
+      }
+
+      return elementWidth + 'px';
+    }
+
+    if (method == 'style') {
+      var style = $element.attr('style');
+
+      if (typeof(style) !== 'string') {
+        return null;
+      }
+
+      var attrs = style.split(';');
+
+      for (var i = 0, l = attrs.length; i < l; i = i + 1) {
+        var attr = attrs[i].replace(/\s/g, '');
+        var matches = attr.match(WIDTH);
+
+        if (matches !== null && matches.length >= 1) {
+          return matches[1];
+        }
+      }
+
+      return null;
+    }
+
+    return method;
+  };
+
+  Select2.prototype._bindAdapters = function () {
+    this.dataAdapter.bind(this, this.$container);
+    this.selection.bind(this, this.$container);
+
+    this.dropdown.bind(this, this.$container);
+    this.results.bind(this, this.$container);
+  };
+
+  Select2.prototype._registerDomEvents = function () {
+    var self = this;
+
+    this.$element.on('change.select2', function () {
+      self.dataAdapter.current(function (data) {
+        self.trigger('selection:update', {
+          data: data
+        });
+      });
+    });
+
+    this._sync = Utils.bind(this._syncAttributes, this);
+
+    if (this.$element[0].attachEvent) {
+      this.$element[0].attachEvent('onpropertychange', this._sync);
+    }
+
+    var observer = window.MutationObserver ||
+      window.WebKitMutationObserver ||
+      window.MozMutationObserver
+    ;
+
+    if (observer != null) {
+      this._observer = new observer(function (mutations) {
+        $.each(mutations, self._sync);
+      });
+      this._observer.observe(this.$element[0], {
+        attributes: true,
+        subtree: false
+      });
+    } else if (this.$element[0].addEventListener) {
+      this.$element[0].addEventListener('DOMAttrModified', self._sync, false);
+    }
+  };
+
+  Select2.prototype._registerDataEvents = function () {
+    var self = this;
+
+    this.dataAdapter.on('*', function (name, params) {
+      self.trigger(name, params);
+    });
+  };
+
+  Select2.prototype._registerSelectionEvents = function () {
+    var self = this;
+    var nonRelayEvents = ['toggle'];
+
+    this.selection.on('toggle', function () {
+      self.toggleDropdown();
+    });
+
+    this.selection.on('*', function (name, params) {
+      if ($.inArray(name, nonRelayEvents) !== -1) {
+        return;
+      }
+
+      self.trigger(name, params);
+    });
+  };
+
+  Select2.prototype._registerDropdownEvents = function () {
+    var self = this;
+
+    this.dropdown.on('*', function (name, params) {
+      self.trigger(name, params);
+    });
+  };
+
+  Select2.prototype._registerResultsEvents = function () {
+    var self = this;
+
+    this.results.on('*', function (name, params) {
+      self.trigger(name, params);
+    });
+  };
+
+  Select2.prototype._registerEvents = function () {
+    var self = this;
+
+    this.on('open', function () {
+      self.$container.addClass('select2-container--open');
+    });
+
+    this.on('close', function () {
+      self.$container.removeClass('select2-container--open');
+    });
+
+    this.on('enable', function () {
+      self.$container.removeClass('select2-container--disabled');
+    });
+
+    this.on('disable', function () {
+      self.$container.addClass('select2-container--disabled');
+    });
+
+    this.on('focus', function () {
+      self.$container.addClass('select2-container--focus');
+    });
+
+    this.on('blur', function () {
+      self.$container.removeClass('select2-container--focus');
+    });
+
+    this.on('query', function (params) {
+      if (!self.isOpen()) {
+        self.trigger('open');
+      }
+
+      this.dataAdapter.query(params, function (data) {
+        self.trigger('results:all', {
+          data: data,
+          query: params
+        });
+      });
+    });
+
+    this.on('query:append', function (params) {
+      this.dataAdapter.query(params, function (data) {
+        self.trigger('results:append', {
+          data: data,
+          query: params
+        });
+      });
+    });
+
+    this.on('keypress', function (evt) {
+      var key = evt.which;
+
+      if (self.isOpen()) {
+        if (key === KEYS.ENTER) {
+          self.trigger('results:select');
+
+          evt.preventDefault();
+        } else if ((key === KEYS.SPACE && evt.ctrlKey)) {
+          self.trigger('results:toggle');
+
+          evt.preventDefault();
+        } else if (key === KEYS.UP) {
+          self.trigger('results:previous');
+
+          evt.preventDefault();
+        } else if (key === KEYS.DOWN) {
+          self.trigger('results:next');
+
+          evt.preventDefault();
+        } else if (key === KEYS.ESC || key === KEYS.TAB) {
+          self.close();
+
+          evt.preventDefault();
+        }
+      } else {
+        if (key === KEYS.ENTER || key === KEYS.SPACE ||
+            ((key === KEYS.DOWN || key === KEYS.UP) && evt.altKey)) {
+          self.open();
+
+          evt.preventDefault();
+        }
+      }
+    });
+  };
+
+  Select2.prototype._syncAttributes = function () {
+    this.options.set('disabled', this.$element.prop('disabled'));
+
+    if (this.options.get('disabled')) {
+      if (this.isOpen()) {
+        this.close();
+      }
+
+      this.trigger('disable');
+    } else {
+      this.trigger('enable');
+    }
+  };
+
+  /**
+   * Override the trigger method to automatically trigger pre-events when
+   * there are events that can be prevented.
+   */
+  Select2.prototype.trigger = function (name, args) {
+    var actualTrigger = Select2.__super__.trigger;
+    var preTriggerMap = {
+      'open': 'opening',
+      'close': 'closing',
+      'select': 'selecting',
+      'unselect': 'unselecting'
+    };
+
+    if (name in preTriggerMap) {
+      var preTriggerName = preTriggerMap[name];
+      var preTriggerArgs = {
+        prevented: false,
+        name: name,
+        args: args
+      };
+
+      actualTrigger.call(this, preTriggerName, preTriggerArgs);
+
+      if (preTriggerArgs.prevented) {
+        args.prevented = true;
+
+        return;
+      }
+    }
+
+    actualTrigger.call(this, name, args);
+  };
+
+  Select2.prototype.toggleDropdown = function () {
+    if (this.options.get('disabled')) {
+      return;
+    }
+
+    if (this.isOpen()) {
+      this.close();
+    } else {
+      this.open();
+    }
+  };
+
+  Select2.prototype.open = function () {
+    if (this.isOpen()) {
+      return;
+    }
+
+    this.trigger('query', {});
+
+    this.trigger('open');
+  };
+
+  Select2.prototype.close = function () {
+    if (!this.isOpen()) {
+      return;
+    }
+
+    this.trigger('close');
+  };
+
+  Select2.prototype.isOpen = function () {
+    return this.$container.hasClass('select2-container--open');
+  };
+
+  Select2.prototype.enable = function (args) {
+    if (this.options.get('debug') && window.console && console.warn) {
+      console.warn(
+        'Select2: The `select2("enable")` method has been deprecated and will' +
+        ' be removed in later Select2 versions. Use $element.prop("disabled")' +
+        ' instead.'
+      );
+    }
+
+    if (args == null || args.length === 0) {
+      args = [true];
+    }
+
+    var disabled = !args[0];
+
+    this.$element.prop('disabled', disabled);
+  };
+
+  Select2.prototype.data = function () {
+    if (this.options.get('debug') &&
+        arguments.length > 0 && window.console && console.warn) {
+      console.warn(
+        'Select2: Data can no longer be set using `select2("data")`. You ' +
+        'should consider setting the value instead using `$element.val()`.'
+      );
+    }
+
+    var data = [];
+
+    this.dataAdapter.current(function (currentData) {
+      data = currentData;
+    });
+
+    return data;
+  };
+
+  Select2.prototype.val = function (args) {
+    if (this.options.get('debug') && window.console && console.warn) {
+      console.warn(
+        'Select2: The `select2("val")` method has been deprecated and will be' +
+        ' removed in later Select2 versions. Use $element.val() instead.'
+      );
+    }
+
+    if (args == null || args.length === 0) {
+      return this.$element.val();
+    }
+
+    var newVal = args[0];
+
+    if ($.isArray(newVal)) {
+      newVal = $.map(newVal, function (obj) {
+        return obj.toString();
+      });
+    }
+
+    this.$element.val(newVal).trigger('change');
+  };
+
+  Select2.prototype.destroy = function () {
+    this.$container.remove();
+
+    if (this.$element[0].detachEvent) {
+      this.$element[0].detachEvent('onpropertychange', this._sync);
+    }
+
+    if (this._observer != null) {
+      this._observer.disconnect();
+      this._observer = null;
+    } else if (this.$element[0].removeEventListener) {
+      this.$element[0]
+        .removeEventListener('DOMAttrModified', this._sync, false);
+    }
+
+    this._sync = null;
+
+    this.$element.off('.select2');
+    this.$element.attr('tabindex', this.$element.data('old-tabindex'));
+
+    this.$element.removeClass('select2-hidden-accessible');
+	this.$element.attr('aria-hidden', 'false');
+    this.$element.removeData('select2');
+
+    this.dataAdapter.destroy();
+    this.selection.destroy();
+    this.dropdown.destroy();
+    this.results.destroy();
+
+    this.dataAdapter = null;
+    this.selection = null;
+    this.dropdown = null;
+    this.results = null;
+  };
+
+  Select2.prototype.render = function () {
+    var $container = $(
+      '<span class="select2 select2-container">' +
+        '<span class="selection"></span>' +
+        '<span class="dropdown-wrapper" aria-hidden="true"></span>' +
+      '</span>'
+    );
+
+    $container.attr('dir', this.options.get('dir'));
+
+    this.$container = $container;
+
+    this.$container.addClass('select2-container--' + this.options.get('theme'));
+
+    $container.data('element', this.$element);
+
+    return $container;
+  };
+
+  return Select2;
+});
+
+S2.define('select2/compat/utils',[
+  'jquery'
+], function ($) {
+  function syncCssClasses ($dest, $src, adapter) {
+    var classes, replacements = [], adapted;
+
+    classes = $.trim($dest.attr('class'));
+
+    if (classes) {
+      classes = '' + classes; // for IE which returns object
+
+      $(classes.split(/\s+/)).each(function () {
+        // Save all Select2 classes
+        if (this.indexOf('select2-') === 0) {
+          replacements.push(this);
+        }
+      });
+    }
+
+    classes = $.trim($src.attr('class'));
+
+    if (classes) {
+      classes = '' + classes; // for IE which returns object
+
+      $(classes.split(/\s+/)).each(function () {
+        // Only adapt non-Select2 classes
+        if (this.indexOf('select2-') !== 0) {
+          adapted = adapter(this);
+
+          if (adapted != null) {
+            replacements.push(adapted);
+          }
+        }
+      });
+    }
+
+    $dest.attr('class', replacements.join(' '));
+  }
+
+  return {
+    syncCssClasses: syncCssClasses
+  };
+});
+
+S2.define('select2/compat/containerCss',[
+  'jquery',
+  './utils'
+], function ($, CompatUtils) {
+  // No-op CSS adapter that discards all classes by default
+  function _containerAdapter (clazz) {
+    return null;
+  }
+
+  function ContainerCSS () { }
+
+  ContainerCSS.prototype.render = function (decorated) {
+    var $container = decorated.call(this);
+
+    var containerCssClass = this.options.get('containerCssClass') || '';
+
+    if ($.isFunction(containerCssClass)) {
+      containerCssClass = containerCssClass(this.$element);
+    }
+
+    var containerCssAdapter = this.options.get('adaptContainerCssClass');
+    containerCssAdapter = containerCssAdapter || _containerAdapter;
+
+    if (containerCssClass.indexOf(':all:') !== -1) {
+      containerCssClass = containerCssClass.replace(':all', '');
+
+      var _cssAdapter = containerCssAdapter;
+
+      containerCssAdapter = function (clazz) {
+        var adapted = _cssAdapter(clazz);
+
+        if (adapted != null) {
+          // Append the old one along with the adapted one
+          return adapted + ' ' + clazz;
+        }
+
+        return clazz;
+      };
+    }
+
+    var containerCss = this.options.get('containerCss') || {};
+
+    if ($.isFunction(containerCss)) {
+      containerCss = containerCss(this.$element);
+    }
+
+    CompatUtils.syncCssClasses($container, this.$element, containerCssAdapter);
+
+    $container.css(containerCss);
+    $container.addClass(containerCssClass);
+
+    return $container;
+  };
+
+  return ContainerCSS;
+});
+
+S2.define('select2/compat/dropdownCss',[
+  'jquery',
+  './utils'
+], function ($, CompatUtils) {
+  // No-op CSS adapter that discards all classes by default
+  function _dropdownAdapter (clazz) {
+    return null;
+  }
+
+  function DropdownCSS () { }
+
+  DropdownCSS.prototype.render = function (decorated) {
+    var $dropdown = decorated.call(this);
+
+    var dropdownCssClass = this.options.get('dropdownCssClass') || '';
+
+    if ($.isFunction(dropdownCssClass)) {
+      dropdownCssClass = dropdownCssClass(this.$element);
+    }
+
+    var dropdownCssAdapter = this.options.get('adaptDropdownCssClass');
+    dropdownCssAdapter = dropdownCssAdapter || _dropdownAdapter;
+
+    if (dropdownCssClass.indexOf(':all:') !== -1) {
+      dropdownCssClass = dropdownCssClass.replace(':all', '');
+
+      var _cssAdapter = dropdownCssAdapter;
+
+      dropdownCssAdapter = function (clazz) {
+        var adapted = _cssAdapter(clazz);
+
+        if (adapted != null) {
+          // Append the old one along with the adapted one
+          return adapted + ' ' + clazz;
+        }
+
+        return clazz;
+      };
+    }
+
+    var dropdownCss = this.options.get('dropdownCss') || {};
+
+    if ($.isFunction(dropdownCss)) {
+      dropdownCss = dropdownCss(this.$element);
+    }
+
+    CompatUtils.syncCssClasses($dropdown, this.$element, dropdownCssAdapter);
+
+    $dropdown.css(dropdownCss);
+    $dropdown.addClass(dropdownCssClass);
+
+    return $dropdown;
+  };
+
+  return DropdownCSS;
+});
+
+S2.define('select2/compat/initSelection',[
+  'jquery'
+], function ($) {
+  function InitSelection (decorated, $element, options) {
+    if (options.get('debug') && window.console && console.warn) {
+      console.warn(
+        'Select2: The `initSelection` option has been deprecated in favor' +
+        ' of a custom data adapter that overrides the `current` method. ' +
+        'This method is now called multiple times instead of a single ' +
+        'time when the instance is initialized. Support will be removed ' +
+        'for the `initSelection` option in future versions of Select2'
+      );
+    }
+
+    this.initSelection = options.get('initSelection');
+    this._isInitialized = false;
+
+    decorated.call(this, $element, options);
+  }
+
+  InitSelection.prototype.current = function (decorated, callback) {
+    var self = this;
+
+    if (this._isInitialized) {
+      decorated.call(this, callback);
+
+      return;
+    }
+
+    this.initSelection.call(null, this.$element, function (data) {
+      self._isInitialized = true;
+
+      if (!$.isArray(data)) {
+        data = [data];
+      }
+
+      callback(data);
+    });
+  };
+
+  return InitSelection;
+});
+
+S2.define('select2/compat/inputData',[
+  'jquery'
+], function ($) {
+  function InputData (decorated, $element, options) {
+    this._currentData = [];
+    this._valueSeparator = options.get('valueSeparator') || ',';
+
+    if ($element.prop('type') === 'hidden') {
+      if (options.get('debug') && console && console.warn) {
+        console.warn(
+          'Select2: Using a hidden input with Select2 is no longer ' +
+          'supported and may stop working in the future. It is recommended ' +
+          'to use a `<select>` element instead.'
+        );
+      }
+    }
+
+    decorated.call(this, $element, options);
+  }
+
+  InputData.prototype.current = function (_, callback) {
+    function getSelected (data, selectedIds) {
+      var selected = [];
+
+      if (data.selected || $.inArray(data.id, selectedIds) !== -1) {
+        data.selected = true;
+        selected.push(data);
+      } else {
+        data.selected = false;
+      }
+
+      if (data.children) {
+        selected.push.apply(selected, getSelected(data.children, selectedIds));
+      }
+
+      return selected;
+    }
+
+    var selected = [];
+
+    for (var d = 0; d < this._currentData.length; d++) {
+      var data = this._currentData[d];
+
+      selected.push.apply(
+        selected,
+        getSelected(
+          data,
+          this.$element.val().split(
+            this._valueSeparator
+          )
+        )
+      );
+    }
+
+    callback(selected);
+  };
+
+  InputData.prototype.select = function (_, data) {
+    if (!this.options.get('multiple')) {
+      this.current(function (allData) {
+        $.map(allData, function (data) {
+          data.selected = false;
+        });
+      });
+
+      this.$element.val(data.id);
+      this.$element.trigger('change');
+    } else {
+      var value = this.$element.val();
+      value += this._valueSeparator + data.id;
+
+      this.$element.val(value);
+      this.$element.trigger('change');
+    }
+  };
+
+  InputData.prototype.unselect = function (_, data) {
+    var self = this;
+
+    data.selected = false;
+
+    this.current(function (allData) {
+      var values = [];
+
+      for (var d = 0; d < allData.length; d++) {
+        var item = allData[d];
+
+        if (data.id == item.id) {
+          continue;
+        }
+
+        values.push(item.id);
+      }
+
+      self.$element.val(values.join(self._valueSeparator));
+      self.$element.trigger('change');
+    });
+  };
+
+  InputData.prototype.query = function (_, params, callback) {
+    var results = [];
+
+    for (var d = 0; d < this._currentData.length; d++) {
+      var data = this._currentData[d];
+
+      var matches = this.matches(params, data);
+
+      if (matches !== null) {
+        results.push(matches);
+      }
+    }
+
+    callback({
+      results: results
+    });
+  };
+
+  InputData.prototype.addOptions = function (_, $options) {
+    var options = $.map($options, function ($option) {
+      return $.data($option[0], 'data');
+    });
+
+    this._currentData.push.apply(this._currentData, options);
+  };
+
+  return InputData;
+});
+
+S2.define('select2/compat/matcher',[
+  'jquery'
+], function ($) {
+  function oldMatcher (matcher) {
+    function wrappedMatcher (params, data) {
+      var match = $.extend(true, {}, data);
+
+      if (params.term == null || $.trim(params.term) === '') {
+        return match;
+      }
+
+      if (data.children) {
+        for (var c = data.children.length - 1; c >= 0; c--) {
+          var child = data.children[c];
+
+          // Check if the child object matches
+          // The old matcher returned a boolean true or false
+          var doesMatch = matcher(params.term, child.text, child);
+
+          // If the child didn't match, pop it off
+          if (!doesMatch) {
+            match.children.splice(c, 1);
+          }
+        }
+
+        if (match.children.length > 0) {
+          return match;
+        }
+      }
+
+      if (matcher(params.term, data.text, data)) {
+        return match;
+      }
+
+      return null;
+    }
+
+    return wrappedMatcher;
+  }
+
+  return oldMatcher;
+});
+
+S2.define('select2/compat/query',[
+
+], function () {
+  function Query (decorated, $element, options) {
+    if (options.get('debug') && window.console && console.warn) {
+      console.warn(
+        'Select2: The `query` option has been deprecated in favor of a ' +
+        'custom data adapter that overrides the `query` method. Support ' +
+        'will be removed for the `query` option in future versions of ' +
+        'Select2.'
+      );
+    }
+
+    decorated.call(this, $element, options);
+  }
+
+  Query.prototype.query = function (_, params, callback) {
+    params.callback = callback;
+
+    var query = this.options.get('query');
+
+    query.call(null, params);
+  };
+
+  return Query;
+});
+
+S2.define('select2/dropdown/attachContainer',[
+
+], function () {
+  function AttachContainer (decorated, $element, options) {
+    decorated.call(this, $element, options);
+  }
+
+  AttachContainer.prototype.position =
+    function (decorated, $dropdown, $container) {
+    var $dropdownContainer = $container.find('.dropdown-wrapper');
+    $dropdownContainer.append($dropdown);
+
+    $dropdown.addClass('select2-dropdown--below');
+    $container.addClass('select2-container--below');
+  };
+
+  return AttachContainer;
+});
+
+S2.define('select2/dropdown/stopPropagation',[
+
+], function () {
+  function StopPropagation () { }
+
+  StopPropagation.prototype.bind = function (decorated, container, $container) {
+    decorated.call(this, container, $container);
+
+    var stoppedEvents = [
+    'blur',
+    'change',
+    'click',
+    'dblclick',
+    'focus',
+    'focusin',
+    'focusout',
+    'input',
+    'keydown',
+    'keyup',
+    'keypress',
+    'mousedown',
+    'mouseenter',
+    'mouseleave',
+    'mousemove',
+    'mouseover',
+    'mouseup',
+    'search',
+    'touchend',
+    'touchstart'
+    ];
+
+    this.$dropdown.on(stoppedEvents.join(' '), function (evt) {
+      evt.stopPropagation();
+    });
+  };
+
+  return StopPropagation;
+});
+
+S2.define('select2/selection/stopPropagation',[
+
+], function () {
+  function StopPropagation () { }
+
+  StopPropagation.prototype.bind = function (decorated, container, $container) {
+    decorated.call(this, container, $container);
+
+    var stoppedEvents = [
+      'blur',
+      'change',
+      'click',
+      'dblclick',
+      'focus',
+      'focusin',
+      'focusout',
+      'input',
+      'keydown',
+      'keyup',
+      'keypress',
+      'mousedown',
+      'mouseenter',
+      'mouseleave',
+      'mousemove',
+      'mouseover',
+      'mouseup',
+      'search',
+      'touchend',
+      'touchstart'
+    ];
+
+    this.$selection.on(stoppedEvents.join(' '), function (evt) {
+      evt.stopPropagation();
+    });
+  };
+
+  return StopPropagation;
+});
+
+S2.define('jquery.select2',[
+  'jquery',
+  'require',
+
+  './select2/core',
+  './select2/defaults'
+], function ($, require, Select2, Defaults) {
+  // Force jQuery.mousewheel to be loaded if it hasn't already
+  require('jquery.mousewheel');
+
+  if ($.fn.select2 == null) {
+    // All methods that should return the element
+    var thisMethods = ['open', 'close', 'destroy'];
+
+    $.fn.select2 = function (options) {
+      options = options || {};
+
+      if (typeof options === 'object') {
+        this.each(function () {
+          var instanceOptions = $.extend({}, options, true);
+
+          var instance = new Select2($(this), instanceOptions);
+        });
+
+        return this;
+      } else if (typeof options === 'string') {
+        var instance = this.data('select2');
+
+        if (instance == null && window.console && console.error) {
+          console.error(
+            'The select2(\'' + options + '\') method was called on an ' +
+            'element that is not using Select2.'
+          );
+        }
+
+        var args = Array.prototype.slice.call(arguments, 1);
+
+        var ret = instance[options](args);
+
+        // Check if we should be returning `this`
+        if ($.inArray(options, thisMethods) > -1) {
+          return this;
+        }
+
+        return ret;
+      } else {
+        throw new Error('Invalid arguments for Select2: ' + options);
+      }
+    };
+  }
+
+  if ($.fn.select2.defaults == null) {
+    $.fn.select2.defaults = Defaults;
+  }
+
+  return Select2;
+});
+
+/*!
+ * jQuery Mousewheel 3.1.12
+ *
+ * Copyright 2014 jQuery Foundation and other contributors
+ * Released under the MIT license.
+ * http://jquery.org/license
+ */
+
+(function (factory) {
+    if ( typeof S2.define === 'function' && S2.define.amd ) {
+        // AMD. Register as an anonymous module.
+        S2.define('jquery.mousewheel',['jquery'], factory);
+    } else if (typeof exports === 'object') {
+        // Node/CommonJS style for Browserify
+        module.exports = factory;
+    } else {
+        // Browser globals
+        factory(jQuery);
+    }
+}(function ($) {
+
+    var toFix  = ['wheel', 'mousewheel', 'DOMMouseScroll', 'MozMousePixelScroll'],
+        toBind = ( 'onwheel' in document || document.documentMode >= 9 ) ?
+                    ['wheel'] : ['mousewheel', 'DomMouseScroll', 'MozMousePixelScroll'],
+        slice  = Array.prototype.slice,
+        nullLowestDeltaTimeout, lowestDelta;
+
+    if ( $.event.fixHooks ) {
+        for ( var i = toFix.length; i; ) {
+            $.event.fixHooks[ toFix[--i] ] = $.event.mouseHooks;
+        }
+    }
+
+    var special = $.event.special.mousewheel = {
+        version: '3.1.12',
+
+        setup: function() {
+            if ( this.addEventListener ) {
+                for ( var i = toBind.length; i; ) {
+                    this.addEventListener( toBind[--i], handler, false );
+                }
+            } else {
+                this.onmousewheel = handler;
+            }
+            // Store the line height and page height for this particular element
+            $.data(this, 'mousewheel-line-height', special.getLineHeight(this));
+            $.data(this, 'mousewheel-page-height', special.getPageHeight(this));
+        },
+
+        teardown: function() {
+            if ( this.removeEventListener ) {
+                for ( var i = toBind.length; i; ) {
+                    this.removeEventListener( toBind[--i], handler, false );
+                }
+            } else {
+                this.onmousewheel = null;
+            }
+            // Clean up the data we added to the element
+            $.removeData(this, 'mousewheel-line-height');
+            $.removeData(this, 'mousewheel-page-height');
+        },
+
+        getLineHeight: function(elem) {
+            var $elem = $(elem),
+                $parent = $elem['offsetParent' in $.fn ? 'offsetParent' : 'parent']();
+            if (!$parent.length) {
+                $parent = $('body');
+            }
+            return parseInt($parent.css('fontSize'), 10) || parseInt($elem.css('fontSize'), 10) || 16;
+        },
+
+        getPageHeight: function(elem) {
+            return $(elem).height();
+        },
+
+        settings: {
+            adjustOldDeltas: true, // see shouldAdjustOldDeltas() below
+            normalizeOffset: true  // calls getBoundingClientRect for each event
+        }
+    };
+
+    $.fn.extend({
+        mousewheel: function(fn) {
+            return fn ? this.bind('mousewheel', fn) : this.trigger('mousewheel');
+        },
+
+        unmousewheel: function(fn) {
+            return this.unbind('mousewheel', fn);
+        }
+    });
+
+
+    function handler(event) {
+        var orgEvent   = event || window.event,
+            args       = slice.call(arguments, 1),
+            delta      = 0,
+            deltaX     = 0,
+            deltaY     = 0,
+            absDelta   = 0,
+            offsetX    = 0,
+            offsetY    = 0;
+        event = $.event.fix(orgEvent);
+        event.type = 'mousewheel';
+
+        // Old school scrollwheel delta
+        if ( 'detail'      in orgEvent ) { deltaY = orgEvent.detail * -1;      }
+        if ( 'wheelDelta'  in orgEvent ) { deltaY = orgEvent.wheelDelta;       }
+        if ( 'wheelDeltaY' in orgEvent ) { deltaY = orgEvent.wheelDeltaY;      }
+        if ( 'wheelDeltaX' in orgEvent ) { deltaX = orgEvent.wheelDeltaX * -1; }
+
+        // Firefox < 17 horizontal scrolling related to DOMMouseScroll event
+        if ( 'axis' in orgEvent && orgEvent.axis === orgEvent.HORIZONTAL_AXIS ) {
+            deltaX = deltaY * -1;
+            deltaY = 0;
+        }
+
+        // Set delta to be deltaY or deltaX if deltaY is 0 for backwards compatabilitiy
+        delta = deltaY === 0 ? deltaX : deltaY;
+
+        // New school wheel delta (wheel event)
+        if ( 'deltaY' in orgEvent ) {
+            deltaY = orgEvent.deltaY * -1;
+            delta  = deltaY;
+        }
+        if ( 'deltaX' in orgEvent ) {
+            deltaX = orgEvent.deltaX;
+            if ( deltaY === 0 ) { delta  = deltaX * -1; }
+        }
+
+        // No change actually happened, no reason to go any further
+        if ( deltaY === 0 && deltaX === 0 ) { return; }
+
+        // Need to convert lines and pages to pixels if we aren't already in pixels
+        // There are three delta modes:
+        //   * deltaMode 0 is by pixels, nothing to do
+        //   * deltaMode 1 is by lines
+        //   * deltaMode 2 is by pages
+        if ( orgEvent.deltaMode === 1 ) {
+            var lineHeight = $.data(this, 'mousewheel-line-height');
+            delta  *= lineHeight;
+            deltaY *= lineHeight;
+            deltaX *= lineHeight;
+        } else if ( orgEvent.deltaMode === 2 ) {
+            var pageHeight = $.data(this, 'mousewheel-page-height');
+            delta  *= pageHeight;
+            deltaY *= pageHeight;
+            deltaX *= pageHeight;
+        }
+
+        // Store lowest absolute delta to normalize the delta values
+        absDelta = Math.max( Math.abs(deltaY), Math.abs(deltaX) );
+
+        if ( !lowestDelta || absDelta < lowestDelta ) {
+            lowestDelta = absDelta;
+
+            // Adjust older deltas if necessary
+            if ( shouldAdjustOldDeltas(orgEvent, absDelta) ) {
+                lowestDelta /= 40;
+            }
+        }
+
+        // Adjust older deltas if necessary
+        if ( shouldAdjustOldDeltas(orgEvent, absDelta) ) {
+            // Divide all the things by 40!
+            delta  /= 40;
+            deltaX /= 40;
+            deltaY /= 40;
+        }
+
+        // Get a whole, normalized value for the deltas
+        delta  = Math[ delta  >= 1 ? 'floor' : 'ceil' ](delta  / lowestDelta);
+        deltaX = Math[ deltaX >= 1 ? 'floor' : 'ceil' ](deltaX / lowestDelta);
+        deltaY = Math[ deltaY >= 1 ? 'floor' : 'ceil' ](deltaY / lowestDelta);
+
+        // Normalise offsetX and offsetY properties
+        if ( special.settings.normalizeOffset && this.getBoundingClientRect ) {
+            var boundingRect = this.getBoundingClientRect();
+            offsetX = event.clientX - boundingRect.left;
+            offsetY = event.clientY - boundingRect.top;
+        }
+
+        // Add information to the event object
+        event.deltaX = deltaX;
+        event.deltaY = deltaY;
+        event.deltaFactor = lowestDelta;
+        event.offsetX = offsetX;
+        event.offsetY = offsetY;
+        // Go ahead and set deltaMode to 0 since we converted to pixels
+        // Although this is a little odd since we overwrite the deltaX/Y
+        // properties with normalized deltas.
+        event.deltaMode = 0;
+
+        // Add event and delta to the front of the arguments
+        args.unshift(event, delta, deltaX, deltaY);
+
+        // Clearout lowestDelta after sometime to better
+        // handle multiple device types that give different
+        // a different lowestDelta
+        // Ex: trackpad = 3 and mouse wheel = 120
+        if (nullLowestDeltaTimeout) { clearTimeout(nullLowestDeltaTimeout); }
+        nullLowestDeltaTimeout = setTimeout(nullLowestDelta, 200);
+
+        return ($.event.dispatch || $.event.handle).apply(this, args);
+    }
+
+    function nullLowestDelta() {
+        lowestDelta = null;
+    }
+
+    function shouldAdjustOldDeltas(orgEvent, absDelta) {
+        // If this is an older event and the delta is divisable by 120,
+        // then we are assuming that the browser is treating this as an
+        // older mouse wheel event and that we should divide the deltas
+        // by 40 to try and get a more usable deltaFactor.
+        // Side note, this actually impacts the reported scroll distance
+        // in older browsers and can cause scrolling to be slower than native.
+        // Turn this off by setting $.event.special.mousewheel.settings.adjustOldDeltas to false.
+        return special.settings.adjustOldDeltas && orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
+    }
+
+}));
+
+  // Return the AMD loader configuration so it can be used outside of this file
+  return {
+    define: S2.define,
+    require: S2.require
+  };
+}());
+
+  // Autoload the jQuery bindings
+  // We know that all of the modules exist above this, so we're safe
+  var select2 = S2.require('jquery.select2');
+
+  // Hold the AMD module references on the jQuery function that was just loaded
+  // This allows Select2 to use the internal loader outside of this file, such
+  // as in the language files.
+  jQuery.fn.select2.amd = S2;
+
+  // Return the Select2 instance for anyone who is importing it.
+  return select2;
+}));
+
+//jshint maxstatements:40
+define('core/select2/directives/ng-select2',['require','./../../module','angular','select2','jquery'],function(require){
+    'use strict';
+
+    var module = require('./../../module');
+    var ng = require('angular');
+    require('select2');
+    var $ = require('jquery');
+    var config = $.fn.select2.amd.require('select2/defaults').defaults;
+
+    module.constant('NG_OPTIONS_REGEXP', /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?(?:\s+group\s+by\s+([\s\S]+?))?(?:\s+disable\s+when\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?$/);
+    // 1: value expression (valueFn)
+    // 2: label expression (displayFn)
+    // 3: group by expression (groupByFn)
+    // 4: disable when expression (disableWhenFn)
+    // 5: array item variable name
+    // 6: object item key variable name
+    // 7: object item value variable name
+    // 8: collection expression
+    // 9: track by expression
+
+
+    var uid = 0;
+    var nextUid = function() {
+        return uid++;
+    };
+
+    /**
+     * Computes a hash of an 'obj'.
+     * Hash of a:
+     *  string is string
+     *  number is number as string
+     *  object is either result of calling $$hashKey function on the object or uniquely generated id,
+     *         that is also assigned to the $$hashKey property of the object.
+     *
+     * @param obj
+     * @returns {string} hash string such that the same input will have the same hash string.
+     *         The resulting string key is in 'type:hashKey' format.
+     */
+
+    function hashKey(obj, nextUidFn) {
+        var key = obj && obj.$$hashKey;
+
+        if (key) {
+            if (typeof key === 'function') {
+                key = obj.$$hashKey();
+            }
+            return key;
+        }
+
+        var objType = typeof obj;
+        if (objType === 'function' || (objType === 'object' && obj !== null)) {
+            key = obj.$$hashKey = objType + ':' + (nextUidFn || nextUid)();
+        } else {
+            key = objType + ':' + obj;
+        }
+
+        return key;
+    }
+
+    function findTheme(element) {
+        var curr = element,
+            classes;
+        while(curr.length) {
+            if (curr[0].className) {
+                classes = curr[0].className.split(' ');
+                for (var i = 0; i < classes.length; i++) {
+                    if (classes[i].indexOf('theme') > -1) {
+                        return classes[i];
+                    }
+                }
+            }
+            curr = curr.parent();
+        }
+    }
+
+    module.value('select2Config', {
+        minimumResultsForSearch: 10,
+        dropdownAutoWidth: false,
+        tokenSeparators: [',']
+    });
+
+    var attrOptions = ['placeholder', 'minimumResultsForSearch', 'dropdownAutoWidth', 'maximumSelectionLength', 'tokenSeparators', 'tags', 'ajax', 'query', 'width', 'allowClear', 'formatModelInsert'];
+
+    var placeholderMultiselect = 'Select some options';
+    var placeholderSelect = 'Select an option';
+
+    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse', 'trackValuesFactory',
+        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse, trackValuesFactory) {
+        return {
+            restrict: 'A',
+            require: '?ngModel',
+            //priority: 1,
+            //terminal: true,
+            link: function(scope, element, attr, ngModel) {
+                var trackValues = trackValuesFactory();
+                var match, valuesFn, trackBy, theme, select2, isMultiple, timer;
+                //set a flag to see if this is a multiselect instance
+                isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
+                var opts = ng.extend({}, defaults, scope.$eval(attr.options));
+
+                //Add each attribute that is in the white list to the options hash
+                ng.forEach(attr, function(value, key) {
+                    if (attrOptions.indexOf(key) > -1) {
+                        opts[key] = scope.$eval(value);
+                    }
+                });
+
+                opts.matcher = function(params, data) {
+                    // Angular adds a null element with no value when using ngOptions, filter this value
+                    if (data.id === '?' || !data.id) {
+                        return null;
+                    }
+
+                    return config.matcher(params, data);
+                };
+
+                if (!opts.width) {
+                    opts.width = function() {
+                        return element.width() + 40;
+                    };
+                }
+
+                theme = findTheme(element);
+
+                if (theme) {
+                    opts.theme = theme;
+                }
+
+                if (attr.ngOptions) {
+                    if (!(match = attr.ngOptions.match(NG_OPTIONS_REGEXP))) {
+                        $log.warn('Invalid ngOptions: ', attr.ngOptions);
+                    }
+
+                    valuesFn = $parse(match[8]);
+                    trackBy = match[9];
+                    var keyName = match[6];
+                    var valueName = match[5] || match[7];
+                    var trackByFn = trackBy && $parse(trackBy);
+
+                    // Get the value by which we are going to track the option
+                    // if we have a trackFn then use that (passing scope and locals)
+                    // otherwise just hash the given viewValue
+                    var getTrackByValueFn =  trackBy ?
+                        function(value, locals) { return trackByFn(scope, locals); } :
+                        function(value) { return hashKey(value); };
+
+                    var getTrackByValue = function(value, key) {
+                        return getTrackByValueFn(value, getLocals(value, key));
+                    };
+
+                    var locals = {};
+                    var getLocals = keyName ? function(value, key) {
+                        locals[keyName] = key;
+                        locals[valueName] = value;
+                        return locals;
+                    } : function(value) {
+                        locals[valueName] = value;
+                        return locals;
+                    };
+
+                    //Make a map of angular models -> values
+                    scope.$watchCollection(valuesFn, function(values) {
+                        trackValues.reset();
+                        ng.forEach(values, function(value, key) {
+                            var selectValue = getTrackByValue(value, key);
+                            trackValues.add(selectValue, value);
+                        });
+                        initOrUpdate();
+                    });
+                } else {
+                    //in the event of no ngOptions still want to bind the trackValues to change the model
+                    var options = element.find('option');
+                    trackValues.reset();
+                    ng.forEach(options, function(option) {
+                        var key;
+                        var text = option.innerText;
+                        if (option.hasAttribute('value')) {
+                            key = option.getAttributeNode('value').value;
+                        } else {
+                            key = text;
+                        }
+                        trackValues.add(key, key);
+                    });
+                }
+
+                var formatModelInsert = opts.formatModelInsert || function(v) {
+                        return {
+                            value: v.id,
+                            name: v.text
+                        };
+                    };
+
+                function updateModel() {
+                    var options = element.select2('data');
+                    var newValues = [];
+                    ng.forEach(options, function (v) {
+                        var trackValue = trackValues.get(v.id);
+                        if (!trackValue) {
+                            var value = formatModelInsert(v);
+                            //remove the select2 attribute or else things fall out of sync
+                            v.element.removeAttribute('data-select2-tag');
+                            newValues.push(value);
+                        }
+                    });
+
+                    if (newValues.length) {
+                        var currentValues = ngModel.$viewValue;
+                        if (!ng.isArray(currentValues)) {
+                            currentValues = [];
+                        }
+                        var values = valuesFn(scope);
+                        if (ng.isArray(values)) {
+                            [].push.apply(values, newValues);
+                        } else {
+                            $log.warn('Not sure how to add new values to hash.');
+                        }
+                        [].push.apply(currentValues, newValues);
+                        ngModel.$setViewValue(currentValues);
+                        scope.$apply();
+                    }
+                }
+
+                function initOrUpdate() {
+                    setDefaultText();
+                    timer = $timeout(function() {
+                        var focused;
+                        if (!select2) {
+                            //init select2 once
+                            select2 = element.select2(opts);
+                            if (isMultiple && opts.tags) {
+                                element.on('change', updateModel);
+                            }
+                        }
+                        if (!trackValues.isEmpty() && ngModel) {
+                            //if ngModel is an array and is multiple set the element and trigger a change to update select2;
+                            if (ng.isArray(ngModel.$viewValue) && isMultiple) {
+                                var values = [];
+                                ng.forEach(ngModel.$viewValue, function(v) {
+                                    var trackValue = trackValues.get(v);
+                                    if (trackValue) {
+                                        values.push(trackValue.index);
+                                    }
+                                });
+
+                                //focus is lost when change is triggered
+                                focused = $(':focus');
+                                element.val(values).trigger('change');
+                                if (focused.length) {
+                                    focused.focus();
+                                }
+                            } else {
+                                var trackValue = trackValues.get(ngModel.$viewValue);
+                                if (trackValue) {
+                                    //focus is lost when change is triggered
+                                    focused = $(':focus');
+                                    element.val(trackValue.index).trigger('change');
+                                    if (focused.length) {
+                                        focused.focus();
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                //set up the default placeholders
+                function setDefaultText() {
+                    if (isMultiple) {
+                        opts.placeholder = opts.placeholder || placeholderMultiselect;
+                    } else {
+                        var option = element.find('option').eq(0);
+                        var text = option.text();
+                        if (!text) {
+                            option.text(opts.placeholder || placeholderSelect);
+                            option.val('?');
+                        }
+                    }
+                }
+
+                if (ngModel) {
+                    var originalRender = ngModel.$render;
+                    ngModel.$render = function() {
+                        originalRender();
+                        initOrUpdate();
+                    };
+
+                    var viewWatch = function() {
+                        return ngModel.$viewValue;
+                    };
+
+                    scope.$watch(viewWatch, ngModel.$render, true);
+                } else {
+                    initOrUpdate();
+                }
+
+                //On destroy clean up the timeout/ select2 element
+                scope.$on('$destroy', function() {
+                    if (timer) {
+                        $timeout.cancel(timer);
+                    }
+                });
+            }
+        };
+    }]);
+});
+
+define('core/select2/factories/trackValues',['require','./../../module','angular'],function(require) {
+    'use strict';
+
+    var module = require('./../../module');
+    var ng = require('angular');
+
+    module.factory('trackValuesFactory', [
+    function() {
+        return function() {
+            var Tracked = function() {
+                this._data = {};
+            };
+
+            Tracked.prototype.reset = function() {
+                this._data = {};
+            };
+
+            Tracked.prototype.add = function(index, value) {
+                this._data[JSON.stringify(value)] = { index: index, value: value };
+                this._data[index] = { index: index, value: value };
+            };
+
+            Tracked.prototype.get = function(index) {
+                return this._data[index] || this._data[JSON.stringify(index)];
+            };
+
+            Tracked.prototype.contains = function(index) {
+                return typeof this.get(index) !== 'undefined';
+            };
+
+            Tracked.prototype.isEmpty = function(){
+                return ng.equals({}, this._data);
+            };
+
+            return new Tracked();
+        };
+    }]);
+});
+
+define('core/select2/index',['require','./directives/ng-select2','./factories/trackValues'],function(require) {
+    'use strict';
+
+    require('./directives/ng-select2');
+    require('./factories/trackValues');
+});
+
 define('core/factories/data',['require','./../module','angular'],function (require) {
     'use strict';
 
@@ -48605,6 +54363,7 @@ define('core/factories/record',['require','./../module','angular'],function (req
     var ng = require('angular');
 
     module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification) {
+        //destroy, update, create, error, change
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
          */
@@ -48708,6 +54467,18 @@ define('core/factories/record',['require','./../module','angular'],function (req
                     }
 
                     return this._filter(_diff);
+                },
+                intersect: function(changed, original) {
+                    var _intersection = {}, val;
+
+                    for (var attr in changed) {
+                        val = changed[attr];
+                        if(ng.equals(original[attr], val)) {
+                            _intersection[attr] = val;
+                        }
+                    }
+
+                    return this._filter(_intersection);
                 },
                 ignore: function(key){
                     return this.rules[key] && this.rules[key].ignore;
@@ -48863,7 +54634,7 @@ define('core/factories/recordPool',['require','./../module'],function (require) 
     var module = require('./../module');
 
     module.factory('recordPoolFactory', ['recordFactory', 'observerFactory', '$q', function (recordFactory, observerFactory, $q) {
-        return function (apiConfig) {
+        return function (apiConfig, rules) {
             var observers = observerFactory();
             var records = {};
 
@@ -48875,7 +54646,7 @@ define('core/factories/recordPool',['require','./../module'],function (require) 
                 if (exists(id)) {
                     return records[id];
                 } else {
-                    var record = recordFactory({apiConfig: apiConfig, attributes: { id: id }});
+                    var record = recordFactory({apiConfig: apiConfig, rules: rules, attributes: { id: id }});
                     records[id] = record;
                     record.observe(observers.notifyObservers, undefined, true);
                     return record;
@@ -48909,6 +54680,7 @@ define('core/factories/recordPool',['require','./../module'],function (require) 
             function create(attrs) {
                 var record = recordFactory({
                     apiConfig: apiConfig,
+                    rules: rules,
                     successFn: function(resp) {
                         var data = resp.data;
                         records[data.id] = record;
@@ -49238,6 +55010,13 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                 }
 
                 function updatePosition() {
+                    hideIfNotOverflowed();
+
+                    var dims = calculateDims();
+                    elem.addClass(calculateClass(dims));
+                }
+
+                function hideIfNotOverflowed() {
                     if (overflow) {
                         var element = elem.find('.main')[0];
                         if (element.offsetWidth >= element.scrollWidth) {
@@ -49246,9 +55025,6 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                             elem.find('.wrapper').removeClass('ng-hide');
                         }
                     }
-
-                    var dims = calculateDims();
-                    elem.addClass(calculateClass(dims));
                 }
 
             }
@@ -49332,7 +55108,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
 
 /**
  * Simple Ajax Uploader
- * Version 2.1
+ * Version 2.2
  * https://github.com/LPology/Simple-Ajax-Uploader
  *
  * Copyright 2012-2015 LPology, LLC
@@ -50647,7 +56423,7 @@ ss.XhrUpload = {
             ext = ss.getExt( filename );
             size = Math.round( files[i].size / 1024 );
 
-            if ( false === this._opts.onChange.call( this, filename, ext, size ) ) {
+            if ( false === this._opts.onChange.call( this, filename, ext, this._overBtn, size ) ) {
                 return false;
             }
 
@@ -50907,7 +56683,8 @@ ss.XhrUpload = {
                 'padding' : 0,
                 'fontSize' : '480px',
                 'fontFamily' : 'sans-serif',
-                'cursor' : 'pointer'
+                'cursor' : 'pointer',
+                'height' : '100%'
             });
 
             if ( div.style.opacity !== '0' ) {
@@ -50940,16 +56717,19 @@ ss.XhrUpload = {
             });
 
             if ( self._opts.hoverClass !== '' ) {
-                ss.addEvent( this._input, 'mouseover', function() {
+                ss.addEvent( div, 'mouseover', function() {
                     ss.addClass( self._overBtn, self._opts.hoverClass );
                 });
+            }
 
-                ss.addEvent( this._input, 'mouseout', function() {
+            ss.addEvent( div, 'mouseout', function() {
+                self._input.parentNode.style.visibility = 'hidden';
+                
+                if ( self._opts.hoverClass !== '' ) {
                     ss.removeClass( self._overBtn, self._opts.hoverClass );
                     ss.removeClass( self._overBtn, self._opts.focusClass );
-                    self._input.parentNode.style.visibility = 'hidden';
-                });
-            }
+                }                
+            });
 
             if ( self._opts.focusClass !== '' ) {
                 ss.addEvent( this._input, 'focus', function() {
@@ -51521,19 +57301,19 @@ define('core/filters/adTypeOrder',['require','./../module'],function (require) {
 
         function customOrder(item) {
             switch(item) {
-                case 'In-Banner':
+                case 'inBanner':
                     return 1;
-                case 'In-Stream':
+                case 'inStream':
                     return 2;
-                case 'Rich Media':
+                case 'richMedia':
                     return 3;
-                case 'Display':
+                case 'display':
                     return 4;
             }
         }
 
         return function(items) {
-            
+
             return items.sort(function(a, b) {
                 return ( customOrder(a.type) > customOrder(b.type) ? 1 : -1 );
             });
@@ -51641,7 +57421,6 @@ define('core/services/accountRecord',['require','./../module'],function (require
         }
     };
 
-
     module.service('accountRecordService', ['recordPoolFactory', function (recordPoolFactory) {
         return recordPoolFactory(apiConfig);
     }]);
@@ -51687,7 +57466,7 @@ define('core/services/creativeRecord',['require','./../module'],function (requir
 
 
     module.service('creativeRecordService', ['recordPoolFactory', function (recordPoolFactory) {
-        return recordPoolFactory(apiConfig);
+        return recordPoolFactory(apiConfig, { subtype: { ignore: true }});
     }]);
 });
 
@@ -51718,8 +57497,11 @@ define('core/services/clientPublisherRecord',['require','./../module'],function 
     var module = require('./../module');
 
     var apiConfig = {
-        version: 'crud',
-        endpoint: 'clients/{{id}}/publishers'
+        update: {
+            version: 'crud',
+            endpoint: 'clients/{{id}}/publishers'
+        },
+        create: {}
     };
 
 
@@ -52109,15 +57891,20 @@ define('core/services/studioLocation',['require','./../module'],function(require
     }]);
 });
 
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./constants/apiURI','./creativePreview/index','./notifications/index','./factories/data','./factories/cache','./factories/pagination','./factories/record','./factories/recordPool','./factories/domainInterceptor','./factories/observer','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/fallbackSrc','./directives/placeholder','./directives/filePicker','./directives/youWorkOn','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./filters/percentage','./filters/adTypeOrder','./services/channel','./services/clientRecord','./services/divisionRecord','./services/accountRecord','./services/campaignRecord','./services/creativeRecord','./services/placementRecord','./services/clientPublisherRecord','./services/industry','./services/adTag','./services/enums','./services/clientSet','./services/divisionSet','./services/apiURIGenerator','./services/studioLocation'],function(require) {
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./constants/apiURI','./constants/creativeSettings','./constants/enums','./constants/urlRegex','./constants/moneyRegex','./creativePreview/index','./notifications/index','./select2/index','./factories/data','./factories/cache','./factories/pagination','./factories/record','./factories/recordPool','./factories/domainInterceptor','./factories/observer','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/fallbackSrc','./directives/placeholder','./directives/filePicker','./directives/youWorkOn','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./filters/percentage','./filters/adTypeOrder','./services/channel','./services/clientRecord','./services/divisionRecord','./services/accountRecord','./services/campaignRecord','./services/creativeRecord','./services/placementRecord','./services/clientPublisherRecord','./services/industry','./services/adTag','./services/enums','./services/clientSet','./services/divisionSet','./services/apiURIGenerator','./services/studioLocation'],function(require) {
     'use strict';
 
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
     require('./constants/apiURI');
+    require('./constants/creativeSettings');
+    require('./constants/enums');
+    require('./constants/urlRegex');
+    require('./constants/moneyRegex');
     require('./creativePreview/index');
     require('./notifications/index');
+    require('./select2/index');
 
     services();
     filters();
@@ -61951,7 +67738,7 @@ define('chart/directives/comparisonChart',['require','./../module','d3'],functio
 });
 
 
-define('tpl!chart/directives/analyticsLineChart.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'chart/directives/analyticsLineChart.html', '<div class="interactive-chart">\n    <form class="form-inline" role="form">\n        <div class="form-group">\n            <label class="form-label">\n                <span class="sr-only">Show Options</span>\n                <select chosen disable-search-threshold="10" ng-model="show" ng-options="item.value as item.name for item in showOptions track by item.value"></select>\n            </label>\n        </div>\n        <div class="form-group">\n            <label class="form-label">\n                <span>View By: </span>\n                <select chosen disable-search-threshold="10" ng-model="interval" ng-options="item.value as item.name for item in intervalOptions track by item.value"></select>\n            </label>\n        </div>\n        <div class="form-group">\n            <label for="startDate" class="form-label">\n                Start Date:\n            </label>\n            <div class="input-group">\n                <input id="startDate" placeholder="yyyy-mm-dd" class="form-control" type="text" ng-model="startDate" datepicker-popup="{{format}}" is-open="opened" min-date="minDate" datepicker-options="dateOptions"  date-disabled="false" ng-required="true" close-text="Close" show-weeks="false">\n            <span class="input-group-btn">\n                <button class="btn btn-inline" ng-click="openPicker($event)"><i class="glyph-calendar"></i></button>\n            </span>\n            </div>\n        </div>\n        <div class="form-group">\n            <a ng-click="downloadImage($event)"><i class="glyph-download-chart"></i> download chart</a>\n        </div>\n    </form>\n    <div ng-show="noData" class="no-data"><div class="text">No Data</div></div>\n    <div style="height: 250px;" class="chart-area"></div>\n    <div class="details-summary"></div>\n</div>\n\n'); });
+define('tpl!chart/directives/analyticsLineChart.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'chart/directives/analyticsLineChart.html', '<div class="interactive-chart">\n    <form class="form-inline" role="form">\n        <div class="form-group">\n            <label class="form-label">\n                <span class="sr-only">Show Options</span>\n                <select select2 ng-model="show" ng-options="item.value as item.name for item in showOptions track by item.value"></select>\n            </label>\n        </div>\n        <div class="form-group">\n            <label class="form-label">\n                <span>View By: </span>\n                <select select2 ng-model="interval" ng-options="item.value as item.name for item in intervalOptions track by item.value"></select>\n            </label>\n        </div>\n        <div class="form-group">\n            <label for="startDate" class="form-label">\n                Start Date:\n            </label>\n            <div class="input-group">\n                <input id="startDate" placeholder="yyyy-mm-dd" class="form-control" type="text" ng-model="startDate" datepicker-popup="{{format}}" is-open="opened" min-date="minDate" datepicker-options="dateOptions"  date-disabled="false" ng-required="true" close-text="Close" show-weeks="false">\n            <span class="input-group-btn">\n                <button class="btn btn-inline" ng-click="openPicker($event)"><i class="glyph-calendar"></i></button>\n            </span>\n            </div>\n        </div>\n        <div class="form-group">\n            <a ng-click="downloadImage($event)"><i class="glyph-download-chart"></i> download chart</a>\n        </div>\n    </form>\n    <div ng-show="noData" class="no-data"><div class="text">No Data</div></div>\n    <div style="height: 250px;" class="chart-area"></div>\n    <div class="details-summary"></div>\n</div>\n\n'); });
 
 
 define('text!chart/directives/analyticsLineChart.css',[],function () { return '.x-axis path, .x-axis line, .y-axis path, .y-axis line {\n    fill: none;\n    stroke: #000;\n    shape-rendering: chrispEdges;\n}\n\n.y-axis .tick line {\n    stroke: lightgray;\n}\n\n.y-axis .tick line:first-child line {\n    stroke: #000;\n}\n';});
@@ -62140,7 +67927,7 @@ define('chart/directives/analyticsLineChart',['require','angular','./../module',
                                 return {
                                     name: name,
                                     date: d[interval],
-                                    datum: +d.metrics[show],
+                                    datum: +(d.metrics[show] || 0),
                                     metrics: d.metrics
                                 }
                             })
@@ -62586,10 +68373,10 @@ define('tpl!campaignManagement/clients/index.html', ['angular', 'tpl'], function
 define('tpl!campaignManagement/clients/clients.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/clients.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>All Clients Summary</div>\n    <div class="dropdown-menu">\n        <div active-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openNewClientModal()">New Client</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/clients/client.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{client.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openNewAccountModal()">New Account</button>\n    <!-- <button class="btn btn-default solid" ng-click="openNewDivisionModal()">New Division</button> -->\n    <button class="btn btn-default solid" ng-click="openEditClientModal()">Edit Client</button>\n</div>\n'); });
+define('tpl!campaignManagement/clients/client.summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/client.summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{client.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div you-work-on></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button tooltip="\'You need a division before you can create an account!\'" ng-class="{hover:noDivisions}" class="tooltip tooltip-basic tooltip-light btn btn-default solid" ng-disabled="noDivisions" ng-click="openNewAccountModal()">New Account</button>\n    <!-- <button class="btn btn-default solid" ng-click="openNewDivisionModal()">New Division</button> -->\n    <button class="btn btn-default solid" ng-click="openEditClientModal()">Edit Client</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/clients/new-edit-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-edit-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{action}} Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newClient.channels.$invalid || errors.channelId) && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select id="new-edit-client-channels-select" name="channels" ng-model="client.channelId" class="single-select" chosen ng-options="item.id as item.name for item in channels track by item.id" disable-search-threshold="10" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n                <p ng-show="errors.channelId && submitted" class="help-block">\n                    {{errors.channelId}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newClient.name.$invalid || errors.name) && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-client-name-field" ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n                <p ng-show="errors.name && submitted" class="help-block">\n                    {{errors.name}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div file-picker ng-model="client.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input id="new-edit-client-requireRepInfo-check" ng-model="client.requireRepInfo" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button id="new-edit-client-save-client-btn" class="btn btn-primary solid" ng-click="ok(newClient.$error)">Save Client</button>\n    <button id="new-edit-client-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/clients/new-edit-client.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/clients/new-edit-client.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{action}} Client</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newClient">\n        <div ng-pluralize ng-show="newClient.$invalid && submitted" class="alert alert-danger" count="(newClient.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newClient.channels.$invalid || errors.channelId) && submitted}">\n            <label class="col-sm-3 form-label required"><span>Channel</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-client-channels-select" name="channels" ng-model="client.channelId" select2 ng-options="item.id as item.name for item in channels track by item.id" required>\n                </select>\n                <p ng-show="newClient.channels.$invalid && submitted" class="help-block">\n                    channel is required\n                </p>\n                <p ng-show="errors.channelId && submitted" class="help-block">\n                    {{errors.channelId}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newClient.name.$invalid || errors.name) && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-client-name-field" ng-model="client.name" type="text" name="name" class="form-control" id="inputName" placeholder="Name" required />\n                <p ng-show="newClient.name.$invalid && submitted" class="help-block">\n                    name is required\n                </p>\n                <p ng-show="errors.name && submitted" class="help-block">\n                    {{errors.name}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper form-inline">\n                <div file-picker ng-model="client.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input id="new-edit-client-requireRepInfo-check" ng-model="client.requireRepInfo" type="checkbox" class="checkbox checkbox-light" />\n                    <span>Require AE/Rep Name and Email for each campaign</span>\n                </label>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button id="new-edit-client-save-client-btn" class="btn btn-primary solid" ng-click="ok(newClient.$error)">Save Client</button>\n    <button id="new-edit-client-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 define('campaignManagement/clients/routes',['require','./../module','tpl!./index.html','tpl!./clients.summary.html','tpl!./client.summary.html','tpl!./new-edit-client.html'],function (require) {
     'use strict';
@@ -62654,7 +68441,7 @@ define('campaignManagement/divisions/routes',['require','./../module','tpl!./div
 });
 
 
-define('tpl!campaignManagement/accounts/new-edit-account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/new-edit-account.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{action}} Account</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newAccount">\n        <div ng-pluralize ng-show="newAccount.$invalid && submitted" class="alert alert-danger" count="(newAccount.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="divisions" class="form-group row" ng-class="{\'has-error\': (newAccount.divisionId.$invalid || errors.divisionId) && submitted}">\n            <label class="col-sm-3 form-label required"><span>Division</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select id="new-edit-account-division-select" name="division" class="single-select" chosen ng-options="division.id as division.name for division in divisions track by division.id" disable-search-threshold="10" ng-model="account.divisionId" required>\n                </select>\n                <p ng-show="newAccount.division.$invalid && submitted" class="help-block">\n                    division is required\n                </p>\n                <p ng-show="errors.divisionId && submitted" class="help-block">\n                    {{errors.divisionId}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.name.$invalid || errors.name) && submitted}">\n            <label for="name" class="col-sm-3 form-label required"><span>Account Name</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-name-field" ng-model="account.name" type="text" name="name" class="form-control" id="name" placeholder="Enter new account name" required />\n                <p ng-show="newAccount.name.$invalid && submitted" class="help-block">\n                    account name is required\n                </p>\n                <p ng-show="errors.name && submitted" class="help-block">\n                    {{errors.name}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Account Keywords</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-keywords-field" ng-model="account.keywords" type="text" class="form-control" id="keywords" placeholder="Enter account keywords" />\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.industry.$invalid || errors.industryId) && submitted}">\n            <label class="col-sm-3 form-label required"><span>Industry</span></label>\n            <div class="col-sm-9 single-select-light">\n                <select id="new-edit-account-industry-select" name="industry" class="single-select" chosen ng-options="industry.id as industry.name for industry in industries track by industry.id" disable-search-threshold="10" ng-model="account.industryId" required>\n                </select>\n                <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">\n                    industry is required\n                </p>\n                <p ng-show="errors.industryId && submitted" class="help-block">\n                    {{errors.industryId}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="account.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.clickthroughUrl.$invalid || errors.clickthroughUrl) && submitted}">\n            <label for="clickthroughUrl" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-url-field" ng-model="account.clickthroughUrl" type="url" class="form-control" name="clickthroughUrl" id="clickthroughUrl" placeholder="Enter URL" />\n                <p ng-show="newAccount.clickthroughUrl.$invalid && submitted" class="help-block">\n                    clickthrough url is invalid\n                </p>\n                <p ng-show="errors.industryId && submitted" class="help-block">\n                    {{errors.clickthroughUrl}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.leadCaptureEmail.$invalid || errors.leadCaptureEmail) && submitted}">\n            <label for="leadCaptureEmail" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-email-field" ng-model="account.leadCaptureEmail" type="email" class="form-control" name="leadCaptureEmail" id="leadCaptureEmail" placeholder="Enter Lead Capture Email" />\n                <p ng-show="newAccount.leadCaptureEmail.$invalid && submitted" class="help-block">\n                    lead capture email is invalid\n                </p>\n                <p ng-show="errors.leadCaptureEmail && submitted" class="help-block">\n                    {{errors.leadCaptureEmail}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input id="new-edit-account-spanish-checkbox" ng-model="account.enableSpanishPlayer" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Spanish Player</span>\n            </label>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button id="new-edit-account-ok-btn" class="btn btn-primary solid" ng-click="ok(newAccount.$error)">Save Account</button>\n    <button id="new-edit-account-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/accounts/new-edit-account.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/new-edit-account.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{action}} Account</h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate name="newAccount">\n        <div ng-pluralize ng-show="newAccount.$invalid && submitted" class="alert alert-danger" count="(newAccount.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="divisions" class="form-group row" ng-class="{\'has-error\': (newAccount.divisionId.$invalid || errors.divisionId) && submitted}">\n            <label class="col-sm-3 form-label required"><span>Division</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-account-division-select" name="division" select2 ng-options="division.id as division.name for division in divisions track by division.id" ng-model="account.divisionId" required>\n                </select>\n                <p ng-show="newAccount.division.$invalid && submitted" class="help-block">\n                    division is required\n                </p>\n                <p ng-show="errors.divisionId && submitted" class="help-block">\n                    {{errors.divisionId}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.name.$invalid || errors.name) && submitted}">\n            <label for="name" class="col-sm-3 form-label required"><span>Account Name</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-name-field" ng-model="account.name" type="text" name="name" class="form-control" id="name" placeholder="Enter new account name" required />\n                <p ng-show="newAccount.name.$invalid && submitted" class="help-block">\n                    account name is required\n                </p>\n                <p ng-show="errors.name && submitted" class="help-block">\n                    {{errors.name}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Account Keywords</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-keywords-field" ng-model="account.keywords" type="text" class="form-control" id="keywords" placeholder="Enter account keywords" />\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.industry.$invalid || errors.industryId) && submitted}">\n            <label class="col-sm-3 form-label required"><span>Industry</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-account-industry-select" name="industry" select2 ng-options="industry.id as industry.name for industry in industries track by industry.id" ng-model="account.industryId" required>\n                </select>\n                <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">\n                    industry is required\n                </p>\n                <p ng-show="errors.industryId && submitted" class="help-block">\n                    {{errors.industryId}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-3 form-label">Logo</label>\n            <div class="col-sm-9 file-selection-wrapper">\n                <div file-picker ng-model="account.logo"></div>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.clickthroughUrl.$invalid || errors.clickthroughUrl) && submitted}">\n            <label for="clickthroughUrl" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-url-field" ng-model="account.clickthroughUrl" type="text" ng-pattern="URL_REGEX" class="form-control" name="clickthroughUrl" id="clickthroughUrl" placeholder="Enter URL" />\n                <p ng-show="newAccount.clickthroughUrl.$invalid && submitted" class="help-block">\n                    clickthrough url is invalid\n                </p>\n                <p ng-show="errors.industryId && submitted" class="help-block">\n                    {{errors.clickthroughUrl}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': (newAccount.leadCaptureEmail.$invalid || errors.leadCaptureEmail) && submitted}">\n            <label for="leadCaptureEmail" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>\n            <div class="col-sm-9">\n                <input id="new-edit-account-email-field" ng-model="account.leadCaptureEmail" type="email" class="form-control" name="leadCaptureEmail" id="leadCaptureEmail" placeholder="Enter Lead Capture Email" />\n                <p ng-show="newAccount.leadCaptureEmail.$invalid && submitted" class="help-block">\n                    lead capture email is invalid\n                </p>\n                <p ng-show="errors.leadCaptureEmail && submitted" class="help-block">\n                    {{errors.leadCaptureEmail}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label class="col-sm-offset-3 col-sm-9">\n                <input id="new-edit-account-spanish-checkbox" ng-model="account.enableSpanishPlayer" type="checkbox" class="checkbox checkbox-light" />\n                <span>Enable Spanish Player</span>\n            </label>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button id="new-edit-account-ok-btn" class="btn btn-primary solid" ng-click="ok(newAccount.$error)">Save Account</button>\n    <button id="new-edit-account-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/accounts/summary.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/accounts/summary.html', '<div class="dropdown">\n    <div class="dropdown-toggle"><i class="glyph-chevron-down"></i>{{account.name}} Summary</div>\n    <div class="dropdown-menu">\n        <div account-summary></div>\n    </div>\n</div>\n<div class="btn-group right">\n    <button class="btn btn-default solid" ng-click="openNewCampaignModal()">New Campaign</button>\n    <button class="btn btn-default solid" ng-click="openEditAccountModal()">Edit Account</button>\n</div>\n'); });
@@ -62691,10 +68478,10 @@ define('campaignManagement/accounts/routes',['require','./../module','tpl!./new-
 define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<div ng-if="hasPlacements">\n    <nav class="row tab-header" role="form">\n    \n        <div class="col-sm-6 col-xs-12">\n            \n            <div class="btn-group left">\n                <b style="float: left;">View By:</b>\n                <a ng-click="setActive()" ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers || 0}})</a>\n                <a ng-click="setActive()" ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives || 0}})</a>\n                <a ng-click="setActive()" ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types || 0}})</a>\n                <label class="form-label search">\n                    <input class="input" placeholder="Search" type="search"/>\n                </label>\n            </div>\n        </div>        \n        <div class="col-sm-6 col-xs-12">\n            <div class="btn-group right">\n                <button class="btn btn-default solid" ng-click="openNewPlacementModal()">New Placement</button>\n                <button ng-show="selectedPlacements.length > 0" ng-click="editPlacements()" class="btn btn-default">Edit Placement<span ng-show="selectedPlacements.length > 1">s</span></button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button ng-click="pullTags()" class="btn btn-default">Pull Tags</button>\n\n            </div>\n        </div>\n        \n    \n    </nav>\n</div>\n<div no-content></div>'); });
+define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav class="row tab-header" role="form">\n    <div class="col-lg-3">\n        <b>View By:</b>\n        <a ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers || 0}})</a>\n        <a ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives || 0}})</a>\n        <a ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types || 0}})</a>\n    </div>\n    <div class="col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 text-right-lg">\n        <div class="row">\n            <div class="col-sm-4 col-lg-offset-1 col-lg-3">\n                <div class="dropdown dropdown-xs-12">\n                    <!--<a class="dropdown-toggle btn-default btn solid">New Placements<i class="glyph-chevron-down"></i></a>-->\n                    <!--<ul class="dropdown-menu" role="menu">-->\n                        <!--<li role="presentation"><a role="menuitem" tabindex="-1" href="">New Placement</a></li>-->\n                        <!--<li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>-->\n                    <!--</ul>-->\n                </div>\n            </div>\n            <div class="col-sm-8 text-right-sm col-lg-8">\n                <div class="btn-group">\n                    <button ng-click="openNewPlacementModal()" class="btn btn-default">New Placement</button>\n                    <button ng-show="selectedPlacements.length > 0" ng-click="editPlacements()" class="btn btn-default">Edit Placement<span ng-show="selectedPlacements.length > 1">s</span></button>\n                    <button class="btn btn-default">Set Trackers</button>\n                    <button ng-click="pullTags()" class="btn btn-default">Pull Tags</button>\n                </div>\n            </div>\n        </div>\n    </div>\n</nav>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/new-edit-placement.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/new-edit-placement.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newPlacement">\n        <div ng-pluralize ng-show="newPlacement.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newPlacement.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="!multiplePlacements" class="form-group row"\n             ng-class="{\'has-error\': newPlacement.name.$invalid && submitted}">\n            <label for="inputName" ng-class="{required:!multiplePlacements}" class="col-sm-3 form-label"><span>Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="placement.name" type="text" name="name"\n                       class="form-control" id="inputName" placeholder="Name"\n                       ng-required="!multiplePlacements"/>\n\n                <p ng-show="newPlacement.name.$invalid && submitted"\n                   class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newPlacement.type.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Publisher</span></label>\n\n            <div class="col-sm-9 single-select-light">\n                <select name="types" class="single-select" chosen\n                        ng-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"\n                        disable-search-threshold="10"\n                        ng-model="placement.publisherId" required>\n                </select>\n\n                <p ng-show="newPlacement.type.$invalid && submitted"\n                   class="help-block">\n                    publisher is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="placement.flightStart"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="placement.flightEnd"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>\n            <div class="col-sm-9">\n                <input ng-model="placement.bookedImpressions" type="text"\n                       class="form-control" id="bookedImpressions" name="bookedImpressions"\n                       placeholder="Planned Impressions"/>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label\n                class="col-sm-3 form-label"><span>Cost</span></label>\n\n            <div class="col-sm-3 single-select-light">\n                <select name="types" class="single-select" chosen\n                        ng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"\n                        disable-search-threshold="10"\n                        ng-model="placement.rateType">\n                </select>\n            </div>\n            <div class="col-sm-3" ng-if="showCostPer">\n                <input name="costPer" ng-model="placement.costPer" type="text"\n                       class="form-control" id="costPer"\n                       placeholder="Cost Per"/>\n            </div>\n            <div class="col-sm-3" ng-if="showTotalCost">\n                <input name="totalCost" ng-model="placement.totalCost" type="text"\n                       class="form-control" id="totalCost"\n                       placeholder="Total Cost"/>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywordString" type="text"\n                       class="form-control" id="keywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n\n        <div expand-anchors-directions></div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save\n        Placement\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/new-edit-placement.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/new-edit-placement.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newPlacement">\n        <div ng-pluralize ng-show="newPlacement.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newPlacement.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="!multiplePlacements" class="form-group row"\n             ng-class="{\'has-error\': newPlacement.name.$invalid && submitted}">\n            <label for="inputName" ng-class="{required:!multiplePlacements}" class="col-sm-3 form-label"><span>Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="placement.name" type="text" name="name"\n                       class="form-control" id="inputName" placeholder="Name"\n                       ng-required="!multiplePlacements"/>\n\n                <p ng-show="newPlacement.name.$invalid && submitted"\n                   class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newPlacement.type.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Publisher</span></label>\n\n            <div class="col-sm-9">\n                <select name="types" select2\n                        ng-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"\n                        ng-model="placement.publisherId" required>\n                </select>\n\n                <p ng-show="newPlacement.type.$invalid && submitted"\n                   class="help-block">\n                    publisher is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="placement.flightStart"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="placement.flightEnd"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>\n            <div class="col-sm-9">\n                <input ng-model="placement.bookedImpressions" type="text"\n                       class="form-control" id="bookedImpressions" name="bookedImpressions"\n                       placeholder="Planned Impressions"/>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label\n                class="col-sm-3 form-label"><span>Cost</span></label>\n\n            <div class="col-sm-3">\n                <select name="types" select2\n                        ng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"\n                        ng-model="placement.rateType">\n                </select>\n            </div>\n            <div class="col-sm-3" ng-if="showCostPer">\n                <input name="costPer" ng-model="placement.costPer" type="text"\n                       class="form-control" id="costPer"\n                       placeholder="Cost Per"/>\n            </div>\n            <div class="col-sm-3" ng-if="showTotalCost">\n                <input name="totalCost" ng-model="placement.totalCost" type="text"\n                       class="form-control" id="totalCost"\n                       placeholder="Total Cost"/>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywordString" type="text"\n                       class="form-control" id="keywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n\n        <div expand-anchors-directions></div>\n\n        <div class="form-group row">\n            <label for="adtype" class="col-sm-3 form-label"><span>Ad Type</span></label>\n            <div class="col-sm-9">\n              <select id="adtype" select2\n                      ng-options="key as key for (key, value) in creativesByAdType track by key"\n                      ng-model="adType">\n              </select>\n            </div>\n        </div>\n\n        <div class="form-group row">\n          <label for="creative" class="col-sm-3 form-label"><span>Creative</span></label>\n          <div class="col-sm-9">\n            <select id="creative" select2\n                    ng-options="item as item.name for item in creativesByAdType[adType] track by item.id"\n                    ng-model="creative">\n            </select>\n          </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save\n        Placement\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span> <span class="muted normal right">{{group.meta.count}} placements, {{group.meta.numDelivering}} delivering, {{group.meta.impressions}} of {{group.meta.bookedImpressions}} impressions</span>\n'); });
@@ -62734,13 +68521,13 @@ define('tpl!campaignManagement/campaigns/creatives/creativesList.html', ['angula
 define('tpl!campaignManagement/campaigns/creatives/creativesThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesThumbnails.html', '<div creative-thumbnails></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-5">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>\n            <a ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a ui-sref=".({filter: \'\'})">all ({{creativesMeta.all}})</a>\n        <a ui-sref=".({filter: \'IBV\'})">In-Banner ({{creativesMeta.IBV}})</a>\n        <a ui-sref=".({filter: \'IS\'})">In-Stream({{creativesMeta.IS}})</a>\n        <a ui-sref=".({filter: \'RM\'})">Rich Media({{creativesMeta.RM}})</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-5 text-right-lg">\n        <button class="btn btn-default" ng-click="openNewCreativeModal()">New Creative</button>\n        <button class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row" role="form">\n    <div class="form-group col-lg-5">\n        <span style="font-size: 20px; padding-right: 20px;">\n            <a id="creatives-header-view-thumnails" ui-sref="cm.campaigns.detail.creatives.thumbnails()"><i class="glyph-icon glyph-grid"></i></a>\n            <a id="creatives-header-view-list" ui-sref="cm.campaigns.detail.creatives.list()"><i class="glyph-icon glyph-list"></i></a>\n        </span>\n        <b>Filter:</b>\n        <a id="creatives-header-filter-all" ui-sref=".({filter: \'\'})">all ({{creativesMeta.all}})</a>\n        <a id="creatives-header-filter-ibv" ui-sref=".({filter: \'inBannerVideo\'})">In-Banner ({{creativesMeta.inBannerVideo}})</a>\n        <a id="creatives-header-filter-is" ui-sref=".({filter: \'inStream\'})">In-Stream({{creativesMeta.inStream}})</a>\n        <a id="creatives-header-filter-rm" ui-sref=".({filter: \'richMedia\'})">Rich Media({{creativesMeta.richMedia}})</a>\n    </div>\n    <div class="form-group col-lg-2">\n        <label class="form-label search">\n            <input id="creatives-header-search-field" class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="form-group col-lg-5 text-right-lg">\n        <button id="creatives-header-newcreative-btn" class="btn btn-default" ng-click="openNewCreativeModal()">New Creative</button>\n        <button id="creatives-header-settrackers-btn" class="btn btn-default">Set Trackers</button>\n    </div>\n</nav>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<span class="title">{{creative.creativeName}}</span>\n\t\t\t<div class="data">\n\t\t\t\t<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">{{creative.numPlacements.name}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>\n\t\t\t\t\t<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>\n\t\t\t\t\t<a ng-click="openPreviewPage(creative)" title="Preview Creative in Page"><i class="glyph-icon glyph-view"></i>Preview</a>\n\t\t\t\t</span>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/new-edit-creative.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/new-edit-creative.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Creative</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCreative">\n        <div ng-pluralize ng-show="newCreative.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCreative.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="campaigns" class="form-group row"\n             ng-class="{\'has-error\': newCreative.accountId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Campaign</span></label>\n\n            <div class="col-sm-9 single-select-light">\n                <select name="campaigns" class="single-select" chosen\n                        ng-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"\n                        disable-search-threshold="10"\n                        ng-model="creative.campaignId" required>\n                </select>\n\n                <p ng-show="newCreative.accountId.$invalid && submitted"\n                   class="help-block">\n                    campaign is required\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="creative.name" type="text" name="name"\n                       class="form-control" id="inputName" placeholder="Name"\n                       required/>\n\n                <p ng-show="newCreative.name.$invalid && submitted"\n                   class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.clickthroughUrl.$invalid && submitted}">\n            <label for="clickthroughUrl" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="creative.clickthroughUrl" type="text"\n                       name="clickthroughUrl" class="form-control"\n                       id="clickthroughUrl" placeholder="Clickthrough Url" required/>\n\n                <p ng-show="newCreative.clickthroughUrl.$invalid && submitted"\n                   class="help-block">\n                    clickthrough url is required\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.type.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Creative Type</span></label>\n\n            <div class="col-sm-9 single-select-light">\n                <select name="types" class="single-select" chosen\n                        ng-options="type.id as type.name for type in types track by type.id"\n                        disable-search-threshold="10"\n                        ng-model="creative.type" required>\n                </select>\n\n                <p ng-show="newCreative.type.$invalid && submitted"\n                   class="help-block">\n                    creative type is required\n                </p>\n            </div>\n        </div>\n\n        <div ng-if="environments" class="form-group row"\n             ng-class="{\'has-error\': newCreative.environment.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Environment</span></label>\n\n            <div class="col-sm-9 single-select-light">\n                <select name="environment" class="single-select" chosen\n                        ng-options="environment.id as environment.name for environment in environments track by environment.id"\n                        disable-search-threshold="10"\n                        ng-model="creative.environment" required>\n                </select>\n\n                <p ng-show="newCreative.environment.$invalid && submitted"\n                   class="help-block">\n                    environment is required\n                </p>\n            </div>\n        </div>\n\n        <div ng-if="dimensions" class="form-group row"\n             ng-class="{\'has-error\': (newCreative.dimensions.$invalid || newCreative.customDimensionsWidth.$invalid || newCreative.customDimensionsHeight.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Dimensions</span></label>\n\n            <div class="col-sm-3 single-select-light">\n                <select name="dimensions" class="single-select" chosen\n                        ng-options="dimension.id as dimension.name for dimension in dimensions track by dimension.id"\n                        disable-search-threshold="10"\n                        ng-model="creative.dimensions" required>\n                </select>\n\n                <p ng-show="newCreative.dimensions.$invalid && submitted"\n                   class="help-block">\n                    dimensions are required\n                </p>\n                <p ng-show="newCreative.customDimensionsWidth.$invalid && submitted"\n                   class="help-block">\n                    width is required\n                </p>\n                <p ng-show="newCreative.customDimensionsHeight.$invalid && submitted"\n                   class="help-block">\n                    height is required\n                </p>\n            </div>\n            <div class="col-sm-6" ng-if="dimensionsAreCustom">\n                <div class="col-sm-6">\n                    <input name="customDimensionsWidth" ng-model="creative.customDimensionsWidth" type="text"\n                           class="form-control" id="customDimensionsWidth"\n                           placeholder="Width" required/>\n                </div>\n                <div class="col-sm-6">\n                    <input name="customDimensionsHeight" ng-model="creative.customDimensionsHeight" type="text"\n                           class="form-control" id="customDimensionsHeight"\n                           placeholder="Height" required/>\n                </div>\n            </div>\n        </div>\n\n        <div ng-if="expandedDimensions" class="form-group row"\n             ng-class="{\'has-error\': (newCreative.expandedDimensions.$invalid || newCreative.customExpandedDimensionsWidth.$invalid || newCreative.customExpandedDimensionsHeight.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>\n\n            <div class="col-sm-3 single-select-light">\n                <select name="expandedDimensions" class="single-select" chosen\n                        ng-options="expandedDimension.id as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"\n                        disable-search-threshold="10"\n                        ng-model="creative.expandedDimensions" required>\n                </select>\n\n                <p ng-show="newCreative.expandedDimensions.$invalid && submitted"\n                   class="help-block">\n                    expanded dimensions are required\n                </p>\n                <p ng-show="newCreative.customExpandedDimensionsWidth.$invalid && submitted"\n                   class="help-block">\n                    expanded width is required\n                </p>\n                <p ng-show="newCreative.customExpandedDimensionsHeight.$invalid && submitted"\n                   class="help-block">\n                    expanded height is required\n                </p>\n            </div>\n            <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">\n                <div class="col-sm-6">\n                    <input name="customExpandedDimensionsWidth" ng-model="creative.customExpandedDimensionsWidth" type="text"\n                           class="form-control" id="customExpandedDimensionsWidth"\n                           placeholder="Width" required />\n                </div>\n                <div class="col-sm-6">\n                    <input name="customExpandedDimensionsHeight" ng-model="creative.customExpandedDimensionsHeight" type="text"\n                           class="form-control" id="customExpandedDimensionsHeight"\n                           placeholder="Height" required />\n                </div>\n            </div>\n        </div>\n\n        <div ng-if="creative.type == \'SWF\'">\n            <div class="form-group row">\n                <label class="col-sm-3 form-label">Upload SWF</label>\n                <div class="col-sm-9 file-selection-wrapper form-inline">\n                    <div file-picker accept="\'application/x-shockwave-flash\'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>\n                </div>\n            </div>\n        </div>\n\n        <div ng-if="creative.type == \'IMG\'">\n            <div class="form-group row">\n                <label class="col-sm-3 form-label">Upload Image</label>\n                <div class="col-sm-9 file-selection-wrapper form-inline">\n                    <div file-picker ng-model="creative.file"></div>\n                </div>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>\n            <div class="col-sm-9">\n                <label>\n                    <input id="customStartFrame" ng-model="creative.customStartFrame" type="checkbox" class="checkbox checkbox-light" />\n                    <span></span>\n                </label>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="creative.keywords" type="text"\n                       class="form-control" id="keywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save\n        Creative\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/new-edit-creative.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/new-edit-creative.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Creative</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCreative">\n        <div ng-pluralize ng-show="newCreative.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCreative.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-show="campaigns" class="form-group row"\n             ng-class="{\'has-error\': newCreative.campaignId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Campaign</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-creative-select-campaign" name="campaignId" select2\n                        ng-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"\n                        ng-model="creative.campaignId" required>\n                </select>\n\n                <p ng-show="newCreative.campaignId.$invalid && submitted"\n                   class="help-block">\n                    campaign is required\n                </p>\n                <p ng-show="errors.campaignId && submitted" class="help-block">\n                    {{errors.campaignId}}\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.name.$invalid && submitted}">\n            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-creative-name-field" ng-model="creative.name" type="text" name="name"\n                       class="form-control" id="inputName" placeholder="Name"\n                       required/>\n\n                <p ng-show="newCreative.name.$invalid && submitted"\n                   class="help-block">\n                    name is required\n                </p>\n                <p ng-show="errors.name && submitted" class="help-block">\n                    {{errors.name}}\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.clickthroughUrl.$invalid && submitted}">\n            <label for="new-edit-creative-clickthrough-url-field" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-creative-clickthrough-url-field" ng-model="creative.clickthroughUrl" type="text" ng-pattern="URL_REGEX"\n                       name="clickthroughUrl" class="form-control" placeholder="Clickthrough Url" required/>\n\n                <p ng-show="newCreative.clickthroughUrl.$invalid && submitted"\n                   class="help-block">\n                    clickthrough url must be a valid URL\n                </p>\n\n                <p ng-show="errors.clickthroughUrl && submitted" class="help-block">\n                    {{errors.clickthroughUrl}}\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.type.$invalid && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Creative Type</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-creative-select-creative-type" ng-disabled="editing" name="type" select2\n                        ng-options="type as type.name for type in types track by type.id"\n                        ng-model="typeTransform" ng-model-options="{ getterSetter: true }" required>\n                </select>\n                <p ng-show="newCreative.type.$invalid && submitted"\n                   class="help-block">\n                    creative type is required\n                </p>\n                <p ng-show="errors.type && submitted" class="help-block">\n                    {{errors.type}}\n                </p>\n            </div>\n        </div>\n\n        <div ng-if="environments" class="form-group row"\n             ng-class="{\'has-error\': newCreative.environment.$invalid && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Environment</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-creative-select-environment" ng-disabled="editing" name="environment" select2\n                        ng-options="environment as environment.name for environment in environments track by environment.id"\n                        ng-model="environmentTransform" ng-model-options="{ getterSetter: true }" ng-required="!editing">\n                </select>\n\n                <p ng-show="newCreative.environment.$invalid && submitted"\n                   class="help-block">\n                    environment is required\n                </p>\n                <p ng-show="errors.environment && submitted" class="help-block">\n                    {{errors.environment}}\n                </p>\n            </div>\n        </div>\n\n        <div ng-if="dimensions" class="form-group row"\n             ng-class="{\'has-error\': (newCreative.dimensions.$invalid || newCreative.customDimensionsWidth.$invalid || newCreative.customDimensionsHeight.$invalid) && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Dimensions</span></label>\n            <div class="col-sm-3">\n                <select id="new-edit-creative-select-dimensions" ng-disabled="editing" name="dimensions" select2\n                        ng-options="dimension as dimension.name for dimension in dimensions track by dimension.id"\n                        ng-model="dimensionsTransform" ng-model-options="{ getterSetter: true }" required>\n                </select>\n\n                <p ng-show="newCreative.dimensions.$invalid && submitted"\n                   class="help-block">\n                    dimensions are required\n                </p>\n                <p ng-show="newCreative.customDimensionsWidth.$invalid && submitted"\n                   class="help-block">\n                    width is required\n                </p>\n                <p ng-show="newCreative.customDimensionsHeight.$invalid && submitted"\n                   class="help-block">\n                    height is required\n                </p>\n                <p ng-show="errors.embedWidth && submitted" class="help-block">\n                    {{errors.embedWidth}}\n                </p>\n                <p ng-show="errors.embedHeight && submitted" class="help-block">\n                    {{errors.embedHeight}}\n                </p>\n            </div>\n            <div class="col-sm-6" ng-show="dimensionsAreCustom">\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-width-field" ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.embedWidth" type="number"\n                           class="form-control" id="customDimensionsWidth"\n                           placeholder="Width" required/>\n                </div>\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-height-field" ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.embedHeight" type="number"\n                           class="form-control" id="customDimensionsHeight"\n                           placeholder="Height" required/>\n                </div>\n            </div>\n        </div>\n        <div ng-if="expandedDimensions" class="form-group row"\n             ng-class="{\'has-error\': (newCreative.expandedDimensions.$invalid || newCreative.customExpandedDimensionsWidth.$invalid || newCreative.customExpandedDimensionsHeight.$invalid) && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>\n            <div class="col-sm-3">\n                <select id="new-edit-creative-select-exp-dimension" ng-disabled="editing" name="expandedDimensions" select2\n                        ng-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"\n                        ng-model="dimensionsExpandTransform" ng-model-options="{ getterSetter: true }" required>\n                </select>\n\n                <p ng-show="newCreative.expandedDimensions.$invalid && submitted"\n                   class="help-block">\n                    expanded dimensions are required\n                </p>\n                <p ng-show="newCreative.customExpandedDimensionsWidth.$invalid && submitted"\n                   class="help-block">\n                    expanded width is required\n                </p>\n                <p ng-show="newCreative.customExpandedDimensionsHeight.$invalid && submitted"\n                   class="help-block">\n                    expanded height is required\n                </p>\n                <p ng-show="errors.expandedWidth && submitted" class="help-block">\n                    {{errors.expandedWidth}}\n                </p>\n                <p ng-show="errors.expandedHeight && submitted" class="help-block">\n                    {{errors.expandedHeight}}\n                </p>\n            </div>\n            <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-exp-width-field" ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"\n                           class="form-control" id="customExpandedDimensionsWidth"\n                           placeholder="Width" required />\n                </div>\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-exp-height-field" ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"\n                           class="form-control" id="customExpandedDimensionsHeight"\n                           placeholder="Height" required />\n                </div>\n            </div>\n        </div>\n\n        <div ng-if="creative.subtype == \'SWF\' && !editing">\n            <div class="form-group row">\n                <label class="col-sm-3 form-label">Upload SWF</label>\n                <div class="col-sm-9 file-selection-wrapper form-inline">\n                    <div file-picker accept="\'application/x-shockwave-flash\'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>\n                </div>\n            </div>\n        </div>\n\n        <div ng-if="creative.subtype == \'IMG\' && !editing">\n            <div class="form-group row">\n                <label class="col-sm-3 form-label">Upload Image</label>\n                <div class="col-sm-9 file-selection-wrapper form-inline">\n                    <div file-picker ng-model="creative.file"></div>\n                </div>\n            </div>\n        </div>\n\n        <div ng-show="creative.type===\'inBanner\' && creative.expandedDimensions === nonExpandingIndex" class="form-group row">\n            <label ng-class="{disabled:editing}" for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-disabled="editing" id="customStartFrame" ng-model="creative.customStartFrame" type="checkbox" class="checkbox checkbox-light" />\n                    <span></span>\n                </label>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-creative-keywords-field" ng-model="creative.keywords" type="text"\n                       class="form-control" id="keywords"\n                       placeholder="Keywords"/>\n            </div>\n\n            <p ng-show="errors.keywords && submitted" class="help-block">\n                {{errors.keywords}}\n            </p>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button id="new-edit-creative-save-creative-btn" class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save\n        Creative\n    </button>\n    <button id="new-edit-creative-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 define('campaignManagement/campaigns/creatives/routes',['require','./../../module','tpl!./creativesList.html','tpl!./creativesThumbnails.html','tpl!./creativesHeader.html','tpl!./directives/creativeThumbnails.html','tpl!./new-edit-creative.html'],function (require) {
     'use strict';
@@ -62822,7 +68609,7 @@ define('tpl!campaignManagement/campaigns/directives/campaignsByAccount.html', ['
 define('tpl!campaignManagement/campaigns/directives/campaignsByStatus.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByStatus.html', '<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/new-edit-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-edit-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Campaign</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="accounts" class="form-group row"\n             ng-class="{\'has-error\': newCampaign.accountId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Account</span></label>\n\n            <div class="col-sm-9 single-select-light">\n                <select name="accounts" class="single-select" chosen\n                        ng-options="account.id as account.name for account in accounts track by account.id"\n                        disable-search-threshold="10"\n                        ng-model="campaign.accountId" required>\n                </select>\n\n                <p ng-show="newCampaign.accountId.$invalid && submitted"\n                   class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCampaign.name.$invalid && submitted}">\n            <label for="name" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.name" type="text" name="name"\n                       class="form-control" id="name"\n                       placeholder="Campaign Name" required/>\n\n                <p ng-show="newCampaign.name.$invalid && submitted"\n                   class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywordString" type="text"\n                       class="form-control" id="campaignKeywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           class="form-control"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="campaign.startDate"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           class="form-control"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="campaign.endDate"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.budget.$invalid && submitted}">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="number" pattern="^\\d+((\\.|\\,)\\d{2})?$"\n                       class="form-control" id="budget" name="budget"\n                       placeholder="Enter your budget"/>\n                <p ng-show="newCampaign.budget.$invalid && submitted" class="help-block">\n                    please enter budget in a format like "1234.56"\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm">Options</div>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-model="campaign.measureReach" type="checkbox"\n                           class="checkbox checkbox-light"/>\n                    <span>Measure Reach &amp; Frequency</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.googleAnalyticsParams"\n                           type="checkbox" class="checkbox checkbox-light"/>\n                    <span>Add Google AnalyticsUTM Parameters to URLs</span>\n                </label>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.conversionTracking"\n                           type="checkbox" class="checkbox checkbox-light"/>\n                    <span>Enable Conversion Tracking</span>\n                </label>\n            </div>\n        </div>\n\n        <div ng-if="campaign.conversionTracking">\n            <div class="form-group row">\n                <label for="conversionPageDomain"\n                       class="col-sm-3 form-label"><span>Conversion Page Domain</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionPageDomain" type="text"\n                           class="form-control" id="conversionPageDomain"\n                           placeholder="Conversion Page Domain"/>\n                </div>\n            </div>\n            <div class="form-group row">\n                <label for="conversionEventName"\n                       class="col-sm-3 form-label"><span>Conversion Event Name</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionEventName" type="text"\n                           class="form-control" id="conversionEventName"\n                           placeholder="Conversion Event Name"/>\n                </div>\n            </div>\n            <div class="form-group row">\n                <div class="col-sm-3 text-right-sm">Conversion Embed Snippet</div>\n                <div class="col-sm-9">\n                    <textarea ng-model="conversionEmbedSnippetText" class="form-control"\n                              placeholder="Enter some text"></textarea>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repName.$invalid || errors.repName) && submitted}">\n            <label for="repName" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text"\n                       class="form-control" name="repName" id="repName"\n                       placeholder="Enter AE/Rep Name" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repName.$invalid && submitted"\n                   class="help-block">\n                    rep name is required\n                </p>\n                <p ng-show="errors.repName && submitted" class="help-block">\n                    {{errors.repName}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repEmail.$invalid || errors.repEmail) && submitted}">\n            <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="text"\n                       class="form-control" name="repEmail" id="repEmail"\n                       placeholder="Enter AE/Rep Email" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repEmail.$invalid && submitted"\n                   class="help-block">\n                    rep email is required\n                </p>\n                <p ng-show="errors.repEmail && submitted" class="help-block">\n                    {{errors.repEmail}}\n                </p>\n            </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save\n        Campaign\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/new-edit-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-edit-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Campaign</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="accounts" class="form-group row"\n             ng-class="{\'has-error\': newCampaign.accountId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Account</span></label>\n\n            <div class="col-sm-9">\n                <select name="accounts" select2\n                        ng-options="account.id as account.name for account in accounts track by account.id"\n                        ng-model="campaign.accountId" required>\n                </select>\n\n                <p ng-show="newCampaign.accountId.$invalid && submitted"\n                   class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCampaign.name.$invalid && submitted}">\n            <label for="name" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.name" type="text" name="name"\n                       class="form-control" id="name"\n                       placeholder="Campaign Name" required/>\n\n                <p ng-show="newCampaign.name.$invalid && submitted"\n                   class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywordString" type="text"\n                       class="form-control" id="campaignKeywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           name="startDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="campaign.startDate"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           name="endDate"\n                                           datepicker-popup="{{format}}"\n                                           ng-blur="formatDate($event)"\n                                           ng-model="campaign.endDate"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.budget.$invalid && submitted}">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="number" ng-pattern="MONEY_REGEX"\n                       class="form-control" id="budget" name="budget"\n                       placeholder="Enter your budget"/>\n                <p ng-show="newCampaign.budget.$invalid && submitted" class="help-block">\n                    please enter budget in a format like "1234.56"\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm">Options</div>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-model="campaign.measureReach" type="checkbox"\n                           class="checkbox checkbox-light"/>\n                    <span>Measure Reach &amp; Frequency</span>\n                </label>\n            </div>\n        </div>\n\n        <!--Disabled until after Alpha-->\n\n        <!--<div class="form-group row">-->\n            <!--<div class="col-sm-offset-3 col-sm-9">-->\n                <!--<label>-->\n                    <!--<input model="enableGeotargeting" type="checkbox" class="checkbox checkbox-light"/>-->\n                    <!--<span>Enable Geotargeting</span>-->\n                <!--</label>-->\n            <!--</div>-->\n        <!--</div>-->\n        <!--<div class="form-group row">-->\n          <!--<label class="col-sm-3 form-label">Upload CSV file</label>-->\n\n          <!--<div class="col-sm-9 file-selection-wrapper">-->\n            <!--<div file-picker ng-model="campaign.csv"></div>-->\n          <!--</div>-->\n        <!--</div>-->\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.conversionTracking"\n                           type="checkbox" class="checkbox checkbox-light"/>\n                    <span>Enable Conversion Tracking</span>\n                </label>\n            </div>\n        </div>\n\n        <div ng-show="campaign.conversionTracking">\n            <div class="form-group row" ng-class="{\'has-error\': newCampaign.conversionDomain.$invalid && submitted}">\n                <label for="conversionDomain"\n                       class="col-sm-3 form-label"><span>Conversion Page Domain</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionDomain" type="text" name="conversionDomain"\n                           class="form-control" id="conversionDomain" ng-pattern="URL_REGEX"\n                           placeholder="Conversion Page Domain"/>\n                    <p ng-show="newCampaign.conversionDomain.$invalid && submitted"\n                       class="help-block">\n                      conversion domain is invalid\n                    </p>\n                </div>\n            </div>\n            <div class="form-group row">\n                <label for="conversionEvent"\n                       class="col-sm-3 form-label"><span>Conversion Event Name</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionEvent" type="text"\n                           class="form-control" id="conversionEvent"\n                           placeholder="Conversion Event Name"/>\n                </div>\n            </div>\n            <div class="form-group row">\n                <div class="col-sm-3 text-right-sm">Conversion Embed Snippet</div>\n                <div class="col-sm-9">\n                    <textarea disabled ng-model="conversionEmbedSnippetText" class="form-control"></textarea>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repName.$invalid || errors.repName) && submitted}">\n            <label for="repName" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text"\n                       class="form-control" name="repName" id="repName"\n                       placeholder="Enter AE/Rep Name" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repName.$invalid && submitted"\n                   class="help-block">\n                    rep name is invalid\n                </p>\n                <p ng-show="errors.repName && submitted" class="help-block">\n                    {{errors.repName}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repEmail.$invalid || errors.repEmail) && submitted}">\n            <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="email"\n                       class="form-control" name="repEmail" id="repEmail"\n                       placeholder="Enter AE/Rep Email" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repEmail.$invalid && submitted"\n                   class="help-block">\n                    rep email is invalid\n                </p>\n                <p ng-show="errors.repEmail && submitted" class="help-block">\n                    {{errors.repEmail}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n          <div class="col-sm-3 text-right-sm">Description</div>\n          <div class="col-sm-9">\n            <textarea ng-model="campaign.description" class="form-control"></textarea>\n          </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save\n        Campaign\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 define('campaignManagement/campaigns/routes',['require','./../module','./placements/routes','./creatives/routes','tpl!./index.html','tpl!./campaign.summary.html','tpl!./campaigns.html','tpl!./campaign.html','tpl!./campaignsByStatusHeader.html','tpl!./analytics-preview.html','tpl!./services/campaignsByAccountHeader.html','tpl!./directives/campaignDetails.html','tpl!./directives/campaignsByAccount.html','tpl!./directives/campaignsByStatus.html','tpl!./new-edit-campaign.html'],function (require) {
     'use strict';
@@ -62916,29 +68703,6 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
             });
 
         buildAnalyticsRoutes('analytics');
-        buildReportRoutes('reports');
-
-        function buildReportRoutes(base) {
-            $stateProvider
-                .state({
-                    name: base,
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.account',
-                    url: '/analytics/reports/account/:accountId',
-                    template: '<ui-view />'
-                })
-                .state({
-                    name: base + '.campaigns.detail',
-                    url: '/analytics/reports/campaign/:campaignId',
-                    template: '<ui-view />'
-                });
-        }
 
         function buildAnalyticsRoutes(base) {
             $stateProvider
@@ -62954,7 +68718,12 @@ define('campaignManagement/routes',['require','./module','./clients/routes','./d
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/campaign/:campaignId',
+                    url: '/campaign/:campaignId*path',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.wildcard',
+                    url: '{ path: ^(?!(\/client|\/account|\/division)).*$ }',
                     template: '<ui-view />'
                 });
         }
@@ -62968,7 +68737,7 @@ define('campaignManagement/divisions/controllers/division',['require','./../../m
 
     var app = require('./../../module');
 
-    app.controller('divisionCtrl', ['$scope', '$modal', 'navbarService', function ($scope, $modal, navbar) {
+    app.controller('divisionCtrl', ['$scope', '$modal', '$state', 'navbarService', function ($scope, $modal, $state, navbar) {
         $scope.openNewAccountModal = openNewAccountModal;
 
         function updateDivisionInfo() {
@@ -62982,7 +68751,7 @@ define('campaignManagement/divisions/controllers/division',['require','./../../m
             if (!newAccountModal) {
                 newAccountModal = {
                     originalAccount: {
-                        divisionId: $scope.division.id
+                        divisionId: $state.params.divisionId
                     },
                     action: 'New'
                 };
@@ -63041,8 +68810,8 @@ define('campaignManagement/campaigns/placements/controllers/placementsHeader',['
     var app = require('./../../../module');
 
     app.controller('placementsHeader', [
-        '$scope', '$modal', '$rootScope', '$q', '$interpolate', 'placements', 'adTagService', 'placementRecordService',
-        function($scope, $modal, $rootScope, $q, $interpolate, placements, adTagService, placementRecordService) {
+        '$scope', '$modal', '$rootScope', '$q', '$interpolate', '$state', 'placements', 'adTagService', 'placementRecordService',
+        function($scope, $modal, $rootScope, $q, $interpolate, $state, placements, adTagService, placementRecordService) {
 
             $scope.openNewPlacementModal = openNewPlacementModal;
             $scope.editPlacements = editPlacements;
@@ -63054,7 +68823,12 @@ define('campaignManagement/campaigns/placements/controllers/placementsHeader',['
             function openNewPlacementModal() {
                 if(! newPlacementModal) {
                     newPlacementModal = {
-                        action: 'New'
+                        action: 'New',
+                        originalPlacement: {
+                            campaignId: $state.params.campaignId,
+                            flightStart: new Date(),
+                            flightEnd: new Date()
+                        }
                     };
                 }
 
@@ -63126,6 +68900,10 @@ define('campaignManagement/campaigns/placements/controllers/placementsHeader',['
                     selectedPlacements = $scope.selectedPlacements;
                     editPlacementsModal = {
                         placementIds: $scope.selectedPlacements,
+                        originalPlacement: {
+                            flightStart: new Date(),
+                            flightEnd: new Date()
+                        },
                         action: 'Edit'
                     };
                 }
@@ -63206,12 +68984,12 @@ define('campaignManagement/campaigns/placements/controllers/placementsHeader',['
                 var placementPromises = [];
 
                 placementIds.forEach(function(placementId) {
-                    placementPromises.push(placementRecordService.getById(placementId));
+                    placementPromises.push(placementRecordService.fetch(placementId));
                 });
 
                 $q.all(placementPromises).then(function(placements) {
-                    placements.forEach(function(placement) {
-                        placement = placement.all();
+                    placements.forEach(function(resp) {
+                        var placement = resp.data;
                         tags += getPlacementTagText(placement);
                     });
 
@@ -63295,33 +69073,35 @@ define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['
 
     var ng = require('angular');
 
-    app.controller('newEditPlacementCtrl', ['$scope', '$q', '$modalInstance', 'placements',
-                                            'placementRecordService', 'campaignRecordService',
-                                            'accountRecordService', 'divisionRecordService',
-                                            'clientRecordService', 'clientPublisherRecordService', 'modalState',
-                                            function ($scope, $q, $modalInstance, placements,
-                                                      placementRecordService, campaignRecordService,
-                                                      accountRecordService, divisionRecordService,
-                                                      clientRecordService, clientPublisherRecordService, modalState) {
-        $scope.placement = modalState.placement;
+    app.controller('newEditPlacementCtrl', [
+        '$scope', '$q', '$modalInstance', '$timeout', '$filter', 'placements',
+        'placementRecordService', 'campaignRecordService',
+        'accountRecordService', 'divisionRecordService',
+        'clientRecordService', 'clientPublisherRecordService',
+        'modalState', 'creatives',
+    function ($scope, $q, $modalInstance, $timeout, $filter, placements,
+            placementRecordService, campaignRecordService,
+            accountRecordService, divisionRecordService,
+            clientRecordService, clientPublisherRecordService,
+    modalState, creativeService) {
+
+        $scope.ok = ok;
+        $scope.cancel = cancel;
         $scope.action = modalState.action;
+        $scope.multiplePlacements = modalState.placementIds && modalState.placementIds.length > 1;
+        $scope.formatDate = formatDate;
+
+        var records = [];
+        var record;
 
         setupDatePickers();
         setupRateTypes();
+        setupPickCreative();
         setupModal();
 
+        creativeService.observe(setupPickCreative, $scope);
+
         function setupDatePickers() {
-            var openPicker = function($event, name) {
-                $event.preventDefault();
-                $event.stopPropagation();
-
-                ng.forEach($scope.datePickers, function (value, key) {
-                    $scope.datePickers[key] = false;
-                });
-
-                $scope.datePickers[name] = true;
-            };
-
             $scope.format = 'MM/dd/yyyy';
             $scope.openPicker = openPicker;
             $scope.datePickers = {};
@@ -63330,6 +69110,17 @@ define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['
                 startingDay: 0,
                 maxMode: 'day'
             };
+
+            function openPicker($event, name) {
+                $event.preventDefault();
+                $event.stopPropagation();
+
+                ng.forEach($scope.datePickers, function (value, key) {
+                    $scope.datePickers[key] = false;
+                });
+
+                $scope.datePickers[name] = true;
+            }
         }
 
         function setupRateTypes() {
@@ -63363,44 +69154,50 @@ define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['
             });
         }
 
-        function setupModal() {
-            var originalPlacement;
-            var placementPromises = [];
+        function setupPickCreative() {
+            var adTypes = {};
+            var creatives = creativeService.data().all();
 
-            // Editing placement(s)
-            if (modalState.placementIds) {
-                $scope.multiplePlacements = modalState.placementIds.length > 1;
-
-                for (var i=0; i<modalState.placementIds.length; i++) {
-                    placementPromises.push(
-                        placementRecordService.getById(modalState.placementIds[i])
-                    );
+            creatives.forEach(function(creative) {
+                if (!adTypes[creative.type]) {
+                    adTypes[creative.type] = [];
                 }
 
-                $q.all(placementPromises).then(function(placements) {
-                    updatePublishers(placements[0].all().campaignId);
-                    originalPlacement = getSameProperties(placements);
-                    addDefaults(originalPlacement);
-                    if (!$scope.placement || $scope.placement === {}) {
-                        $scope.placement = ng.copy(originalPlacement);
-                    }
+                adTypes[creative.type].push(creative);
+            });
+
+            $scope.creativesByAdType = adTypes;
+        }
+
+        function setupModal() {
+            var placementPromises = [];
+            var r, id;
+            // Editing placement(s)
+            if (modalState.placementIds) {
+                for (var i=0; i<modalState.placementIds.length; i++) {
+                    id = modalState.placementIds[i];
+                    r = placementRecordService.get(id);
+                    placementPromises.push(placementRecordService.fetch(id));
+                    records.push(r);
+                }
+
+                $q.all(placementPromises).then(function() {
+                    record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
+                    record.observe(update, $scope);
                 });
             }
 
             // Creating a new placement under a campaign
-            if (modalState.campaignId) {
+            if (modalState.originalPlacement.campaignId) {
+                record = placementRecordService.create(modalState.originalPlacement);
+                record.set(modalState.placement);
+                record.observe(update, $scope);
+            }
 
-                updatePublishers(modalState.campaignId);
-
-                if (!originalPlacement) {
-                    originalPlacement = addDefaults({});
-                }
-
-                if (!$scope.placement) {
-                    $scope.placement = originalPlacement;
-                }
-
-                $scope.placement.campaignId = originalPlacement.campaignId = modalState.campaignId;
+            function update() {
+                $scope.placement = record.get();
+                $scope.errors = record.errors();
+                updatePublishers(record.get().campaignId);
             }
 
             /**
@@ -63409,112 +69206,78 @@ define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['
              *
              * @param placements {Array<Object>}
              */
-            function getSameProperties(placements) {
-
-                if (placements.length === 1) {
-                    return placements[0].all();
-                }
-
-                var sameProperties = placements.pop().all();
-                var tmpSameProperties;
-                var currentPlacement;
+            function getIntersection(placements) {
+                var intersection = placements.pop().get();
+                var curr;
 
                 for (var i=0; i<placements.length; i++) {
-                    currentPlacement = placements[i].all();
-                    tmpSameProperties = {};
-                    for (var index in currentPlacement) {
-                        if (currentPlacement.hasOwnProperty(index)) {
-                            if (ng.equals(sameProperties[index], currentPlacement[index])) {
-                                tmpSameProperties[index] = sameProperties[index];
-                            }
-                        }
-                    }
-                    sameProperties = tmpSameProperties;
+                    curr = placements[i];
+                    intersection = curr.intersect(intersection, curr.get());
                 }
 
-                return sameProperties;
-            }
-
-            function addDefaults(placement) {
-                ng.extend(placement, {
-                    flightStart: placement.flightStart || new Date(),
-                    flightEnd: placement.flightEnd || new Date()
-                });
+                return intersection;
             }
 
             function updatePublishers(campaignId) {
-                campaignRecordService.getById(campaignId)
-                    .then(function(campaign) {
-                        accountRecordService.getById(campaign.all().accountId)
-                            .then(function(account) {
-                                divisionRecordService.getById(account.all().divisionId)
-                                    .then(function(division) {
-                                        clientRecordService.getById(division.all().clientId)
-                                            .then(function(client) {
-                                                clientPublisherRecordService.getById(client.all().id)
-                                                    .then(function(publishers) {
-                                                        $scope.publishers = publishers.all();
+                campaignRecordService.fetch(campaignId)
+                    .then(function(resp) {
+                        accountRecordService.fetch(resp.data.accountId)
+                            .then(function(resp) {
+                                divisionRecordService.fetch(resp.data.divisionId)
+                                    .then(function(resp) {
+                                        clientRecordService.fetch(resp.data.clientId)
+                                            .then(function(resp) {
+                                                clientPublisherRecordService.fetch(resp.data.id)
+                                                    .then(function(resp) {
+                                                        $scope.publishers = resp.data;
                                                     });
                                             });
                                     });
                             });
                     });
             }
+        }
 
-            $scope.ok = function (errors) {
-                $scope.errors = errors;
-                if (ng.equals({}, $scope.errors) || !$scope.errors) {
-                    var onSuccess = function() {
-                        originalPlacement = $scope.placement;
-                        $modalInstance.dismiss('cancel');
-                    };
-                    if($scope.placement && $scope.placement.id) {
-                        var placementDiff = getDiff($scope.placement, originalPlacement);
+        function ok(errors) {
+            if (ng.equals({}, errors) || !errors) {
+                var onSuccess = function() {
+                    $scope.placement = {};
+                    $modalInstance.dismiss('cancel');
+                };
 
-                        if (!ng.equals(placementDiff, {})) {
-                            placementRecordService.update($scope.placement.id, placementDiff).then(onSuccess);
-                        } else {
-                            $modalInstance.dismiss('cancel');
-                        }
-                    } else {
-                        placementRecordService.create($scope.placement).then(onSuccess);
-                    }
-                }
-                $scope.submitted = true;
-            };
+                if(records.length) {
 
-            // Simple diffing function for PUT request
-            function getDiff(changed, original) {
-                var diff = {};
-                for (var index in changed) {
-                    if (changed.hasOwnProperty(index)) {
-                        if (original[index] && !ng.equals(changed[index], original[index])) {
-                            diff[index] = changed[index];
-                        }
-                    }
-                }
-
-                return diff;
-            }
-
-            $scope.cancel = function () {
-                if (hasUnsavedChanges()) {
-                    if (confirm('You have unsaved changes. Really close?')) {
-                        $scope.placement = ng.copy(originalPlacement);
-                        $modalInstance.dismiss('cancel');
-                    }
                 } else {
+                    record.save().then(onSuccess);
+                }
+            }
+            $scope.submitted = true;
+        }
+
+        function cancel() {
+            if (record.hasChanges()) {
+                if (confirm('You have unsaved changes. Really close?')) {
+                    record.reset();
+                    $scope.placement = record.get();
                     $modalInstance.dismiss('cancel');
                 }
-            };
-
-            function hasUnsavedChanges() {
-                return !ng.equals(originalPlacement, $scope.placement);
+            } else {
+                $modalInstance.dismiss('cancel');
             }
+        }
 
-            $scope.$on('$destroy', function() {
-                modalState.placement = $scope.placement;
-            });
+        $scope.$on('$destroy', function() {
+            modalState.placement = $scope.placement;
+        });
+
+        function formatDate($event) {
+            var date = new Date($event.target.value);
+            if (isNaN( date.getTime() )) {
+
+                // Date doesn't parse!
+                date = new Date('Jan 1 2000');
+            }
+            $event.target.value = $filter('date')(date, 'M/d/yyyy');
         }
     }]);
 });
@@ -63568,7 +69331,7 @@ define('campaignManagement/campaigns/placements/directives/placementOptions',['r
 });
 
 
-define('tpl!campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', '<div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Direction</span></div>\n        <div class="col-sm-9 single-select-light">\n            <select class="single-select" chosen\n                    disable-search-threshold="10"\n                    ng-options="direction.id as direction.name for direction in expandDirections track by direction.id"\n                    ng-model="expandDirection">\n            </select>\n        </div>\n    </div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Anchor</span></div>\n        <div class="col-sm-9 single-select-light">\n            <select class="single-select" chosen\n                    disable-search-threshold="10"\n                    ng-options="anchor as anchor for anchor in expandAnchors"\n                    ng-model="expandAnchor">\n            </select>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', '<div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Direction</span></div>\n        <div class="col-sm-9">\n            <select select2\n                    ng-options="direction.id as direction.name for direction in expandDirections track by direction.id"\n                    ng-model="expandDirection">\n            </select>\n        </div>\n    </div>\n    <div ng-show="expandDirection" class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Anchor</span>\n        </div>\n        <div class="row col-sm-9">\n          <div class="col-sm-2" ng-repeat="anchor in expandAnchors">\n            <div class="expand-anchor" ng-class="{selected:expandAnchor===anchor.value}">\n              <img ng-click="setExpandAnchor(anchor.value)" ng-src="{{anchor.image}}" />\n            </div>\n          </div>\n        </div>\n    </div>\n</div>\n'); });
 
 define('campaignManagement/campaigns/placements/directives/expandAnchorsDirections',['require','./../../../module','tpl!./expandAnchorsDirections.html'],function (require) {
     'use strict';
@@ -63587,12 +69350,15 @@ define('campaignManagement/campaigns/placements/directives/expandAnchorsDirectio
             },
             templateUrl: 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html',
             controller: ['$scope', function ($scope) {
+                var imageDirectory = '/images/anchorsExpandDirections/';
+                $scope.expandAnchors = [];
                 $scope.expandDirections = [
                     {id: 'left', name: 'Expand to Left'},
                     {id: 'right', name: 'Expand to Right'},
-                    {id: 'top', name: 'Expand Upwards'},
-                    {id: 'bottom', name: 'Expand Downwards'}
+                    {id: 'up', name: 'Expand Upwards'},
+                    {id: 'down', name: 'Expand Downwards'}
                 ];
+                $scope.expandDirection = 'left';
 
                 var commonAnchors = [
                     'bottomright',
@@ -63604,13 +69370,26 @@ define('campaignManagement/campaigns/placements/directives/expandAnchorsDirectio
                 var expandAnchorPossibilities = {
                     left: ['left', 'right'].concat(commonAnchors),
                     right: ['left', 'right'].concat(commonAnchors),
-                    top: ['top', 'bottom'].concat(commonAnchors),
-                    bottom: ['top', 'bottom'].concat(commonAnchors)
+                    up: ['top', 'bottom'].concat(commonAnchors),
+                    down: ['top', 'bottom'].concat(commonAnchors)
                 };
 
                 $scope.$watch('expandDirection', function() {
-                   $scope.expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
+                    if (typeof $scope.expandDirection === 'string') {
+                        $scope.expandAnchors = [];
+                        var expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
+                        expandAnchors.forEach(function(anchor) {
+                            $scope.expandAnchors.push({
+                                image: imageDirectory + $scope.expandDirection + '_' + anchor + '.svg',
+                                value: anchor
+                            });
+                        });
+                    }
                 });
+
+                $scope.setExpandAnchor = function(anchor) {
+                    $scope.expandAnchor = anchor;
+                };
             }]
         };
     }]);
@@ -63662,15 +69441,12 @@ define('campaignManagement/campaigns/placements/services/placements',['require',
         {name: '', id: 'options'}
     ];
 
-    var typeTransform = {
-        'In-Banner': 'IBV',
-        'In-Stream': 'IS',
-        'Rich Media': 'RM',
-        'Display': 'DISPLAY'
-    };
-
-    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory', 'apiUriGenerator', 'placementsByAdType', 'placementsByCreative', 'placementsByPublisher',
-                                  function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType, placementsByCreative, placementsByPublisher) {
+    module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory',
+        'apiUriGenerator', 'placementsByAdType', 'placementsByCreative',
+        'placementsByPublisher', 'ENUMS',
+        function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
+        placementsByCreative, placementsByPublisher, ENUMS
+    ) {
         var placementCache = cache({
             transform: function(data) {
                 return data.placements;
@@ -63713,7 +69489,7 @@ define('campaignManagement/campaigns/placements/services/placements',['require',
                         delivering: placement.live,
                         startDate: placement.flightStart,
                         endDate: placement.flightEnd,
-                        type: typeTransform[placement.type],
+                        type: ENUMS.down.creativeTypes[placement.type],
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions
@@ -64093,7 +69869,11 @@ define('campaignManagement/campaigns/creatives/controllers/creativesHeader',['re
         function openNewCreativeModal() {
             if (!newCreativeModal) {
                 newCreativeModal = {
-                    action: 'New'
+                    action: 'New',
+                    creative: {
+                        expandedHeight: null,
+                        expandedWidth: null
+                    }
                 };
             }
 
@@ -64119,9 +69899,9 @@ define('campaignManagement/campaigns/creatives/controllers/creativesHeader',['re
 
                 var meta = {
                     all: 0,
-                    'IBV': 0,
-                    'RM': 0,
-                    'IS': 0
+                    inBannerVideo: 0,
+                    richMedia: 0,
+                    inStream: 0
                 };
 
                 for(var i = 0; i < allCreatives.length; i ++) {
@@ -64170,306 +69950,254 @@ define('campaignManagement/campaigns/creatives/controllers/creativesList',['requ
 });
 
 /* globals confirm */
+/* jshint maxstatements:false */
 define('campaignManagement/campaigns/creatives/controllers/newEditCreative',['require','./../../../module','angular'],function (require) {
     'use strict';
     var app = require('./../../../module');
     var ng = require('angular');
 
     app.controller('newEditCreativeCtrl',
-        ['$scope', '$modalInstance', 'newCreativeService', 'enumService', 'creatives', 'campaignService', 'creativeRecordService', 'modalState', '$window',
-            function ($scope, $modalInstance, newCreativeService, enums, creatives, campaigns, creativeRecordService, modalState, $window) {
+        ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
+         'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
+         'CREATIVE_SETTINGS', 'notification',
+    function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
+              creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
+              creativeSettings, notification
+    ) {
+        var record;
 
         //Modal functions
-        $scope.ok = undefined;
-        $scope.cancel = undefined;
-        $scope.creative = modalState.creative;
+        $scope.ok = ok;
+        $scope.cancel = cancel;
+        $scope.dimensionsTransform = dimensionsTransform;
+        $scope.dimensionsExpandTransform = dimensionsExpandTransform;
+        $scope.environmentTransform = environmentTransform;
+        $scope.typeTransform = typeTransform;
         $scope.action = modalState.action;
         $scope.swfAllowedExtensions = ['swf'];
+        $scope.URL_REGEX = URL_REGEX;
+        $scope.MONEY_REGEX = MONEY_REGEX;
+        $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
 
-        var types = [
-            { id: 'IBV', name: 'In-Banner Video' },
-            { id: 'ISV', name: 'In-Stream Video' },
-            { id: 'RM', name: 'Rich Media' },
-            { id: 'SWF', name: 'SWF' },
-            { id: 'IMG', name: 'Image' }
-        ];
+        $scope.types = creativeSettings.types;
 
-        var typeSettings = {
-            IBV: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-            },
-            ISV: {
-                environments: [1,2],
-                dimensions: [6,7,8,9,10,14],
-                expandedDimensions: undefined
-            },
-            RM: {
-                environments: [1,2,3,4],
-                dimensions: [1,2,3,4,11,12,13,14],
-                expandedDimensions: [1,2,3,4,5,6,7,8,9,10]
-            },
-            SWF: {
-                environments: [2],
-                dimensions: undefined,
-                expandedDimensions: undefined
-            },
-            IMG: {
-                environments: [1,2,3,4],
-                dimensions: undefined,
-                expandedDimensions: undefined
-            }
-        };
+        function getType(data){
+            var type;
 
-        var environments = {
-            1: { id: 'multi-screen', name: 'Multi-Screen (Desktop, Tablet and Phone)' },
-            2: { id: 'desktop', name: 'Desktop' },
-            3: { id: 'mobile', name: 'Tablet & Phone' },
-            4: { id: 'mraid', name: 'Tablet & Phone (In-App/MRAID)' }
-        };
-
-        var dimensions = {
-            1: { widthHeight: [160, 600], name: '160x600' },
-            2: { widthHeight: [180, 150], name: '180x150' },
-            3: { widthHeight: [300, 250], name: '300x250' },
-            4: { widthHeight: [300, 600], name: '300x600' },
-            5: { widthHeight: [728, 90], name: '728x90' },
-            6: { widthHeight: [480, 360], name: '480x360 (4:3)' },
-            7: { widthHeight: [533, 300], name: '533x300 (16:9)' },
-            8: { widthHeight: [640, 360], name: '640x360 (16:9)' },
-            9: { widthHeight: [640, 480], name: '640x480 (4:3)' },
-            10: { widthHeight: [768, 432], name: '768x432 (16:9)' },
-            11: { widthHeight: [728, 90], name: '728x90' },
-            12: { widthHeight: [970, 90], name: '970x90' },
-            13: { widthHeight: [1, 1], name: 'Interstitial 1x1' },
-            14: { name: 'Custom' }
-        };
-
-        var expandedDimensions = {
-            1: { name: 'Non-Expanding' },
-            2: { name: 'Legacy' },
-            3: { widthHeight: [300, 600], name: '300x600' },
-            4: { widthHeight: [560, 300], name: '560x300' },
-            5: { widthHeight: [600, 250], name: '600x250' },
-            6: { widthHeight: [600, 600], name: '600x600' },
-            7: { widthHeight: [728, 315], name: '728x315' },
-            8: { widthHeight: [970, 250], name: '970x250' },
-            9: { widthHeight: [970, 415], name: '970x415' },
-            10: { name: 'Custom' }
-        };
-
-        setupBusinessLogic();
-        setupModalLogic();
-
-        function setupBusinessLogic() {
-            // Update available environments, dimensions and expanded dimensions
-            // based on creative types and the settings above
-            $scope.types = types;
-            $scope.$watch('creative.type', updateType);
-
-            function updateType() {
-                if ($scope.creative && typeSettings[$scope.creative.type]) {
-                    var settings = typeSettings[$scope.creative.type];
-                    updateEnvironments(settings.environments);
-                    updateDimensions(settings.dimensions);
-                    updateExpandedDimensions(settings.expandedDimensions);
-                }
-            }
-
-            function updateEnvironments(enabledEnvironmentIds) {
-                $scope.environments = filterById(environments, enabledEnvironmentIds);
-            }
-
-            function updateDimensions(enabledDimensionIds) {
-                $scope.dimensions = filterById(dimensions, enabledDimensionIds);
-            }
-
-            function updateExpandedDimensions(enabledExpandedDimensionIds) {
-                $scope.expandedDimensions = filterById(expandedDimensions, enabledExpandedDimensionIds);
-            }
-
-            function filterById(options, idArray) {
-                if (typeof idArray === 'undefined') {
-                    return undefined;
-                } else {
-                    var filtered = [];
-                    var currentId;
-                    var current;
-                    for(var i = 0; i < idArray.length; i ++) {
-                        currentId = idArray[i];
-                        current = options[currentId];
-                        filtered.push({
-                            id: currentId,
-                            name: current.name
-                        });
-                    }
-
-                    return filtered;
-                }
-            }
-
-            $scope.$watch('creative.dimensions', function() {
-                if ($scope.creative && $scope.creative.dimensions) {
-                    $scope.dimensionsAreCustom =
-                        dimensions[$scope.creative.dimensions].name === 'Custom';
+            ng.forEach(creativeSettings.types, function(d) {
+                if (data.type === d.dbName && data.subtype === d.subtype) {
+                    type = d;
                 }
             });
 
-            $scope.$watch('creative.expandedDimensions', function() {
-                if ($scope.creative && $scope.creative.expandedDimensions) {
-                    $scope.expandedDimensionsAreCustom =
-                        expandedDimensions[$scope.creative.expandedDimensions].name === 'Custom';
-                }
-            });
+            return type;
         }
 
-        function setupModalLogic() {
-            var originalCreative;
+        function typeTransform(type) {
+            if (type) {
+                record.set({ type: type.dbName, subtype: type.subtype });
 
-            if(modalState.creativeId) {
-                creativeRecordService.getById(modalState.creativeId).then(function(creative) {
-                    originalCreative = creative.all();
-                    if(! $scope.creative || $scope.creative === {}) {
-                        $scope.creative = ng.copy(modalState.creative || originalCreative);
-                    }
-                });
+                var settings = creativeSettings.typeSettings[type.id];
+                updateEnvironments(settings.environments);
+                updateDimensions(settings.dimensions);
+                updateExpandedDimensions(settings.expandedDimensions);
+            }
+            return getType(record.get());
+        }
+
+        function updateEnvironments(enabledEnvironmentIds) {
+            $scope.environments = filterById(creativeSettings.environments, enabledEnvironmentIds);
+        }
+
+        function updateDimensions(enabledDimensionIds) {
+            $scope.dimensions = filterById(creativeSettings.dimensions, enabledDimensionIds);
+        }
+
+        function updateExpandedDimensions(enabledExpandedDimensionIds) {
+            $scope.expandedDimensions = filterById(creativeSettings.expandedDimensions, enabledExpandedDimensionIds);
+        }
+
+        function filterById(options, idArray) {
+            if (typeof idArray === 'undefined') {
+                return undefined;
             } else {
-                originalCreative = {
-                    startDate: (modalState.creative && modalState.creative.startDate) || new Date(),
-                    endDate: (modalState.creative && modalState.creative.endDate) || new Date(),
-                    objectives: [],
-                    campaignId: modalState.campaignId
-                };
+                var filtered = [];
+                var id;
+                for (var i = 0; i < idArray.length; i++) {
+                    id = idArray[i];
+                    filtered.push(options[id]);
+                }
 
-                $scope.creative = ng.copy(modalState.creative || originalCreative);
+                return filtered;
+            }
+        }
+
+        function getDimensionsValue(arry, width, height) {
+            var index;
+            var customIndex;
+            var nonExpandingIndex;
+
+            ng.forEach(arry, function(d) {
+                if (width === d.width && height === d.height) {
+                    index = d.id;
+                }
+                if (d.isCustom) {
+                    customIndex = d.id;
+                }
+                if (d.isNonExpanding) {
+                    nonExpandingIndex = d.id;
+                }
+            });
+
+            if (!width || !height) {
+                return arry[nonExpandingIndex];
             }
 
-            campaigns.observe(updateCampaigns, $scope);
+            return arry[index == null ? customIndex : index];
+        }
 
-            function updateCampaigns() {
-                if(! modalState.creativeId) {
+        function dimensionsTransform(dimension) {
+            if (dimension) {
+                $scope.dimensionsAreCustom = dimension.isCustom;
 
-                    // TODO: add render limit so this isn't crazy slow
-                    //$scope.campaigns = campaigns.all().slice(0, 10);
-                    $scope.campaigns = [{id: '1234', name: 'test'}];
+                if (!dimension.isCustom) {
+                    record.set({
+                        embedWidth: dimension.width,
+                        embedHeight: dimension.height
+                    });
                 }
             }
 
-            $scope.cancel = function() {
-                if(hasUnsavedChanges()) {
-                    if(confirm('You have unsaved changes. Really close?')) {
-                        $scope.creative = originalCreative;
-                        $modalInstance.dismiss('cancel');
-                    }
-                } else {
+            return getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+        }
+
+        function dimensionsExpandTransform(dimension) {
+            if (dimension) {
+                $scope.expandedDimensionsAreCustom = dimension.isCustom;
+
+                if (!dimension.isCustom || !dimension.isNonExpanding) {
+                    record.set({
+                        expandedWidth: dimension.width,
+                        expandedHeight: dimension.height
+                    });
+                }
+
+                if(dimension.isNonExpanding) {
+                    record.set({
+                        expandedWidth: null,
+                        expandedHeight: null,
+                        expandMode: null
+                    });
+                }
+            }
+
+            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+        }
+
+        function getEnvironmentValue(environments, data) {
+            var index;
+            ng.forEach(environments, function(environment) {
+                if (environment.dbName === data.environment) {
+                    index = environment.id;
+                }
+            });
+
+            return environments[index];
+        }
+
+        function environmentTransform(environment) {
+            if (environment) {
+                record.set({
+                    environment: environment.dbName
+                });
+            }
+            return getEnvironmentValue(creativeSettings.environments, record.get());
+        }
+
+        if(modalState.creativeId) {
+            $scope.editing = true;
+            record = creativeRecordService.get(modalState.creativeId);
+            creativeRecordService.fetch(modalState.creativeId);
+        } else {
+            record = creativeRecordService.create();
+            record.set(modalState.creative);
+        }
+
+        record.observe(update, $scope);
+
+        function update() {
+            $scope.creative = record.get();
+            $scope.errors = record.errors();
+            var type = getType(record.get());
+            if (type) {
+                var settings = creativeSettings.typeSettings[type.id];
+                updateEnvironments(settings.environments);
+                updateDimensions(settings.dimensions);
+                updateExpandedDimensions(settings.expandedDimensions);
+            }
+            var dimension = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+            if (dimension) {
+                $scope.dimensionsAreCustom = dimension.isCustom;
+            }
+            var dimensionExpanded = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+            if (dimensionExpanded) {
+                $scope.expandedDimensionsAreCustom = dimensionExpanded.isCustom;
+            }
+        }
+
+        campaigns.observe(updateCampaigns, $scope);
+
+        function updateCampaigns() {
+            if(!modalState.creativeId) {
+                // TODO: add render limit so this isn't crazy slow
+                //$scope.campaigns = campaigns.all().slice(0, 10);
+                $scope.campaigns = [{id: '1c5cf047-5ecd-444b-822a-17e1eebed4b3', name: 'test'}];
+            }
+        }
+
+        function cancel() {
+            if(record.hasChanges()) {
+                if(confirm('You have unsaved changes. Really close?')) {
+                    record.reset();
+                    $scope.campaign = record.get();
                     $modalInstance.dismiss('cancel');
                 }
-            };
-
-            function hasUnsavedChanges() {
-                return ! ng.equals($scope.creative, originalCreative);
+            } else {
+                $modalInstance.dismiss('cancel');
             }
-
-            $scope.ok = function(errors) {
-                $scope.errors = errors;
-                if(ng.equals({}, $scope.errors) || ! $scope.errors) {
-                    var transformedCreative = transformCreative();
-                    var onSuccess = function() {
-                        originalCreative = $scope.creative;
-                        $modalInstance.dismiss('cancel');
-                    };
-                    if($scope.creative && $scope.creative.id) {
-                        var creativeDiff = getDiff($scope.creative, originalCreative);
-
-                        if(! ng.equals(creativeDiff, {})) {
-                            creativeRecordService.update($scope.creative.id, creativeDiff).then(onSuccess);
-                        } else {
-                            $modalInstance.dismiss('cancel');
-                        }
-                    } else {
-                        newCreativeService(transformedCreative)
-                            .then(function(url) {
-                                onSuccess();
-                                $window.open(url, '_blank');
-                            });
-                    }
-                }
-                $scope.submitted = true;
-            };
-
-            function transformCreative() {
-                var creative = $scope.creative;
-                var allDimensions = getDimensions(creative);
-                var getEnvironment = function(id) {
-                    for (var i=0; i<$scope.environments.length; i++) {
-                        if ($scope.environments[i].id === id) {
-                            return environments[id].id;
-                        }
-                    }
-                    return null;
-                };
-
-                return {
-                    expandedWidth: allDimensions.expanded && parseInt(allDimensions.expanded.width, 10),
-                    expandedHeight: allDimensions.expanded && parseInt(allDimensions.expanded.height, 10),
-                    embedWidth: parseInt(allDimensions.embed.width, 10),
-                    embedHeight: parseInt(allDimensions.embed.height, 10),
-                    clickthroughUrl: creative.clickthroughUrl,
-                    type: creative.type,
-                    environment: getEnvironment(creative.environment),
-                    name: creative.name
-                };
-            }
-
-            function getDimensions(creative) {
-                var allDimensions = {
-                    embed: {},
-                    expanded: {}
-                };
-
-                var widthHeight = dimensions[creative.dimensions].widthHeight;
-                allDimensions.embed.width = widthHeight && widthHeight[0];
-                allDimensions.embed.height = widthHeight && widthHeight[1];
-
-                allDimensions.embed = {
-                    width: allDimensions.embed.width || creative.customDimensionsWidth,
-                    height: allDimensions.embed.height || creative.customDimensionsHeight
-                };
-
-                if (creative.expandedDimensions) {
-                    widthHeight = expandedDimensions[creative.expandedDimensions].widthHeight;
-                    allDimensions.expanded.width = widthHeight && widthHeight[0];
-                    allDimensions.expanded.height = widthHeight && widthHeight[1];
-
-                    allDimensions.expanded = {
-                        width: allDimensions.expanded.width || creative.customExpandedDimensionsWidth,
-                        height: allDimensions.expanded.height || creative.customExpandedDimensionsHeight
-                    };
-                }
-
-                return allDimensions;
-            }
-
-            // Simple diffing function for PUT request
-            function getDiff(changed, original) {
-                var diff = {};
-                for(var index in changed) {
-                    if(changed.hasOwnProperty(index)) {
-                        if(original[index] && ! ng.equals(changed[index], original[index])) {
-                            diff[index] = changed[index];
-                        }
-                    }
-                }
-
-                return diff;
-            }
-
-            //Before closing the modal save the state;
-            $scope.$on('$destroy', function() {
-                modalState.creative = $scope.creative;
-            });
         }
+
+        function ok(errors) {
+            if(ng.equals({}, errors) || !errors) {
+                var onSuccess = function(resp) {
+                    $scope.creative = {};
+                    notification.success('Creative: {{name}}, has been updated.',
+                        {
+                            locals: {
+                                name: resp.data.name
+                            }
+                        });
+                    $modalInstance.dismiss('cancel');
+                };
+
+                if (record.isNew()) {
+                    newCreativeService($scope.creative)
+                        .then(function(url) {
+                            $scope.creative = {};
+                            $modalInstance.dismiss('cancel');
+                            $window.open(url, 'mixpo_studio');
+                        });
+                } else {
+                    record.save().then(onSuccess);
+                }
+            }
+            $scope.submitted = true;
+        }
+
+        //Before closing the modal save the state;
+        $scope.$on('$destroy', function() {
+            modalState.creative = $scope.creative;
+        });
     }]);
 });
 
@@ -64586,12 +70314,12 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
                     }
 
                     function copyCreative(id) {
-                        creativeRecordService.fetch(id).then(function(creative) {
-                            creative = creative.all();
-                            var newCreative = ng.copy(creative);
-                            delete newCreative.id;
-                            newCreative = removeNulls(newCreative);
-                            creativeRecordService.create( transformCreativeData(newCreative) );
+                        creativeRecordService.fetch(id).then(function(resp) {
+                            var creative = ng.copy(resp.data);
+                            delete creative.id;
+                            creative = removeNulls(creative);
+                            var record = creativeRecordService.create( transformCreativeData(creative) );
+                            record.save();
                         });
                     }
 
@@ -64705,39 +70433,36 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
         {name: '', id: 'options'}
     ];
 
-    var typeTransform = {
-        'In-Banner': 'IBV',
-        'In-Stream': 'IS',
-        'Rich Media': 'RM',
-        'Display': 'DISPLAY'
-    };
-
     module.service('creatives', [
-        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
+        'cacheFactory', '$state', 'creativeRecordService', 'ENUMS', function(cacheFactory, $state, creativeRecordService, ENUMS) {
+
             var cache = cacheFactory({
                 transform: function(data) {
                     return data.creatives;
                 }
             });
 
-            creativeRecordService.observe(function(newUpdatedRecord) {
-                var existingRecord = getCreative(newUpdatedRecord.id);
+            creativeRecordService.observe(function(event, record) {
+                if (event === 'create' || event === 'update') {
+                    var existingRecord = getCreative(record.id);
 
-                if (!existingRecord) {
-                    // Set up defaults for a new record
-                    existingRecord = {
-                        lastModified: new Date(),
-                        delivering: false,
-                        countPlacements: 0
-                    };
+                    if (!existingRecord) {
+                        // Set up defaults for a new record
+                        existingRecord = {
+                            lastModified: new Date(),
+                            delivering: false,
+                            countPlacements: 0
+                        };
+                    }
+
+                    var transformedRecord = transformCrudRecord(record.get(), existingRecord);
+                    addData([transformedRecord]);
                 }
-                var transformedRecord = transformCrudRecord(newUpdatedRecord, existingRecord);
-                addData([transformedRecord]);
-
             }, undefined, true);
 
             function transformCrudRecord(updatedRecord, existingRecord) {
                 return {
+                    campaign: existingRecord.campaign,
                     deleted: updatedRecord.deleted,
                     embedHeight: updatedRecord.embedHeight,
                     expandedWidth: updatedRecord.expandedWidth,
@@ -64780,7 +70505,7 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
                         checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
                         creativeName: creative.name,
                         delivering: creative.live,
-                        type: typeTransform[creative.type],
+                        type: ENUMS.down.creativeTypes[creative.type],
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         campaignId: creative.campaign.id,
@@ -64791,7 +70516,7 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
                         options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
                         // These properties are needed by thumbnails but aren't
-						// in the table
+						            // in the table
                         id: creative.id,
                         lastModified: creative.modifiedDate,
                         thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
@@ -64863,25 +70588,27 @@ define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['r
      * @name studioDirectAdapter
      * @ngInject
      */
-    module.service('studioDirectAdapter', [function () {
-        function getAdType(type, expandedWidth, expandedHeight) {
-            if(type === 'IMG') {
+    module.service('studioDirectAdapter', ['ENUMS', function (ENUMS) {
+        var types = ENUMS.up.creativeTypes;
+        var environments = ENUMS.up.creativeEnvironments;
+        function getAdType(type, subtype, expandedWidth, expandedHeight) {
+            if(type === types.display && subtype === 'IMG') {
                 // Image
                 return 'IMG';
-            } else if(type === 'SWF') {
+            } else if(type === types.display && subtype === 'SWF') {
                 // SWF
                 return 'SWF';
-            }  else if(type === 'ISV') {
+            }  else if(type === types.inStream) {
                 // In-Stream Video
                 return 'IS';
-            } else if(type === 'RM') {
+            } else if(type === types.richMedia) {
                 // 'Rich Media' AKA 'Interactive-Display'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDRM';
                 } else {
                     return 'ID';
                 }
-            } else if(type === 'IBV') {
+            } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     return 'IDMLQ';
@@ -64896,13 +70623,13 @@ define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['r
 
         function getAdEnvironment(env) {
             switch(env) {
-                case 'multi-screen':
+                case environments.all:
                     return 'multiscreen';
-                case 'mobile':
+                case environments.mobile:
                     return 'tabletphone';
-                case 'mraid':
+                case environments.mraid:
                     return 'inappmraid';
-                case 'desktop':
+                case environments.desktop:
                     return 'desktop';
                 default:
                     // unknown
@@ -64911,7 +70638,7 @@ define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['r
         }
 
         function setDimensions(params, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
-            if(type === 'IBV') {
+            if(type === types.inBannerVideo) {
                 if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
                     // IDMLQ
                     params.idw = embedWidth;
@@ -64923,6 +70650,10 @@ define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['r
                     params.tcw = embedWidth;
                     params.tch = embedHeight;
                 }
+            } else if(type === types.inStream) {
+                // IS
+                params.tcw = embedWidth;
+                params.tch = embedHeight;
             } else {
                 params.idw = embedWidth;
                 params.idh = embedHeight;
@@ -64934,10 +70665,11 @@ define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['r
         }
 
         function validate(creative) {
-            if(!!!creative) {
+            if(!creative) {
                 return false;
             }
-            if(getAdType(creative.type, creative.expandedWidth, creative.expandedHeight)===null) {
+
+            if(getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight)===null) {
                 return false;
             }
             if(getAdEnvironment(creative.environment)===null) {
@@ -64958,7 +70690,7 @@ define('campaignManagement/campaigns/creatives/services/studioDirectAdapter',['r
             }
             var params = {};
             params.sdf = 'new';
-            params.ad = getAdType(creative.type, creative.expandedWidth, creative.expandedHeight);
+            params.ad = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight);
             params.env = getAdEnvironment(creative.environment);
             params.url = creative.clickthroughUrl;
             params.title = creative.name;
@@ -65776,9 +71508,9 @@ define('campaignManagement/campaigns/controllers/newEditCampaign',['require','./
 
     app.controller('newEditCampaignCtrl', [
         '$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService',
-        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification',
+        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification', 'URL_REGEX', 'MONEY_REGEX', '$interpolate', '$filter',
         function ($scope, $q, $modalInstance, accounts, accountRecords, divisionRecords,
-                  clientRecords, campaignRecords, modalState, notification) {
+                  clientRecords, campaignRecords, modalState, notification, URL_REGEX, MONEY_REGEX, $interpolate, $filter) {
 
             //Datepicker functions
             $scope.format = 'MM/dd/yyyy';
@@ -65790,10 +71522,21 @@ define('campaignManagement/campaigns/controllers/newEditCampaign',['require','./
                 maxMode: 'day'
             };
 
+            $scope.URL_REGEX = URL_REGEX;
+            $scope.MONEY_REGEX = MONEY_REGEX;
+
             //Modal functions
             $scope.ok = ok;
             $scope.cancel = cancel;
             $scope.action = modalState.action;
+            $scope.formatDate = formatDate;
+
+            var conversionEmbedSnippetTemplate = $interpolate('<img src="https://player1.mixpo.com/player/analytics/ct?event={{conversionEvent}} />');
+            $scope.$watch('campaign.conversionEvent', function() {
+                $scope.conversionEmbedSnippetText = conversionEmbedSnippetTemplate({
+                    conversionEvent: encodeURIComponent($scope.campaign && $scope.campaign.conversionEvent || 'default')
+                });
+            });
 
             accounts.observe(updateAccounts, $scope);
 
@@ -65845,6 +71588,16 @@ define('campaignManagement/campaigns/controllers/newEditCampaign',['require','./
                 });
 
                 $scope.datePickers[name] = true;
+            }
+
+            function formatDate($event) {
+                var date = new Date($event.target.value);
+                if (isNaN( date.getTime() )) {
+
+                    // Date doesn't parse!
+                    date = new Date('Jan 1 2000');
+                }
+                $event.target.value = $filter('date')(date, 'M/d/yyyy');
             }
 
             function cancel() {
@@ -66173,10 +71926,10 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
             };
 
             var displayTypeMap = {
-                anyPlacementsDisplay: 'D',
-                anyPlacementsInBanner: 'IBV',
-                anyPlacementsRichmedia: 'RM',
-                anyPlacementsInStream: 'ISV'
+                anyPlacementsDisplay: 'display',
+                anyPlacementsInBanner: 'inBannerVideo',
+                anyPlacementsRichmedia: 'richMedia',
+                anyPlacementsInStream: 'inStreamVideo'
             };
 
             function sortRows(transformedRows) {
@@ -66476,7 +72229,7 @@ define('campaignManagement/clients/controllers/client',['require','./../../modul
 
     require('tpl!./../new-edit-client.html');
 
-    app.controller('clientCtrl', ['$scope', '$modal', 'navbarService', function ($scope, $modal, navbar) {
+    app.controller('clientCtrl', ['$scope', '$modal', '$state', 'divisionService', 'navbarService', function ($scope, $modal, $state, divisionService, navbar) {
 
         $scope.openEditClientModal = openEditClientModal;
         $scope.openNewDivisionModal = openNewDivisionModal;
@@ -66485,8 +72238,14 @@ define('campaignManagement/clients/controllers/client',['require','./../../modul
         function updateClientName() {
             $scope.client = navbar.all().client;
         }
-
         navbar.observe(updateClientName, $scope);
+
+        if ($state.params.clientId) {
+            var updateDivisions = function() {
+                $scope.noDivisions = divisionService.filtered().length === 0;
+            };
+            divisionService.observe(updateDivisions, $scope);
+        }
 
         var editClientModal;
         function openEditClientModal() {
@@ -66963,8 +72722,10 @@ define('campaignManagement/accounts/controllers/newEditAccount',['require','./..
 
     var ng = require('angular');
 
-    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', 'notification', function ($scope, $modalInstance, divisionService, accountRecords, industries, modalState, notification) {
+    app.controller('newEditAccountCtrl', ['$scope', '$modalInstance', 'divisionService', 'accountRecordService', 'industryService', 'modalState', 'notification', 'URL_REGEX',
+        function ($scope, $modalInstance, divisionService, accountRecords, industries, modalState, notification, URL_REGEX) {
         $scope.action = modalState.action;
+        $scope.URL_REGEX = URL_REGEX;
 
         var record;
 
@@ -66984,7 +72745,7 @@ define('campaignManagement/accounts/controllers/newEditAccount',['require','./..
         record.observe(update, $scope);
 
         // Creating a new account under a client
-        if (modalState.clientId) {
+        if (modalState.clientId || modalState.divisionId) {
             var updateDivisions = function() {
                 var divisions = divisionService.filtered();
                 if (divisions.length === 1) {
@@ -67215,12 +72976,11 @@ define('analytics/index',['require','./routes'],function (require) {
     require('./routes');
 });
 
-define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index','./analytics/index'],function (require) {
+define('app-core',['require','angular','ui-router','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index','./analytics/index'],function (require) {
     'use strict';
 
     var ng = require('angular');
     require('ui-router');
-    require('angular-chosen');
     require('ng-perfect-scrollbar');
     require('ng-datepicker');
     require('./core/index');
@@ -67234,7 +72994,6 @@ define('app-core',['require','angular','ui-router','angular-chosen','ng-perfect-
         'perfect_scrollbar',
         'app.campaign-management',
         'app.analytics',
-        'localytics.directives',
         'tpl',
         'app.core',
         'app.tables',
@@ -67400,8 +73159,7 @@ require.config({
         'text': 'components/requirejs-text/text',
         'd3': 'components/d3/d3',
         'jquery': 'components/jquery/dist/jquery',
-        'chosen': 'components/chosen/chosen.jquery',
-        'angular-chosen': 'components/angular-chosen-localytics/chosen',
+        'select2': 'components/select2/dist/js/select2.full',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
         'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0',
@@ -67413,6 +73171,9 @@ require.config({
         },
         'jquery': {
             exports: 'jquery'
+        },
+        'select2': {
+            deps: ['jquery']
         },
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']
@@ -67426,12 +73187,6 @@ require.config({
         },
         'ng-datepicker': {
             deps: ['jquery', 'angular']
-        },
-        'angular-chosen': {
-            deps: ['angular', 'chosen']
-        },
-        'chosen': {
-            deps: ['jquery']
         },
         'angular': {
             deps: ['jquery'],

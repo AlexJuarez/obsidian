@@ -7,19 +7,19 @@ define(function (require) {
 
         function customOrder(item) {
             switch(item) {
-                case 'In-Banner':
+                case 'inBanner':
                     return 1;
-                case 'In-Stream':
+                case 'inStream':
                     return 2;
-                case 'Rich Media':
+                case 'richMedia':
                     return 3;
-                case 'Display':
+                case 'display':
                     return 4;
             }
         }
 
         return function(items) {
-            
+
             return items.sort(function(a, b) {
                 return ( customOrder(a.type) > customOrder(b.type) ? 1 : -1 );
             });

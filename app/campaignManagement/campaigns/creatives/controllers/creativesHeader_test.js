@@ -12,10 +12,10 @@ define(function (require) {
             all: function() {
                 return {
                     data: [
-                        {type: 'IBV'},
-                        {type: 'RM'},
-                        {type: 'IS'},
-                        {type: 'IBV'}
+                        {type: 'inBannerVideo'},
+                        {type: 'richMedia'},
+                        {type: 'inStream'},
+                        {type: 'inBannerVideo'}
                     ]
                 };
             },
@@ -60,9 +60,9 @@ define(function (require) {
         it('should set $scope.creativesMeta appropriately', function() {
             var expected = {
                 all: 4,
-                IBV: 2,
-                RM: 1,
-                IS: 1
+                inBannerVideo: 2,
+                richMedia: 1,
+                inStream: 1
             };
 
             expect(scope.creativesMeta).toEqual(expected);

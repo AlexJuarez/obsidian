@@ -114,6 +114,13 @@ define(function (require) {
                 }
 
                 function updatePosition() {
+                    hideIfNotOverflowed();
+
+                    var dims = calculateDims();
+                    elem.addClass(calculateClass(dims));
+                }
+
+                function hideIfNotOverflowed() {
                     if (overflow) {
                         var element = elem.find('.main')[0];
                         if (element.offsetWidth >= element.scrollWidth) {
@@ -122,9 +129,6 @@ define(function (require) {
                             elem.find('.wrapper').removeClass('ng-hide');
                         }
                     }
-
-                    var dims = calculateDims();
-                    elem.addClass(calculateClass(dims));
                 }
 
             }

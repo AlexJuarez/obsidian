@@ -15,12 +15,15 @@ define(function (require) {
             },
             templateUrl: 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html',
             controller: ['$scope', function ($scope) {
+                var imageDirectory = '/images/anchorsExpandDirections/';
+                $scope.expandAnchors = [];
                 $scope.expandDirections = [
                     {id: 'left', name: 'Expand to Left'},
                     {id: 'right', name: 'Expand to Right'},
-                    {id: 'top', name: 'Expand Upwards'},
-                    {id: 'bottom', name: 'Expand Downwards'}
+                    {id: 'up', name: 'Expand Upwards'},
+                    {id: 'down', name: 'Expand Downwards'}
                 ];
+                $scope.expandDirection = 'left';
 
                 var commonAnchors = [
                     'bottomright',
@@ -32,13 +35,26 @@ define(function (require) {
                 var expandAnchorPossibilities = {
                     left: ['left', 'right'].concat(commonAnchors),
                     right: ['left', 'right'].concat(commonAnchors),
-                    top: ['top', 'bottom'].concat(commonAnchors),
-                    bottom: ['top', 'bottom'].concat(commonAnchors)
+                    up: ['top', 'bottom'].concat(commonAnchors),
+                    down: ['top', 'bottom'].concat(commonAnchors)
                 };
 
                 $scope.$watch('expandDirection', function() {
-                   $scope.expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
+                    if (typeof $scope.expandDirection === 'string') {
+                        $scope.expandAnchors = [];
+                        var expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
+                        expandAnchors.forEach(function(anchor) {
+                            $scope.expandAnchors.push({
+                                image: imageDirectory + $scope.expandDirection + '_' + anchor + '.svg',
+                                value: anchor
+                            });
+                        });
+                    }
                 });
+
+                $scope.setExpandAnchor = function(anchor) {
+                    $scope.expandAnchor = anchor;
+                };
             }]
         };
     }]);

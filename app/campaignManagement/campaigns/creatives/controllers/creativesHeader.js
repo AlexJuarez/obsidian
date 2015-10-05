@@ -3,7 +3,7 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', 'ENUMS', function($scope, $rootScope, $state, $modal, creatives, ENUMS) {
 
         $scope.openNewCreativeModal = openNewCreativeModal;
 
@@ -11,7 +11,11 @@ define(function(require) {
         function openNewCreativeModal() {
             if (!newCreativeModal) {
                 newCreativeModal = {
-                    action: 'New'
+                    action: 'New',
+                    creative: {
+                        expandedHeight: null,
+                        expandedWidth: null
+                    }
                 };
             }
 
@@ -37,9 +41,9 @@ define(function(require) {
 
                 var meta = {
                     all: 0,
-                    'IBV': 0,
-                    'RM': 0,
-                    'IS': 0
+                    inBannerVideo: 0,
+                    richMedia: 0,
+                    inStream: 0
                 };
 
                 for(var i = 0; i < allCreatives.length; i ++) {
@@ -47,7 +51,8 @@ define(function(require) {
 
                     meta.all ++;
                     if(creative.type) {
-                        meta[creative.type]++;
+                        var type = ENUMS.down.creativeTypes[creative.type];
+                        meta[type]++;
                     }
                 }
                 $scope.creativesMeta = meta;

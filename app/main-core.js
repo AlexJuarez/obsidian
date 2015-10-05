@@ -10,8 +10,7 @@ require.config({
         'text': 'components/requirejs-text/text',
         'd3': 'components/d3/d3',
         'jquery': 'components/jquery/dist/jquery',
-        'chosen': 'components/chosen/chosen.jquery',
-        'angular-chosen': 'components/angular-chosen-localytics/chosen',
+        'select2': 'components/select2/dist/js/select2.full',
         'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
         'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0',
@@ -23,6 +22,9 @@ require.config({
         },
         'jquery': {
             exports: 'jquery'
+        },
+        'select2': {
+            deps: ['jquery']
         },
         'ng-perfect-scrollbar': {
             deps: ['angular', 'perfect-scrollbar']
@@ -36,12 +38,6 @@ require.config({
         },
         'ng-datepicker': {
             deps: ['jquery', 'angular']
-        },
-        'angular-chosen': {
-            deps: ['angular', 'chosen']
-        },
-        'chosen': {
-            deps: ['jquery']
         },
         'angular': {
             deps: ['jquery'],

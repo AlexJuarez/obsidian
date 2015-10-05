@@ -64,35 +64,30 @@
 
 .tab-header {
     margin-bottom: 2rem;
-    div[class*="col"] {
-        
+    .icons {
+        border: 1px solid @light-gray;
+        border-width: 0 1px 0 0;
+        padding-right: 1rem;
+        margin-right: 2rem;
+        .glyph-icon {
+            .font-size(2);
+        }
+    }
+    .filters {
+        padding-top: 3px;
+        margin-right: 2rem;
         a, b {
             margin-right: 1rem;
             display: inline;
         }
-        .icons {
-            border: 1px solid @light-gray; 
-            border-width: 0 1px 0 0; 
-            padding-right: 1rem; 
-            margin-right: 2rem;
-            .glyph-icon {
-                .font-size(2);
-            }
-        }
-        .filters {
-            padding-top: 3px;
-            margin-right: 2rem;
-        }
-        .search {
-            padding-top: 4px;
-            
-        }
+    }
+    .search {
+        padding-top: 4px;
+
     }
     @media (max-width: @screen-xs-max) {
-        div[class*="col"] {
-            .icons {
-                border: none;
-            }
+        .icons {
+            border: none;
         }
         .search {
             display: block;
