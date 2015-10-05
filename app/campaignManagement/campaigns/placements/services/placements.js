@@ -92,7 +92,7 @@ define(function (require) {
                         delivering: placement.live,
                         startDate: placement.flightStart,
                         endDate: placement.flightEnd,
-                        type: ENUMS.down.creativeTypes[placement.type],
+                        type: placement.type,
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions

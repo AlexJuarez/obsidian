@@ -40,7 +40,7 @@ define(function(require) {
     ];
 
     module.service('creatives', [
-        'cacheFactory', '$state', 'creativeRecordService', 'ENUMS', function(cacheFactory, $state, creativeRecordService, ENUMS) {
+        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
             var cache = cacheFactory({
                 transform: function(data) {
                     return data.creatives;
@@ -110,7 +110,7 @@ define(function(require) {
                         checked: false,
                         creativeName: creative.name,
                         delivering: creative.live,
-                        type: ENUMS.down.creativeTypes[creative.type],
+                        type: creative.type,
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         campaignId: creative.campaign.id,

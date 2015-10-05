@@ -58,7 +58,7 @@ define(function(require) {
                     delivering: false,
                     startDate: '2015-07-14',
                     endDate: '2015-08-15',
-                    type: 'richMedia',
+                    type: 'Rich Media',
                     pacing: {current: 123, max: 1234},
                     spend: {current: 1000, max: 10000},
                     creatives: [
@@ -72,7 +72,7 @@ define(function(require) {
                     delivering: true,
                     startDate: '2015-07-14',
                     endDate: '2015-08-15',
-                    type: 'inBannerVideo',
+                    type: 'In-Banner',
                     pacing: {current: 123, max: 1234},
                     spend: {current: 1000, max: 10000},
                     creatives: [
@@ -90,7 +90,7 @@ define(function(require) {
                     delivering: false,
                     startDate: '2015-07-14',
                     endDate: '2015-08-15',
-                    type: 'richMedia',
+                    type: 'Rich Media',
                     pacing: {current: 123, max: 1234},
                     spend: {current: 1000, max: 10000},
                     creatives: [
