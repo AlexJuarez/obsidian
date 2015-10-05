@@ -56,12 +56,17 @@ define(function (require) {
                 })
                 .state({
                     name: base + '.campaigns.detail',
-                    url: '/campaign/:campaignId*path',
+                    url: '/campaign/:campaignId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.detail.wildcard',
+                    url: '*path',
                     template: '<ui-view />'
                 })
                 .state({
                     name: base + '.wildcard',
-                    url: '{ path: ^(?!(\/client|\/account|\/division)).*$ }',
+                    url: '{ path: ^(?!(\/client|\/account|\/division|\/campaign)).*$ }',
                     template: '<ui-view />'
                 });
         }
