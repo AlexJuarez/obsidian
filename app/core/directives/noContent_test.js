@@ -78,8 +78,9 @@ define(function (require) {
             state.params = { clientId: 'testClient'};
 
             var el = generateEl();
+            var isoScope = el.isolateScope();
             
-            expect(el.scope().showAccountMsg).toEqual(true);
+            expect(isoScope.showAccountMsg).toEqual(true);
         });
 
         it('should create the notification element with the appropriate message', function(){
@@ -114,8 +115,9 @@ define(function (require) {
             state.params = { divisionId: 'testClient'};
 
             var el = generateEl();
+            var isoScope = el.isolateScope();
             
-            expect(el.scope().showAccountMsg).toEqual(true);
+            expect(isoScope.showAccountMsg).toEqual(true);
         });
 
         it('should create the notification element with the appropriate message', function(){
@@ -152,8 +154,9 @@ define(function (require) {
             state.params = { accountId: 'testClient'};
 
             var el = generateEl();
+            var isoScope = el.isolateScope();
             
-            expect(el.scope().showCampaignMsg).toEqual(true);
+            expect(isoScope.showCampaignMsg).toEqual(true);
         });
         
         it('should create the notification element with the appropriate message', function(){
@@ -191,8 +194,9 @@ define(function (require) {
             state.current.url = '/placements';
 
             var el = generateEl();
+            var isoScope = el.isolateScope();
             
-            expect(el.scope().showPlacementMsg).toEqual(true);
+            expect(isoScope.showPlacementMsg).toEqual(true);
         });
         
         it('should create the notification element with the appropriate message', function(){
@@ -231,8 +235,9 @@ define(function (require) {
             state.current.url = '/thumbnails';
 
             var el = generateEl();
+            var isoScope = el.isolateScope();
             
-            expect(el.scope().showCreativeMsg).toEqual(true);
+            expect(isoScope.showCreativeMsg).toEqual(true);
         });
         
         it('should create the notification element with the appropriate message', function(){
