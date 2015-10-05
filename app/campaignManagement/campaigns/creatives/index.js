@@ -4,6 +4,7 @@ define(function (require) {
     require('./controllers/creativesHeader');
     require('./controllers/creativesList');
     require('./controllers/newEditCreative');
+    require('./controllers/creativesCtrl');
     require('./directives/creativeThumbnails');
     require('./directives/creativeOptions');
     require('./services/creatives');
