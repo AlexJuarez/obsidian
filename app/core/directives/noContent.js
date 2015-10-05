@@ -9,7 +9,7 @@ define(function (require) {
         return {
             restrict: 'A',
             replace: false,
-            scope: false,
+            scope: {},
             templateUrl: 'core/directives/noContent.html',
             controller: ['$rootScope', '$scope', '$state', '$timeout', 'clientSet', 'divisionSet', 'campaignsHeader', 'creatives', 'placements', function ($rootScope, $scope, $state, $timeout, clientSet, divisionSet, campaignsHeader, creatives, placements) {
                 
@@ -20,56 +20,6 @@ define(function (require) {
 
                 assignObserver();
 
-                function hasContent(data) {
-                    var results = [];
-                    ng.forEach(data, function(d) {
-                        results.push(d == 0);
-                    });
-
-                    return results.every(function (d) {
-                        return d;
-                    });
-                }
-
-                function updatePlacementMsg() {
-                    if ( placements.data().isLoaded() ) {
-                        var data = placements.all(true);
-                        $scope.showPlacementMsg = hasContent(data);
-                    }
-                }
-
-                function updateCreativeMsg() {
-                    if ( creatives.data().isLoaded() ) {
-                        var data = creatives.all().data;
-                        $scope.showCreativeMsg = hasContent(data);
-                    }
-                }
-
-                function updateAccountMsg() {
-                    if ( campaignsHeader.data().isLoaded() ) {
-                        var data = campaignsHeader.all();
-                        $scope.showCampaignMsg = hasContent(data);
-                    }
-                }
-
-                function updateDivisionMsg() {
-                    if ( divisionSet.data().isLoaded() ) {
-                        var data = divisionSet.all().countAccounts;
-                        var dataObj = {data};
-                        $scope.showAccountMsg = hasContent(dataObj);
-                        
-                    }
-                }
-
-                function updateClientMsg() {
-                    if ( clientSet.data().isLoaded() ) {
-                        var data = clientSet.all().countAccounts;
-                        var dataObj = {data};
-                        $scope.showAccountMsg = hasContent(dataObj);
-                    }
-                    
-                }
-                
                 function assignObserver() {
                     if ($state.params.campaignId) {
                         
@@ -96,7 +46,36 @@ define(function (require) {
                     }
                 }
 
+                function updateCreativeMsg() {
+                    if ( creatives.data().isLoaded() ) {
+                        $scope.showCreativeMsg = creatives.noContent();
+                    }
+                }
 
+                function updatePlacementMsg() {
+                    if ( placements.data().isLoaded() ) {
+                        $scope.showPlacementMsg = placements.noContent();
+                    }
+                }
+
+                function updateAccountMsg() {
+                    if ( campaignsHeader.data().isLoaded() ) {
+                        $scope.showCampaignMsg = campaignsHeader.noContent();
+                    }
+                }
+
+                function updateDivisionMsg() {
+                    if ( divisionSet.data().isLoaded() ) {
+                        $scope.showAccountMsg = !divisionSet.all().countAccounts;
+                    }
+                }
+
+                function updateClientMsg() {
+                    if ( clientSet.data().isLoaded() ) {
+                        $scope.showAccountMsg = !clientSet.all().countAccounts;
+                    }
+                    
+                }
 
             }]
         };

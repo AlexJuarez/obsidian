@@ -18,11 +18,8 @@ define(function (require) {
         $scope.updateFilters = updateFilters;
 
         campaignsHeader.observe(function() {
-            if ( campaignsHeader.data().isLoaded() ) {
-                var data = campaignsHeader.all();
-            }
-
-        }, $scope);
+            $scope.noContent = campaignsHeader.noContent();
+        }, $scope, true);
 
         accounts.observe(function() {
             updateFilters($scope.filter);

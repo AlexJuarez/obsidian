@@ -168,6 +168,19 @@ define(function(require) {
                 return cache.get(_apiConfig(), initialize);
             }
 
+            function noContent() {
+                var datas = all().data;
+                var results = [];
+                ng.forEach(datas, function(d) {
+                    results.push(d == 0);
+                });
+
+                return results.every(function (d) {
+                    return d;
+                });
+            }
+
+
             return {
                 _transformCreatives: _transformCreatives,
                 _apiConfig: _apiConfig,
@@ -176,7 +189,8 @@ define(function(require) {
                 all: all,
                 data: data,
                 addData: addData,
-                observe: observe
+                observe: observe,
+                noContent: noContent
             };
         }
     ]);

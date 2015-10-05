@@ -42,6 +42,7 @@ define(function(require) {
             function update() {
                 updateMeta();
                 updateSelected();
+                $scope.noContent = placements.noContent();
             }
 
             function updateMeta() {
@@ -84,7 +85,7 @@ define(function(require) {
                 $scope.selectedPlacements = placements.getSelectedPlacementIds();
             }
 
-            updateMeta();
+            update();
             placements.observe(update, $scope, true);
 
             // Edit Placements

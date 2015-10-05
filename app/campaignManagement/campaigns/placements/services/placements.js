@@ -177,6 +177,18 @@ define(function (require) {
             return placementCache.get(getApiConfig(), initialize);
         }
 
+        function noContent() {
+            var datas = all(true);
+            var results = [];
+            ng.forEach(datas, function(d) {
+                results.push(d == 0);
+            });
+
+            return results.every(function (d) {
+                return d;
+            });
+        }
+
         return {
             _transformPlacementGroups: _transformPlacementGroups,
             _getPlacementGroups: _getPlacementGroups,
@@ -184,7 +196,8 @@ define(function (require) {
             getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
             data: data,
-            observe: observe
+            observe: observe,
+            noContent: noContent
         };
     }]);
 });

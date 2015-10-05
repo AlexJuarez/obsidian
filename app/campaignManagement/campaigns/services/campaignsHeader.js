@@ -59,12 +59,25 @@ define(function (require) {
             return cache.get(getApiUriConfig(), initialize);
         }
 
+        function noContent() {
+            var datas = all();
+            var results = [];
+            ng.forEach(datas, function(d) {
+                results.push(d == 0);
+            });
+
+            return results.every(function (d) {
+                return d;
+            });
+        }
+
         return {
             _apiConfig: apiConfig,
             _getApiUriConfig: getApiUriConfig,
             all: all,
             data: data,
-            observe: observe
+            observe: observe,
+            noContent: noContent
         };
     }]);
 });
