@@ -24,7 +24,7 @@ define(function (require) {
         $stateProvider
             .state({
                 name: 'cm.campaigns',
-                url: '?viewBy',
+                url: '?viewBy&viewAs',
                 templateUrl: 'campaignManagement/campaigns/index.html'
             })
             .state({

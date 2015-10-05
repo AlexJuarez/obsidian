@@ -18,7 +18,7 @@ define(function(require) {
     };
 
     var rules = {
-        checked: '',
+        checked: 'checkbox',
         creativeName: '',
         delivering: 'delivering',
         type: '',
@@ -41,7 +41,6 @@ define(function(require) {
 
     module.service('creatives', [
         'cacheFactory', '$state', 'creativeRecordService', 'ENUMS', function(cacheFactory, $state, creativeRecordService, ENUMS) {
-
             var cache = cacheFactory({
                 transform: function(data) {
                     return data.creatives;
@@ -108,7 +107,7 @@ define(function(require) {
                 for(var i = 0; i < creatives.length; i ++) {
                     creative = creatives[i];
                     transformedTable.data.push({
-                        checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
+                        checked: false,
                         creativeName: creative.name,
                         delivering: creative.live,
                         type: ENUMS.down.creativeTypes[creative.type],
@@ -122,7 +121,7 @@ define(function(require) {
                         options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
                         // These properties are needed by thumbnails but aren't
-						            // in the table
+                        // in the table
                         id: creative.id,
                         lastModified: creative.modifiedDate,
                         thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
