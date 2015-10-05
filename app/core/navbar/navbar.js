@@ -20,7 +20,7 @@ define(function (require) {
                 scope.$state = $state;
 
                 function transition(area){
-                    if (!$state.includes(area)){
+                    if (!$state.includes(area)) {
                         if ($state.params.clientId) {
                             $state.go(area + '.campaigns.client', {clientId: $state.params.clientId});
                         } else if ($state.params.divisionId) {
