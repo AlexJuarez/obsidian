@@ -55,8 +55,18 @@ define(function (require) {
                     templateUrl: 'campaignManagement/campaigns/index.html'
                 })
                 .state({
+                    name: base + '.campaigns.detail',
+                    url: '/campaign/:campaignId',
+                    template: '<ui-view />'
+                })
+                .state({
+                    name: base + '.campaigns.detail.wildcard',
+                    url: '*path',
+                    template: '<ui-view />'
+                })
+                .state({
                     name: base + '.wildcard',
-                    url: '/*path',
+                    url: '{ path: ^(?!(\/client|\/account|\/division|\/campaign)).*$ }',
                     template: '<ui-view />'
                 });
         }
