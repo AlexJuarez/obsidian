@@ -3,7 +3,7 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', function($scope, $rootScope, $state, $modal, creatives) {
+    app.controller('creativesHeaderCtrl', ['$scope', '$rootScope', '$state', '$modal', 'creatives', 'ENUMS', function($scope, $rootScope, $state, $modal, creatives, ENUMS) {
 
         $scope.openNewCreativeModal = openNewCreativeModal;
 
@@ -51,7 +51,7 @@ define(function(require) {
 
                     meta.all ++;
                     if(creative.type) {
-                        meta[creative.type]++;
+                        meta[ENUMS.down.creativeTypes[creative.type]]++;
                     }
                 }
                 $scope.creativesMeta = meta;

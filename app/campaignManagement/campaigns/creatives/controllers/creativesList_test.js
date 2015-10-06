@@ -6,7 +6,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('creativesListCtrl', function () {
-        var list, mockCreatives, httpBackend, state, scope, rootScope;
+        var list, mockCreatives, httpBackend, state, scope, rootScope, enums;
 
         mockCreatives = {
             all: function() {
@@ -14,10 +14,10 @@ define(function (require) {
                     headers: 'headers',
                     rules: 'rules',
                     data: [
-                        {type: 'inBannerVideo'},
-                        {type: 'richMedia'},
-                        {type: 'inStream'},
-                        {type: 'inBannerVideo'}
+                        {type: 'In-Banner'},
+                        {type: 'Rich Media'},
+                        {type: 'In-Stream'},
+                        {type: 'In-Banner'}
                     ]
                 };
             },
@@ -31,13 +31,14 @@ define(function (require) {
 
             spyOn(mockCreatives, 'observe').and.callThrough();
 
-            inject(function ($controller, $httpBackend, $state, $rootScope) {
+            inject(function ($controller, $httpBackend, $state, $rootScope, ENUMS) {
                 httpBackend = $httpBackend;
                 state = $state;
                 state.params.filter = 'inBannerVideo';
                 scope = $rootScope.$new();
                 rootScope = $rootScope;
                 list = $controller('creativesListCtrl', {$scope: scope, creatives: mockCreatives});
+                enums = ENUMS;
             });
         });
 
@@ -59,8 +60,8 @@ define(function (require) {
                 headers: 'headers',
                 rules: 'rules',
                 data: [
-                    {type: 'inBannerVideo'},
-                    {type: 'inBannerVideo'}
+                    {type: 'In-Banner'},
+                    {type: 'In-Banner'}
                 ]
             };
 
@@ -68,9 +69,10 @@ define(function (require) {
         });
 
         it('should update the filter', function() {
+            enums.up.creativeTypes.test = 'testup';
             rootScope.$broadcast('$stateChangeSuccess', 'newState', { filter: 'test' });
 
-            expect(scope.filter).toEqual('test');
+            expect(scope.filter).toEqual('testup');
         });
 
     });

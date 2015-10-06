@@ -8,7 +8,7 @@ define(function (require) {
     var template = require('tpl!./creativeThumbnails.html');
 
     describe('creativeThumbnails', function () {
-        var compile, state, rootScope, mockCreatives, modal, window, records;
+        var compile, state, rootScope, mockCreatives, modal, window, records, enums;
 
         mockCreatives = {
             all: function() {
@@ -16,10 +16,10 @@ define(function (require) {
                     headers: 'headers',
                     rules: 'rules',
                     data: [
-                        {type: 'inBannerVideo'},
-                        {type: 'richMedia'},
-                        {type: 'inStream'},
-                        {type: 'inBannerVideo'}
+                        {type: 'In-Banner'},
+                        {type: 'Rich Media'},
+                        {type: 'In-Stream'},
+                        {type: 'In-Banner'}
                     ]
                 };
             },
@@ -37,7 +37,7 @@ define(function (require) {
                 $provide.value('creatives', mockCreatives);
             });
 
-            inject(function ($compile, $state, $rootScope, $templateCache, $modal, $window, creativeRecordService) {
+            inject(function ($compile, $state, $rootScope, $templateCache, $modal, $window, creativeRecordService, ENUMS) {
                 $templateCache.put('campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', template);
 
                 state = $state;
@@ -46,6 +46,7 @@ define(function (require) {
                 modal = $modal;
                 window = $window;
                 records = creativeRecordService;
+                enums = ENUMS;
             });
         });
 
@@ -66,8 +67,8 @@ define(function (require) {
             it('should filter creatives by type based on state', function (){
                 state.params.filter = 'inBannerVideo';
                 var expected = [
-                    {type: 'inBannerVideo'},
-                    {type: 'inBannerVideo'}
+                    {type: 'In-Banner'},
+                    {type: 'In-Banner'}
                 ];
 
                 var scope = setUpScope();
@@ -110,9 +111,10 @@ define(function (require) {
 
             it('should update the filter on stateChange', function () {
                 var scope = setUpScope();
+                enums.up.creativeTypes.test = 'testup';
                 rootScope.$broadcast('$stateChangeSuccess', {}, { filter: 'test' });
 
-                expect(scope.filter).toEqual('test');
+                expect(scope.filter).toEqual('testup');
             });
 
             it('should transform the creative Data', function () {
