@@ -45,7 +45,7 @@ define(function(require) {
 							client: {
 								name: getClientName()
 							}
-						}
+						};
 					},
 					setData: function(data) {
 						clientId = data.clientId;

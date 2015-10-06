@@ -52,7 +52,7 @@ define(function(require) {
 							division: {
 								name: getDivisionName()
 							}
-						}
+						};
 					},
 					setData: function(data) {
 						divisionId = data.divisionId;

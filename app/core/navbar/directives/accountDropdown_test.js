@@ -55,7 +55,7 @@ define(function(require) {
 							account: {
 								name: getAccountName()
 							}
-						}
+						};
 					},
 					setData: function(data) {
 						accountId = data.accountId;

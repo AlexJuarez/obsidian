@@ -55,7 +55,7 @@ define(function(require) {
 							campaign: {
 								name: getCampaignName()
 							}
-						}
+						};
 					},
 					setData: function(data) {
 						campaignId = data.campaignId;
