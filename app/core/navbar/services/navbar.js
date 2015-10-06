@@ -60,15 +60,15 @@ define(function (require) {
 
             if (account) {
                 data.account = account;
-                var client = clients.get(account.client.id);
                 var division = divisions.get(account.division.id);
-
-                if (client) {
-                    data.client = client;
-                }
 
                 if (division) {
                     data.division = division;
+                    var client = clients.get(division.client.id);
+
+                    if (client) {
+                        data.client = client;
+                    }
                 }
             }
 
@@ -81,20 +81,20 @@ define(function (require) {
 
             if (campaign) {
                 data.campaign = campaign;
-                var client = clients.get(campaign.client.id);
-                var division = divisions.get(campaign.division.id);
                 var account = accounts.get(campaign.account.id);
-
-                if (client) {
-                    data.client = client;
-                }
 
                 if (account) {
                     data.account = account;
-                }
+                    var division = divisions.get(account.division.id);
 
-                if (division) {
-                    data.division = division;
+                    if (division) {
+                        data.division = division;
+
+                        var client = clients.get(division.client.id);
+                        if (client) {
+                            data.client = client;
+                        }
+                    }
                 }
             }
 

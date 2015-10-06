@@ -1,4 +1,4 @@
-//jshint maxstatements:40
+//jshint maxstatements:50
 define(function(require){
     'use strict';
 
@@ -6,7 +6,6 @@ define(function(require){
     var ng = require('angular');
     require('select2');
     var $ = require('jquery');
-    var config = $.fn.select2.amd.require('select2/defaults').defaults;
 
     module.constant('NG_OPTIONS_REGEXP', /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?(?:\s+group\s+by\s+([\s\S]+?))?(?:\s+disable\s+when\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?$/);
     // 1: value expression (valueFn)
@@ -92,15 +91,10 @@ define(function(require){
             priority: 0.5,
             terminal: true,
             link: function(scope, element, attr, ngModel) {
-                var id = nextUid();
                 var trackValues = trackValuesFactory();
                 var match, valuesFn, trackBy, theme, select2, isMultiple, timer, data = [];
-                var getModelFn = $parse(attr.ngModel);
-                var getModel = function() { return getModelFn(scope); };
-                var setModel = function(value) { return getModelFn.assign(scope, value) };
-
                 var limit = scope.$eval(attr.limit) || 25;
-                var searchLimit = scope.$eval(attr.searchLimit) || 25;
+                var searchLimit = scope.$eval(attr.searchLimit) || 5;
                 //set a flag to see if this is a multiselect instance
                 isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
                 var opts = setUpOptions();
@@ -138,7 +132,11 @@ define(function(require){
                     valuesFn = $parse(match[8]);
                     trackBy = match[9];
                     var keyName = match[6];
+                    var selectAs = / as /.test(match[0]) && match[1];
                     var valueName = match[5] || match[7];
+                    var valueFn = $parse(match[2] ? match[1] : valueName);
+                    var selectAsFn = selectAs && $parse(selectAs);
+                    var viewValueFn = selectAsFn || valueFn;
                     var trackByFn = trackBy && $parse(trackBy);
                     var displayFn = $parse(match[2] || match[1]);
 
@@ -148,14 +146,6 @@ define(function(require){
                     var getTrackByValueFn =  trackBy ?
                         function(value, locals) { return trackByFn(scope, locals); } :
                         function(value) { return hashKey(value); };
-
-                    var getTrackByValue = function(value, key) {
-                        return getTrackByValueFn(value, getLocals(value, key));
-                    };
-
-                    var getDisplayValue = function(value, key) {
-                        return displayFn(value, getLocals(value, key));
-                    };
 
                     var locals = {};
                     var getLocals = keyName ? function(value, key) {
@@ -169,7 +159,7 @@ define(function(require){
 
                     //Make a map of angular models -> values
                     scope.$watchCollection(valuesFn, function(values) {
-                        updateValues(values, getTrackByValue, getDisplayValue);
+                        updateValues(values, getLocals, getTrackByValueFn, displayFn, viewValueFn);
                         initOrUpdate();
                     });
                 } else {
@@ -189,7 +179,7 @@ define(function(require){
                             id: key,
                             text: text
                         });
-                        trackValues.add(key, key);
+                        trackValues.add(key, key, key, key);
                     });
                 }
 
@@ -200,21 +190,40 @@ define(function(require){
                         };
                     };
 
-                function updateValues(values, getTrackByValue, getDisplayValue) {
+                function updateValues(values, localFn, getTrackByValueFn, displayFn, viewValueFn) {
                     data = [];
-                    trackValues.reset();
-                    var value;
+                    var value, locals, id, label, viewValue;
                     for (var key in values) {
                         if (values.hasOwnProperty(key)) {
                             value = values[key];
-                            var selectValue = getTrackByValue(value, key);
-                            var displayValue = getDisplayValue(value, key);
+                            locals = localFn(value, key);
+                            label = displayFn(value, locals);
+                            viewValue = viewValueFn(value, locals);
+                            id = getTrackByValueFn(viewValue, locals);
+
                             data.push({
-                                id: selectValue,
-                                text: displayValue
+                                id: id,
+                                text: label
                             });
-                            trackValues.add(selectValue, value);
+
+                            trackValues.add(id, label, viewValue, value);
                         }
+                    }
+                }
+
+                function getModelViewValue() {
+                    if (ng.isFunction(ngModel.$viewValue)) {
+                        return ngModel.$viewValue();
+                    } else {
+                        return ngModel.$viewValue;
+                    }
+                }
+
+                function setViewValue(value) {
+                    if (ng.isFunction(ngModel.$viewValue)) {
+                        return ngModel.$viewValue(value);
+                    } else {
+                        return ngModel.$setViewValue(value);
                     }
                 }
 
@@ -223,15 +232,16 @@ define(function(require){
                     var newValues = [];
                     var oldValues = [];
                     var length = options.length;
+                    var trackValue;
                     var v;
                     while(length--) {
                         v = options[length];
-                        var trackValue = trackValues.get(v.id);
+                        trackValue = trackValues.get(v.id);
                         if (!trackValue) {
                             newValues.push(formatModelInsert(v));
                             //remove the select2 attribute or else things fall out of sync
                         } else {
-                            oldValues.push(trackValue.value);
+                            oldValues.push(trackValue.viewValue);
                         }
                     }
 
@@ -244,17 +254,18 @@ define(function(require){
                                 $log.warn('Not sure how to add new values to hash.');
                             }
                         }
-                        ngModel.$setViewValue(oldValues.concat(newValues));
+                        setViewValue(oldValues.concat(newValues));
                     } else {
-                        console.log(id + ' ngModel viewValue: ', oldValues[0]);
-                        setModel(oldValues[0]);
+                        setViewValue(oldValues[0]);
                     }
                     scope.$apply();
                 }
 
                 function matches(term, data) {
                     term = $.trim(term);
-                    if (!term) return data.slice(0, limit);
+                    if (!term) {
+                        return data.slice(0, limit);
+                    }
 
                     var results = [];
 
@@ -265,7 +276,7 @@ define(function(require){
                             results.push(value);
                         }
 
-                        if (results.length >= limit) {
+                        if (results.length >= searchLimit) {
                             break;
                         }
                     }
@@ -286,17 +297,17 @@ define(function(require){
                         if (isMultiple) {
                             opts.placeholder = opts.placeholder || placeholderMultiselect;
                         } else {
-                            opts.placeholder = opts.placeholder || placeholderSelect
+                            opts.placeholder = opts.placeholder || placeholderSelect;
                         }
 
                         opts.data = data.slice(0, limit);
                         select2 = element.select2(opts);
-                        var debouce = null;
+                        var debounce = null;
                         element.on('change', function() {
-                            if (!debouce) {
-                                debouce = $timeout(function() {
+                            if (!debounce) {
+                                debounce = $timeout(function() {
                                     updateModel();
-                                    debouce = null;
+                                    debounce = null;
                                 }, 10);
                             }
                         });
@@ -306,9 +317,9 @@ define(function(require){
                 function selectValues() {
                     var focused;
                     if (!trackValues.isEmpty() && ngModel) {
-                        if (ng.isArray(ngModel.$viewValue) && isMultiple) {
+                        if (ng.isArray(getModelViewValue()) && isMultiple) {
                             var values = [];
-                            ng.forEach(ngModel.$viewValue, function(v) {
+                            ng.forEach(getModelViewValue(), function(v) {
                                 var trackValue = trackValues.get(v);
                                 if (trackValue) {
                                     values.push(trackValue.index);
@@ -322,11 +333,11 @@ define(function(require){
                                 focused.focus();
                             }
                         } else {
-                            var trackValue = trackValues.get(ngModel.$viewValue);
+                            var trackValue = trackValues.get(getModelViewValue());
                             if (trackValue) {
                                 //focus is lost when change is triggered
                                 focused = $(':focus');
-                                element.select2('val', trackValue.index);
+                                element.val('val', trackValue.index);
                                 if (focused.length) {
                                     focused.focus();
                                 }
@@ -353,14 +364,13 @@ define(function(require){
                     }
 
                     var originalRender = ngModel.$render;
-                    ngModel.$render = function(val) {
-                        console.log('ngModel value: ', val);
+                    ngModel.$render = function() {
                         originalRender();
                         initOrUpdate();
                     };
 
                     var viewWatch = function() {
-                        return ngModel.$viewValue;
+                        return getModelViewValue();
                     };
 
                     scope.$watch(viewWatch, ngModel.$render, true);

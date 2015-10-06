@@ -26,15 +26,14 @@ define(function (require) {
         accounts.init({
             endpoint: 'accounts',
             queryParams: {
-                dimensions: ['id', 'name', 'pinned', 'division.id', 'client.id']
+                dimensions: ['id', 'name', 'pinned', 'division.id']
             }
         });
         campaigns.init({
             endpoint: 'campaigns',
             queryParams: {
                 dimensions: [
-                    'id', 'name', 'pinned', 'account.id', 'division.id',
-                    'client.id', 'startDate', 'endDate'
+                    'id', 'name', 'pinned', 'account.id', 'startDate', 'endDate'
                 ]
             }
         });
