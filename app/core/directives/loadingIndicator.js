@@ -18,7 +18,7 @@ define(function (require) {
                 
                 loadedService.observe(updateService, $scope);
 
-                function updateService(newValue, oldValue) {
+                function updateService() {
                     if ( typeof loadedService.isLoaded === 'function' ) {
                         
                         $scope.isLoaded = loadedService.isLoaded();
