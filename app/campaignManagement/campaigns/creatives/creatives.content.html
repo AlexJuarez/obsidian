@@ -1,0 +1,6 @@
+<div ng-if="!viewAs">
+    <div creative-thumbnails></div>
+</div>
+<div ng-if="viewAs == 'list'" ng-controller="creativesListCtrl">
+    <div basic-table="creatives" class="table table-hover"></div>
+</div>

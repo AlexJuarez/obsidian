@@ -14,13 +14,13 @@ define(function (require) {
                 limit: '='
             },
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS) {
 
                     var editCreativeModals = {};
                     var mixpoURL = studioLocation.host();
 
-                    $scope.filter = $state.params.filter;
+                    $scope.filter = ENUMS.up.creativeTypes[$state.params.filter];
                     $scope.openPreviewPage = openPreviewPage;
                     $scope.openStudio = openStudio;
                     $scope.openSettings = openSettings;
@@ -34,8 +34,12 @@ define(function (require) {
 
                     creatives.observe(updateCreatives, $scope);
 
-                    $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-                        $scope.filter = toParams.filter;
+                    var cleanup = $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+                        $scope.filter = ENUMS.up.creativeTypes[toParams.filter];
+                    });
+
+                    $scope.$on('$destroy', function() {
+                        cleanup();
                     });
 
                     function openPreviewPage(creative) {
@@ -136,7 +140,6 @@ define(function (require) {
 
                         $scope.creatives = duplicateCreatives;
                     }
-
             }]
         };
     }]);

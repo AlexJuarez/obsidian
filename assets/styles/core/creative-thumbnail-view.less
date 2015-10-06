@@ -58,20 +58,23 @@
 }
 
 .thumbnail-view {
-
+    margin-left: -18px;
+    margin-right: -18px;
     .creative-wrapper {
+        padding-left: 18px;
+        padding-right: 18px;
         @media (min-width: @screen-lg-min) {
             &.col-md-5 {
                 width: 20%;
             }
         }
-        @media (min-width: 1580px) {
+        @media (min-width: 1690px) {
             &.col-lg-7 {
                 width: calc(100% / 7);
             }
         }
 
-        margin-bottom: 2rem;
+        margin-bottom: 4rem;
         .font-size(1.4);
         .line-height(2);
 
@@ -109,7 +112,6 @@
                     .glyph-icon {
                         float: left;
                         margin: 0 0.5rem 0 0;
-                        //display: inline-block;
                         position: relative;
                         &.glyph-view:before {
                             top: 2px;
@@ -123,7 +125,9 @@
                 .glyph-icon {
                     float: right;
                     margin: 0 0 0 1.2rem;
-                    //display: inline-block;
+                    &:last-child {
+                        margin: 0;
+                    }
                 }
 
            }

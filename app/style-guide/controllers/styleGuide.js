@@ -1,6 +1,4 @@
-/**
- * Created by Alex on 3/2/2015.
- */
+//jshint maxstatements:50
 /* jshint camelcase: false */
 /* jshint -W098 */
 /* jshint -W004 */
@@ -43,6 +41,11 @@ define(function (require) {
         $scope.open = open;
 
         $scope.selected = [];
+
+        var _selected5;
+        $scope.selected5 = function (value) {
+            return arguments.length ? (_selected5 = value) : _selected5;
+        };
 
         $scope.select = [
             {

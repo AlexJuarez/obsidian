@@ -51,6 +51,7 @@ define(function (require) {
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
+
             return getType(record.get());
         }
 
@@ -198,9 +199,7 @@ define(function (require) {
 
         function updateCampaigns() {
             if(!modalState.creativeId) {
-                // TODO: add render limit so this isn't crazy slow
-                //$scope.campaigns = campaigns.all().slice(0, 10);
-                $scope.campaigns = [{id: '1c5cf047-5ecd-444b-822a-17e1eebed4b3', name: 'test'}];
+                $scope.campaigns = campaigns.all();
             }
         }
 
