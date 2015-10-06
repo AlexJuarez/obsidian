@@ -229,7 +229,8 @@ define(function(require) {
 				setData: navInfo.setData,
 				observe: navInfo.observe,
 				all: all,
-				params: navInfo.all
+				params: navInfo.all,
+				_getOptions: getOptions
 			};
 		}
 	]);
