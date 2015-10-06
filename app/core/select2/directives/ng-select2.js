@@ -83,8 +83,8 @@ define(function(require){
     var placeholderMultiselect = 'Select some options';
     var placeholderSelect = 'Select an option';
 
-    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse', 'trackValuesFactory', '$injector',
-        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse, trackValuesFactory, $injector) {
+    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse', 'trackValuesFactory', '$injector', '$q',
+        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse, trackValuesFactory, $injector, $q) {
         return {
             restrict: 'A',
             require: '?ngModel',
@@ -92,9 +92,11 @@ define(function(require){
             terminal: true,
             link: function(scope, element, attr, ngModel) {
                 var trackValues = trackValuesFactory();
-                var match, valuesFn, trackBy, theme, select2, isMultiple, timer, data = [];
+                var match, valuesFn, trackBy, theme, isMultiple, data = [], select2;
+                var initialized = false;
                 var limit = scope.$eval(attr.limit) || 25;
                 var searchLimit = scope.$eval(attr.searchLimit) || 5;
+                var id = nextUid();
                 //set a flag to see if this is a multiselect instance
                 isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
                 var opts = setUpOptions();
@@ -239,7 +241,6 @@ define(function(require){
                         trackValue = trackValues.get(v.id);
                         if (!trackValue) {
                             newValues.push(formatModelInsert(v));
-                            //remove the select2 attribute or else things fall out of sync
                         } else {
                             oldValues.push(trackValue.viewValue);
                         }
@@ -263,7 +264,7 @@ define(function(require){
 
                 function matches(term, data) {
                     term = $.trim(term);
-                    if (!term) {
+                    if (!term || data.id === '') {
                         return data.slice(0, limit);
                     }
 
@@ -297,11 +298,14 @@ define(function(require){
                         if (isMultiple) {
                             opts.placeholder = opts.placeholder || placeholderMultiselect;
                         } else {
+                            //add a element to assume the placeholder value
+                            element.append(ng.element('<option />'));
                             opts.placeholder = opts.placeholder || placeholderSelect;
                         }
 
-                        opts.data = data.slice(0, limit);
-                        select2 = element.select2(opts);
+                        opts.data = ng.copy(data.slice(0, limit));
+
+                        element.select2(opts);
                         var debounce = null;
                         element.on('change', function() {
                             if (!debounce) {
@@ -347,13 +351,16 @@ define(function(require){
                 }
 
                 function initOrUpdate() {
-                    if (!select2) {
-                        timer = setUpSelect2();
-                        timer.then(function() {
+                    if (!initialized) {
+                        initialized = true;
+                        select2 = setUpSelect2();
+                        select2.then(function() {
                             selectValues();
                         });
                     } else {
-                        selectValues();
+                        select2.then(function() {
+                            selectValues();
+                        });
                     }
                 }
 
@@ -380,8 +387,8 @@ define(function(require){
 
                 //On destroy clean up the timeout/ select2 element
                 scope.$on('$destroy', function() {
-                    if (timer) {
-                        $timeout.cancel(timer);
+                    if (select2) {
+                        $timeout.cancel(select2);
                     }
                 });
             }

@@ -51,6 +51,7 @@ define(function (require) {
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
+
             return getType(record.get());
         }
 
@@ -198,7 +199,6 @@ define(function (require) {
 
         function updateCampaigns() {
             if(!modalState.creativeId) {
-                // TODO: add render limit so this isn't crazy slow
                 $scope.campaigns = campaigns.all();
             }
         }
