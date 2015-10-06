@@ -4,8 +4,7 @@ define(function(require) {
     var module = require('./../../module');
     var ng = require('angular');
 
-    module.factory('trackValuesFactory', [
-    function() {
+    module.factory('trackValuesFactory', [function() {
         return function() {
             var Tracked = function() {
                 this._data = {};

@@ -3,4 +3,6 @@ define(function(require) {
 
     require('./directives/ng-select2');
     require('./factories/trackValues');
+    require('./factories/selectOptions');
+    require('./factories/modelSync');
 });
