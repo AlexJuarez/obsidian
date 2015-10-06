@@ -165,8 +165,12 @@ define(function (require) {
                                 opts.placeholder = opts.placeholder || placeholderSelect;
                             }
 
-                            opts.data = ng.copy(data.slice(0, opts.limit));
-
+                            if (!opts.tags) {
+                                opts.data = ng.copy(data.slice(0, opts.limit));
+                            } else {
+                                opts.data = data;
+                            }
+                            
                             element.select2(opts);
                             var debounce = null;
                             if (modelSync) {
