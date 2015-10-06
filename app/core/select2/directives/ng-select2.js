@@ -83,8 +83,8 @@ define(function(require){
     var placeholderMultiselect = 'Select some options';
     var placeholderSelect = 'Select an option';
 
-    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse', 'trackValuesFactory', '$injector', '$q',
-        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse, trackValuesFactory, $injector, $q) {
+    module.directive('select2', ['$timeout', 'select2Config', 'NG_OPTIONS_REGEXP', '$log', '$parse', 'trackValuesFactory', '$injector',
+        function ($timeout, defaults, NG_OPTIONS_REGEXP, $log, $parse, trackValuesFactory, $injector) {
         return {
             restrict: 'A',
             require: '?ngModel',
@@ -96,7 +96,6 @@ define(function(require){
                 var initialized = false;
                 var limit = scope.$eval(attr.limit) || 25;
                 var searchLimit = scope.$eval(attr.searchLimit) || 5;
-                var id = nextUid();
                 //set a flag to see if this is a multiselect instance
                 isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
                 var opts = setUpOptions();
