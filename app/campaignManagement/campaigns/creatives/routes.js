@@ -2,45 +2,25 @@ define(function (require) {
     'use strict';
     var app = require('./../../module');
 
-    require('tpl!./creativesList.html');
-    require('tpl!./creativesThumbnails.html');
+    require('tpl!./creatives.content.html');
     require('tpl!./creativesHeader.html');
     require('tpl!./directives/creativeThumbnails.html');
     require('tpl!./new-edit-creative.html');
 
-    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
-
-        $urlRouterProvider.when('/campaign-management/campaign/:campaignId/creatives', '/campaign-management/campaign/:campaignId/creatives/thumbnails');
+    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider) {
 
         $stateProvider
             .state({
                 name: 'cm.campaigns.detail.creatives',
-                url: '/creatives?filter'
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives.list',
-                url: '/list',
+                url: '/creatives?filter',
                 views: {
                     'tab-header@cm.campaigns.detail': {
                         controller: 'creativesHeaderCtrl',
                         templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
                     },
                     'table@cm.campaigns.detail': {
-                        controller: 'creativesListCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesList.html'
-                    }
-                }
-            })
-            .state({
-                name: 'cm.campaigns.detail.creatives.thumbnails',
-                url: '/thumbnails',
-                views: {
-                    'tab-header@cm.campaigns.detail': {
-                        controller: 'creativesHeaderCtrl',
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesHeader.html'
-                    },
-                    'table@cm.campaigns.detail': {
-                        templateUrl: 'campaignManagement/campaigns/creatives/creativesThumbnails.html'
+                        controller: 'creativesCtrl',
+                        templateUrl: 'campaignManagement/campaigns/creatives/creatives.content.html'
                     }
                 }
             });

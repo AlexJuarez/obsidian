@@ -2,7 +2,7 @@ define(function (require) {
     'use strict';
 
     var app = require('./../module');
-    //var ng = require('angular');
+    var ng = require('angular');
 
     app.filter('format', ['$filter', function ($filter) {
         function percent(input) {
@@ -13,9 +13,18 @@ define(function (require) {
             return $filter('date')(input, 'M/d/yyyy');
         }
 
+        function createCheckbox(data, input) {
+            if (ng.isFunction(data)) {
+                return '<label><input ng-click="row.' + input + '()" class="checkbox checkbox-light" type="checkbox" /><span></span></label>';
+            } else {
+                return '<label><input class="checkbox checkbox-light" type="checkbox" /><span></span></label>';
+            }
+        }
+
         return function (input, row, rules) {
             var rule = rules[input];
             var data = row[input];
+
             switch (rule) {
             case 'number':
                 return $filter('number')(data, 0);
@@ -29,6 +38,8 @@ define(function (require) {
                 }).join(' ');
             case 'date':
                 return date(data);
+            case 'checkbox':
+                return createCheckbox(data, input);
             case 'status':
                 return '<span class="glyph-dot" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':
