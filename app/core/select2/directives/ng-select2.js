@@ -170,7 +170,7 @@ define(function (require) {
                             } else {
                                 opts.data = data;
                             }
-                            
+
                             element.select2(opts);
                             var debounce = null;
                             if (modelSync) {
