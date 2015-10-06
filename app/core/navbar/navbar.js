@@ -35,8 +35,12 @@ define(function (require) {
                     }
                 }
 
-                $rootScope.$on('$stateChangeSuccess', function () {
+                var cleanup = $rootScope.$on('$stateChangeSuccess', function () {
                     scope.open = false;
+                });
+
+                scope.$on('$destroy', function() {
+                    cleanup();
                 });
             }
         };
