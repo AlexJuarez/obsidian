@@ -1,5 +1,4 @@
 /* jshint -W101 */
-
 define(function(require) {
 	'use strict';
 
@@ -50,13 +49,26 @@ define(function(require) {
 			});
 
 			function getRecord(id, type) {
-				var record = getExistingRecord(id, type);
-				if(record) {
-					return transformRecord(record, type);
-				}
-				if (!cache[type][id]) {
 
-					// Grab the one campaign we need and set the data in campaigns
+				// If the navbar services already have all the data we need, just return
+				// that data
+				var record = getExistingRecord(id, type);
+				if(!ng.equals(record, {})) {
+					return record;
+				}
+
+				// If we've already made the request for the data we need, return that
+				// data
+				var cachedRecord = cache[type][id];
+				if (cachedRecord) {
+					record = cachedRecord.all();
+					if (!ng.equals(record, [])) {
+						return transformRecord(record[0], type);
+					}
+				} else {
+
+					// Grab the one record we need and notifyObservers when done, so
+					// they'll re-query all()
 					var options = {
 						endpoint: type,
 						queryParams: {
@@ -67,44 +79,101 @@ define(function(require) {
 						}
 					};
 
-					cache[type][id] = dataFactory().init(options, function(data) {
-						// Transform to grab the one record
-						return data[type][0];
-					}).then(function(record) {
-						addRecord(record, type);
-					});
+					var transformResponse = function(data) {
+						return data[type];
+					};
+
+					cache[type][id] = dataFactory();
+					cache[type][id].init(options, transformResponse).then(navInfo.notifyObservers);
 				}
+
 				return {};
 			}
 
 			function getExistingRecord(id, type) {
 				switch(type) {
 					case 'campaigns':
-						return campaigns.get(id);
+						return getCampaign(id);
 					case 'accounts':
-						return accounts.get(id);
+						return getAccount(id);
 					case 'divisions':
-						return divisions.get(id);
+						return getDivision(id);
 					case 'clients':
-						return clients.get(id);
+						return getClient(id);
 				}
 			}
 
-			function addRecord(record, type) {
-				switch(type) {
-					case 'campaigns':
-						campaigns.addData([record]);
-						break;
-					case 'accounts':
-						accounts.addData([record]);
-						break;
-					case 'divisions':
-						divisions.addData([record]);
-						break;
-					case 'clients':
-						clients.addData([record]);
-						break;
+			function getClient(id) {
+				var data = {};
+				var client = clients.get(id);
+
+				if (client) {
+					data.client = client;
 				}
+
+				return data;
+			}
+
+			function getDivision(id) {
+				var data = {};
+				var division = divisions.get(id);
+
+				if (division) {
+					data.division = division;
+					var client = clients.get(division.client.id);
+					if (client) {
+						data.client = client;
+					}
+				}
+
+				return data;
+			}
+
+			function getAccount(id) {
+				var data = {};
+				var account = accounts.get(id);
+
+				if (account) {
+					data.account = account;
+					var division = divisions.get(account.division.id);
+
+					if (division) {
+						data.division = division;
+						var client = clients.get(division.client.id);
+
+						if (client) {
+							data.client = client;
+						}
+					}
+				}
+
+				return data;
+			}
+
+			function getCampaign(id) {
+				var data = {};
+				var campaign = campaigns.get(id);
+
+				if (campaign) {
+					data.campaign = campaign;
+					var account = accounts.get(campaign.account.id);
+
+					if (account) {
+						data.account = account;
+						var division = divisions.get(account.division.id);
+
+						if (division) {
+							data.division = division;
+
+							var client = clients.get(division.client.id);
+							if (client) {
+								data.client = client;
+							}
+						}
+					}
+				}
+
+				return data;
 			}
 
 			function transformRecord(record, type) {

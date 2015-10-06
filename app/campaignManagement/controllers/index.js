@@ -20,29 +20,32 @@ define(function (require) {
         divisions.init({
             endpoint: 'divisions',
             queryParams: {
-                dimensions: ['id', 'name', 'pinned', 'client.id', 'client.name']
+                dimensions: ['id', 'name', 'pinned', 'client.id']
             }
         });
         accounts.init({
             endpoint: 'accounts',
             queryParams: {
-                dimensions: ['id', 'name', 'pinned', 'division.id', 'division.name', 'client.id', 'client.name']
+                dimensions: ['id', 'name', 'pinned', 'division.id']
             }
         });
         campaigns.init({
             endpoint: 'campaigns',
             queryParams: {
                 dimensions: [
-                    'id', 'name', 'pinned', 'account.id', 'account.name', 'division.id', 'division.name',
-                    'client.id', 'client.name', 'startDate', 'endDate'
+                    'id', 'name', 'pinned', 'account.id', 'startDate', 'endDate'
                 ]
             }
         });
 
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        var cleanup = $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
             if (window.Router && toState.name === 'analytics.campaigns.detail') {
                 window.Router.handleURL($location.url());
             }
+        });
+
+        $scope.$on('$destroy', function() {
+            cleanup();
         });
     }]);
 });

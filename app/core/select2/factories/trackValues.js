@@ -15,9 +15,9 @@ define(function(require) {
                 this._data = {};
             };
 
-            Tracked.prototype.add = function(index, value) {
-                this._data[JSON.stringify(value)] = { index: index, value: value };
-                this._data[index] = { index: index, value: value };
+            Tracked.prototype.add = function(index, label, viewValue, value) {
+                var o = { index: index, label: label, viewValue: viewValue, value: value };
+                this._data[index] = this._data[JSON.stringify(viewValue)] = o;
             };
 
             Tracked.prototype.get = function(index) {
