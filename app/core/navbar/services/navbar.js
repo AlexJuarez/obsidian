@@ -34,6 +34,18 @@ define(function(require) {
 				clients: [ 'id', 'name' ]
 			};
 
+			function getOptions(type, id) {
+				return {
+					endpoint: type,
+					queryParams: {
+						dimensions: ng.copy(dimensionTypes[type]),
+						filters: [
+							'id:eq:' + id
+						]
+					}
+				};
+			}
+
 			$rootScope.$on('$stateChangeSuccess', function(event, toState, toParams) {
 				navInfo.setData(toParams);
 			});
@@ -69,15 +81,7 @@ define(function(require) {
 
 					// Grab the one record we need and notifyObservers when done, so
 					// they'll re-query all()
-					var options = {
-						endpoint: type,
-						queryParams: {
-							dimensions: ng.copy(dimensionTypes[type]),
-							filters: [
-								'id:eq:' + id
-							]
-						}
-					};
+					var options = getOptions(type, id);
 
 					var transformResponse = function(data) {
 						return data[type];

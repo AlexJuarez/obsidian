@@ -1,106 +1,135 @@
-define(function (require) {
-    'use strict';
+define(function(require) {
+	'use strict';
 
-    require('./clientDropdown');
-    require('angularMocks');
+	require('./clientDropdown');
+	require('angularMocks');
 
-    var template = require('tpl!./client.html');
+	var template = require('tpl!./client.html');
 
-    describe('clientDropdownDirective', function () {
-        var compile, rootScope, document, client, navbar;
+	var clients = [
+		{
+			'id': 'clientId0',
+			'name': 'Client 0',
+			'pinned': true,
+			'active': false,
+			'lastViewed': '2015-01-01T12:00:00Z',
+			'lastViewedName': 'Joe Snoopypants',
+			'channel': 'Advertisers'
+		}
+	];
 
-        beforeEach(function () {
-            module('app.core');
+	describe('clientDropdownDirective', function() {
+		var compile, rootScope, document, client, navbar;
 
-            inject(function ($compile, $rootScope, $document, $templateCache, clientService, navbarService) {
-                $templateCache.put('core/navbar/directives/client.html', template);
+		beforeEach(function() {
+			module('app.core');
 
-                compile = $compile;
-                rootScope = $rootScope;
-                document = $document;
-                client = clientService;
-                navbar = navbarService;
-            });
-        });
+			module(function($provide) {
+				var clientId;
+				var getClientName = function() {
+					var clientName;
+					clients.forEach(function(client) {
+						if(client.id === clientId) {
+							clientName = client.name;
+						}
+					});
+					return clientName;
+				};
 
-        function createDropDown(clients) {
-            client.setData(clients);
+				$provide.value('navbarService', {
+					observe: function(callback) {
+						callback();
+					},
+					all: function() {
+						return {
+							client: {
+								name: getClientName()
+							}
+						}
+					},
+					setData: function(data) {
+						clientId = data.clientId;
+					}
+				});
+			});
 
-            var parentScope = rootScope.$new();
-            var html = compile('<div client-dropdown="test"></div>')(parentScope);
-            parentScope.$apply();
+			inject(function($compile, $rootScope, $document, $templateCache, clientService, navbarService) {
+				$templateCache.put('core/navbar/directives/client.html', template);
 
-            return html.scope();
-        }
+				compile = $compile;
+				rootScope = $rootScope;
+				document = $document;
+				client = clientService;
+				navbar = navbarService;
+			});
+		});
 
-        describe('controller', function () {
-            var clients = [{
-                'id': 'clientId0',
-                'name': 'Client 0',
-                'pinned': true,
-                'active': false,
-                'lastViewed': '2015-01-01T12:00:00Z',
-                'lastViewedName': 'Joe Snoopypants',
-                'channel': 'Advertisers'
-            }];
+		function createDropDown(clients) {
+			client.setData(clients);
 
-            it('should check to see if elements are pinned.',function(){
-                var scope = createDropDown(clients);
+			var parentScope = rootScope.$new();
+			var html = compile('<div client-dropdown="test"></div>')(parentScope);
+			parentScope.$apply();
 
-                expect(scope.pinned).toEqual(client.all());
-            });
+			return html.scope();
+		}
 
-            it('should check to see if the clientsMap exists',function(){
-                var scope = createDropDown(clients);
+		describe('controller', function() {
+			it('should check to see if elements are pinned.', function() {
+				var scope = createDropDown(clients);
 
-                expect(scope.clientsMap).toEqual(client.alphabetMap());
-            });
+				expect(scope.pinned).toEqual(client.all());
+			});
 
-            it('should change the pinned client when pin state change', function() {
-                var scope = createDropDown(clients);
+			it('should check to see if the clientsMap exists', function() {
+				var scope = createDropDown(clients);
 
-                expect(scope.pin).toEqual(jasmine.any(Function));
-                expect(scope.unpin).toEqual(jasmine.any(Function));
+				expect(scope.clientsMap).toEqual(client.alphabetMap());
+			});
 
-                spyOn(scope, 'unpin');
-                spyOn(scope, 'pin');
+			it('should change the pinned client when pin state change', function() {
+				var scope = createDropDown(clients);
 
-                scope.unpin(client.all()[0]);
-                expect(scope.unpin).toHaveBeenCalled();
+				expect(scope.pin).toEqual(jasmine.any(Function));
+				expect(scope.unpin).toEqual(jasmine.any(Function));
 
-                scope.pin(client.all()[0]);
-                expect(scope.pin).toHaveBeenCalled();
-            });
+				spyOn(scope, 'unpin');
+				spyOn(scope, 'pin');
 
-            it('should have the current client', function() {
-                var scope = createDropDown(clients);
+				scope.unpin(client.all()[0]);
+				expect(scope.unpin).toHaveBeenCalled();
 
-                expect(scope.current).toEqual('All Clients');
-            });
+				scope.pin(client.all()[0]);
+				expect(scope.pin).toHaveBeenCalled();
+			});
 
-            it('should update the query results on a search', function () {
-                var scope = createDropDown(clients);
+			it('should have the current client', function() {
+				var scope = createDropDown(clients);
 
-                scope.query = 'Client 0';
-                scope.$digest();
+				expect(scope.current).toEqual('All Clients');
+			});
 
-                expect(scope.results).toEqual(client.all());
-                scope.query = 'Client 01';
-                scope.$digest();
+			it('should update the query results on a search', function() {
+				var scope = createDropDown(clients);
 
-                expect(scope.results).toEqual([]);
-            });
+				scope.query = 'Client 0';
+				scope.$digest();
 
-            it('should return the current client', function () {
-                navbar.setData({clientId: 'clientId0'});
+				expect(scope.results).toEqual(client.all());
+				scope.query = 'Client 01';
+				scope.$digest();
 
-                var scope = createDropDown(clients);
+				expect(scope.results).toEqual([]);
+			});
 
-                expect(scope.current).toEqual('Client 0');
-            });
-        });
+			it('should return the current client', function() {
+				navbar.setData({clientId: 'clientId0'});
 
+				var scope = createDropDown(clients);
 
+				expect(scope.current).toEqual('Client 0');
+			});
+		});
 
-    });
+	});
 });
