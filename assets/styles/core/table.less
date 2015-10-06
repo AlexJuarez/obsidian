@@ -17,26 +17,28 @@ table {
 }
 .table-wrapper {
     overflow-y: auto;
-    overflow-x: auto;
+    //overflow-x: auto;
 
     @media(min-width: @screen-sm-min) {
         overflow-y: visible;
-        overflow-x: visible;
+        overflow-x: scroll;
     }
 
     width: 100%;
+    height: 100%;
     .table {
         margin-bottom: 0;
     }
 }
 
 .table {
+    position: relative;
     overflow-y: auto;
-    overflow-x: auto;
+    //overflow-x: auto;
 
     @media(min-width: @screen-sm-min) {
         overflow-y: visible;
-        overflow-x: visible;
+        overflow-x: scroll;
     }
 
     width: 100%;

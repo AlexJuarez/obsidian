@@ -2,8 +2,8 @@
     <div ng-include="'campaignManagement/clients/clients.summary.html'"></div>
 </div>
 <div ui-view="topClients" class="top-clients">
-    <div loading-indicator is-loaded="isLoaded"></div>
-    <h3>Top Clients {{isLoaded}}</h3>
+    <div loading-indicator loading-service="topClientsService"></div>
+    <h3>Top Clients</h3>
     <div class="table-wrapper table-xs-scroll">
         <div basic-table="topClients" class="table table-hover"></div>
     </div>

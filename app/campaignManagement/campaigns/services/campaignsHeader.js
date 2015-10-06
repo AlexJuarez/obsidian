@@ -36,9 +36,11 @@ define(function (require) {
                 'archived': 0
             };
 
-            for (var i = 0; i < datum.length; i++) {
-                var data = datum[i];
-                output[data.status] = data.metrics.count;
+            if (datum && datum.length) {
+                for (var i = 0; i < datum.length; i++) {
+                    var data = datum[i];
+                    output[data.status] = data.metrics.count;
+                }
             }
 
             return output;
@@ -57,12 +59,25 @@ define(function (require) {
             return cache.get(getApiUriConfig(), initialize);
         }
 
+        function noContent() {
+            var datas = all();
+            var results = [];
+            ng.forEach(datas, function(d) {
+                results.push(d === 0);
+            });
+
+            return results.every(function (d) {
+                return d;
+            });
+        }
+
         return {
             _apiConfig: apiConfig,
             _getApiUriConfig: getApiUriConfig,
             all: all,
             data: data,
-            observe: observe
+            observe: observe,
+            noContent: noContent
         };
     }]);
 });

@@ -4,32 +4,34 @@ define(function (require) {
     var app = require('./../module');
     require('tpl!./loadingIndicator.html');
 
-    app.directive('loadingIndicator', ['topClients', function (topClients) {
+    app.directive('loadingIndicator', [function () {
         return {
             restrict: 'A',
             replace: true,
-            scope: false,
-            // scope: {
-            //     isLoaded: '='
-            // },
+            scope: {},
             templateUrl: 'core/directives/loadingIndicator.html',
-            controller: ['$scope', function ($scope) {
-                topClients.observe(updateTopClients, $scope, true);
+            controller: function ($scope, $attrs, $injector) {
 
-                $scope.topClients = topClients.all();
-            }]
-            // link: function (scope, elem, attr) {
+                $scope.isLoaded = false;
 
-            //     //scope.isLoaded = false;
-            //     //console.log( $parse(attr.isLoaded) );
+                var loadedService = $injector.get($attrs.loadingService);
                 
-            //     scope.$watch(attr.isLoaded, function(newValue) {
-            //         console.log( 'watching attr',newValue );
-            //         //scope.isLoaded = attr.isLoaded;
-            //     });
+                loadedService.observe(updateService, $scope);
 
+                function updateService(newValue, oldValue) {
+                    if ( typeof loadedService.isLoaded === 'function' ) {
+                        
+                        $scope.isLoaded = loadedService.isLoaded();
+                    
+                    }
+                    if ( typeof loadedService.data().isLoaded === 'function' ) {
+                        
+                        $scope.isLoaded = loadedService.data().isLoaded();
+                    
+                    }
+                }
                 
-            // }
+            }
         };
     }]);
 });

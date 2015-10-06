@@ -7,21 +7,13 @@ define(function (require) {
     app.controller('clientsCtrl', ['$scope', 'topClientsService', '$modal', function ($scope, topClients, $modal) {
 
         $scope.openNewClientModal = openNewClientModal;
-        //$scope.isLoaded = false;
-        //console.log( '$scope.isLoaded',$scope.isLoaded );
 
         topClients.init();
 
-        topClients.observe(updateTopClients, $scope, true);
-
+        topClients.observe(updateTopClients, $scope);
 
         function updateTopClients() {
             $scope.topClients = topClients.all();
-            //console.log( 'updateTopClients',$scope.topClients.data );
-            // if ($scope.topClients.data) {
-            //     $scope.isLoaded = true;
-            // }
-            // console.log( '$scope.isLoaded',$scope.isLoaded );
         }
 
         var createModal;

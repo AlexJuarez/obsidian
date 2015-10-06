@@ -171,12 +171,23 @@ define(function (require) {
             placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
         }
 
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return placementCache.get(getApiConfig(), initialize);
+
+        }
+
         return {
             _transformPlacementGroups: _transformPlacementGroups,
             _getPlacementGroups: _getPlacementGroups,
             _getApiConfig: getApiConfig,
             getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
+            data: data,
             observe: observe
         };
     }]);
