@@ -1,149 +1,182 @@
-define(function (require) {
-    'use strict';
+define(function(require) {
+	'use strict';
 
-    require('./divisionDropdown');
-    require('angularMocks');
+	require('./divisionDropdown');
+	require('angularMocks');
 
-    var template = require('tpl!./division.html');
+	var template = require('tpl!./division.html');
 
-    describe('divisionDropdownDirective', function () {
-        var compile, rootScope, document, division, navbar, client;
+	var divisions = [
+		{
+			'id': 'divisionId0',
+			'name': 'Division 0',
+			'pinned': true,
+			'active': false,
+			'lastViewed': '2015-01-01T12:00:00Z',
+			'client': {'id': 'clientId0'}
+		},
+		{
+			'id': 'divisionId1',
+			'name': 'Division 1',
+			'pinned': false,
+			'active': false,
+			'lastViewed': '2015-01-01T12:00:00Z',
+			'client': {'id': 'clientId1'}
+		}
+	];
 
-        beforeEach(function () {
-            module('app.core');
+	describe('divisionDropdownDirective', function() {
+		var compile, rootScope, document, division, navbar, client;
 
-            inject(function ($compile, $rootScope, $document, $templateCache, navbarService, divisionService, clientService) {
-                $templateCache.put('core/navbar/directives/division.html', template);
+		beforeEach(function() {
+			module('app.core');
 
-                compile = $compile;
-                rootScope = $rootScope;
-                document = $document;
-                navbar = navbarService;
-                division = divisionService;
-                client = clientService;
-            });
-        });
+			module(function($provide) {
+				var divisionId;
+				var getDivisionName = function() {
+					var divisionName;
+					divisions.forEach(function(division) {
+						if(division.id === divisionId) {
+							divisionName = division.name;
+						}
+					});
+					return divisionName;
+				};
 
-        function createDropDown(divisions) {
-            division.setData(divisions);
-            client.setData([{
-                'id': 'clientId0',
-                'name': 'Client 0',
-                'pinned': true,
-                'active': false,
-                'lastViewed': '2015-01-01T12:00:00Z',
-                'lastViewedName': 'Joe Snoopypants',
-                'channel': 'Advertisers'
-            }]);
+				$provide.value('navbarService', {
+					observe: function(callback) {
+						callback();
+					},
+					all: function() {
+						return {
+							division: {
+								name: getDivisionName()
+							}
+						}
+					},
+					setData: function(data) {
+						divisionId = data.divisionId;
+					}
+				});
+			});
 
-            var parentScope = rootScope.$new();
-            var html = compile('<div division-dropdown="test"></div>')(parentScope);
-            parentScope.$apply();
-            return html;
-        }
+			inject(function($compile, $rootScope, $document, $templateCache, navbarService, divisionService, clientService) {
+				$templateCache.put('core/navbar/directives/division.html', template);
 
-        describe('controller', function () {
-            var divisions = [
-                {
-                    'id': 'divisionId0',
-                    'name': 'Division 0',
-                    'pinned': true,
-                    'active': false,
-                    'lastViewed': '2015-01-01T12:00:00Z',
-                    'client': {'id': 'clientId0'}
-                },
-                {
-                    'id': 'divisionId1',
-                    'name': 'Division 1',
-                    'pinned': false,
-                    'active': false,
-                    'lastViewed': '2015-01-01T12:00:00Z',
-                    'client': {'id': 'clientId1'}
-                }
-            ];
+				compile = $compile;
+				rootScope = $rootScope;
+				document = $document;
+				navbar = navbarService;
+				division = divisionService;
+				client = clientService;
+			});
+		});
 
-            it('should check to see if elements are pinned.',function(){
-                var scope = createDropDown(divisions).scope();
+		function createDropDown(divisions) {
+			division.setData(divisions);
+			client.setData([
+				{
+					'id': 'clientId0',
+					'name': 'Client 0',
+					'pinned': true,
+					'active': false,
+					'lastViewed': '2015-01-01T12:00:00Z',
+					'lastViewedName': 'Joe Snoopypants',
+					'channel': 'Advertisers'
+				}
+			]);
 
-                expect(scope.pinned).toEqual([division.all()[0]]);
-            });
+			var parentScope = rootScope.$new();
+			var html = compile('<div division-dropdown="test"></div>')(parentScope);
+			parentScope.$apply();
+			return html;
+		}
 
-            it('should check to see if the accountsMap exists',function(){
-                var scope = createDropDown(divisions).scope();
+		describe('controller', function() {
+			it('should check to see if elements are pinned.', function() {
+				var scope = createDropDown(divisions).scope();
 
-                expect(scope.divisionsMap).toEqual(division.alphabetMap());
-            });
+				expect(scope.pinned).toEqual([division.all()[0]]);
+			});
 
-            it('should change the pinned account when pin state change', function() {
-                var scope = createDropDown(divisions).scope();
+			it('should check to see if the accountsMap exists', function() {
+				var scope = createDropDown(divisions).scope();
 
-                expect(scope.pin).toEqual(jasmine.any(Function));
-                expect(scope.unpin).toEqual(jasmine.any(Function));
+				expect(scope.divisionsMap).toEqual(division.alphabetMap());
+			});
 
-                spyOn(scope, 'unpin');
-                spyOn(scope, 'pin');
+			it('should change the pinned account when pin state change', function() {
+				var scope = createDropDown(divisions).scope();
 
-                scope.unpin(division.all()[0]);
-                expect(scope.unpin).toHaveBeenCalled();
+				expect(scope.pin).toEqual(jasmine.any(Function));
+				expect(scope.unpin).toEqual(jasmine.any(Function));
 
-                scope.pin(division.all()[0]);
-                expect(scope.pin).toHaveBeenCalled();
-            });
+				spyOn(scope, 'unpin');
+				spyOn(scope, 'pin');
 
-            it('should have the current account', function() {
-                var scope = createDropDown(divisions).scope();
+				scope.unpin(division.all()[0]);
+				expect(scope.unpin).toHaveBeenCalled();
 
-                expect(scope.current).toEqual('All Divisions');
-            });
+				scope.pin(division.all()[0]);
+				expect(scope.pin).toHaveBeenCalled();
+			});
 
-            it('should update the query results on a search', function () {
-                var scope = createDropDown(divisions).scope();
+			it('should have the current account', function() {
+				var scope = createDropDown(divisions).scope();
 
-                scope.query = 'Division 0';
-                scope.$digest();
+				expect(scope.current).toEqual('All Divisions');
+			});
 
-                expect(scope.results).toEqual([division.all()[0]]);
+			it('should update the query results on a search', function() {
+				var scope = createDropDown(divisions).scope();
 
-                scope.query = 'Division 01'; //real is 'Account 1'
-                scope.$digest();
+				scope.query = 'Division 0';
+				scope.$digest();
 
-                expect(scope.results).toEqual([]);
-            });
+				expect(scope.results).toEqual([division.all()[0]]);
 
-            it('should hide the elment when there is one division with an empty name', function () {
-                var elementArray = createDropDown([{
-                    'name': '',
-                    'client': {'id': 'clientId3'}
-                }]);
-                var scope = elementArray.scope();
+				scope.query = 'Division 01'; //real is 'Account 1'
+				scope.$digest();
 
-                scope.$digest();
-                expect(elementArray[0].style.display).toEqual('none');
-            });
+				expect(scope.results).toEqual([]);
+			});
 
-            it('should hide the elment when there are no divisions', function () {
-                var elementArray = createDropDown([]);
-                var scope = elementArray.scope();
+			it('should hide the elment when there is one division with an empty name', function() {
+				var elementArray = createDropDown([
+					{
+						'name': '',
+						'client': {'id': 'clientId3'}
+					}
+				]);
+				var scope = elementArray.scope();
 
-                scope.$digest();
-                expect(elementArray[0].style.display).toEqual('none');
-            });
+				scope.$digest();
+				expect(elementArray[0].style.display).toEqual('none');
+			});
 
-            it('should show the elment when there are >1 divisions', function () {
-                var elementArray = createDropDown(divisions);
-                var scope = elementArray.scope();
+			it('should hide the elment when there are no divisions', function() {
+				var elementArray = createDropDown([]);
+				var scope = elementArray.scope();
 
-                scope.$digest();
-                expect(elementArray[0].style.display).toEqual('block');
-            });
+				scope.$digest();
+				expect(elementArray[0].style.display).toEqual('none');
+			});
 
-            it('should return the first division', function () {
-                navbar.setData({divisionId: 'divisionId0'});
+			it('should show the elment when there are >1 divisions', function() {
+				var elementArray = createDropDown(divisions);
+				var scope = elementArray.scope();
 
-                var scope = createDropDown(divisions).scope();
+				scope.$digest();
+				expect(elementArray[0].style.display).toEqual('block');
+			});
 
-                expect(scope.current).toEqual('Division 0');
-            });
-        });
-    });
+			it('should return the first division', function() {
+				navbar.setData({divisionId: 'divisionId0'});
+
+				var scope = createDropDown(divisions).scope();
+
+				expect(scope.current).toEqual('Division 0');
+			});
+		});
+	});
 });

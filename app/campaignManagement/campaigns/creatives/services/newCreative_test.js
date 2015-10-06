@@ -31,7 +31,7 @@ define(function (require) {
                 expandedWidth: NaN,
                 expandedHeight: NaN
             };
-            var calledUrl = '//studio.mixpo.com/studio?ad=IMG&env=multiscreen&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IMG&env=multiscreen&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler);

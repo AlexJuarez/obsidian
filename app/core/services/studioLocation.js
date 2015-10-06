@@ -24,7 +24,7 @@ define(function(require) {
             } else if (hostname.indexOf('mixpo.com') > -1) {
                 return '//' + hostname.replace(/(w*)\.mixpo\.com/, '$1-studio.mixpo.com');
             } else {
-                return '//studio.mixpo.com';
+                return '//alpha-studio.mixpo.com';
             }
         }
 
