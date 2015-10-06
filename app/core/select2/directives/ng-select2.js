@@ -31,7 +31,7 @@ define(function (require) {
         searchLimit: 5
     });
 
-    var attrOptions = ['placeholder', 'limit', 'searchLimit', 'minimumResultsForSearch', 'dropdownAutoWidth', 'maximumSelectionLength', 'tokenSeparators', 'tags', 'ajax', 'width', 'allowClear', 'formatModelInsert'];
+    var attrOptions = ['placeholder', 'limit', 'searchLimit', 'minimumResultsForSearch', 'formatSelectionTooBig', 'maximumSelectionLength', 'tokenSeparators', 'tags', 'query', 'width', 'allowClear', 'formatModelInsert'];
 
     var placeholderMultiselect = 'Select some options';
     var placeholderSelect = 'Select an option';
@@ -58,6 +58,40 @@ define(function (require) {
                                 name: v.text
                             };
                         };
+
+                    if (attr.ngOptions) {
+                        scope.$watchCollection(getValues(), function (values) {
+                            data = selectOptions.getOptions(values);
+                            initOrUpdate();
+                        });
+                    } else {
+                        var values = element.find('option');
+                        data = selectOptions.getOptions(values);
+                    }
+
+                    if (ngModel) {
+                        if (attr.ngModelOptions) {
+                            var ngModelOptions = $injector.get('ngModelOptionsDirective')[0];
+                            $injector.invoke(ngModelOptions.controller, ngModel, {$scope: scope, $attrs: attr});
+                        }
+
+                        modelSync = modelSyncFactory(ngModel, trackValues, {
+                            formatModel: formatModelInsert,
+                            valuesFn: getValues(),
+                            scope: scope,
+                            isMultiple: isMultiple
+                        });
+
+                        var originalRender = ngModel.$render;
+                        ngModel.$render = function () {
+                            originalRender();
+                            initOrUpdate();
+                        };
+
+                        scope.$watch(modelSync.get, ngModel.$render, true);
+                    } else {
+                        initOrUpdate();
+                    }
 
                     function getValues() {
                         return selectOptions.valuesFn;
@@ -88,16 +122,6 @@ define(function (require) {
                         return opts;
                     }
 
-                    if (attr.ngOptions) {
-                        scope.$watchCollection(getValues(), function (values) {
-                            data = selectOptions.getOptions(values);
-                            initOrUpdate();
-                        });
-                    } else {
-                        var values = element.find('option');
-                        data = selectOptions.getOptions(values);
-                    }
-
                     function matches(term, data) {
                         term = $.trim(term);
                         if (!term || data.id === '') {
@@ -123,13 +147,15 @@ define(function (require) {
 
                     function setUpSelect2() {
                         return $timeout(function () {
-                            opts.query = function (query) {
-                                if (attr.query) {
-                                    attr.query(data, query.term, query.callback);
-                                } else {
-                                    query.callback({results: matches(query.term, data)});
-                                }
-                            };
+                            if (!opts.tags) {
+                                opts.query = function (query) {
+                                    if (attr.query) {
+                                        attr.query(data, query.term, query.callback);
+                                    } else {
+                                        query.callback({results: matches(query.term, data)});
+                                    }
+                                };
+                            }
 
                             if (isMultiple) {
                                 opts.placeholder = opts.placeholder || placeholderMultiselect;
@@ -200,30 +226,6 @@ define(function (require) {
                         select2.then(function () {
                             selectValues();
                         });
-                    }
-
-                    if (ngModel) {
-                        if (attr.ngModelOptions) {
-                            var ngModelOptions = $injector.get('ngModelOptionsDirective')[0];
-                            $injector.invoke(ngModelOptions.controller, ngModel, {$scope: scope, $attrs: attr});
-                        }
-
-                        modelSync = modelSyncFactory(ngModel, trackValues, {
-                            formatModel: formatModelInsert,
-                            valuesFn: getValues(),
-                            scope: scope,
-                            isMultiple: isMultiple
-                        });
-
-                        var originalRender = ngModel.$render;
-                        ngModel.$render = function () {
-                            originalRender();
-                            initOrUpdate();
-                        };
-
-                        scope.$watch(modelSync.get, ngModel.$render, true);
-                    } else {
-                        initOrUpdate();
                     }
 
                     //On destroy clean up the timeout/ select2 element

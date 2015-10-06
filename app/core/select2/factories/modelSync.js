@@ -46,6 +46,7 @@ define(function (require) {
                     trackValue = tracker.get(value.id);
                     if (!trackValue) {
                         newValues.push(formatModel(value));
+                        value.element.removeAttribute('data-select2-tag');
                     } else {
                         oldValues.push(trackValue.viewValue);
                     }
