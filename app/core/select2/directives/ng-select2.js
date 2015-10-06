@@ -337,7 +337,7 @@ define(function(require){
                             if (trackValue) {
                                 //focus is lost when change is triggered
                                 focused = $(':focus');
-                                element.val('val', trackValue.index);
+                                element.select2('val', trackValue.index);
                                 if (focused.length) {
                                     focused.focus();
                                 }
