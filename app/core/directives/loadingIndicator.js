@@ -7,7 +7,7 @@ define(function (require) {
     app.directive('loadingIndicator', [function () {
         return {
             restrict: 'A',
-            replace: false,
+            replace: true,
             scope: {
                 isLoaded: '=loadingIndicator',
                 showLoader: '='
