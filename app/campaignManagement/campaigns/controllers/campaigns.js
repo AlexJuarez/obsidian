@@ -7,6 +7,7 @@ define(function (require) {
     var ng = require('angular');
 
     app.controller('campaignsCtrl', ['$scope', '$state', 'campaignService', 'accountService', 'campaignsByStatus', 'campaignsByAccount', '$timeout', function ($scope, $state, campaigns, accounts, campaignsByStatus, campaignsByAccount, $timeout) {
+
         //Needed for viewBy query Parameter
         $scope.params = $state.params;
         $scope.filter = '';

@@ -1,7 +1,7 @@
-<div loading-indicator loading-service="creatives"></div>
 <div ng-if="!viewAs">
     <div creative-thumbnails></div>
 </div>
 <div ng-if="viewAs == 'list'" ng-controller="creativesListCtrl">
+		<div loading-indicator="creativesAreLoaded" show-loader="showLoader"></div>
     <div basic-table="creatives" class="table table-hover"></div>
 </div>

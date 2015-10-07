@@ -35,8 +35,9 @@ define(function(require) {
         function updateMeta() {
 
             var allCreatives = creatives.all().data;
-
+            
             if (allCreatives) {
+                
                 var creative = 0;
 
                 var meta = {
