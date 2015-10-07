@@ -5,13 +5,13 @@ module.exports = {
     dev: {
         options: {
             script: 'app.js',
-            args: process.argv.slice(2),
-            background: true
+            args: process.argv.slice(2)
         }
     },
     prod: {
         options: {
             script: 'app.js',
+            args: process.argv.slice(2),
             node_env: 'production'
         }
     }

@@ -4,8 +4,6 @@ define(function(require){
     require('./trackValues');
     require('angularMocks');
 
-    var ng = require('angular');
-
     describe('trackValues', function() {
         var tracked;
 
