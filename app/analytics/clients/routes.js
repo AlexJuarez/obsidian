@@ -13,11 +13,11 @@ define(function (require) {
                 url: '/client/:clientId',
                 views: {
                     'summary': {
-                        templateUrl: 'analytics/clients/index.summary.html'
+                        templateUrl: 'analytics/clients/index.summary.html',
+                        controller: 'clientCtrl'
                     },
                     'content': {
-                        templateUrl: 'analytics/clients/index.content.html',
-                        controller: 'clientCtrl'
+                        templateUrl: 'analytics/clients/index.content.html'
                     }
                 }
             });
