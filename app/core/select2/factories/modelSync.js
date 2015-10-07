@@ -79,9 +79,9 @@ define(function (require) {
             function updateModel(values) {
                 var data = getSelectData(values);
 
-                if (isMultiple) {
+                if (isMultiple && !ng.equals(data, get())) {
                     set(data);
-                } else {
+                } else if (!ng.equals(data[0], get())) {
                     set(data[0]);
                 }
                 scope.$apply();

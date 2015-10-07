@@ -13,11 +13,11 @@ define(function (require) {
                 url: '/account/:accountId',
                 views: {
                     'summary': {
-                        templateUrl: 'analytics/accounts/index.summary.html'
+                        templateUrl: 'analytics/accounts/index.summary.html',
+                        controller: 'accountCtrl'
                     },
                     'content': {
-                        templateUrl: 'analytics/accounts/index.content.html',
-                        controller: 'accountCtrl'
+                        templateUrl: 'analytics/accounts/index.content.html'
                     }
                 }
             });
