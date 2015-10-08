@@ -59,7 +59,7 @@
     </div>
     <div class="form-group">
         <label class="form-label"><span class="sr-only">Select Options</span></label>
-        <select select2 ng-model="selected5" ng-model-options="{ getterSetter: true }" ng-options="item.name for item in select track by item.value"></select>
+        <select select2 ng-model="selected5" ng-options="item.name group by item.group for item in groupByExample track by item.value"></select>
     </div>
     <div class="form-group">
         <label>

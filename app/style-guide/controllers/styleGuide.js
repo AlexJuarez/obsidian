@@ -33,6 +33,34 @@ define(function (require) {
             current: 45300
         };
 
+        $scope.groupByExample = [
+            {
+                name: 'First Choice',
+                value: '1',
+                group: 'thing 1'
+            },
+            {
+                name: 'Second',
+                value: '2',
+                group: 'thing 1'
+            },
+            {
+                name: 'Choice #3',
+                value: '3',
+                group: 'thing 1'
+            },
+            {
+                name: 'Pick me, pick me, pick me!',
+                value: '4',
+                group: 'thing 2'
+            },
+            {
+                name: 'Sheeple',
+                value: '5',
+                group: 'thing 2'
+            }
+        ];
+
         $timeout(function () {
             $location.hash($location.hash());
             $anchorScroll();
@@ -41,11 +69,6 @@ define(function (require) {
         $scope.open = open;
 
         $scope.selected = [];
-
-        var _selected5;
-        $scope.selected5 = function (value) {
-            return arguments.length ? (_selected5 = value) : _selected5;
-        };
 
         $scope.select = [
             {
