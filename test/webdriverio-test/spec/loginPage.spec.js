@@ -1,9 +1,9 @@
-var webdriverio = require('webdriverio');
-var options = { 
-  desiredCapabilities: { browserName: 'firefox' }
-};
+//var webbrowserio = require('webbrowserio');
+//var options = { 
+//  desiredCapabilities: { browserName: 'firefox' }
+//};
 
-var driver = {};
+//var browser = {};
 
 var LoginPage = (function( ) {
 
@@ -11,7 +11,7 @@ var LoginPage = (function( ) {
       passwordField = '#password';
 
   this.goToWebsite = function() {
-    driver
+    browser
       .url('http://studio.mixpo.com', function() {
         console.log('went to http://studio.mixpo.com');
       })
@@ -21,23 +21,23 @@ var LoginPage = (function( ) {
         expect(title).toBe('Sign in to your Mixpo SmartVideo advertising account'); 
         console.log('made it to the mixpo homepage!');
       });
-    return driver;
+    return browser;
   };
 /*
   this.setEmail = function(strEmail) {
-    driver
+    browser
       .setValue(userField, strEmail, function() {
         console.log('set email');
     });
-    return driver;
+    return browser;
   };
 
   this.setPassword = function(strPassword) {
-      driver
+      browser
           .setValue(passwordField, strPassword, function() {
               console.log('set password');
           });
-      return driver;
+      return browser;
   };
 */
   this.loginToWebsite = function(strEmail, strPassword) { 
@@ -56,23 +56,23 @@ var LoginPage = (function( ) {
           expect(err).toBeFalsy();
           expect(title).not.toBe('Sign in to your Mixpo SmartVideo advertising account'); 
         });
-      return driver;
+      return browser;
   };
 
 });
 
 describe('New Ad Build by LMP Creative Producer', function () {
 
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 9999999;
+//  jasmine.DEFAULT_TIMEOUT_INTERVAL = 9999999;
 
-  beforeEach(function (done) {
-    driver = webdriverio.remote( );
-    driver.init(done);
-  });
+//  beforeEach(function (done) {
+//    browser = webbrowserio.remote( );
+//    browser.init(done);
+//  });
 
-  afterEach(function(done) {
-    driver.end(done);
-  });
+//  afterEach(function(done) {
+//    browser.end(done);
+//  });
 
   it('will have no account ____', function(done) {
 /*
@@ -84,16 +84,16 @@ describe('New Ad Build by LMP Creative Producer', function () {
     loginPage = new LoginPage();
     loginPage.loginToWebsite('rawr','lulz');
 
-    driver.pause(30000)
+    browser.pause(30000)
       .call(done);
     //  .setEmail('rawr')
     //  .setPassword('lols')
     //  .click(loginPage.passwordField)
     //  .keys('Enter')
     //  .call(done);
-    //driver.call(done);
+    //browser.call(done);
 /*
-    driver
+    browser
       .url('http://studio.mixpo.com')
       .getTitle(function(err,title){
         expect(err).toBeFalsy();
@@ -104,7 +104,7 @@ describe('New Ad Build by LMP Creative Producer', function () {
     //landingPage.
     //console.log('should be logged in off the loginpage');
     //expect(true).toBe(true);
-    //driver.call(done);
+    //browser.call(done);
   });
 
 });  
