@@ -19,6 +19,9 @@ define(function (require) {
                     ]
                 };
             },
+            noContent: function () {
+                return {};
+            },
             observe: function() {}
         };
 

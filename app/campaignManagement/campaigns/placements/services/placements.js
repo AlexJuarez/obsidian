@@ -181,7 +181,7 @@ define(function (require) {
             var datas = all(true);
             var results = [];
             ng.forEach(datas, function(d) {
-                results.push(d == 0);
+                results.push(d === 0);
             });
 
             return results.every(function (d) {

@@ -2,7 +2,6 @@ define(function (require) {
     'use strict';
 
     var app = require('./../module');
-    var ng = require('angular');
     require('tpl!./noContent.html');
 
     app.directive('noContent', [function () {
@@ -22,11 +21,10 @@ define(function (require) {
 
                 function assignObserver() {
                     if ($state.params.campaignId) {
-                        
-                        if ($state.current.url === '/placements') {
+                        if ($state.current.name === 'cm.campaigns.detail.placements') {
                             placements.observe(updatePlacementMsg, $scope);
                         }
-                        if ($state.current.url === '/thumbnails' || $state.current.url === '/list') {
+                        if ($state.current.name === 'cm.campaigns.detail.creatives') {
                             creatives.observe(updateCreativeMsg, $scope);
                         }
                         
