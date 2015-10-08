@@ -41,11 +41,10 @@ define(function (require) {
             return {
                 restrict: 'A',
                 require: '?ngModel',
-                priority: 0.5,
-                terminal: true,
                 link: function (scope, element, attr, ngModel) {
+                    var optionsExpression = attr.ngOptions || attr.s2Options;
                     var trackValues = trackValuesFactory();
-                    var selectOptions = selectOptionsFactory(attr.ngOptions, element, scope, trackValues);
+                    var selectOptions = selectOptionsFactory(optionsExpression, element, scope, trackValues);
                     var modelSync;
                     var theme, data, select2;
                     var initialized = false;
@@ -59,7 +58,7 @@ define(function (require) {
                             };
                         };
 
-                    if (attr.ngOptions) {
+                    if (optionsExpression) {
                         scope.$watchCollection(getValues(), function (values) {
                             data = selectOptions.getOptions(values);
                             initOrUpdate();
@@ -84,6 +83,7 @@ define(function (require) {
 
                         var originalRender = ngModel.$render;
                         ngModel.$render = function () {
+                            console.log('modelvalue changed', ngModel.$viewValue);
                             originalRender();
                             initOrUpdate();
                         };
@@ -124,7 +124,7 @@ define(function (require) {
 
                     function matches(term, data) {
                         term = $.trim(term);
-                        if (!term || data.id === '') {
+                        if (!term || data.id === '' || data.id === '?') {
                             return data.slice(0, opts.limit);
                         }
 
@@ -153,7 +153,7 @@ define(function (require) {
 
                     function setUpSelect2() {
                         return $timeout(function () {
-                            if (!opts.tags) {
+                            if (!opts.tags && optionsExpression) {
                                 opts.query = function (query) {
                                     if (attr.query) {
                                         attr.query(data, query.term, query.callback);
@@ -167,14 +167,23 @@ define(function (require) {
                                 opts.placeholder = opts.placeholder || placeholderMultiselect;
                             } else {
                                 //add a element to assume the placeholder value
-                                element.append(ng.element('<option />'));
                                 opts.placeholder = opts.placeholder || placeholderSelect;
+                                if (attr.s2Options) {
+                                    element.prepend('<option value="" selected="selected" />');
+                                } else if (attr.ngOptions) {
+                                    var text = element.children().eq(0).text();
+                                    if (!text) {
+                                        element.children().eq(0).attr('value', '');
+                                    }
+                                }
                             }
 
-                            if (!opts.tags) {
-                                opts.data = ng.copy(data.slice(0, opts.limit));
-                            } else {
-                                opts.data = data;
+                            if (attr.s2Options) {
+                                if (!opts.tags) {
+                                    opts.data = ng.copy(data.slice(0, opts.limit));
+                                } else {
+                                    opts.data = data;
+                                }
                             }
 
                             element.select2(opts);
@@ -193,14 +202,12 @@ define(function (require) {
                             }*/
 
                             var debounce = null;
-                            if (modelSync) {
+                            if (modelSync && !attr.ngOptions && isMultiple) {
                                 element.on('change', function () {
-                                    if (!debounce) {
-                                        debounce = $timeout(function () {
-                                            modelSync.updateModel(element.select2('data'));
-                                            debounce = null;
-                                        }, 10);
-                                    }
+                                    debounce = $timeout(function() {
+                                        modelSync.updateModel(element.select2('data'));
+                                        debounce = null;
+                                    }, 10);
                                 });
                             }
                         });
@@ -221,20 +228,25 @@ define(function (require) {
                                     });
 
                                     //focus is lost when change is triggered
-                                    focused = $(':focus');
-                                    element.val(values).trigger('change');
-                                    if (focused.length) {
-                                        focused.focus();
-                                    }
+                                    $timeout(function() {
+                                        focused = $(':focus');
+                                        element.val(values).trigger('change');
+                                        if (focused.length) {
+                                            focused.focus();
+                                        }
+                                    });
                                 } else {
                                     var trackValue = trackValues.get(viewValues);
                                     if (trackValue) {
                                         //focus is lost when change is triggered
-                                        focused = $(':focus');
-                                        element.val(trackValue.index).trigger('change');
-                                        if (focused.length) {
-                                            focused.focus();
-                                        }
+                                        $timeout(function() {
+                                            focused = $(':focus');
+                                            //change event triggers a ngModel update
+                                            element.val(trackValue.index).trigger('change');
+                                            if (focused.length) {
+                                                focused.focus();
+                                            }
+                                        });
                                     }
                                 }
                             }
