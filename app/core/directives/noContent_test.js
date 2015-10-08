@@ -191,7 +191,7 @@ define(function (require) {
         
         it('should set the variable "showCampaignMsg" to true', function(){
             state.params = { campaignId: 'testClient'};
-            state.current.url = '/placements';
+            state.current.name = 'cm.campaigns.detail.placements';
 
             var el = generateEl();
             var isoScope = el.isolateScope();
@@ -201,7 +201,7 @@ define(function (require) {
         
         it('should create the notification element with the appropriate message', function(){
             state.params = { campaignId: 'testClient'};
-            state.current.url = '/placements';
+            state.current.name = 'cm.campaigns.detail.placements';
 
             var el = generateEl();
             
@@ -232,7 +232,7 @@ define(function (require) {
         
         it('should set the variable "showCreativeMsg" to true', function(){
             state.params = { campaignId: 'testClient'};
-            state.current.url = '/thumbnails';
+            state.current.name = 'cm.campaigns.detail.creatives';
 
             var el = generateEl();
             var isoScope = el.isolateScope();
@@ -242,7 +242,7 @@ define(function (require) {
         
         it('should create the notification element with the appropriate message', function(){
             state.params = { campaignId: 'testClient'};
-            state.current.url = '/thumbnails';
+            state.current.name = 'cm.campaigns.detail.creatives';
 
             var el = generateEl();
             
