@@ -5,8 +5,7 @@
         <span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span></h2>
 </div>
 <div class="modal-body">
-    <form class="form form-horizontal" role="form" novalidate
-          name="newPlacement">
+    <form class="form form-horizontal" role="form" novalidate name="newPlacement">
         <div ng-pluralize ng-show="newPlacement.$invalid && submitted"
              class="alert alert-danger"
              count="(newPlacement.$error | errorCount)"
@@ -30,9 +29,9 @@
             </div>
         </div>
 
-        <div assign-publisher placement="placement"></div>
+        <div assign-publisher></div>
 
-        <div start-end-dates placement="placement"></div>
+        <div start-end-dates></div>
 
         <div class="form-group row">
             <label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>
@@ -43,7 +42,7 @@
             </div>
         </div>
 
-        <div rate-types></div>
+        <div rate-types placement="placement"></div>
 
         <div class="form-group row">
             <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>
@@ -55,7 +54,7 @@
             </div>
         </div>
 
-        <div assign-creative placement="placement"></div>
+        <div assign-creative></div>
     </form>
 </div>
 <div class="modal-footer">

@@ -10,10 +10,7 @@ define(function(require) {
 			return {
 				restrict: 'A',
 				replace: true,
-				scope: {
-					publishers: '=',
-					placement: '='
-				},
+				scope: false,
 				templateUrl: 'campaignManagement/campaigns/placements/directives/assign-publisher.html',
 				controller: [
 					'$scope', 'navbarService', 'clientPublisherRecordService',

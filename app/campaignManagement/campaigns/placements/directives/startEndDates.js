@@ -10,11 +10,9 @@ define(function (require) {
 		return {
 			restrict: 'A',
 			replace: true,
-			scope: {
-				placement: '='
-			},
+			scope: false,
 			templateUrl: 'campaignManagement/campaigns/placements/directives/start-end-dates.html',
-			controller: ['$scope', function ($scope) {
+			controller: ['$scope', function($scope) {
 				$scope.format = 'MM/dd/yyyy';
 				$scope.openPicker = openPicker;
 				$scope.datePickers = {};
@@ -43,7 +41,7 @@ define(function (require) {
 						// Date doesn't parse!
 						date = new Date('Jan 1 2000');
 					}
-					$event.target.value = $filter('date')(date, 'M/d/yyyy');
+					$event.target.value = $filter('date')(date, 'MM/dd/yyyy');
 				}
 			}]
 		};

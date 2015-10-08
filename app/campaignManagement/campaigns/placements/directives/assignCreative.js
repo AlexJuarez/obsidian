@@ -9,15 +9,14 @@ define(function (require) {
 		return {
 			restrict: 'A',
 			replace: true,
-			scope: {
-				placement: '='
-			},
+			scope: false,
 			templateUrl: 'campaignManagement/campaigns/placements/directives/assign-creative.html',
-			controller: ['$scope', 'creatives', function ($scope, creativeService) {
+			controller: ['$scope', 'creatives', 'ENUMS', function ($scope, creativeService, ENUMS) {
+				var creativeTypes = ENUMS.down.creativeTypes;
 
-				creativeService.observe(setupPickCreative, $scope);
+				creativeService.observe(updateCreativesByAdType, $scope);
 
-				function setupPickCreative() {
+				function updateCreativesByAdType() {
 					var adTypes = {};
 					var creatives = creativeService.data().all();
 
@@ -31,6 +30,16 @@ define(function (require) {
 
 					$scope.creativesByAdType = adTypes;
 				}
+
+				$scope.$watch('creative', function() {
+					$scope.isExpanding = false;
+					if ($scope.creative) {
+						$scope.creativeType = creativeTypes[$scope.creative.type];
+						if ($scope.creative.expandedWidth) {
+							$scope.isExpanding = true;
+						}
+					}
+				});
 			}]
 		};
 	}]);
