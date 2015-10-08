@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
 
-    module.factory('modelSyncFactory', ['$log', function ($log) {
+    module.factory('modelSyncFactory', ['$log', '$timeout', function ($log) {
         return function (ngModel, tracker, options) {
             options = options || {};
             var formatModel = options.formatModel;
@@ -29,15 +29,14 @@ define(function (require) {
             function set(value) {
                 var options = ngModel.$options;
                 if (ng.isFunction(ngModel.$viewValue) && options && options.getterSetter) {
-                    return ngModel.$viewValue(value);
+                    ngModel.$viewValue(value);
                 } else {
-                    return ngModel.$setViewValue(value);
+                    ngModel.$setViewValue(value);
                 }
             }
 
-            function getSelectData(values) {
+            function updateCollection(values) {
                 var newValues = [];
-                var oldValues = [];
                 var trackValue, value;
                 var length = values.length;
 
@@ -46,14 +45,11 @@ define(function (require) {
                     trackValue = tracker.get(value.id);
                     if (!trackValue) {
                         newValues.push(formatModel(value));
-                    } else {
-                        oldValues.push(trackValue.viewValue);
+                        value.element.removeAttribute('data-select2-tag');
                     }
                 }
 
                 addValues(newValues);
-
-                return oldValues.concat(newValues);
             }
 
             /**
@@ -71,27 +67,11 @@ define(function (require) {
                 }
             }
 
-            /**
-             *
-             * @param {{id: String, text: String, children: Array, disabled: Boolean}[]} data - data
-             */
-            function updateModel(values) {
-                var data = getSelectData(values);
-
-                if (isMultiple) {
-                    set(data);
-                } else {
-                    set(data[0]);
-                }
-                scope.$apply();
-            }
-
             return {
-                _getSelectData: getSelectData,
+                updateCollection: updateCollection,
                 _addValues: addValues,
                 get: get,
-                set: set,
-                updateModel: updateModel
+                set: set
             };
         };
     }]);

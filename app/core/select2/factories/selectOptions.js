@@ -114,7 +114,6 @@ define(function(require) {
                             viewValue = viewValueFn(value, locals);
                             id = getTrackByValueFn(viewValue, locals);
 
-                            //
                             tracked.add(id, label, viewValue, value);
 
                             datum = {
@@ -161,9 +160,10 @@ define(function(require) {
                     var data = [];
 
                     if (values) {
-                        var id, text, option;
+                        var text, id, option;
                         for (var i = 0; i < values.length; i++) {
                             option = values[i];
+
                             text = option.innerText;
 
                             if (option.hasAttribute('value')) {

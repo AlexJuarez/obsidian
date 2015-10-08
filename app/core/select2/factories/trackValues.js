@@ -24,7 +24,7 @@ define(function(require) {
             };
 
             Tracked.prototype.contains = function(index) {
-                return typeof this.get(index) !== 'undefined';
+                return !ng.isUndefined(this.get(index));
             };
 
             Tracked.prototype.isEmpty = function(){
