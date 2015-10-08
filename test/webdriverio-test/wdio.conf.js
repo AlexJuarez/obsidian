@@ -10,7 +10,7 @@ exports.config = {
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
     specs: [
-        './test/webdriverio-test/specs/**/*.js'
+        './spec/**/*.js'
     ],
     // Patterns to exclude.
     exclude: [
@@ -86,7 +86,7 @@ exports.config = {
     // Test reporter for stdout.
     // The following are supported: dot (default), spec and xunit
     // see also: http://webdriver.io/guide/testrunner/reporters.html
-    reporter: 'xunit',
+    reporter: 'dot',
     
     //
     // Some reporter require additional information which should get defined here
