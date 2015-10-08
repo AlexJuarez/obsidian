@@ -247,7 +247,7 @@ define(function (require) {
                         }
                     }
 
-                    selectCtrl.writeValue = function (value) {
+                    selectCtrl.writeValue = function () {
                         //noop
                     };
 
