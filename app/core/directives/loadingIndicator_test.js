@@ -6,17 +6,6 @@ define(function (require) {
     var template = require('tpl!./loadingIndicator.html');
     var ng = require('angular');
 
-    // var resp = [{
-    //     metrics: {
-    //         count: 0,
-    //         countAccounts: 0,
-    //         countCampaignsPreFlight: 0,
-    //         countCampaignsInFlight: 0,
-    //         countCampaignsCompleted: 0,
-    //         countCampaignsArchived: 0
-    //     }
-    // }];
-
     describe('Loading Indicator Directive', function () {
         var compile, rootScope, document, httpBackend, apiGenerator, state, clientSetData, divisionSetData;
 
@@ -43,38 +32,30 @@ define(function (require) {
         });
 
         function generateEl(html){
-            //httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({ clientSet: resp});
-            //httpBackend.when('GET', apiGenerator(divisionSetData._getApiConfig())).respond({ divisionSet: resp});
-
 
             var scope = rootScope.$new();
             var el = ng.element(html);
             compile(el)(scope);
             scope.$digest();
 
-            //httpBackend.flush();
-
             return el;
         }
 
         it('should render the element', function(){
-            //state.params = { clientId: 'client0'};
 
             var el = generateEl('<div loading-indicator="clientsAreLoaded" show-loader="showLoader"></div>');
 
-            console.log( el );
             expect(el.length).toEqual(1);
         });
 
-        it('should have isolated scope', function(){
+        it('should have isolated scope with expressions', function(){
             
-            state.params = { clientId: 'client0'};
-            //console.log( 'state',state );
             var el = generateEl('<div loading-indicator></div>');
             var isoScope = el.isolateScope();
-            //console.log( isoScope );
-
+            
             expect(isoScope).toBeDefined();
+
+            
         });
 
 

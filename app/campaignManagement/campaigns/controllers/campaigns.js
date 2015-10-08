@@ -8,14 +8,6 @@ define(function (require) {
 
     app.controller('campaignsCtrl', ['$scope', '$state', 'campaignService', 'accountService', 'campaignsByStatus', 'campaignsByAccount', '$timeout', function ($scope, $state, campaigns, accounts, campaignsByStatus, campaignsByAccount, $timeout) {
 
-        // $scope.campaignsAreLoaded = false;
-        // $scope.showLoader = false;
-        console.log( 'campaignsCtrl', campaigns );
-        // Show spinner if data not loaded
-        // if ( !campaigns.isLoaded() ) {
-        //     $scope.showLoader = true;
-        // }
-
         //Needed for viewBy query Parameter
         $scope.params = $state.params;
         $scope.filter = '';
@@ -32,11 +24,6 @@ define(function (require) {
 
         campaigns.observe(function() {
             updateFilters($scope.filter);
-            
-            // Stop the loading spinner if data loaded
-            // if ( campaigns.isLoaded() ) {
-            //     $scope.campaignsAreLoaded = true;
-            // }
         }, $scope, true);
 
         function filterBy(result) {
