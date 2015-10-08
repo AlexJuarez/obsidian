@@ -27,7 +27,7 @@ define(function (require) {
         function openEditClientModal() {
             if (!editClientModal) {
                 editClientModal = {
-                    clientId: $scope.client.id,
+                    clientId: $scope.client.id || $state.params.clientId,
                     action: 'Edit'
                 };
             }
@@ -49,7 +49,7 @@ define(function (require) {
         function openNewAccountModal() {
             if (!newAccountModal) {
                 newAccountModal = {
-                    clientId: $scope.client.id,
+                    clientId: $scope.client.id || $state.params.clientId,
                     action: 'New'
                 };
             }
@@ -71,7 +71,7 @@ define(function (require) {
         function openNewDivisionModal() {
             if (!newDivisionModal) {
                 newDivisionModal = {
-                    clientId: $scope.client.id,
+                    clientId: $scope.client.id || $state.params.clientId,
                     action: 'New'
                 };
             }

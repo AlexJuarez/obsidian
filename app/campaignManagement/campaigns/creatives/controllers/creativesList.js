@@ -3,11 +3,15 @@
 define(function(require) {
     var app = require('./../../../module');
 
-    app.controller('creativesListCtrl', ['$scope', '$rootScope', '$state', '$filter', 'creatives', function($scope, $rootScope, $state, $filter, creatives) {
-        $scope.filter = $state.params.filter;
+    app.controller('creativesListCtrl', ['$scope', '$rootScope', '$state', '$filter', 'creatives', 'ENUMS', function($scope, $rootScope, $state, $filter, creatives, ENUMS) {
+        $scope.filter = ENUMS.up.creativeTypes[$state.params.filter];
 
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-            $scope.filter = toParams.filter;
+        var cleanUp = $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
+            $scope.filter = ENUMS.up.creativeTypes[toParams.filter];
+        });
+
+        $scope.$on('$destroy', function() {
+            cleanUp();
         });
 
         function updateCreatives() {
@@ -18,7 +22,7 @@ define(function(require) {
                 data: []
             };
 
-            duplicateCreatives.data = $filter('filter')(allCreatives.data, {type: $scope.filter});
+            duplicateCreatives.data = $filter('filter')(allCreatives.data, { type: $scope.filter });
             $scope.creatives = duplicateCreatives;
         }
 

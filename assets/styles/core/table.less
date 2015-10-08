@@ -32,7 +32,6 @@ table {
 }
 
 .table {
-
     overflow-y: auto;
     overflow-x: auto;
 
@@ -244,7 +243,7 @@ table {
             tbody {
                 display: block;
                 white-space: nowrap;
-                overflow-y: hidden;
+                overflow-y: initial;
                 width: auto;
 
                 > tr {
@@ -326,7 +325,14 @@ table {
         padding: 1rem 2rem;
         position: relative;
         .right {
+            display: none;
+            @media(min-width: @screen-sm-min) {
+                display: inline-block;
+            }
             margin-right: 30px;
+            span + span {
+                margin-left: 1rem;
+            }
         }
         &:after {
             font-family: "mixpo-icons";

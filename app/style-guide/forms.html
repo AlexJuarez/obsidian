@@ -59,7 +59,7 @@
     </div>
     <div class="form-group">
         <label class="form-label"><span class="sr-only">Select Options</span></label>
-        <select select2 ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+        <select select2 ng-model="selected5" ng-model-options="{ getterSetter: true }" s2-options="item.name group by item.group for item in groupByExample track by item.value"></select>
     </div>
     <div class="form-group">
         <label>
@@ -115,7 +115,7 @@
     <div class="form-group row">
         <label class="col-sm-2 form-label required"><span>Channel</span></label>
         <div class="col-sm-10">
-            <select select2 ng-model="options">
+            <select ng-model="options" select2>
                 <option>Option 1</option>
                 <option>Option 2</option>
                 <option>Option 3</option>
@@ -263,7 +263,7 @@
     <div class="form-group">
         <label class="form-label"><span>Single Select w/o Search</span></label>
         <div>
-            <select select2 ng-model="selected" ng-options="item.name for item in select track by item.value"></select>
+            <select select2 ng-model="selected" s2-options="item.name for item in select3 track by item.value"></select>
         </div>
     </div>
 </form>
@@ -281,7 +281,7 @@
     <div class="form-group">
         <label class="form-label">
             <span>Single Select w/ Search</span>
-            <select select2 ng-model="selected" minimum-results-for-search="0" ng-options="item.name for item in select track by item.value"></select>
+            <select select2 ng-model="selected" minimum-results-for-search="0" s2-options="item.name for item in select3 track by item.value"></select>
         </label>
     </div>
 </form>
@@ -299,7 +299,7 @@
     <div class="form-group">
         <label class="form-label theme-dark">
             <span>Dark Single Select w/ Search</span>
-            <select select2 ng-model="selected2" minimum-results-for-search="0" ng-options="value for (key, value) in select2 track by key"></select>
+            <select select2 ng-model="selected2" minimum-results-for-search="0" s2-options="value for (key, value) in select2 track by key"></select>
         </label>
     </div>
 </form>

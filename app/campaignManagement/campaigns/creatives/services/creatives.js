@@ -18,7 +18,7 @@ define(function(require) {
     };
 
     var rules = {
-        checked: '',
+        checked: 'checkbox',
         creativeName: '',
         delivering: 'delivering',
         type: '',
@@ -40,8 +40,7 @@ define(function(require) {
     ];
 
     module.service('creatives', [
-        'cacheFactory', '$state', 'creativeRecordService', 'ENUMS', function(cacheFactory, $state, creativeRecordService, ENUMS) {
-
+        'cacheFactory', '$state', 'creativeRecordService', function(cacheFactory, $state, creativeRecordService) {
             var cache = cacheFactory({
                 transform: function(data) {
                     return data.creatives;
@@ -105,30 +104,28 @@ define(function(require) {
                     data: []
                 };
 
-                if (creatives && creatives.length) {
-                    for(var i = 0; i < creatives.length; i ++) {
-                        creative = creatives[i];
-                        transformedTable.data.push({
-                            checked: '<input class="checkbox checkbox-light" type="checkbox"><span></span>',
-                            creativeName: creative.name,
-                            delivering: creative.live,
-                            type: ENUMS.down.creativeTypes[creative.type],
-                            dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                            expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                            campaignId: creative.campaign.id,
-                            numPlacements: {
-                                name: creative.countPlacements || 0,
-                                route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
-                            },
-                            options: '<div creative-options id="\'' + creative.id + '\'"></div>',
+                for(var i = 0; i < creatives.length; i ++) {
+                    creative = creatives[i];
+                    transformedTable.data.push({
+                        checked: false,
+                        creativeName: creative.name,
+                        delivering: creative.live,
+                        type: creative.type,
+                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                        campaignId: creative.campaign.id,
+                        numPlacements: {
+                            name: creative.countPlacements || 0,
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                        },
+                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
-                            // These properties are needed by thumbnails but aren't
-                                        // in the table
-                            id: creative.id,
-                            lastModified: creative.modifiedDate,
-                            thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
-                        });
-                    }
+                        // These properties are needed by thumbnails but aren't
+                        // in the table
+                        id: creative.id,
+                        lastModified: creative.modifiedDate,
+                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
+                    });
                 }
                 return transformedTable;
             }

@@ -46,9 +46,9 @@ define(function (require) {
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory',
         'apiUriGenerator', 'placementsByAdType', 'placementsByCreative',
-        'placementsByPublisher', 'ENUMS',
+        'placementsByPublisher',
         function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
-        placementsByCreative, placementsByPublisher, ENUMS
+        placementsByCreative, placementsByPublisher
     ) {
         var placementCache = cache({
             transform: function(data) {
@@ -92,7 +92,7 @@ define(function (require) {
                         delivering: placement.live,
                         startDate: placement.flightStart,
                         endDate: placement.flightEnd,
-                        type: ENUMS.down.creativeTypes[placement.type],
+                        type: placement.type,
                         pacing: {
                             current: placement.metrics.impressions,
                             max: placement.bookedImpressions

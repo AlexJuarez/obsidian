@@ -62,7 +62,7 @@ define(function (require) {
 
             var result = service.host();
 
-            expect(result).toEqual('//studio.mixpo.com');
+            expect(result).toEqual('//alpha-studio.mixpo.com');
         });
     });
 });

@@ -76,6 +76,7 @@ textarea.form-control {
 
     .select2-container {
         min-width: 100%;
+        max-width: 100%;
     }
 }
 
@@ -93,6 +94,17 @@ textarea.form-control {
             vertical-align: middle;
         }
     }
+    @media (max-width: @screen-sm-min) {
+        .form-label {
+            display: block;
+            width: 100%;
+        }
+        .select2-container {
+            min-width: 100%;
+            max-width: 100%;
+        }
+    }
+
     @media (min-width: @screen-sm-min) {
         .form-label {
             vertical-align: middle;
@@ -144,6 +156,7 @@ textarea.form-control {
         }
         .form-control, .select2-container {
             min-width: 100%;
+            max-width: 100%;
         }
     }
 }

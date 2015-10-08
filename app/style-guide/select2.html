@@ -1,0 +1,45 @@
+<h1 id="select2">Select2</h1>
+<hr />
+<p>A custom select2 directive exists! <code>select2</code> and allows for the following attributes</p>
+<ul>
+    <li><code>multiple</code> - makes the select a multiselect</li>
+    <li><code>select2</code> - options hash</li>
+    <li><code>ng-model</code>optional - binds to a model</li>
+    <li><code>ng-options</code>optional - binds to a value collection</li>
+    <li><code>ng-model-options</code>optional - example <code>ng-model-options="{ getterSetter: true }"</code></li>
+</ul>
+<h3>Options</h3>
+<p>all of the options can be defined either as attributes on the element or in the select2 options hash</p>
+<div class="highlight" highlight>
+<pre><code class="javascript">
+{
+    placeholder: 'a string for the when empty state',
+    limit: 25, //a render limit for the dropdown,
+    searchLimit: 5, //the number of search results to return
+    minimumResultsForSearch: 10, //The thresh hold before displaying a search box
+    tokenSeparators: [','], //an array of separators for multiselect
+    tags: false, //enabled to allow custom tag creation. the created tags are added to the values array
+    query: function(data, term, callback) {}, //returns the drop down results
+    width: {*}, //see <a href="https://select2.github.io/options.html#width">width info</a> for details
+    allowClear: false, //allow the client to remove their selection
+    formatModelInsert: function(v) { return { value: v.id, name: v.text }; } //returns the correct formatting for values insert on new tag creation.
+}
+</code></pre>
+</div>
+<h3>Multi-Select</h3>
+<p>tags and query can not currently enabled at the same time.</p>
+<p>{{multiselect}}</p>
+<div class="form-inline">
+    <div class="form-group">
+        <label for="multiselection">Select Tags:</label>
+    </div>
+    <div class="form-group">
+        <select id="multiselection" tags="true" select2 multiple ng-model="selected" ng-options="item.name for item in multiselect track by item.value"></select>
+    </div>
+</div>
+<div class="highlight" highlight>
+<pre><code class="html">
+&lt;select select2 multiple tags=&quot;true&quot; ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in multiselect track by item.value&quot;&gt;
+&lt;/select&gt;
+</code></pre>
+</div>
