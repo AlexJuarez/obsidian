@@ -21,7 +21,6 @@ define(function (require) {
 					startingDay: 0,
 					maxMode: 'day'
 				};
-				$scope.formatDate = formatDate;
 
 				function openPicker($event, name) {
 					$event.preventDefault();
@@ -32,16 +31,6 @@ define(function (require) {
 					});
 
 					$scope.datePickers[name] = true;
-				}
-
-				function formatDate($event) {
-					var date = new Date($event.target.value);
-					if (isNaN( date.getTime() )) {
-
-						// Date doesn't parse!
-						date = new Date('Jan 1 2000');
-					}
-					$event.target.value = $filter('date')(date, 'MM/dd/yyyy');
 				}
 			}]
 		};

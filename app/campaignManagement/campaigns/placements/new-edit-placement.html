@@ -1,65 +1,77 @@
 <div class="modal-header">
-    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
+	<i class="glyph-icon glyph-close right" ng-click="cancel()"></i>
 
-    <h2 class="modal-title">
-        <span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span></h2>
+	<h2 class="modal-title">
+		<span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span>
+	</h2>
 </div>
 <div class="modal-body">
-    <form class="form form-horizontal" role="form" novalidate name="newPlacement">
-        <div ng-pluralize ng-show="newPlacement.$invalid && submitted"
-             class="alert alert-danger"
-             count="(newPlacement.$error | errorCount)"
-             when="{'0': 'There are no errors on this form',
+	<form class="form form-horizontal" role="form" novalidate name="newPlacement">
+		<div ng-pluralize ng-show="newPlacement.$invalid && submitted"
+				 class="alert alert-danger"
+				 count="(newPlacement.$error | errorCount)"
+				 when="{'0': 'There are no errors on this form',
                     '1': 'There is 1 error on this form.',
                     'other': 'There are {} errors on this form.'}">
-        </div>
-        <div ng-if="!multiplePlacements" class="form-group row"
-             ng-class="{'has-error': newPlacement.name.$invalid && submitted}">
-            <label for="inputName" ng-class="{required:!multiplePlacements}" class="col-sm-3 form-label"><span>Name</span></label>
+		</div>
+		<div ng-if="!multiplePlacements" class="form-group row"
+				 ng-class="{'has-error': newPlacement.name.$invalid && submitted}">
+			<label for="inputName" ng-class="{required:!multiplePlacements}"
+						 class="col-sm-3 form-label"><span>Name</span></label>
 
-            <div class="col-sm-9">
-                <input ng-model="placement.name" type="text" name="name"
-                       class="form-control" id="inputName" placeholder="Name"
-                       ng-required="!multiplePlacements"/>
+			<div class="col-sm-9">
+				<input ng-model="placement.name" type="text" name="name"
+							 class="form-control" id="inputName" placeholder="Name"
+							 ng-required="!multiplePlacements"/>
 
-                <p ng-show="newPlacement.name.$invalid && submitted"
-                   class="help-block">
-                    name is required
-                </p>
-            </div>
-        </div>
+				<p ng-show="newPlacement.name.$invalid && submitted"
+					 class="help-block">
+					name is required
+				</p>
+			</div>
+		</div>
 
-        <div assign-publisher></div>
+		<div assign-publisher></div>
 
-        <div start-end-dates></div>
+		<div start-end-dates></div>
 
-        <div class="form-group row">
-            <label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>
-            <div class="col-sm-9">
-                <input ng-model="placement.bookedImpressions" type="text"
-                       class="form-control" id="bookedImpressions" name="bookedImpressions"
-                       placeholder="Planned Impressions"/>
-            </div>
-        </div>
+		<div class="form-group row"
+				 ng-class="{'has-error': newPlacement.bookedImpressions.$invalid && submitted}">
+			<label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>
 
-        <div rate-types placement="placement"></div>
+			<div class="col-sm-9">
+				<input ng-model="placement.bookedImpressions" type="number"
+							 ng-pattern="'[0-9]*'"
+							 class="form-control" id="bookedImpressions"
+							 name="bookedImpressions"
+							 placeholder="Planned Impressions"/>
 
-        <div class="form-group row">
-            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>
+				<p ng-show="newPlacement.bookedImpressions.$invalid && submitted"
+					 class="help-block">
+					booked impressions must be valid
+				</p>
+			</div>
+		</div>
 
-            <div class="col-sm-9">
-                <input ng-model="campaign.keywordString" type="text"
-                       class="form-control" id="keywords"
-                       placeholder="Keywords"/>
-            </div>
-        </div>
+		<div rate-types placement="placement"></div>
 
-        <div assign-creative></div>
-    </form>
+		<div class="form-group row">
+			<label for="keywords"
+						 class="col-sm-3 form-label"><span>Keywords</span></label>
+
+			<div class="col-sm-9">
+				<input ng-model="campaign.keywordString" type="text"
+							 class="form-control" id="keywords"
+							 placeholder="Keywords"/>
+			</div>
+		</div>
+
+		<div assign-creative></div>
+	</form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save
-        Placement
-    </button>
-    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
+	<button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save
+		Placement
+	</button>
+	<button class="btn btn-default solid" ng-click="cancel()">Cancel</button>
 </div>

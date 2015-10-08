@@ -12,6 +12,7 @@ define(function(require) {
 		function($scope, $q, $modalInstance, $timeout, placements,
 						 placementRecordService, modalState) {
 
+			$scope.numberRegex = /^[0-9]*$/;
 			$scope.ok = ok;
 			$scope.cancel = cancel;
 			$scope.action = modalState.action;

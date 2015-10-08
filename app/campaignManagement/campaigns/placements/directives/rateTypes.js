@@ -9,12 +9,11 @@ define(function (require) {
 		return {
 			restrict: 'A',
 			replace: true,
-			scope: {
-				placement: '='
-			},
+			scope: false,
 			templateUrl: 'campaignManagement/campaigns/placements/directives/rate-types.html',
-			controller: ['$scope', function ($scope) {
+			controller: ['$scope', 'MONEY_REGEX', function ($scope, MONEY_REGEX) {
 
+				$scope.MONEY_REGEX = MONEY_REGEX;
 				$scope.rateTypes = [
 					{id: 'CPM', name: 'CPM'},
 					{id: 'CPC', name: 'CPC'},

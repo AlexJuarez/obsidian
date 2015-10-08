@@ -1,6 +1,6 @@
 <div>
 	<div class="form-group row"
-			 ng-class="{'has-error': (newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted}">
+			 ng-class="{'has-error': (newPlacement.flightStart.$invalid || newPlacement.flightEnd.$invalid) && submitted}">
 		<label
 			class="col-sm-3 form-label required"><span>Flight Dates</span></label>
 
@@ -19,7 +19,6 @@
 											 ng-model="placement.flightStart"
 											 is-open="datePickers.startDateOpened"
 											 min-date="minDate"
-											 ng-blur="formatDate($event)"
 											 datepicker-options="dateOptions"
 											 date-disabled="false"
 											 ng-required="true" close-text="Close"
@@ -47,7 +46,6 @@
 											 ng-model="placement.flightEnd"
 											 is-open="datePickers.endDateOpened"
 											 min-date="minDate"
-											 ng-blur="formatDate($event)"
 											 datepicker-options="dateOptions"
 											 date-disabled="false"
 											 ng-required="true" close-text="Close"
@@ -63,7 +61,7 @@
 					</div>
 				</div>
 				<p
-					ng-show="(newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted"
+					ng-show="(newPlacement.flightEnd.$invalid || newPlacement.flightStart.$invalid) && submitted"
 					class="help-block">
 					start and end dates are required
 				</p>
