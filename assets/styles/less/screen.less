@@ -1,10 +1,17 @@
 @import "misc";
+@import "../core/variables";
 
 .container {
     padding-bottom: 6rem;
 }
 
 .style-guide {
+    @media (max-width: @screen-md-min) {
+        [role="main"] {
+            padding: 0 2rem;
+        }
+    }
+
     .side-nav {
         position: fixed;
         top: 20px;

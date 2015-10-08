@@ -41,7 +41,7 @@ define(function (require) {
             case 'checkbox':
                 return createCheckbox(data, input);
             case 'status':
-                return '<span class="glyph-dot" ng-class="{\'success\': row.' + input + '}"></span>';
+                return '<span class="glyph-dot status" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':
                 return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':

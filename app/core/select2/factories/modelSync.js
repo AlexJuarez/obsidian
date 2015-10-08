@@ -4,7 +4,7 @@ define(function (require) {
     var module = require('./../../module');
     var ng = require('angular');
 
-    module.factory('modelSyncFactory', ['$log', function ($log) {
+    module.factory('modelSyncFactory', ['$log', '$timeout', function ($log) {
         return function (ngModel, tracker, options) {
             options = options || {};
             var formatModel = options.formatModel;
@@ -29,9 +29,9 @@ define(function (require) {
             function set(value) {
                 var options = ngModel.$options;
                 if (ng.isFunction(ngModel.$viewValue) && options && options.getterSetter) {
-                    return ngModel.$viewValue(value);
+                    ngModel.$viewValue(value);
                 } else {
-                    return ngModel.$setViewValue(value);
+                    ngModel.$setViewValue(value);
                 }
             }
 
@@ -46,12 +46,11 @@ define(function (require) {
                     trackValue = tracker.get(value.id);
                     if (!trackValue) {
                         newValues.push(formatModel(value));
+                        value.element.removeAttribute('data-select2-tag');
                     } else {
                         oldValues.push(trackValue.viewValue);
                     }
                 }
-
-                addValues(newValues);
 
                 return oldValues.concat(newValues);
             }
@@ -78,11 +77,13 @@ define(function (require) {
             function updateModel(values) {
                 var data = getSelectData(values);
 
-                if (isMultiple) {
+                if (isMultiple && !ng.equals(data, get())) {
                     set(data);
-                } else {
+                } else if (!ng.equals(data[0], get())) {
+                    console.log('ngModel: ', data[0], get());
                     set(data[0]);
                 }
+
                 scope.$apply();
             }
 

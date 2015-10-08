@@ -13,11 +13,11 @@ define(function (require) {
                 url: '/division/:divisionId',
                 views: {
                     'summary': {
-                        templateUrl: 'analytics/divisions/index.summary.html'
+                        templateUrl: 'analytics/divisions/index.summary.html',
+                        controller: 'divisionCtrl'
                     },
                     'content': {
-                        templateUrl: 'analytics/divisions/index.content.html',
-                        controller: 'divisionCtrl'
+                        templateUrl: 'analytics/divisions/index.content.html'
                     }
                 }
             });
