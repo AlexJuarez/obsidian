@@ -6,16 +6,16 @@ define(function (require) {
     var template = require('tpl!./loadingIndicator.html');
     var ng = require('angular');
 
-    var resp = [{
-        metrics: {
-            count: 0,
-            countAccounts: 0,
-            countCampaignsPreFlight: 0,
-            countCampaignsInFlight: 0,
-            countCampaignsCompleted: 0,
-            countCampaignsArchived: 0
-        }
-    }];
+    // var resp = [{
+    //     metrics: {
+    //         count: 0,
+    //         countAccounts: 0,
+    //         countCampaignsPreFlight: 0,
+    //         countCampaignsInFlight: 0,
+    //         countCampaignsCompleted: 0,
+    //         countCampaignsArchived: 0
+    //     }
+    // }];
 
     describe('Loading Indicator Directive', function () {
         var compile, rootScope, document, httpBackend, apiGenerator, state, clientSetData, divisionSetData;
@@ -74,7 +74,7 @@ define(function (require) {
             var isoScope = el.isolateScope();
             //console.log( isoScope );
 
-            //expect(isoScope).toBeDefined();
+            expect(isoScope).toBeDefined();
         });
 
 
