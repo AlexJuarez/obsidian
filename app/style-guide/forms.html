@@ -263,7 +263,7 @@
     <div class="form-group">
         <label class="form-label"><span>Single Select w/o Search</span></label>
         <div>
-            <select select2 ng-model="selected" ng-options="item.name for item in select3 track by item.value"></select>
+            <select select2 ng-model="selected" s2-options="item.name for item in select3 track by item.value"></select>
         </div>
     </div>
 </form>
@@ -281,7 +281,7 @@
     <div class="form-group">
         <label class="form-label">
             <span>Single Select w/ Search</span>
-            <select select2 ng-model="selected" minimum-results-for-search="0" ng-options="item.name for item in select3 track by item.value"></select>
+            <select select2 ng-model="selected" minimum-results-for-search="0" s2-options="item.name for item in select3 track by item.value"></select>
         </label>
     </div>
 </form>

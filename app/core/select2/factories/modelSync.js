@@ -35,9 +35,8 @@ define(function (require) {
                 }
             }
 
-            function getSelectData(values) {
+            function updateCollection(values) {
                 var newValues = [];
-                var oldValues = [];
                 var trackValue, value;
                 var length = values.length;
 
@@ -47,12 +46,10 @@ define(function (require) {
                     if (!trackValue) {
                         newValues.push(formatModel(value));
                         value.element.removeAttribute('data-select2-tag');
-                    } else {
-                        oldValues.push(trackValue.viewValue);
                     }
                 }
 
-                return oldValues.concat(newValues);
+                addValues(newValues);
             }
 
             /**
@@ -70,29 +67,11 @@ define(function (require) {
                 }
             }
 
-            /**
-             *
-             * @param {{id: String, text: String, children: Array, disabled: Boolean}[]} data - data
-             */
-            function updateModel(values) {
-                var data = getSelectData(values);
-
-                if (isMultiple && !ng.equals(data, get())) {
-                    set(data);
-                } else if (!ng.equals(data[0], get())) {
-                    console.log('ngModel: ', data[0], get());
-                    set(data[0]);
-                }
-
-                scope.$apply();
-            }
-
             return {
-                _getSelectData: getSelectData,
+                updateCollection: updateCollection,
                 _addValues: addValues,
                 get: get,
-                set: set,
-                updateModel: updateModel
+                set: set
             };
         };
     }]);

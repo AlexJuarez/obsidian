@@ -40,8 +40,11 @@ define(function (require) {
         function ($timeout, defaults, $parse, trackValuesFactory, $injector, selectOptionsFactory, modelSyncFactory) {
             return {
                 restrict: 'A',
-                require: '?ngModel',
-                link: function (scope, element, attr, ngModel) {
+                require: ['select', '?ngModel'],
+                priority: 1,
+                link: function (scope, element, attr, ctrls) {
+                    var ngModel = ctrls[1];
+                    var selectCtrl = ctrls[0];
                     var optionsExpression = attr.ngOptions || attr.s2Options;
                     var trackValues = trackValuesFactory();
                     var selectOptions = selectOptionsFactory(optionsExpression, element, scope, trackValues);
@@ -49,12 +52,14 @@ define(function (require) {
                     var theme, data, select2;
                     var initialized = false;
                     //set a flag to see if this is a multiselect instance
-                    var isMultiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
+                    var multiple = attr.hasOwnProperty('multiple') && attr.multiple !== 'false';
                     var opts = setUpOptions();
-                    var formatModelInsert = opts.formatModelInsert || function (v) {
+                    var formatModelInsert = opts.formatModelInsert || function (ele) {
+                            var text = ele.text();
+                            var id = ele.attr('value') || text;
                             return {
-                                value: v.id,
-                                name: v.text
+                                value: id,
+                                name: text
                             };
                         };
 
@@ -78,12 +83,11 @@ define(function (require) {
                             formatModel: formatModelInsert,
                             valuesFn: getValues(),
                             scope: scope,
-                            isMultiple: isMultiple
+                            isMultiple: multiple
                         });
 
                         var originalRender = ngModel.$render;
                         ngModel.$render = function () {
-                            console.log('modelvalue changed', ngModel.$viewValue);
                             originalRender();
                             initOrUpdate();
                         };
@@ -163,7 +167,7 @@ define(function (require) {
                                 };
                             }
 
-                            if (isMultiple) {
+                            if (multiple) {
                                 opts.placeholder = opts.placeholder || placeholderMultiselect;
                             } else {
                                 //add a element to assume the placeholder value
@@ -200,16 +204,6 @@ define(function (require) {
                                     element.select2('close');
                                 });
                             }*/
-
-                            var debounce = null;
-                            if (modelSync && !attr.ngOptions && isMultiple) {
-                                element.on('change', function () {
-                                    debounce = $timeout(function() {
-                                        modelSync.updateModel(element.select2('data'));
-                                        debounce = null;
-                                    }, 10);
-                                });
-                            }
                         });
                     }
 
@@ -218,7 +212,7 @@ define(function (require) {
                             var focused;
                             var viewValues = modelSync.get();
                             if (!trackValues.isEmpty()) {
-                                if (ng.isArray(viewValues) && isMultiple) {
+                                if (ng.isArray(viewValues) && multiple) {
                                     var values = [];
                                     ng.forEach(viewValues, function (v) {
                                         var trackValue = trackValues.get(v);
@@ -252,6 +246,48 @@ define(function (require) {
                             }
                         }
                     }
+
+                    selectCtrl.writeValue = function (value) {
+                        //noop
+                    };
+
+                    if (!multiple) {
+                        selectCtrl.readValue = function readS2OptionsValue() {
+                            var selection = trackValues.get(element.val());
+
+                            if (selection) {
+                                return selection.viewValue;
+                            }
+                            return null;
+                        };
+                    } else {
+                        selectCtrl.readValue = function readS2OptionsMultiple() {
+                            var values = element.val() || [];
+                            var viewValues = [];
+                            var collection = getValues()(scope);
+                            var isArray = ng.isArray(collection);
+
+                            for (var i = 0; i < values.length; i++) {
+                                var value = values[i];
+                                var trackedValue = trackValues.get(value);
+                                if (trackedValue) {
+                                    viewValues.push(trackedValue.viewValue);
+                                } else if (opts.tags && isArray) {
+                                    var ele = element.find('option[value="' + value + '"]');
+                                    if (ele.length && ele[0].hasAttribute('data-select2-tag')) {
+                                        ele[0].removeAttribute('data-select2-tag');
+                                        var formatted = formatModelInsert(ele);
+                                        trackValues.add(value, value, formatted, value);
+                                        collection.push(formatted);
+                                        viewValues.push(formatted);
+                                    }
+                                }
+                            }
+
+                            return viewValues;
+                        };
+                    }
+
 
                     function initOrUpdate() {
                         if (!initialized) {
