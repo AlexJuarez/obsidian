@@ -173,10 +173,6 @@ define(function (require) {
 
         }
 
-        function data(initialize) {
-            return placementCache.get(getApiConfig(), initialize);
-        }
-
         function noContent() {
             var datas = all(true);
             var results = [];
