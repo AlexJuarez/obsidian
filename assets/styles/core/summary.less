@@ -4,6 +4,10 @@
     margin: 4rem 0;
     &:extend(.clearfix all);
 
+    .you-work-on {
+        display: inline-block;
+    }
+
     .title, .list {
         padding: 0;
         margin: 0;
@@ -55,6 +59,8 @@
                     font-family: 'Lato', sans-serif;
                     text-transform: uppercase;
                     font-weight: bold;
+                    line-height: 1;
+                    margin: 0 0 7px 0;
                 }
                 &:last-child {
                     font-family: 'Oswald', sans-serif;
@@ -128,8 +134,10 @@
             padding: 3px @mobile-gutter;
             box-sizing: border-box;
             li span {
+                
                 &:first-child {
                     .font-size(1.2);
+                    margin: 5px 0 7px 0;
                 }
                 &:last-child {
                     .font-size(2);

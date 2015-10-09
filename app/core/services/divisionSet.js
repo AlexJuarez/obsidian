@@ -44,7 +44,7 @@ define(function (require) {
                 'countCampaignsCompleted': 0
             };
 
-            if (datum.length) {
+            if (datum && datum.length) {
                 ng.forEach(datum[0].metrics, function (d, key){
                     output[key] = d;
                 });

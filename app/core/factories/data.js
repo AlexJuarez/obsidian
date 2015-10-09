@@ -98,8 +98,33 @@ define(function (require) {
                 return output;
             }
 
+            function observe(callback, $scope, preventImmediate) {
+                var id = observerId++;
+                observers[id] = callback;
+
+                if (preventImmediate !== true) {
+                    callback();
+                }
+
+                if ($scope) {
+                    $scope.$on('$destroy', function() {
+                        delete observers[id];
+                    });
+                }
+            }
+
             function isLoaded() {
                 return loaded;
+            }
+
+            function notifyObservers(event) {
+                for (var x in observers) {
+                    observers[x](event);
+                }
+
+                $timeout(function () {
+                    $rootScope.$apply();
+                });
             }
 
             function getById(id) {

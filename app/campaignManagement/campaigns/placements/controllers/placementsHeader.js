@@ -42,12 +42,13 @@ define(function(require) {
             function update() {
                 updateMeta();
                 updateSelected();
+                $scope.noContent = placements.noContent();
             }
 
             function updateMeta() {
                 var allPlacements = placements.all(true);
 
-                if(allPlacements) {
+                if(allPlacements && placements.data().isLoaded()) {
                     var placement;
                     var creative;
 
@@ -76,6 +77,7 @@ define(function(require) {
                         creatives: creatives.length,
                         types: types.length
                     };
+
                 }
             }
 
@@ -83,7 +85,7 @@ define(function(require) {
                 $scope.selectedPlacements = placements.getSelectedPlacementIds();
             }
 
-            updateMeta();
+            update();
             placements.observe(update, $scope, true);
 
             // Edit Placements
