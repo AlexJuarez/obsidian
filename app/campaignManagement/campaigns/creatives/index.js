@@ -9,6 +9,7 @@ define(function (require) {
     require('./directives/creativeOptions');
     require('./services/creatives');
     require('./services/studioDirectAdapter');
+    require('./services/studio/urlBuilder/index');
     require('./services/newCreative');
     require('./services/creative');
 });
