@@ -22,6 +22,13 @@ define(function (require) {
             noContent: function () {
                 return {};
             },
+            data: function() {
+                return {
+                    isLoaded: function() {
+                        return true;
+                    }
+                };
+            },
             observe: function() {}
         };
 
