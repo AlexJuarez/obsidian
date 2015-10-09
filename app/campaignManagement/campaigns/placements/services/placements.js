@@ -168,7 +168,31 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-            placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
+
+            return placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
+
+        }
+
+        function noContent() {
+            var datas = all(true);
+            var results = [];
+            ng.forEach(datas, function(d) {
+                results.push(d === 0);
+            });
+
+            return results.every(function (d) {
+                return d;
+            });
+        }
+
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return placementCache.get(getApiConfig(), initialize);
+
         }
 
         return {
@@ -177,7 +201,9 @@ define(function (require) {
             _getApiConfig: getApiConfig,
             getSelectedPlacementIds: getSelectedPlacementIds,
             all: all,
-            observe: observe
+            data: data,
+            observe: observe,
+            noContent: noContent
         };
     }]);
 });

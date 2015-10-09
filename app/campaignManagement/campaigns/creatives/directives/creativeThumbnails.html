@@ -1,4 +1,5 @@
 <div class="thumbnail-view row ng-scope">
+	<div loading-indicator="creativesAreLoaded" show-loader="showLoader"></div>
 	<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">
 		<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">
 			<div class="ratio-box">
@@ -25,7 +26,7 @@
 			</div>
 			<div class="data">
 				<span>
-					<a ng-click="openStudio(creative.id)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>
+					<a ng-click="openStudio(creative)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>
 					<a ng-click="openPreviewPage(creative)" title="Preview Creative in Page"><i class="glyph-icon glyph-view"></i>Preview</a>
 				</span>
 				<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>

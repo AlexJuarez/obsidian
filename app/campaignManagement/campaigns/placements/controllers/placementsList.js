@@ -16,10 +16,22 @@ define(function (require) {
                 value: '2'
             }
         ];
+        $scope.placementsAreLoaded = false;
+        $scope.showLoader = false;
+
+        // Show spinner if data not loaded
+        if ( !placements.data().isLoaded() ) {
+            $scope.showLoader = true;
+        }
 
         placements.observe(updatePlacements, $scope);
         function updatePlacements() {
             $scope.placements = placements.all();
+
+            // Stop the loading spinner if data loaded
+            if ( placements.data().isLoaded() ) {
+                $scope.placementsAreLoaded = true;
+            }
         }
     }]);
 });

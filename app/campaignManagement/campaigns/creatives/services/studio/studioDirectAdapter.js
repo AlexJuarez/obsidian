@@ -1,7 +1,7 @@
 define(function(require) {
     'use strict';
 
-    var module = require('./../../../module');
+    var module = require('./../../../../module');
 
     /**
      * The studioDirectAdapter adapt the newEditCreative.js params object to

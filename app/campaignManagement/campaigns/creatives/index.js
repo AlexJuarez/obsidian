@@ -8,7 +8,8 @@ define(function (require) {
     require('./directives/creativeThumbnails');
     require('./directives/creativeOptions');
     require('./services/creatives');
-    require('./services/studioDirectAdapter');
+    require('./services/studio/studioDirectAdapter');
+    require('./services/studio/urlBuilder/index');
     require('./services/newCreative');
     require('./services/creative');
 });

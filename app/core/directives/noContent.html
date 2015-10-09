@@ -1,0 +1,39 @@
+<div class="no-content-wrapper">
+    
+    <div ng-if="showAccountMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any accounts.</h3>
+            <p>Let's fix that! Click to add an account.</p>
+            <button class="btn btn-primary solid" ng-click="openNewAccountModal()">Add New Account</button>
+        </div>
+    </div>
+
+    <div ng-if="showCampaignMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any campaigns.</h3>
+            <p>Let's fix that! Click to add a campaign.</p>
+            <button class="btn btn-primary solid" ng-click="openNewCampaignModal()">Add New Campaign</button>
+        </div>
+    </div>
+
+    <div ng-if="showCreativeMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any creatives.</h3>
+            <p>Let's fix that! Click to create a new creative.</p>
+            <button class="btn btn-primary solid" ng-click="openNewCreativeModal()">Add New Creative</button>
+        </div>
+    </div>
+
+    <div ng-if="showPlacementMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any placements.</h3>
+            <p>Let's fix that! Click to create a new placement.</p>
+            <button class="btn btn-primary solid" ng-click="openNewPlacementModal()">Add New Placement</button>
+        </div>
+    </div>
+
+</div>
