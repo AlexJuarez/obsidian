@@ -64,25 +64,48 @@
 }
 
 .tab-header {
-    margin-bottom: 2rem;
-    .col-xs-12 + .col-xs-12 {
-        margin-top: 1rem;
+    margin-bottom: 3rem;
+    ul:not(.search-results) li {
+        margin: 0 1rem 0 0;
+        padding: 0;
+        display: inline;
     }
     .icons {
         border: 1px solid @light-gray;
         border-width: 0 1px 0 0;
-        padding-right: 1rem;
-        margin-right: 2rem;
-        .glyph-icon {
-            .font-size(2);
+        padding: 0 1rem 0 0;
+        margin: 0 2rem 0 0;
+        a {
+            .glyph-icon {
+                .font-size(2);
+                color: @dark-gray;
+            }
+            &.active .glyph-icon {
+                color: @brand-color;
+            }
+        }
+        // a.active {
+        //     color: @brand-color;
+        // }
+        a:hover:not(.active) {
+            .glyph-icon {
+                color: lighten(@brand-color, 10);
+            }
         }
     }
     .filters {
-        padding-top: 3px;
-        margin-right: 2rem;
-        a, b {
-            margin-right: 1rem;
-            display: inline;
+        padding: 3px 0 0 0;
+        margin: 0 2rem 0 0;
+        list-style: none;
+        li {
+            a {
+                padding-bottom: 2px;
+                &.active {
+                    border: 2px solid @brand-color;
+                    border-width: 0 0 2px;
+                    color: @brand-color;
+                }
+            }
         }
     }
     .search {
@@ -92,6 +115,23 @@
     @media (max-width: @screen-xs-max) {
         .icons {
             border: none;
+        }
+        .filters:not(.search-results) {
+            clear: both;
+            li:not(:first-child) {
+                display: block;
+                margin-left: 1rem;
+                a.active {
+                    border: none;
+                    &:before {
+                        .glyph-dot();
+                        .font-size(0.5);
+                        position: relative;
+                        left: -10px;
+                        bottom: 0.4rem;
+                    }
+                }
+            }
         }
         .search {
             display: block;
