@@ -189,6 +189,16 @@ define(function (require) {
             });
         }
 
+        /**
+         * Returns underlying dataFactory object for the cache entry
+         * @param {boolean} [initialize=false] should we call init
+         * @returns {{dataFactory}}
+         */
+        function data(initialize) {
+            return placementCache.get(getApiConfig(), initialize);
+
+        }
+
         return {
             _transformPlacementGroups: _transformPlacementGroups,
             _getPlacementGroups: _getPlacementGroups,

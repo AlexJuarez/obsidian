@@ -23,6 +23,13 @@ define(function (require) {
                     ]
                 };
             },
+            data: function() {
+                return {
+                    isLoaded: function() {
+                        return true;
+                    }
+                };
+            },
             observe: function(callback) {
                 callback();
             }
@@ -35,6 +42,10 @@ define(function (require) {
 
             module(function ($provide) {
                 $provide.value('creatives', mockCreatives);
+                // Ignore the loadingIndicator directive...
+                $provide.factory('loadingIndicatorDirective', function(){
+                    return {};
+                });
             });
 
             inject(function ($compile, $state, $rootScope, $templateCache, $modal, $window, creativeRecordService, ENUMS) {
@@ -51,6 +62,7 @@ define(function (require) {
         });
 
         function setUpScope() {
+
             var parentScope = rootScope.$new();
             var html = compile('<div creative-thumbnails></div>')(parentScope);
             parentScope.$apply();

@@ -15,6 +15,7 @@ define(function (require) {
                 classes: '@class'
             },
             link: function (scope) {
+
                 var opened = false;
 
                 scope.init = init;

@@ -21,6 +21,13 @@ define(function (require) {
                     ]
                 };
             },
+            data: function() {
+                return {
+                    isLoaded: function() {
+                        return true;
+                    }
+                };
+            },
             observe: function(callback) {
                 callback();
             }

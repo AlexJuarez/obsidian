@@ -27,6 +27,13 @@ define(function (require) {
                     $scope.copyCreative = copyCreative;
                     $scope.deleteCreative = deleteCreative;
                     $scope.transformCreativeData = transformCreativeData;
+                    $scope.creativesAreLoaded = false;
+                    $scope.showLoader = false;
+
+                    // Show spinner if data not loaded
+                    if ( !creatives.data().isLoaded() ) {
+                        $scope.showLoader = true;
+                    }
 
                     if ($scope.limit) {
                         creatives.setLimit($scope.limit);
@@ -139,6 +146,12 @@ define(function (require) {
                         }
 
                         $scope.creatives = duplicateCreatives;
+                        
+                        // Stop the loading spinner if data loaded
+                        if ( creatives.data().isLoaded() ) {
+                            $scope.creativesAreLoaded = true;
+                        }
+
                     }
             }]
         };

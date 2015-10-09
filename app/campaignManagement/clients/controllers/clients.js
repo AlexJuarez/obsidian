@@ -7,6 +7,13 @@ define(function (require) {
     app.controller('clientsCtrl', ['$scope', 'topClientsService', '$modal', function ($scope, topClients, $modal) {
 
         $scope.openNewClientModal = openNewClientModal;
+        $scope.clientsAreLoaded = false;
+        $scope.showLoader = false;
+
+        // Show spinner if data not loaded
+        if ( !topClients.isLoaded() ) {
+            $scope.showLoader = true;
+        }
 
         topClients.init();
 
@@ -14,6 +21,11 @@ define(function (require) {
 
         function updateTopClients() {
             $scope.topClients = topClients.all();
+            
+            // Stop the loading spinner if data loaded
+            if ( topClients.isLoaded() ) {
+                $scope.clientsAreLoaded = true;
+            }
         }
 
         var createModal;
