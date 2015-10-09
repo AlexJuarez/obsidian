@@ -42,6 +42,14 @@ define(function (require) {
 						}
 					}
 				});
+
+				$scope.$watch('placement.costPerRate',function(val){
+					$scope.placement.costPerRate = parseInt(val);
+				});
+
+				$scope.$watch('placement.budget',function(val){
+					$scope.placement.budget = parseInt(val);
+				});
 			}]
 		};
 	}]);

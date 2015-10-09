@@ -4,7 +4,7 @@
 		<div class="col-sm-9">
 			<select id="adtype" select2
 							ng-options="key as key for (key, value) in creativesByAdType track by key"
-							ng-model="adType">
+							ng-model="placement.type">
 			</select>
 		</div>
 	</div>
@@ -13,7 +13,7 @@
 		<label for="creative" class="col-sm-3 form-label"><span>Creative</span></label>
 		<div class="col-sm-9">
 			<select id="creative" select2
-							ng-options="item as item.name for item in creativesByAdType[adType] track by item.id"
+							ng-options="item as item.name for item in creativesByAdType[placement.type] track by item.id"
 							ng-model="creative">
 			</select>
 		</div>
@@ -21,7 +21,7 @@
 
 	<!-- IN BANNER VIDEO NON-EXPANDING -->
 
-	<div ng-show="creativeType === 'inBannerVideo' && !isExpanding">
+	<div ng-if="creativeType === 'inBannerVideo' && !isExpanding">
 		<div class="form-group row">
 			<label for="creative" class="col-sm-3 form-label"><span>Play Mode</span></label>
 			<div class="col-sm-9">
@@ -66,7 +66,7 @@
 
 	<!-- IN BANNER VIDEO EXPANDING -->
 
-	<div ng-show="creativeType === 'inBannerVideo' && isExpanding">
+	<div ng-if="creativeType === 'inBannerVideo' && isExpanding">
 		<div class="form-group row">
 			<label for="creative" class="col-sm-3 form-label"><span>Play Mode</span></label>
 			<div class="col-sm-9">
@@ -113,6 +113,9 @@
 				</label>
 			</div>
 		</div>
+
+		<div expand-anchors-directions></div>
+
 		<div class="form-group row">
 			<label for="creative" class="col-sm-3 form-label"><span>Play Mode Options</span></label>
 			<div class="col-sm-9">
@@ -130,5 +133,6 @@
 				</label>
 			</div>
 		</div>
+
 	</div>
 </div>

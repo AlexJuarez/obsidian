@@ -68,6 +68,13 @@ define(function(require) {
 			}
 
 			function ok(errors) {
+				$scope.placement.expandBeforeCountdown = true;
+				$scope.placement.spanish = true;
+				$scope.placement.clickTrackers = '';
+				$scope.placement.impressionTrackers = '';
+				$scope.placement.viewTrackers = '';
+				$scope.placement.adTagId = '41a72be8-492f-4da0-8e8f-8bcb2f34d93e';
+				//console.log(JSON.stringify($scope.placement));
 				if(ng.equals({}, errors) || ! errors) {
 					var onSuccess = function() {
 						$scope.placement = {};

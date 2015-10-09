@@ -6,7 +6,7 @@ define(function (require) {
 
 	require('tpl!./start-end-dates.html');
 
-	app.directive('startEndDates', ['$filter', function ($filter) {
+	app.directive('startEndDates', [function() {
 		return {
 			restrict: 'A',
 			replace: true,

@@ -12,14 +12,13 @@ define(function (require) {
 			scope: false,
 			templateUrl: 'campaignManagement/campaigns/placements/directives/assign-creative.html',
 			controller: ['$scope', 'creatives', 'ENUMS', function ($scope, creativeService, ENUMS) {
+
 				var creativeTypes = ENUMS.down.creativeTypes;
 
 				creativeService.observe(updateCreativesByAdType, $scope);
-
 				function updateCreativesByAdType() {
 					var adTypes = {};
 					var creatives = creativeService.data().all();
-
 					creatives.forEach(function(creative) {
 						if(! adTypes[creative.type]) {
 							adTypes[creative.type] = [];
@@ -27,7 +26,6 @@ define(function (require) {
 
 						adTypes[creative.type].push(creative);
 					});
-
 					$scope.creativesByAdType = adTypes;
 				}
 

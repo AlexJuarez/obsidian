@@ -10,7 +10,7 @@
 		</select>
 	</div>
 	<div class="col-sm-3" ng-if="showCostPer">
-		<input name="costPer" ng-model="placement.costPer" type="text" ng-pattern="MONEY_REGEX"
+		<input name="costPer" ng-model="placement.costPerRate" type="text" ng-pattern="MONEY_REGEX"
 					 class="form-control col-sm-4" id="costPer"
 					 placeholder="Cost Per"/>
 		<p ng-class="{'help-block':newPlacement.costPer.$invalid && submitted}">
@@ -21,7 +21,7 @@
 		</p>
 	</div>
 	<div class="col-sm-3" ng-if="showTotalCost">
-		<input name="totalCost" ng-model="placement.totalCost" type="text" ng-pattern="MONEY_REGEX"
+		<input name="totalCost" ng-model="placement.budget" type="text" ng-pattern="MONEY_REGEX"
 					 class="form-control" id="totalCost"
 					 placeholder="Total Cost"/>
 		<p ng-class="{'help-block':newPlacement.totalCost.$invalid && submitted}">

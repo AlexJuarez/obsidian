@@ -83,7 +83,6 @@ define(function (require) {
 
                         var originalRender = ngModel.$render;
                         ngModel.$render = function () {
-                            console.log('modelvalue changed', ngModel.$viewValue);
                             originalRender();
                             initOrUpdate();
                         };
