@@ -115,6 +115,23 @@
         .icons {
             border: none;
         }
+        .filters:not(.search-results) {
+            clear: both;
+            li:not(:first-child) {
+                display: block;
+                margin-left: 1rem;
+                a.active {
+                    border: none;
+                    &:before {
+                        .glyph-dot();
+                        .font-size(0.5);
+                        position: relative;
+                        left: -10px;
+                        bottom: 0.4rem;
+                    }
+                }
+            }
+        }
         .search {
             display: block;
             width: 100%;
