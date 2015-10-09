@@ -104,28 +104,30 @@ define(function(require) {
                     data: []
                 };
 
-                for(var i = 0; i < creatives.length; i ++) {
-                    creative = creatives[i];
-                    transformedTable.data.push({
-                        checked: false,
-                        creativeName: creative.name,
-                        delivering: creative.live,
-                        type: creative.type,
-                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaign.id,
-                        numPlacements: {
-                            name: creative.countPlacements || 0,
-                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
-                        },
-                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
+                if (creatives && creatives.length) {
+                    for(var i = 0; i < creatives.length; i ++) {
+                        creative = creatives[i];
+                        transformedTable.data.push({
+                            checked: false,
+                            creativeName: creative.name,
+                            delivering: creative.live,
+                            type: creative.type,
+                            dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                            expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                            campaignId: creative.campaign.id,
+                            numPlacements: {
+                                name: creative.countPlacements || 0,
+                                route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                            },
+                            options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
-                        // These properties are needed by thumbnails but aren't
-                        // in the table
-                        id: creative.id,
-                        lastModified: creative.modifiedDate,
-                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
-                    });
+                            // These properties are needed by thumbnails but aren't
+                            // in the table
+                            id: creative.id,
+                            lastModified: creative.modifiedDate,
+                            thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
+                        });
+                    }
                 }
                 return transformedTable;
             }
@@ -165,6 +167,19 @@ define(function(require) {
                 return cache.get(_apiConfig(), initialize);
             }
 
+            function noContent() {
+                var datas = all().data;
+                var results = [];
+                ng.forEach(datas, function(d) {
+                    results.push(d === 0);
+                });
+
+                return results.every(function (d) {
+                    return d;
+                });
+            }
+
+
             return {
                 _transformCreatives: _transformCreatives,
                 _apiConfig: _apiConfig,
@@ -173,7 +188,8 @@ define(function(require) {
                 all: all,
                 data: data,
                 addData: addData,
-                observe: observe
+                observe: observe,
+                noContent: noContent
             };
         }
     ]);
