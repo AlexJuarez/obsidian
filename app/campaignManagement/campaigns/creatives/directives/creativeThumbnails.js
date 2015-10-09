@@ -14,8 +14,8 @@ define(function (require) {
                 limit: '='
             },
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS', 'studioUrlBuilder',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS, studioUrlBuilder) {
 
                     var editCreativeModals = {};
                     var mixpoURL = studioLocation.host();
@@ -50,11 +50,22 @@ define(function (require) {
                     });
 
                     function openPreviewPage(creative) {
-                        $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
+                        var cmd = mixpoURL + '/container';
+                        var params = '?' + 'id=' + creative.id;
+
+                        var url = cmd + params;
+                        $window.open(url, '_blank');
                     }
 
-                    function openStudio(id) {
-                        $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
+                    function openStudio(creative) {
+                        var flashvars = {
+                            campaignId: creative.campaignId
+                        };
+                        var url = studioUrlBuilder.open(creative.id)
+                            .setHostname(mixpoURL)
+                            .setFilter(flashvars)
+                            .build();
+                        $window.open(url, '_blank');
                     }
 
                     var removeNulls = function(creative) {

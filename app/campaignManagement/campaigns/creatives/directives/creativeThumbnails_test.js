@@ -111,14 +111,32 @@ define(function (require) {
                 expect(window.open).toHaveBeenCalled();
             });
 
+            it('should open a preview page', function () {
+                spyOn(window, 'open');
+
+                var scope = setUpScope();
+
+                scope.openPreviewPage({id: 1});
+
+                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/container?id=1', '_blank');
+            });
+
             it('should open a studio page', function () {
                 spyOn(window, 'open');
 
                 var scope = setUpScope();
 
-                scope.openStudio(1);
+                scope.openStudio({id: 1});
 
-                expect(window.open).toHaveBeenCalled();
+            });
+
+            it('should open a studio page with creative.id', function () {
+                spyOn(window, 'open');
+                var scope = setUpScope();
+
+                scope.openStudio({id: 1, campaignId:'_id_'});
+
+                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/studio?filter=%7B%22campaignId%22:%22_id_%22%7D&guid=1&sdf=open', '_blank');
             });
 
             it('should update the filter on stateChange', function () {
