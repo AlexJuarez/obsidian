@@ -24,14 +24,15 @@ define(function (require) {
                 type: 'Display',
                 subtype: 'IMG',
                 environment: 'multidevice',
-                clickthroughUrl: 'lego.com',
-                name: 'El Title',
+                clickthroughUrl: '_clickthrough_',
+                name: '_title_',
                 embedWidth: 160,
                 embedHeight: 600,
                 expandedWidth: NaN,
-                expandedHeight: NaN
+                expandedHeight: NaN,
+                campaignId: "_campaignId_"
             };
-            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IMG&env=multiscreen&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IMG&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&title=_title_&url=_clickthrough_';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler);

@@ -112,12 +112,17 @@ define(function(require) {
             if(!validate(creative)) {
                 return null;
             }
+
             var params = {};
             params.sdf = 'new';
             params.ad = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight);
             params.env = getAdEnvironment(creative.environment);
             params.url = creative.clickthroughUrl;
             params.title = creative.name;
+            var filter = {
+                campaignId: creative.campaignId
+            };
+            params.filter = JSON.stringify(filter);
             setDimensions(params, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
             return params;
         };
