@@ -28,10 +28,7 @@ define(function (require) {
 
         $scope.openStudio = function(id, campaignId) {
             var url = studioUrlBuilder
-                .open(id)
-                .setFilter({
-                    campaignId: campaignId
-                })
+                .open(id, campaignId)
                 .setHostname('//'+ urlPrefix())
                 .build();
             $window.open(url, '_blank');

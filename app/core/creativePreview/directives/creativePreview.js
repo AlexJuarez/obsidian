@@ -63,10 +63,7 @@ define(function (require) {
 
                     function openInStudio() {
                         var url = studioUrlBuilder
-                            .open($scope.id)
-                            .setFilter({
-                                campaignId: $scope.campaignId
-                            })
+                            .open($scope.id, $scope.campaignId)
                             .setHostname(mixpoURL)
                             .build();
                         $window.open(url, '_blank');

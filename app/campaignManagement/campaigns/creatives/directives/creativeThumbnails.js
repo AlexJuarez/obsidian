@@ -58,12 +58,8 @@ define(function (require) {
                     }
 
                     function openStudio(creative) {
-                        var flashvars = {
-                            campaignId: creative.campaignId
-                        };
-                        var url = studioUrlBuilder.open(creative.id)
+                        var url = studioUrlBuilder.open(creative.id, creative.campaignId)
                             .setHostname(mixpoURL)
-                            .setFilter(flashvars)
                             .build();
                         $window.open(url, '_blank');
                     }
@@ -157,7 +153,7 @@ define(function (require) {
                         }
 
                         $scope.creatives = duplicateCreatives;
-                        
+
                         // Stop the loading spinner if data loaded
                         if ( creatives.data().isLoaded() ) {
                             $scope.creativesAreLoaded = true;
