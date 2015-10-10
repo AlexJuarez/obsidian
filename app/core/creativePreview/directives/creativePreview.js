@@ -12,8 +12,8 @@ define(function (require) {
             scope: {
                 id: '@creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'studioUrlBuilder',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, studioUrlBuilder) {
                     var htmlContent = ng.element('<div>' + $element.html() + '</div>');
 
                     $scope.isOpen = false;
@@ -62,7 +62,14 @@ define(function (require) {
                     }
 
                     function openInStudio() {
-                        $window.open(mixpoURL + '/studio?sdf=open&guid=' + $scope.id, '_blank');
+                        var url = studioUrlBuilder
+                            .open($scope.id)
+                            .setFilter({
+                                campaignId: $scope.campaignId
+                            })
+                            .setHostname(mixpoURL)
+                            .build();
+                        $window.open(url, '_blank');
                     }
 
                     $templateRequest('core/creativePreview/directives/wrapper.html').then(function(wrapper) {

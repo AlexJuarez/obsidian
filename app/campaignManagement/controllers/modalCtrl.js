@@ -3,7 +3,8 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.controller('modalCtrl', ['$scope', '$rootScope', '$state', '$filter', '$timeout', '$window', '$location', function ($scope, $rootScope, $state, $filter, $timeout, $window, $location) {
+    app.controller('modalCtrl', ['$scope', '$rootScope', '$state', '$filter', '$timeout', '$window', '$location', 'studioUrlBuilder',
+        function ($scope, $rootScope, $state, $filter, $timeout, $window, $location, studioUrlBuilder) {
 
 
         var urlPrefix = function() {
@@ -24,10 +25,16 @@ define(function (require) {
             var previewUrl = '//'+ urlPrefix() + '/videoad/' + id + '/' + n;
             $window.open(previewUrl, '_blank');
         };
-        $scope.openStudio = function(id) {
-            var studioUrl = '//'+ urlPrefix() + '/studio?sdf=open&guid=' + id;
-            $window.open(studioUrl, '_blank');
-        };
 
+        $scope.openStudio = function(id, campaignId) {
+            var url = studioUrlBuilder
+                .open(id)
+                .setFilter({
+                    campaignId: campaignId
+                })
+                .setHostname('//'+ urlPrefix())
+                .build();
+            $window.open(url, '_blank');
+        };
     }]);
 });
