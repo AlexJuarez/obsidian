@@ -128,6 +128,7 @@ define(function (require) {
 
                 scope.openStudio({id: 1});
 
+                expect(window.open).toHaveBeenCalled();
             });
 
             it('should open a studio page with creative.id', function () {

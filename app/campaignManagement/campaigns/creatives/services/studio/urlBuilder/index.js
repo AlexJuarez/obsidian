@@ -20,22 +20,30 @@ define(function(require) {
              * @param {string} The ad environment multiscreen | desktop | tabletphone | inappmraid
              * @param {string} The title of the ad
              * @param {string} The clickthrough url
+             * @param {string} The campaignId of the ad
              * @returns {Object} builder
              */
-            create: function create(adType, environment, title, clickthroughUrl) {
+            create: function create(adType, environment, title, clickthroughUrl, campaignId) {
                 return require('./create')
-                    ($httpParamSerializer, adType, environment, title, clickthroughUrl);
+                    ($httpParamSerializer, adType, environment, title, clickthroughUrl)
+                    .setFilter({
+                        campaignId: campaignId
+                    });
             },
 
             /**
              * Opens an ad for editing.
              *
              * @param {string} The guid of the source ad
+             * @param {string} The campaignId of the source ad
              * @returns {Object} builder
              */
-            open: function open(guid) {
+            open: function open(guid, campaignId) {
                 return require('./open')
-                    ($httpParamSerializer, guid);
+                    ($httpParamSerializer, guid)
+                    .setFilter({
+                        campaignId: campaignId
+                    });
             },
 
             /**
@@ -43,11 +51,15 @@ define(function(require) {
              *
              * @param {string} The guid of the source ad
              * @param {string} The title of the new ad
+             * @param {string} The campaignId of the new ad
              * @returns {Object} builder
              */
-            copy: function copy(template, title) {
+            copy: function copy(template, title, campaignId) {
                 return require('./copy')
-                    ($httpParamSerializer, template, title);
+                    ($httpParamSerializer, template, title)
+                    .setFilter({
+                        campaignId: campaignId
+                    });
             },
 
             /**
