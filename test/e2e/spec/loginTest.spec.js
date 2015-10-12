@@ -1,7 +1,6 @@
-define(function (require) {
-  require('../pages/loginPage');
+var LoginPage = require('../pages/loginPage');
 
-  describe('New Ad Build by LMP Creative Producer', function () {
+describe('New Ad Build by LMP Creative Producer', function () {
 
     it('will have no account ____', function(done) {
       var loginPage = new LoginPage();
@@ -9,5 +8,4 @@ define(function (require) {
         .call(done);
     });
 
-  });  
 });
