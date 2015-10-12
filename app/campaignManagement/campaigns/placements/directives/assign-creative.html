@@ -23,7 +23,7 @@
 
 	<div ng-if="creativeType === 'inBannerVideo' && !isExpanding">
 		<div class="form-group row">
-			<label for="creative" class="col-sm-3 form-label"><span>Play Mode</span></label>
+			<label class="col-sm-3 form-label"><span>Play Mode</span></label>
 			<div class="col-sm-9">
 				<label class="radio-inline">
 					<input ng-model="placement.playMode" ng-value="rollover" type="radio" name="playMode" class="radio radio-light" />
@@ -46,7 +46,7 @@
 			</div>
 		</div>
 		<div class="form-group row">
-			<label for="creative" class="col-sm-3 form-label"><span>Play Mode Options</span></label>
+			<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>
 			<div class="col-sm-9">
 				<label>
 					<input ng-model="skip321" type="checkbox" class="checkbox checkbox-light" />
@@ -73,25 +73,25 @@
 				<label class="radio-inline">
 					<input ng-model="placement.playMode" ng-value="rollover" type="radio" name="playMode" class="radio radio-light" />
 							<span>
-									Roll Over to Play
+									Roll Over to Expand
 							</span>
 				</label>
 				<label class="radio-inline">
 					<input ng-model="placement.playMode" ng-value="click" type="radio" name="playMode" class="radio radio-light" />
 							<span>
-									Click to Play
+									Click to Expand
 							</span>
 				</label>
 				<label class="radio-inline">
 					<input ng-model="placement.playMode" ng-value="auto" type="radio" name="playMode" class="radio radio-light" />
 							<span>
-									Autoplay
+									Auto Expand
 							</span>
 				</label>
 			</div>
 		</div>
 		<div class="form-group row">
-			<label for="creative" class="col-sm-3 form-label"><span>Expand Type</span></label>
+			<label class="col-sm-3 form-label"><span>Expand Type</span></label>
 			<div class="col-sm-9">
 				<label class="radio-inline">
 					<input ng-model="placement.expandType" ng-value="directional" type="radio" name="expandType" class="radio radio-light" />
@@ -117,7 +117,7 @@
 		<div expand-anchors-directions></div>
 
 		<div class="form-group row">
-			<label for="creative" class="col-sm-3 form-label"><span>Play Mode Options</span></label>
+			<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>
 			<div class="col-sm-9">
 				<label>
 					<input ng-model="skip321" type="checkbox" class="checkbox checkbox-light" />
@@ -128,11 +128,12 @@
 					<span>Audio Off</span>
 				</label>
 				<label>
-					<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />
-					<span>Mute Audio on Roll Out</span>
+					<input ng-model="collapseOnRollOut" type="checkbox" class="checkbox checkbox-light" />
+					<span>Collapse on Roll Out</span>
 				</label>
 			</div>
 		</div>
+
 
 	</div>
 </div>
