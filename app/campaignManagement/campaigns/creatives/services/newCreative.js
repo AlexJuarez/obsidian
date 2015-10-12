@@ -88,8 +88,13 @@ define(function(require) {
          * @param callback
          */
         function createDisplayAdStrategy(creative, hostname, callback) {
+            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
+                environment = getAdEnvironment(creative.environment),
+                title = creative.name,
+                clickthroughUrl = creative.clickthroughUrl,
+                campaignId = creative.campaignId;
             var builder = studioUrlBuilder
-                .mediaselect() // TODO(Hays) will need to update the mediaselect()
+                .mediaselect(adType, environment, title, clickthroughUrl, campaignId)
                 .setHostname(hostname);
 
             callback(null, builder.build());

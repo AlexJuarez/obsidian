@@ -33,14 +33,13 @@ define(function (require) {
                 campaignId: '_campaignId_'
             };
 
-            //var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IMG&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&title=_title_&url=_clickthrough_';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?filter=%7B%22sd_adtype%22:%22IMG%22,%22sd_adenv%22:%22multiscreen%22,%22sd_title%22:%22_title_%22,%22sd_url%22:%22_clickthrough_%22,%22campaignId%22:%22_campaignId_%22%7D&sdf=mediaselect';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler);
 
             scope.$digest();
-            //expect(handler).toHaveBeenCalledWith(calledUrl);
-            expect(handler).toHaveBeenCalled();
+            expect(handler).toHaveBeenCalledWith(calledUrl);
         });
 
         it('should return rejected promise for valid creative', function() {
@@ -78,14 +77,13 @@ define(function (require) {
              expect(result.tcw).toBeUndefined();
              expect(result.tch).toBeUndefined();
              */
-            //var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IMG&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?filter=%7B%22sd_adtype%22:%22IMG%22,%22sd_adenv%22:%22multiscreen%22,%22sd_title%22:%22El+Title%22,%22sd_url%22:%22lego.com%22,%22campaignId%22:%22_campaignId_%22%7D&sdf=mediaselect';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler);
 
             scope.$digest();
-            //expect(handler).toHaveBeenCalledWith(calledUrl);
-            expect(handler).toHaveBeenCalled();
+            expect(handler).toHaveBeenCalledWith(calledUrl);
         });
 
         it('should return fullfiled promise for SWF creative', function() {
@@ -113,14 +111,13 @@ define(function (require) {
              expect(result.tcw).toBeUndefined();
              expect(result.tch).toBeUndefined();
              */
-            //var calledUrl = '//alpha-studio.mixpo.com/studio?ad=SWF&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?filter=%7B%22sd_adtype%22:%22SWF%22,%22sd_adenv%22:%22multiscreen%22,%22sd_title%22:%22El+Title%22,%22sd_url%22:%22lego.com%22,%22campaignId%22:%22_campaignId_%22%7D&sdf=mediaselect';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler);
 
             scope.$digest();
-            //expect(handler).toHaveBeenCalledWith(calledUrl);
-            expect(handler).toHaveBeenCalled();
+            expect(handler).toHaveBeenCalledWith(calledUrl);
         });
 
         it('should return fullfiled promise for In-Stream Video creative', function() {
