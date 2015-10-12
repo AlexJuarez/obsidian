@@ -24,47 +24,84 @@ define(function(require) {
         return function(creative) {
             var deferred = $q.defer();
             var hostname = studioLocation.host();
-
-            adapt(function(err, url) {
+            validate(creative, function(err) {
                 if(err) {
                     deferred.reject(err);
                     return;
                 }
-                deferred.resolve(url);
-            }, creative, hostname);
 
+                var strategy = getAdTypeStrategy(creative.type);
+                strategy(creative, hostname, function(err, url){
+                    if(err) {
+                        deferred.reject(err);
+                        return;
+                    }
+                    deferred.resolve(url);
+                });
+            });
             return deferred.promise;
         };
 
-        function adapt(callback, creative, hostname) {
-            validate(function(err) {
-                if(err) {
-                    callback(err);
-                    return;
-                }
+        /**
+         *
+         * @param type - creative.type
+         * @returns {Object} Strategy
+         */
+        function getAdTypeStrategy(type) {
+            var strategy = createDefaultAdStrategy; // use default create strategy
+            if(type === types.display) {
+                // if display image or display swfs, use DisplayAd strategy
+                strategy = createDisplayAdStrategy;
+            }
+            return strategy;
+        }
 
-                // on success
-                var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
-                    environment = getAdEnvironment(creative.environment),
-                    title = creative.name,
-                    clickthroughUrl = creative.clickthroughUrl,
-                    campaignId = creative.campaignId;
+        /**
+         * Create Default (Non-DisplayAd) Strategy
+         *
+         * @param creative
+         * @param hostname
+         * @param callback
+         */
+        function createDefaultAdStrategy(creative, hostname, callback) {
+            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
+                environment = getAdEnvironment(creative.environment),
+                title = creative.name,
+                clickthroughUrl = creative.clickthroughUrl,
+                campaignId = creative.campaignId;
 
-                var builder = studioUrlBuilder
-                    .create(adType, environment, title, clickthroughUrl, campaignId)
-                    .setHostname(hostname);
-                setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
-                callback(null, builder.build());
-            }, creative);
+            var builder = studioUrlBuilder
+                .create(adType, environment, title, clickthroughUrl, campaignId)
+                .setHostname(hostname);
+            setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
+
+            callback(null, builder.build());
+        }
+
+        /**
+         * Create DisplayAd Strategy, for all but Display Ads.
+         * Display Ads are special in that they need to supply a MediaItem to the Servlet.
+         * Uploading MediaItems is a special Async process.
+         *
+         * @param creative
+         * @param hostname
+         * @param callback
+         */
+        function createDisplayAdStrategy(creative, hostname, callback) {
+            var builder = studioUrlBuilder
+                .mediaselect() // TODO(Hays) will need to update the mediaselect()
+                .setHostname(hostname);
+
+            callback(null, builder.build());
         }
 
         /**
          * Validates the Creative
          *
-         * @param callback
          * @param creative
+         * @param callback
          */
-        function validate(callback, creative) {
+        function validate(creative, callback) {
             if(!creative) {
                 callback('creative is required');
                 return;
