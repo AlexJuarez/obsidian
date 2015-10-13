@@ -190,7 +190,7 @@ define(function(require) {
                     });
 
                     if (placements.length > 0) {
-                        var firstPlacementName = placements[0].all().name;
+                        var firstPlacementName = placements[0].data.name;
                         download(firstPlacementName + '_tags.txt', tags);
                     }
                 });
