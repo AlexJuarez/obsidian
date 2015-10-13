@@ -1,5 +1,4 @@
 function divisionPage(){
-
 }
 
 // PAGE ELEMENTS
