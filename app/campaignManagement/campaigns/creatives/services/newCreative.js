@@ -13,17 +13,18 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('newCreativeService', ['ENUMS', '$httpParamSerializer', '$q', 'studioLocation', 'studioUrlBuilder', function(ENUMS, $httpParamSerializer, $q, studioLocation, studioUrlBuilder) {
+    module.service('newCreativeService', ['ENUMS', '$httpParamSerializer', '$q', '$http', '$window' ,'studioLocation', 'studioUrlBuilder',
+        function(ENUMS, $httpParamSerializer, $q, $http, $window, studioLocation, studioUrlBuilder) {
         var types = ENUMS.up.creativeTypes;
         var environments = ENUMS.up.creativeEnvironments;
 
         /**
          * @param creative
+         * @param mediaItem
          * @returns {Object} builder
          */
-        return function(creative) {
+        return function(creative, mediaItem) {
             var deferred = $q.defer();
-            var hostname = studioLocation.host();
             validate(creative, function(err) {
                 if(err) {
                     deferred.reject(err);
@@ -31,7 +32,7 @@ define(function(require) {
                 }
 
                 var strategy = getAdTypeStrategy(creative.type);
-                strategy(creative, hostname, function(err, url){
+                strategy(creative, mediaItem, function(err, url){
                     if(err) {
                         deferred.reject(err);
                         return;
@@ -60,22 +61,40 @@ define(function(require) {
          * Create Default (Non-DisplayAd) Strategy
          *
          * @param creative
+         * @param mediaItem
          * @param hostname
          * @param callback
          */
-        function createDefaultAdStrategy(creative, hostname, callback) {
+        function createDefaultAdStrategy(creative, mediaItem, callback) {
             var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
                 environment = getAdEnvironment(creative.environment),
                 title = creative.name,
                 clickthroughUrl = creative.clickthroughUrl,
-                campaignId = creative.campaignId;
+                campaignId = creative.campaignId,
+                hostname = studioLocation.host();
 
             var builder = studioUrlBuilder
                 .create(adType, environment, title, clickthroughUrl, campaignId)
                 .setHostname(hostname);
             setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
 
-            callback(null, builder.build());
+            var tabWindow = $window.open(
+                builder.build(),
+                'mixpo_studio'
+            );
+            tabWindow.StudioDirectHandler = (function(){
+                function onClose(code, detail) {
+                    if(code && detail) {
+                        // so jshint shuts up
+                    }
+                    tabWindow.close();
+                }
+
+                return {
+                    onClose: onClose
+                };
+            })();
+            callback(null, tabWindow);
         }
 
         /**
@@ -84,20 +103,27 @@ define(function(require) {
          * Uploading MediaItems is a special Async process.
          *
          * @param creative
+         * @param mediaItem
          * @param hostname
          * @param callback
          */
-        function createDisplayAdStrategy(creative, hostname, callback) {
-            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
-                environment = getAdEnvironment(creative.environment),
-                title = creative.name,
-                clickthroughUrl = creative.clickthroughUrl,
-                campaignId = creative.campaignId;
-            var builder = studioUrlBuilder
-                .mediaselect(adType, environment, title, clickthroughUrl, campaignId)
-                .setHostname(hostname);
-
-            callback(null, builder.build());
+        function createDisplayAdStrategy(creative, mediaItem, callback) {
+            var hostname = studioLocation.host();
+            $http({
+                data: {
+                    mediaguid: mediaItem.id,
+                    title: creative.name,
+                    clickThrough: creative.clickthroughUrl,
+                    deviceTargets: getAdEnvironment(creative.environment),
+                    adServer: '' // (if mraid) ? 'mraid' : ''
+                },
+                method: 'POST',
+                url: hostname + '/manager/dafrommedia'
+            }).then(function successCallback(response) {
+                return callback(null, response);
+            }, function errorCallback(response) {
+                return callback(response);
+            });
         }
 
         /**
