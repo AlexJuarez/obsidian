@@ -16,4 +16,5 @@ dist
 build/fonts
 assets/styles/core.css
 assets/styles/screen.css
+assets/fonts/mixpo-icons-hinted.ttf
 test-results.xml

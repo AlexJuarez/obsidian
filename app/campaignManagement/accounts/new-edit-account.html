@@ -12,7 +12,7 @@
         <div ng-if="divisions" class="form-group row" ng-class="{'has-error': (newAccount.divisionId.$invalid || errors.divisionId) && submitted}">
             <label class="col-sm-3 form-label required"><span>Division</span></label>
             <div class="col-sm-9">
-                <select id="new-edit-account-division-select" name="division" select2 ng-options="division.id as division.name for division in divisions track by division.id" ng-model="account.divisionId" required>
+                <select id="new-edit-account-division-select" name="division" select2 s2-options="division.id as division.name for division in divisions track by division.id" ng-model="account.divisionId" required>
                 </select>
                 <p ng-show="newAccount.division.$invalid && submitted" class="help-block">
                     division is required
@@ -23,9 +23,9 @@
             </div>
         </div>
         <div class="form-group row" ng-class="{'has-error': (newAccount.name.$invalid || errors.name) && submitted}">
-            <label for="name" class="col-sm-3 form-label required"><span>Account Name</span></label>
+            <label for="new-edit-account-name-field" class="col-sm-3 form-label required"><span>Account Name</span></label>
             <div class="col-sm-9">
-                <input id="new-edit-account-name-field" ng-model="account.name" type="text" name="name" class="form-control" id="name" placeholder="Enter new account name" required />
+                <input id="new-edit-account-name-field" ng-model="account.name" type="text" name="name" class="form-control" placeholder="Enter new account name" required />
                 <p ng-show="newAccount.name.$invalid && submitted" class="help-block">
                     account name is required
                 </p>
@@ -35,15 +35,15 @@
             </div>
         </div>
         <div class="form-group row">
-            <label for="keywords" class="col-sm-3 form-label"><span>Account Keywords</span></label>
+            <label for="new-edit-account-keywords-field" class="col-sm-3 form-label"><span>Account Keywords</span></label>
             <div class="col-sm-9">
-                <input id="new-edit-account-keywords-field" ng-model="account.keywords" type="text" class="form-control" id="keywords" placeholder="Enter account keywords" />
+                <input id="new-edit-account-keywords-field" ng-model="account.keywords" type="text" class="form-control" placeholder="Enter account keywords" />
             </div>
         </div>
         <div class="form-group row" ng-class="{'has-error': (newAccount.industry.$invalid || errors.industryId) && submitted}">
             <label class="col-sm-3 form-label required"><span>Industry</span></label>
             <div class="col-sm-9">
-                <select id="new-edit-account-industry-select" name="industry" select2 ng-options="industry.id as industry.name for industry in industries track by industry.id" ng-model="account.industryId" required>
+                <select id="new-edit-account-industry-select" name="industry" select2 s2-options="industry.id as industry.name for industry in industries track by industry.id" ng-model="account.industryId" required>
                 </select>
                 <p ng-show="newAccount.industry.$invalid && submitted" class="help-block">
                     industry is required
@@ -60,9 +60,9 @@
             </div>
         </div>
         <div class="form-group row" ng-class="{'has-error': (newAccount.clickthroughUrl.$invalid || errors.clickthroughUrl) && submitted}">
-            <label for="clickthroughUrl" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>
+            <label for="new-edit-account-url-field" class="col-sm-3 form-label"><span>Clickthrough URL</span></label>
             <div class="col-sm-9">
-                <input id="new-edit-account-url-field" ng-model="account.clickthroughUrl" type="text" ng-pattern="URL_REGEX" class="form-control" name="clickthroughUrl" id="clickthroughUrl" placeholder="Enter URL" />
+                <input id="new-edit-account-url-field" ng-model="account.clickthroughUrl" type="text" ng-pattern="URL_REGEX" class="form-control" name="clickthroughUrl" placeholder="Enter URL" />
                 <p ng-show="newAccount.clickthroughUrl.$invalid && submitted" class="help-block">
                     clickthrough url is invalid
                 </p>
@@ -72,9 +72,9 @@
             </div>
         </div>
         <div class="form-group row" ng-class="{'has-error': (newAccount.leadCaptureEmail.$invalid || errors.leadCaptureEmail) && submitted}">
-            <label for="leadCaptureEmail" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>
+            <label for="new-edit-account-email-field" class="col-sm-3 form-label"><span>Lead Capture Email</span></label>
             <div class="col-sm-9">
-                <input id="new-edit-account-email-field" ng-model="account.leadCaptureEmail" type="email" class="form-control" name="leadCaptureEmail" id="leadCaptureEmail" placeholder="Enter Lead Capture Email" />
+                <input id="new-edit-account-email-field" ng-model="account.leadCaptureEmail" type="email" class="form-control" name="leadCaptureEmail" placeholder="Enter Lead Capture Email" />
                 <p ng-show="newAccount.leadCaptureEmail.$invalid && submitted" class="help-block">
                     lead capture email is invalid
                 </p>

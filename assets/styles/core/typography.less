@@ -1,3 +1,5 @@
+@import "brand";
+
 /* for IE8 support */
 .font-size(@size) {
     @remValue: @size;
@@ -26,6 +28,10 @@ h1, h2, h3, h4, h5, h6 {
         font-weight: normal;
         color: @gray;
     }
+}
+
+.warn {
+    color: @brand-warning;
 }
 
 h1 {

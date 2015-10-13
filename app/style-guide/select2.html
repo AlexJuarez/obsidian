@@ -1,11 +1,12 @@
 <h1 id="select2">Select2</h1>
 <hr />
 <p>A custom select2 directive exists! <code>select2</code> and allows for the following attributes</p>
+<p class="warn">warning: do not wrap select2 elements in label, on mobile it will cause the select to open</p>
 <ul>
     <li><code>multiple</code> - makes the select a multiselect</li>
     <li><code>select2</code> - options hash</li>
     <li><code>ng-model</code>optional - binds to a model</li>
-    <li><code>ng-options</code>optional - binds to a value collection</li>
+    <li><code>s2-options | ng-options</code>optional - binds to a value collection see <a href="https://docs.angularjs.org/api/ng/directive/ngOptions">ngOptions</a> for documentation.</li>
     <li><code>ng-model-options</code>optional - example <code>ng-model-options="{ getterSetter: true }"</code></li>
 </ul>
 <h3>Options</h3>
@@ -34,12 +35,12 @@
         <label for="multiselection">Select Tags:</label>
     </div>
     <div class="form-group">
-        <select id="multiselection" tags="true" select2 multiple ng-model="selected" ng-options="item.name for item in multiselect track by item.value"></select>
+        <select id="multiselection" tags="true" select2 multiple ng-model="selected" s2-options="item.name for item in multiselect track by item.value"></select>
     </div>
 </div>
 <div class="highlight" highlight>
 <pre><code class="html">
-&lt;select select2 multiple tags=&quot;true&quot; ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in multiselect track by item.value&quot;&gt;
+&lt;select select2 multiple tags=&quot;true&quot; ng-model=&quot;selected&quot; s2-options=&quot;item.name for item in multiselect track by item.value&quot;&gt;
 &lt;/select&gt;
 </code></pre>
 </div>

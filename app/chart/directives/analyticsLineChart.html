@@ -1,16 +1,16 @@
 <div class="interactive-chart">
     <form class="form-inline" role="form">
         <div class="form-group">
-            <label class="form-label">
+            <div class="form-label">
                 <span class="sr-only">Show Options</span>
                 <select select2 ng-model="show" ng-options="item.value as item.name for item in showOptions track by item.value"></select>
-            </label>
+            </div>
         </div>
         <div class="form-group">
-            <label class="form-label">
+            <div class="form-label">
                 <span>View By: </span>
                 <select select2 ng-model="interval" ng-options="item.value as item.name for item in intervalOptions track by item.value"></select>
-            </label>
+            </div>
         </div>
         <div class="form-group">
             <label for="startDate" class="form-label">
