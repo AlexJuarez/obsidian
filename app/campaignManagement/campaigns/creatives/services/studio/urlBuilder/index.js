@@ -65,14 +65,14 @@ define(function(require) {
             /**
              * Select a media item from the media library Fluent url builder
              *
-             * @param {string} The ad type SWF, IMG
-             * @param {string} The ad environment multiscreen | desktop | tabletphone | inappmraid
-             * @param {string} The title of the ad
-             * @param {string} The clickthrough url
-             * @param {string} The campaignId of the new ad
+             * @param {string} adType The ad type SWF, IMG
+             * @param {string} environment The ad environment multiscreen | desktop | tabletphone | inappmraid
+             * @param {string} title The title of the ad
+             * @param {string} clickthroughUrl The clickthrough url
+             * @param {string} campaignId The campaignId of the new ad
              * @returns {Object} builder
              */
-            mediaselect: function(adType, environment, title, clickthroughUrl, campaignId) {
+            mediaselect: function(campaignId, adType, environment, title, clickthroughUrl) {
                 return require('./mediaselect')
                 ($httpParamSerializer)
                     // Studio uses Mixin's to parse the options from the servlet,
@@ -81,10 +81,10 @@ define(function(require) {
                     // values, or in this case fill values which would otherwise
                     // be null.
                     .setFilter({
-                        sd_adtype: adType,
-                        sd_adenv: environment,
-                        sd_title: title,
-                        sd_url: clickthroughUrl,
+                        'sd_adtype': adType,
+                        'sd_adenv': environment,
+                        'sd_title': title,
+                        'sd_url': clickthroughUrl,
                         campaignId: campaignId
                     });
             }

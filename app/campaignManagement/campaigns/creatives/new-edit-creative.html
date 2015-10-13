@@ -192,23 +192,29 @@
             </div>
         </div>
 
-        <div ng-if="creative.subtype == 'SWF' && !editing">
-            <div class="form-group row">
-                <label class="col-sm-3 form-label">Upload SWF</label>
-                <div class="col-sm-9 file-selection-wrapper form-inline">
-                    <div file-picker accept="'application/x-shockwave-flash'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>
-                </div>
-            </div>
+        <div ng-show="creative.campaignId" class="form-group row">
+          <label class="col-sm-3 form-label">Upload</label>
+          <div class="col-sm-9 file-selection-wrapper form-inline">
+            <button ng-click="selectMedia()">Select Media</button>
+          </div>
         </div>
+        <!--<div ng-if="creative.subtype == 'SWF' && !editing">-->
+            <!--<div class="form-group row">-->
+                <!--<label class="col-sm-3 form-label">Upload SWF</label>-->
+                <!--<div class="col-sm-9 file-selection-wrapper form-inline">-->
+                    <!--<div file-picker accept="'application/x-shockwave-flash'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
 
-        <div ng-if="creative.subtype == 'IMG' && !editing">
-            <div class="form-group row">
-                <label class="col-sm-3 form-label">Upload Image</label>
-                <div class="col-sm-9 file-selection-wrapper form-inline">
-                    <div file-picker ng-model="creative.file"></div>
-                </div>
-            </div>
-        </div>
+        <!--<div ng-if="creative.subtype == 'IMG' && !editing">-->
+            <!--<div class="form-group row">-->
+                <!--<label class="col-sm-3 form-label">Upload Image</label>-->
+                <!--<div class="col-sm-9 file-selection-wrapper form-inline">-->
+                    <!--<div file-picker ng-model="creative.file"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
 
         <div ng-show="creative.type==='inBanner' && creative.expandedDimensions === nonExpandingIndex" class="form-group row">
             <label ng-class="{disabled:editing}" for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>

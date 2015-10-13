@@ -8,11 +8,36 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'notification',
+         'CREATIVE_SETTINGS', 'notification', 'studioUrlBuilder',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, notification
+              creativeSettings, notification, studioUrlBuilder
     ) {
+
+        $scope.selectMedia = function() {
+            var tabWindow = $window.open(
+              studioUrlBuilder.mediaselect($scope.creative.campaignId),
+              'mixpo_studio'
+            );
+
+            tabWindow.StudioDirectHandler = (function(){
+
+                function onClose(code, detail){
+                    alert("Studio Closed with: \n,Code:" + code + "\nDetail:\n" + detail);
+                    //close the window and call back to the parent
+                }
+
+                function onMediaSelect(uuid, detail){
+                    alert("Media Selected: \n,UUID:" + uuid + "\nDetail:\n" + detail);
+                }
+
+                return {
+                    onClose: onClose,
+                    onMediaSelect: onMediaSelect
+                }
+            })();
+        };
+
         var record;
 
         //Modal functions
