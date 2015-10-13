@@ -2,17 +2,31 @@ define(function (require) {
     'use strict';
 
     var app = require('./../module');
-    require('tpl!./loadingIndicator.html');
+    var template = require('tpl!./loadingIndicator.html');
 
-    app.directive('loadingIndicator', [function () {
+    app.directive('loadingIndicator', ['$compile', function ($compile) {
         return {
             restrict: 'A',
             replace: false,
-            scope: {
-                isLoaded: '=loadingIndicator',
-                showLoader: '='
-            },
-            templateUrl: 'core/directives/loadingIndicator.html'
+            scope: false,
+            link: function(scope, element, attrs) {
+
+                var showLoader = scope.$eval(attrs.showLoader);
+
+                if (showLoader) {
+                    element.addClass('indicate-loading');
+                    var childScope = scope.$new();
+                    scope.$watch(attrs.loadingIndicator, function(val) {
+                        childScope.isLoaded = val;
+                        if (val) {
+                            element.removeClass('indicate-loading');
+                        }
+                    });
+
+                    var loader = $compile(template)(childScope);
+                    element.prepend(loader);
+                }
+            }
         };
     }]);
 });
