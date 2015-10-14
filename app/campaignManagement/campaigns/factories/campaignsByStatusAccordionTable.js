@@ -5,7 +5,7 @@ define(function (require) {
     var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
     var ng = require('angular');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
+    module.factory('campaignAccordionTableFactory', ['paginationFactory', '$state', function (paginationFactory, $state) {
         return function() {
             var header;
             var rows = paginationFactory(sortRows);

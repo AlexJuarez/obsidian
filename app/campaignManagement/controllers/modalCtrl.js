@@ -30,7 +30,7 @@ define(function (require) {
             var creative = {
                 id: id,
                 campaignId: campaignId
-            }
+            };
             openCreativeService(creative, '//'+ urlPrefix());
         };
     }]);
