@@ -121,7 +121,7 @@ define(function (require) {
             }
 
             // Creating a new placement under a campaign
-            if (modalState.originalPlacement.campaignId) {
+            if (modalState.originalPlacement && modalState.originalPlacement.campaignId) {
                 record = placementRecordService.create(modalState.originalPlacement);
                 record.set(modalState.placement);
                 record.observe(update, $scope);
