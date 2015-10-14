@@ -9,18 +9,23 @@ define(function (require) {
             restrict: 'A',
             scope: false,
             link: function (scope, rootElement, attrs) {
-                var header = scope.$eval(attrs.tableHeader);
                 var element;
+                scope.$watch(attrs.tableHeader, function(val) {
+                    if (element) {
+                        element.remove();
+                        element = null;
+                    }
 
-                if (ng.isObject(header) && header.template) {
-                    element = ng.element(header.template);
-                    ng.extend(scope, header.locals);
-                } else {
-                    element = ng.element(header);
-                }
+                    if (ng.isObject(val) && val.template) {
+                        element = ng.element(val.template);
+                        ng.extend(scope, val.locals);
+                    } else {
+                        element = ng.element(val);
+                    }
 
-                $compile(element)(scope);
-                rootElement.append(element);
+                    $compile(element)(scope);
+                    rootElement.append(element);
+                }, true);
             }
         };
     }]);

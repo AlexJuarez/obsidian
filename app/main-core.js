@@ -36,7 +36,7 @@ require.config({
             deps: ['jquery', 'angular']
         },
         'angular': {
-            deps: ['jquery'],
+            deps: ['jquery', 'perfect-scrollbar'],
             exports: 'angular'
         },
         'ui-router': {

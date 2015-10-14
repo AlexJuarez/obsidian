@@ -21,8 +21,7 @@ define(function (require) {
         });
 
         function getApiUriConfig() {
-            var newConfig = {};
-            ng.extend(newConfig, apiConfig);
+            var newConfig = ng.copy(apiConfig);
             newConfig.queryParams.filters = filter();
             return newConfig;
         }

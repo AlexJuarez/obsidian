@@ -318,6 +318,13 @@ table {
         .font-size(1.6);
         padding: 1rem 2rem;
         position: relative;
+        span:first-child {
+            display: inline-block;
+            max-width: ~"calc(100% - 30px)";
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
         .right {
             display: none;
             @media(min-width: @screen-sm-min) {
