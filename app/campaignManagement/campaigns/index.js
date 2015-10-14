@@ -11,6 +11,7 @@ define(function (require) {
     filters();
 
     function services() {
+        require('./services/adTags');
         require('./services/campaignCache');
         require('./services/campaignsByAccount');
         require('./services/campaignsByStatus');

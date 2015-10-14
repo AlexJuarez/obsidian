@@ -1,21 +1,19 @@
 <div>
     <div class="form-group row">
-        <div class="col-sm-3 text-right-sm">
-            <span>Expand Direction</span></div>
+        <label class="col-sm-3 form-label required"><span>Expand Direction</span></label>
         <div class="col-sm-9">
             <select select2
+                    name="expandDirection"
                     s2-options="direction.id as direction.name for direction in expandDirections track by direction.id"
-                    ng-model="expandDirection">
+                    ng-model="placement.expandDirection">
             </select>
         </div>
     </div>
-    <div ng-show="expandDirection" class="form-group row">
-        <div class="col-sm-3 text-right-sm">
-            <span>Expand Anchor</span>
-        </div>
+    <div ng-show="placement.expandDirection" class="form-group row">
+        <label class="col-sm-3 form-label required"><span>Expand Anchor</span></label>
         <div class="row col-sm-9">
           <div class="col-sm-2" ng-repeat="anchor in expandAnchors">
-            <div class="expand-anchor" ng-class="{selected:expandAnchor===anchor.value}">
+            <div class="expand-anchor" ng-class="{selected:placement.expandAnchor === anchor.value}">
               <img ng-click="setExpandAnchor(anchor.value)" ng-src="{{anchor.image}}" />
             </div>
           </div>

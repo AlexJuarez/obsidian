@@ -40,7 +40,6 @@ requirejs.config({
         'hljs': '/base/app/components/highlightjs/highlight.pack',
         'jquery': '/base/app/components/jquery/dist/jquery',
         'select2': '/base/app/components/select2/dist/js/select2.full',
-        'ng-perfect-scrollbar': '/base/app/components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': '/base/app/components/perfect-scrollbar/src/perfect-scrollbar',
         'simpleUpload': '/base/app/components/Simple-Ajax-Uploader/SimpleAjaxUploader'
     },
@@ -56,7 +55,7 @@ requirejs.config({
         },
         'angular': {
             exports: 'angular',
-            deps: ['jquery']
+            deps: ['jquery', 'perfect-scrollbar']
         },
         'ui-router': {
             deps: ['angular']
@@ -64,9 +63,6 @@ requirejs.config({
         'simpleUpload': {
             deps: ['jquery'],
             exports: 'ss'
-        },
-        'ng-perfect-scrollbar': {
-            deps: ['angular', 'perfect-scrollbar']
         },
         'perfect-scrollbar': {
             deps: ['jquery']

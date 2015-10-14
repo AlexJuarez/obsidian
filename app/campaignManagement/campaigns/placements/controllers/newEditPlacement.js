@@ -1,216 +1,110 @@
 /* globals confirm */
-define(function (require) {
-    'use strict';
+define(function(require) {
+	'use strict';
 
-    var app = require('./../../../module');
+	var app = require('./../../../module');
 
-    var ng = require('angular');
+	var ng = require('angular');
 
-    app.controller('newEditPlacementCtrl', [
-        '$scope', '$q', '$modalInstance', '$timeout', '$filter', 'placements',
-        'placementRecordService', 'campaignRecordService',
-        'accountRecordService', 'divisionRecordService',
-        'clientRecordService', 'clientPublisherRecordService',
-        'modalState', 'creatives',
-    function ($scope, $q, $modalInstance, $timeout, $filter, placements,
-            placementRecordService, campaignRecordService,
-            accountRecordService, divisionRecordService,
-            clientRecordService, clientPublisherRecordService,
-    modalState, creativeService) {
+	app.controller('newEditPlacementCtrl', [
+		'$scope', '$q', '$modalInstance', '$timeout', 'placements',
+		'placementRecordService', 'modalState',
+		function($scope, $q, $modalInstance, $timeout, placements,
+						 placementRecordService, modalState) {
 
-        $scope.ok = ok;
-        $scope.cancel = cancel;
-        $scope.action = modalState.action;
-        $scope.multiplePlacements = modalState.placementIds && modalState.placementIds.length > 1;
-        $scope.formatDate = formatDate;
+			$scope.numberRegex = /^[0-9]*$/;
+			$scope.ok = ok;
+			$scope.cancel = cancel;
+			$scope.action = modalState.action;
+			$scope.multiplePlacements = modalState.placementIds && modalState.placementIds.length > 1;
 
-        var records = [];
-        var record;
+			var records = [];
+			var record;
+			var placementPromises = [];
+			var r, id;
 
-        setupDatePickers();
-        setupRateTypes();
-        setupPickCreative();
-        setupModal();
+			// Editing placement(s)
+			if(modalState.placementIds) {
+				$scope.placement = {};
+				for(var i = 0; i < modalState.placementIds.length; i ++) {
+					id = modalState.placementIds[i];
+					r = placementRecordService.get(id);
+					placementPromises.push(placementRecordService.fetch(id));
+					records.push(r);
+				}
 
-        creativeService.observe(setupPickCreative, $scope);
+				$q.all(placementPromises).then(function() {
+					record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
+					record.observe(update, $scope);
+				});
+			}
 
-        function setupDatePickers() {
-            $scope.format = 'MM/dd/yyyy';
-            $scope.openPicker = openPicker;
-            $scope.datePickers = {};
-            $scope.dateOptions = {
-                formatYear: 'yy',
-                startingDay: 0,
-                maxMode: 'day'
-            };
+			// Creating a new placement under a campaign
+			if(modalState.originalPlacement && modalState.originalPlacement.campaignId) {
+				record = placementRecordService.create(modalState.originalPlacement);
+				record.set(modalState.placement);
+				record.observe(update, $scope);
+			}
 
-            function openPicker($event, name) {
-                $event.preventDefault();
-                $event.stopPropagation();
+			function update() {
+				$scope.placement = record.get();
+				$scope.errors = record.errors();
+			}
 
-                ng.forEach($scope.datePickers, function (value, key) {
-                    $scope.datePickers[key] = false;
-                });
+			/**
+			 * Returns an object filled with the equal properties of all the objects
+			 * in the placements array
+			 *
+			 * @param placements {Array<Object>}
+			 */
+			function getIntersection(placements) {
+				var intersection = placements.pop().get();
+				var curr;
 
-                $scope.datePickers[name] = true;
-            }
-        }
+				for(var i = 0; i < placements.length; i ++) {
+					curr = placements[i];
+					intersection = curr.intersect(intersection, curr.get());
+				}
 
-        function setupRateTypes() {
-            $scope.rateTypes = [
-                {id: 'CPM', name: 'CPM'},
-                {id: 'CPC', name: 'CPC'},
-                {id: 'CPV', name: 'CPV'},
-                {id: 'CPCV', name: 'CPCV'},
-                {id: 'FIXED', name: 'Fixed Fee'},
-                {id: 'ADDEDV', name: 'Added Value'}
-            ];
+				return intersection;
+			}
 
-            $scope.rateTypeFields = {
-                CPM: { showCostPer: true, showTotalCost: true },
-                CPC: { showCostPer: true, showTotalCost: true },
-                CPV: { showCostPer: true, showTotalCost: true },
-                CPCV: { showCostPer: true, showTotalCost: true },
-                FIXED: { showCostPer: false, showTotalCost: true },
-                ADDEDV: { showCostPer: false, showTotalCost: false }
-            };
+			function ok(errors) {
+				$scope.placement.expandBeforeCountdown = true;
+				$scope.placement.spanish = true;
+				$scope.placement.clickTrackers = '';
+				$scope.placement.impressionTrackers = '';
+				$scope.placement.viewTrackers = '';
+				if(ng.equals({}, errors) || ! errors) {
+					var onSuccess = function() {
+						$scope.placement = {};
+						$modalInstance.dismiss('cancel');
+					};
 
-            $scope.$watch('placement.rateType', function() {
-                var rateType = $scope.placement && $scope.placement.rateType;
-                if (rateType) {
-                    var fields = $scope.rateTypeFields[rateType];
-                    if(fields) {
-                        $scope.showCostPer = fields.showCostPer;
-                        $scope.showTotalCost = fields.showTotalCost;
-                    }
-                }
-            });
-        }
+					if(records.length) {
 
-        function setupPickCreative() {
-            var adTypes = {};
-            var creatives = creativeService.data().all();
+					} else {
+						record.save().then(onSuccess);
+					}
+				}
+				$scope.submitted = true;
+			}
 
-            creatives.forEach(function(creative) {
-                if (!adTypes[creative.type]) {
-                    adTypes[creative.type] = [];
-                }
+			function cancel() {
+				if(record.hasChanges()) {
+					if(confirm('You have unsaved changes. Really close?')) {
+						record.reset();
+						$scope.placement = record.get();
+						$modalInstance.dismiss('cancel');
+					}
+				} else {
+					$modalInstance.dismiss('cancel');
+				}
+			}
 
-                adTypes[creative.type].push(creative);
-            });
-
-            $scope.creativesByAdType = adTypes;
-        }
-
-        function setupModal() {
-            var placementPromises = [];
-            var r, id;
-            // Editing placement(s)
-            if (modalState.placementIds) {
-                for (var i=0; i<modalState.placementIds.length; i++) {
-                    id = modalState.placementIds[i];
-                    r = placementRecordService.get(id);
-                    placementPromises.push(placementRecordService.fetch(id));
-                    records.push(r);
-                }
-
-                $q.all(placementPromises).then(function() {
-                    record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
-                    record.observe(update, $scope);
-                });
-            }
-
-            // Creating a new placement under a campaign
-            if (modalState.originalPlacement && modalState.originalPlacement.campaignId) {
-                record = placementRecordService.create(modalState.originalPlacement);
-                record.set(modalState.placement);
-                record.observe(update, $scope);
-            }
-
-            function update() {
-                $scope.placement = record.get();
-                $scope.errors = record.errors();
-                updatePublishers(record.get().campaignId);
-            }
-
-            /**
-             * Returns an object filled with the equal properties of all the objects
-             * in the placements array
-             *
-             * @param placements {Array<Object>}
-             */
-            function getIntersection(placements) {
-                var intersection = placements.pop().get();
-                var curr;
-
-                for (var i=0; i<placements.length; i++) {
-                    curr = placements[i];
-                    intersection = curr.intersect(intersection, curr.get());
-                }
-
-                return intersection;
-            }
-
-            function updatePublishers(campaignId) {
-                campaignRecordService.fetch(campaignId)
-                    .then(function(resp) {
-                        accountRecordService.fetch(resp.data.accountId)
-                            .then(function(resp) {
-                                divisionRecordService.fetch(resp.data.divisionId)
-                                    .then(function(resp) {
-                                        clientRecordService.fetch(resp.data.clientId)
-                                            .then(function(resp) {
-                                                clientPublisherRecordService.fetch(resp.data.id)
-                                                    .then(function(resp) {
-                                                        $scope.publishers = resp.data;
-                                                    });
-                                            });
-                                    });
-                            });
-                    });
-            }
-        }
-
-        function ok(errors) {
-            if (ng.equals({}, errors) || !errors) {
-                var onSuccess = function() {
-                    $scope.placement = {};
-                    $modalInstance.dismiss('cancel');
-                };
-
-                if(records.length) {
-
-                } else {
-                    record.save().then(onSuccess);
-                }
-            }
-            $scope.submitted = true;
-        }
-
-        function cancel() {
-            if (record.hasChanges()) {
-                if (confirm('You have unsaved changes. Really close?')) {
-                    record.reset();
-                    $scope.placement = record.get();
-                    $modalInstance.dismiss('cancel');
-                }
-            } else {
-                $modalInstance.dismiss('cancel');
-            }
-        }
-
-        $scope.$on('$destroy', function() {
-            modalState.placement = $scope.placement;
-        });
-
-        function formatDate($event) {
-            var date = new Date($event.target.value);
-            if (isNaN( date.getTime() )) {
-
-                // Date doesn't parse!
-                date = new Date('Jan 1 2000');
-            }
-            $event.target.value = $filter('date')(date, 'M/d/yyyy');
-        }
-    }]);
+			$scope.$on('$destroy', function() {
+				modalState.placement = $scope.placement;
+			});
+		}
+	]);
 });

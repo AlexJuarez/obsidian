@@ -12,7 +12,6 @@ require.config({
         'hljs': 'components/highlightjs/highlight.pack',
         'jquery': 'components/jquery/dist/jquery',
         'select2': 'components/select2/dist/js/select2.full',
-        'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
         'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0',
         'simpleUpload': 'components/Simple-Ajax-Uploader/SimpleAjaxUploader'
@@ -30,9 +29,6 @@ require.config({
         'select2': {
             deps: ['jquery']
         },
-        'ng-perfect-scrollbar': {
-            deps: ['angular', 'perfect-scrollbar']
-        },
         'simpleUpload': {
             deps: ['jquery'],
             exports: 'ss'
@@ -44,7 +40,7 @@ require.config({
             deps: ['jquery']
         },
         'angular': {
-            deps: ['jquery'],
+            deps: ['jquery', 'perfect-scrollbar'],
             exports: 'angular'
         },
         'ui-router': {
