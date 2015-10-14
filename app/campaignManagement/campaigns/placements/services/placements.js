@@ -74,7 +74,10 @@ define(function (require) {
             for(var i=0; i<groups.length; i++) {
                 groupData = groups[i];
                 transformedGroup = {
-                    header: $interpolate(tableHeaderTemplate)(groupData),
+                    header: {
+                        template: tableHeaderTemplate,
+                        locals: groupData
+                    },
                     content: {
                         rules: rules,
                         headers: headers,
