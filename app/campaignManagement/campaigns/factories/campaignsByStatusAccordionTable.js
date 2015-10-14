@@ -5,7 +5,7 @@ define(function (require) {
     var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
     var ng = require('angular');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
+    module.factory('campaignAccordionTableFactory', ['paginationFactory', '$state', function (paginationFactory, $state) {
         return function() {
             var header;
             var rows = paginationFactory(sortRows);
@@ -169,28 +169,31 @@ define(function (require) {
             }
 
             function _getTableHeader(data) {
-                var template;
-
                 if (!data) {
                     return '';
                 }
+
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {
-                        template = $interpolate(headerTemplate);
-                        return template({
-                            status: status,
-                            title: title,
-                            count: header.metrics.count,
-                            countPlacementsLive: header.metrics.countPlacementsLive
-                        });
+                        return {
+                            template: headerTemplate,
+                            locals: {
+                                status: status,
+                                title: title,
+                                count: header.metrics.count,
+                                countPlacementsLive: header.metrics.countPlacementsLive
+                            }
+                        };
                     }
                 }
 
-                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
-                return template({
-                    title: title
-                });
+                return {
+                    template: '<div><span class="icon-status"></span>{{title}} (0)</div>',
+                    locals: {
+                        title: title
+                    }
+                };
             }
 
             function observe(callback, $scope) {

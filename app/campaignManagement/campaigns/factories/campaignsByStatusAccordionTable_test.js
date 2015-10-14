@@ -161,9 +161,14 @@ define(function(require) {
                 }
             ];
 
-            var expected = '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>My Status (10)';
+            var expected = {
+                title: 'My Status',
+                status: 'myStatus',
+                count: 10,
+                countPlacementsLive: 1
+            };
             scope.$digest();
-            expect($.trim(test._getTableHeader(given))).toEqual(expected);
+            expect(test._getTableHeader(given).locals).toEqual(expected);
         });
 
         it('should get default headers given no status', function () {
@@ -177,9 +182,9 @@ define(function(require) {
                 {status: 'yourStatus'}
             ];
 
-            var expected = '<span class="icon-status"></span>My Status (0)';
+            var expected = 'My Status';
             scope.$digest();
-            expect($.trim(test._getTableHeader(given))).toEqual(expected);
+            expect(test._getTableHeader(given).locals.title).toEqual(expected);
         });
 
         it('should sort rows correctly', function () {

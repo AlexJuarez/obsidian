@@ -19,7 +19,7 @@ define(function(require) {
 
     var rules = {
         checked: 'checkbox',
-        creativeName: '',
+        creativeName: 'tooltip',
         delivering: 'delivering',
         type: '',
         dimensions: '',

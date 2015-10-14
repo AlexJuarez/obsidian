@@ -13,58 +13,125 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('newCreativeService', ['ENUMS', '$httpParamSerializer', '$q', 'studioLocation', 'studioUrlBuilder', function(ENUMS, $httpParamSerializer, $q, studioLocation, studioUrlBuilder) {
+    module.service('newCreativeService', ['ENUMS', '$httpParamSerializer', '$q', '$http', '$window' ,'studioLocation', 'studioUrlBuilder',
+        function(ENUMS, $httpParamSerializer, $q, $http, $window, studioLocation, studioUrlBuilder) {
         var types = ENUMS.up.creativeTypes;
         var environments = ENUMS.up.creativeEnvironments;
 
         /**
          * @param creative
+         * @param mediaItem
          * @returns {Object} builder
          */
-        return function(creative) {
+        return function(creative, mediaItem) {
             var deferred = $q.defer();
-            var hostname = studioLocation.host();
-
-            adapt(function(err, url) {
+            validate(creative, function(err) {
                 if(err) {
                     deferred.reject(err);
                     return;
                 }
-                deferred.resolve(url);
-            }, creative, hostname);
 
+                var strategy = getAdTypeStrategy(creative.type);
+                strategy(creative, mediaItem, function(err, data){
+                    if(err) {
+                        return deferred.reject(err);
+                    }
+                    deferred.resolve(data);
+                });
+            });
             return deferred.promise;
         };
 
-        function adapt(callback, creative, hostname) {
-            validate(function(err) {
-                if(err) {
-                    callback(err);
-                    return;
+        /**
+         *
+         * @param type - creative.type
+         * @returns {Object} Strategy
+         */
+        function getAdTypeStrategy(type) {
+            var strategy = createDefaultAdStrategy; // use default create strategy
+            if(type === types.display) {
+                // if display image or display swfs, use DisplayAd strategy
+                strategy = createDisplayAdStrategy;
+            }
+            return strategy;
+        }
+
+        /**
+         * Create Default (Non-DisplayAd) Strategy
+         *
+         * @param creative
+         * @param mediaItem
+         * @param hostname
+         * @param callback
+         */
+        function createDefaultAdStrategy(creative, mediaItem, callback) {
+            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
+                environment = getAdEnvironment(creative.environment),
+                title = creative.name,
+                clickthroughUrl = creative.clickthroughUrl,
+                campaignId = creative.campaignId,
+                hostname = studioLocation.host();
+
+            var builder = studioUrlBuilder
+                .create(adType, environment, title, clickthroughUrl, campaignId)
+                .setHostname(hostname);
+            setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
+
+            var tabWindow = $window.open(
+                builder.build(),
+                'mixpo_studio'
+            );
+            tabWindow.StudioDirectHandler = (function(){
+                function onClose(code, detail) {
+                    if(code && detail) {
+                        // so jshint shuts up
+                    }
+                    tabWindow.close();
                 }
 
-                // on success
-                var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
-                    environment = getAdEnvironment(creative.environment),
-                    title = creative.name,
-                    clickthroughUrl = creative.clickthroughUrl,
-                    campaignId = creative.campaignId;
+                return {
+                    onClose: onClose
+                };
+            })();
+            callback(null, tabWindow);
+        }
 
-                var builder = studioUrlBuilder
-                    .create(adType, environment, title, clickthroughUrl, campaignId)
-                    .setHostname(hostname);
-                setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
-                callback(null, builder.build());
-            }, creative);
+        /**
+         * Create DisplayAd Strategy, for all but Display Ads.
+         * Display Ads are special in that they need to supply a MediaItem to the Servlet.
+         * Uploading MediaItems is a special Async process.
+         *
+         * @param creative
+         * @param mediaItem
+         * @param hostname
+         * @param callback
+         */
+        function createDisplayAdStrategy(creative, mediaItem, callback) {
+            var hostname = studioLocation.host();
+            $http({
+                data: {
+                    mediaguid: mediaItem.id,
+                    title: creative.name,
+                    clickThrough: creative.clickthroughUrl,
+                    deviceTargets: getAdEnvironment(creative.environment),
+                    adServer: '' // (if mraid) ? 'mraid' : ''
+                },
+                method: 'POST',
+                url: hostname + '/manager/dafrommedia'
+            }).then(function successCallback(response) {
+                return callback(null, response);
+            }, function errorCallback(response) {
+                return callback(response);
+            });
         }
 
         /**
          * Validates the Creative
          *
-         * @param callback
          * @param creative
+         * @param callback
          */
-        function validate(callback, creative) {
+        function validate(creative, callback) {
             if(!creative) {
                 callback('creative is required');
                 return;

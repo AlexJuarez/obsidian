@@ -5,13 +5,13 @@
             <span class="status"><i class="glyph-dot small" ng-class="{'success': details.live}"></i> {{details.status|campaignStatus}}</span>
         </li>
     </ul>
-    <ul class="list">
-        <li ng-if="details.startDate">
+    <ul ng-if="details.startDate" class="list">
+        <li>
             <span>flight dates</span>
             <span>{{details.startDate|date:'MMM d, yyyy'}} - {{details.endDate|date:'MMM d, yyyy'}}</span>
         </li>
     </ul>
-    <ul class="list">
+    <ul ng-if="details.metrics.impressions || details.metrics.bookedImpressions" class="list">
         <li ng-if="details.metrics.impressions">
             <span>total impressions</span>
             <span>{{details.metrics.impressions|truncateNumber}}</span>

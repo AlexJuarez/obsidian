@@ -3,8 +3,8 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.controller('modalCtrl', ['$scope', '$rootScope', '$state', '$filter', '$timeout', '$window', '$location', 'studioUrlBuilder',
-        function ($scope, $rootScope, $state, $filter, $timeout, $window, $location, studioUrlBuilder) {
+    app.controller('modalCtrl', ['$scope', '$rootScope', '$state', '$filter', '$timeout', '$window', '$location', 'openCreativeService',
+        function ($scope, $rootScope, $state, $filter, $timeout, $window, $location, openCreativeService) {
 
 
         var urlPrefix = function() {
@@ -27,11 +27,11 @@ define(function (require) {
         };
 
         $scope.openStudio = function(id, campaignId) {
-            var url = studioUrlBuilder
-                .open(id, campaignId)
-                .setHostname('//'+ urlPrefix())
-                .build();
-            $window.open(url, '_blank');
+            var creative = {
+                id: id,
+                campaignId: campaignId
+            };
+            openCreativeService(creative, '//'+ urlPrefix());
         };
     }]);
 });

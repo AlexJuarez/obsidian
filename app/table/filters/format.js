@@ -50,6 +50,8 @@ define(function (require) {
                 return '<div table-creatives="row.' + input + '"></div>';
             case 'delivering':
                 return '<span table-delivering delivering="row.' + input + '"></div>';
+            case 'tooltip':
+                return '<div class="tooltip tooltip-basic tooltip-light" tooltip="\'' + data + '\'">' + data + '</div>';
             default:
                 return data;
             }

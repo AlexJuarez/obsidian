@@ -17,6 +17,7 @@ define(function (require) {
     app.directive('tooltip', ['$templateCache', '$rootScope', '$compile', '$document', '$timeout', '$controller', '$parse', function ($templateCache, $rootScope, $compile, $document, $timeout, $controller, $parse) {
         return {
             restrict: 'A',
+            scope: true,
             link: function (scope, elem, attr) {
                 scope.updatePosition = updatePosition;
                 scope.calculateClass = calculateClass;
@@ -24,6 +25,7 @@ define(function (require) {
                 scope.main = elem.html();
                 scope.isOpen = false;
                 scope.toggleOpen = toggleOpen;
+                scope.close = closeTooltip;
 
                 //parse the value within the current scope and set it = to the scope for main
                 scope.tooltipScope = attr.tooltipScope && $parse(attr.tooltipScope)(scope) || scope;
@@ -32,6 +34,27 @@ define(function (require) {
                 var overflow = attr.tooltipOverflow;
                 var isBasicTooltip = true;
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
+
+                var cleanup = $rootScope.$on('tooltip:open', function(event, id) {
+                    if (id !== scope.$id) {
+                        scope.isOpen = false;
+                    }
+                });
+
+                scope.$on('$destroy', function() {
+                    cleanup();
+                });
+
+                //watch for an open event on the scope.
+                if (!overflow) {
+                    scope.$watch(function() { return scope.isOpen; }, function(val) {
+                        if(val) {
+                            elem.addClass('open');
+                        } else {
+                            elem.removeClass('open');
+                        }
+                    });
+                }
 
                 scope.$watch(tooltip, function (newValue) {
                     elem.html($compile(baseTemplate)(scope));
@@ -56,11 +79,9 @@ define(function (require) {
                     }
                 });
 
-                function close() {
+                function closeTooltip() {
                     scope.isOpen = false;
-
                 }
-                scope.close = close;
 
                 function toggleOpen() {
                     if (!scope.isOpen) {

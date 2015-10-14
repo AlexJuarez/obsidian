@@ -10,5 +10,6 @@ define(function (require) {
     require('./services/creatives');
     require('./services/studio/urlBuilder/index');
     require('./services/newCreative');
+    require('./services/openCreative');
     require('./services/creative');
 });

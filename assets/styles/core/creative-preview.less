@@ -1,3 +1,108 @@
+@import "brand";
+
+@creative-preview-bg: @dark-gray;
+@creative-preview-color: #fff;
+@creative-preview-border: #fff;
+
+.creative-preview-container {
+    position: absolute;
+
+    &.hide {
+        opacity: 0;
+    }
+    .wrapper {
+        position: absolute;
+        background: @creative-preview-bg;
+        border: 1px solid @creative-preview-border;
+        color: @creative-preview-color;
+        border-radius: 0.5rem;
+        padding: 0.8rem 1.5rem 1rem 1.5rem;
+
+        &:before, &:after {
+            content: '';
+            position: absolute;
+            border: solid transparent;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        &:before {
+            border-color: solid rgba(60, 60, 60, 0);
+            border-width: 9px;
+        }
+        &:after {
+            border-color: rgba(255, 255, 255, 0);
+            border-width: 8px;
+        }
+    }
+
+    &[class*="top"] .wrapper {
+        &:before {
+            border-top-color: @creative-preview-border;
+        }
+        &:after {
+            border-top-color: @creative-preview-bg;
+        }
+    }
+    &[class*="bottom"] .wrapper {
+        &:before {
+            border-bottom-color: @creative-preview-border;
+        }
+        &:after {
+            border-bottom-color: @creative-preview-bg;
+        }
+    }
+
+    &[class*="right"] .wrapper {
+        left: -4rem;
+        &:before {
+            left: 15px;
+        }
+        &:after {
+            left: 16px;
+        }
+    }
+    &[class*="center"] .wrapper {
+        left: 50%;
+        transform: translateX(-50%);
+        &:before {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        &:after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    }
+    &[class*="left"] .wrapper {
+        right: -4rem;
+        &:before {
+            right: 15px;
+        }
+        &:after {
+            right: 16px;
+        }
+    }
+
+    &[class*="top"] .wrapper {
+        bottom: calc(~'100% + 10px');
+        &:before, &:after {
+            top: 100%;
+        }
+    }
+
+    &[class*="bottom"] .wrapper {
+        top: calc(~'100% + 10px');
+        &:before, &:after {
+            bottom: 100%;
+        }
+    }
+}
+
+.creative-preview-link {
+    cursor: pointer;
+}
+
 .creative-preview {
     color: #fff;
     font-size: 1.2rem;
