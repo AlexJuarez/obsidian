@@ -1,26 +1,37 @@
-<div class="form-inline">
-    <div class="form-group">
-        View By: <a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a> <span ng-if="!params.accountId"> | <a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></span>
-    </div>
-    <div class="form-group search-wrapper">
-        <label class="form-label search">
-            <input class="input" ng-model="filter" ng-change="updateFilters(filter)" placeholder="Search" type="search"/>
-        </label>
-        <ul ng-show="results.length" class="search-results">
-            <li ng-repeat="result in (results | limitTo: 5) track by $index">
-                <a ng-click="filterBy(result)">{{result.name}}</a>
-            </li>
-        </ul>
-    </div>
-    <div class="form-group">
-        <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>
+<div ng-if="!noContent">
+    <nav class="row tab-header" role="form">
+        <div class="col-sm-7 col-xs-12">
+            <ul class="filters left">
+                <li><b>View By:</b></li>
+                <li><a ui-sref=".({viewBy: ''})" ui-sref-active="active">Status</a></li>
+                <li ng-if="!params.accountId"><a ui-sref=".({viewBy: 'account'})" ui-sref-active="active">Account</a></li>
+            </ul>
+            <div class="form-inline">
+                <div class="form-group search-wrapper">
+                    <label class="form-label search">
+                        <input class="input" ng-model="filter" ng-change="updateFilters(filter)" placeholder="Search" type="search"/>
+                    </label>
+                    <ul ng-show="results.length" class="search-results">
+                        <li ng-repeat="result in (results | limitTo: 5) track by $index">
+                            <a ng-click="filterBy(result)">{{result.name}}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <span class="clear" ng-if="filter"><a ng-click="clearFilter()"><i class="glyph-close small"></i> clear</a></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="tab-content" ui-view="tab-content">
+        <div ng-if="params.viewBy !== 'account'">
+            <div campaigns-by-status></div>
+        </div>
+        <div ng-if="params.viewBy === 'account'">
+            <div campaigns-by-account></div>
+        </div>
     </div>
 </div>
-<div class="tab-content" ui-view="tab-content">
-    <div ng-if="params.viewBy !== 'account'">
-        <div campaigns-by-status></div>
-    </div>
-    <div ng-if="params.viewBy === 'account'">
-        <div campaigns-by-account></div>
-    </div>
-</div>
+
+<div no-content></div>

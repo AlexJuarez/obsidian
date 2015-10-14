@@ -8,11 +8,50 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'notification',
+         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, notification
+              creativeSettings, notification, studioLocation, studioUrlBuilder
     ) {
+        var _mediaItem;
+        function setMediaItem(mediaItem) {
+            _mediaItem = mediaItem;
+            // update visuals
+        }
+
+        $scope.selectMedia = function() {
+            // Create window that hosts Studio Direct, see StudioDirectHandler for callbacks
+            var hostname = studioLocation.host();
+            var tabWindow = $window.open(
+                studioUrlBuilder.mediaselect($scope.creative.campaignId)
+                    .setHostname(hostname)
+                    .build(),
+              'mixpo_studio'
+            );
+
+            // Create
+            tabWindow.StudioDirectHandler = (function(){
+                function onClose(code, detail) {
+                    if(code && detail) {
+                        // so jshint shuts up
+                    }
+                    tabWindow.close();
+                }
+
+                function onMediaSelect(uuid, detail) {
+                    if(!!uuid) {
+                        var json = JSON.parse(detail);
+                        setMediaItem(json);
+                    }
+                }
+
+                return {
+                    onClose: onClose,
+                    onMediaSelect: onMediaSelect
+                };
+            })();
+        };
+
         var record;
 
         //Modal functions
@@ -77,7 +116,6 @@ define(function (require) {
                     id = idArray[i];
                     filtered.push(options[id]);
                 }
-
                 return filtered;
             }
         }
@@ -229,14 +267,14 @@ define(function (require) {
                 };
 
                 if (record.isNew()) {
-                    newCreativeService($scope.creative)
-                        .then(function(url) {
+                    newCreativeService($scope.creative, _mediaItem)
+                        .then(function() {
                             $scope.creative = {};
                             $modalInstance.dismiss('cancel');
-                            $window.open(url, 'mixpo_studio');
                         });
                 } else {
-                    record.save().then(onSuccess);
+                    record.save()
+                        .then(onSuccess);
                 }
             }
             $scope.submitted = true;

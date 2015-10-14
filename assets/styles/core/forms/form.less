@@ -20,8 +20,17 @@ input[disabled], input[type]:disabled {
 
 .form-group {
     margin-bottom: 2rem;
-
 }
+
+input {
+    box-sizing: border-box;
+    border-radius: 0;
+}
+
+textarea {
+    border-radius: 0;
+}
+
 textarea.form-control {
     margin: 0;
     box-sizing: border-box;
@@ -154,7 +163,10 @@ textarea.form-control {
         .form-label > span {
             display: inline-block;
         }
-        .form-control, .select2-container {
+        .form-control {
+            width: 100%;
+        }
+        .select2-container {
             min-width: 100%;
             max-width: 100%;
         }

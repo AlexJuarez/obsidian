@@ -36,11 +36,11 @@
 
         <div class="form-group row"
              ng-class="{'has-error': newCreative.name.$invalid && submitted}">
-            <label for="inputName" class="col-sm-3 form-label required"><span>Name</span></label>
+            <label for="new-edit-creative-name-field" class="col-sm-3 form-label required"><span>Name</span></label>
 
             <div class="col-sm-9">
                 <input id="new-edit-creative-name-field" ng-model="creative.name" type="text" name="name"
-                       class="form-control" id="inputName" placeholder="Name"
+                       class="form-control" placeholder="Name"
                        required/>
 
                 <p ng-show="newCreative.name.$invalid && submitted"
@@ -77,7 +77,7 @@
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Creative Type</span></label>
             <div class="col-sm-9">
                 <select id="new-edit-creative-select-creative-type" ng-disabled="editing" name="type" select2
-                        ng-options="type as type.name for type in types track by type.id"
+                        s2-options="type as type.name for type in types track by type.id"
                         ng-model="typeTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
                 <p ng-show="newCreative.type.$invalid && submitted"
@@ -95,7 +95,7 @@
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Environment</span></label>
             <div class="col-sm-9">
                 <select id="new-edit-creative-select-environment" ng-disabled="editing" name="environment" select2
-                        ng-options="environment as environment.name for environment in environments track by environment.id"
+                        s2-options="environment as environment.name for environment in environments track by environment.id"
                         ng-model="environmentTransform" ng-model-options="{ getterSetter: true }" ng-required="!editing">
                 </select>
 
@@ -114,7 +114,7 @@
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Dimensions</span></label>
             <div class="col-sm-3">
                 <select id="new-edit-creative-select-dimensions" ng-disabled="editing" name="dimensions" select2
-                        ng-options="dimension as dimension.name for dimension in dimensions track by dimension.id"
+                        s2-options="dimension as dimension.name for dimension in dimensions track by dimension.id"
                         ng-model="dimensionsTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
 
@@ -155,7 +155,7 @@
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>
             <div class="col-sm-3">
                 <select id="new-edit-creative-select-exp-dimension" ng-disabled="editing" name="expandedDimensions" select2
-                        ng-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
+                        s2-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"
                         ng-model="dimensionsExpandTransform" ng-model-options="{ getterSetter: true }" required>
                 </select>
 
@@ -181,34 +181,44 @@
             <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
                     <input id="new-edit-creative-custom-exp-width-field" ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
-                           class="form-control" id="customExpandedDimensionsWidth"
+                           class="form-control"
                            placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
                     <input id="new-edit-creative-custom-exp-height-field" ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
-                           class="form-control" id="customExpandedDimensionsHeight"
+                           class="form-control"
                            placeholder="Height" required />
                 </div>
             </div>
         </div>
 
-        <div ng-if="creative.subtype == 'SWF' && !editing">
-            <div class="form-group row">
-                <label class="col-sm-3 form-label">Upload SWF</label>
-                <div class="col-sm-9 file-selection-wrapper form-inline">
-                    <div file-picker accept="'application/x-shockwave-flash'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>
-                </div>
-            </div>
+        <div ng-show="creative.campaignId && creative.type === 'Display'" class="form-group row">
+          <label class="col-sm-3 form-label">Media</label>
+          <div class="col-sm-9 file-selection-wrapper form-inline">
+            <button class="btn btn-default" ng-click="selectMedia()">
+              Select
+              <span ng-show="creative.subtype==='SWF'">SWF</span>
+              <span ng-show="creative.subtype==='IMG'">Image</span>
+            </button>
+          </div>
         </div>
+        <!--<div ng-if="creative.subtype == 'SWF' && !editing">-->
+            <!--<div class="form-group row">-->
+                <!--<label class="col-sm-3 form-label">Upload SWF</label>-->
+                <!--<div class="col-sm-9 file-selection-wrapper form-inline">-->
+                    <!--<div file-picker accept="'application/x-shockwave-flash'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
 
-        <div ng-if="creative.subtype == 'IMG' && !editing">
-            <div class="form-group row">
-                <label class="col-sm-3 form-label">Upload Image</label>
-                <div class="col-sm-9 file-selection-wrapper form-inline">
-                    <div file-picker ng-model="creative.file"></div>
-                </div>
-            </div>
-        </div>
+        <!--<div ng-if="creative.subtype == 'IMG' && !editing">-->
+            <!--<div class="form-group row">-->
+                <!--<label class="col-sm-3 form-label">Upload Image</label>-->
+                <!--<div class="col-sm-9 file-selection-wrapper form-inline">-->
+                    <!--<div file-picker ng-model="creative.file"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
 
         <div ng-show="creative.type==='inBanner' && creative.expandedDimensions === nonExpandingIndex" class="form-group row">
             <label ng-class="{disabled:editing}" for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>
@@ -221,11 +231,11 @@
         </div>
 
         <div class="form-group row">
-            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>
+            <label for="new-edit-creative-keywords-field" class="col-sm-3 form-label"><span>Keywords</span></label>
 
             <div class="col-sm-9">
                 <input id="new-edit-creative-keywords-field" ng-model="creative.keywords" type="text"
-                       class="form-control" id="keywords"
+                       class="form-control"
                        placeholder="Keywords"/>
             </div>
 

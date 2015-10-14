@@ -14,8 +14,8 @@ define(function (require) {
                 limit: '='
             },
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS', 'studioUrlBuilder',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS, studioUrlBuilder) {
 
                     var editCreativeModals = {};
                     var mixpoURL = studioLocation.host();
@@ -27,6 +27,13 @@ define(function (require) {
                     $scope.copyCreative = copyCreative;
                     $scope.deleteCreative = deleteCreative;
                     $scope.transformCreativeData = transformCreativeData;
+                    $scope.creativesAreLoaded = false;
+                    $scope.showLoader = false;
+
+                    // Show spinner if data not loaded
+                    if ( !creatives.data().isLoaded() ) {
+                        $scope.showLoader = true;
+                    }
 
                     if ($scope.limit) {
                         creatives.setLimit($scope.limit);
@@ -43,11 +50,18 @@ define(function (require) {
                     });
 
                     function openPreviewPage(creative) {
-                        $window.open(mixpoURL + '/container?id=' + creative.id, '_blank');
+                        var cmd = mixpoURL + '/container';
+                        var params = '?' + 'id=' + creative.id;
+
+                        var url = cmd + params;
+                        $window.open(url, '_blank');
                     }
 
-                    function openStudio(id) {
-                        $window.open(mixpoURL + '/studio?sdf=open&guid=' + id, '_blank');
+                    function openStudio(creative) {
+                        var url = studioUrlBuilder.open(creative.id, creative.campaignId)
+                            .setHostname(mixpoURL)
+                            .build();
+                        $window.open(url, '_blank');
                     }
 
                     var removeNulls = function(creative) {
@@ -139,6 +153,12 @@ define(function (require) {
                         }
 
                         $scope.creatives = duplicateCreatives;
+
+                        // Stop the loading spinner if data loaded
+                        if ( creatives.data().isLoaded() ) {
+                            $scope.creativesAreLoaded = true;
+                        }
+
                     }
             }]
         };

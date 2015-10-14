@@ -32,11 +32,18 @@ define(function(require) {
             });
         }
 
+        function update() {
+            updateMeta();
+            $scope.noContent = creatives.noContent();
+        }
+
+
         function updateMeta() {
 
             var allCreatives = creatives.all().data;
-
-            if (allCreatives) {
+            $scope.noContent = creatives.noContent();
+            
+            if (allCreatives && creatives.data().isLoaded()) {
                 var creative = 0;
 
                 var meta = {
@@ -55,10 +62,12 @@ define(function(require) {
                     }
                 }
                 $scope.creativesMeta = meta;
+
+
             }
         }
-        updateMeta();
-        creatives.observe(updateMeta, $scope, true);
+        update();
+        creatives.observe(update, $scope, true);
     }
     ]);
 });

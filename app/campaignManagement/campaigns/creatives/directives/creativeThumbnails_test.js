@@ -23,6 +23,13 @@ define(function (require) {
                     ]
                 };
             },
+            data: function() {
+                return {
+                    isLoaded: function() {
+                        return true;
+                    }
+                };
+            },
             observe: function(callback) {
                 callback();
             }
@@ -35,6 +42,10 @@ define(function (require) {
 
             module(function ($provide) {
                 $provide.value('creatives', mockCreatives);
+                // Ignore the loadingIndicator directive...
+                $provide.factory('loadingIndicatorDirective', function(){
+                    return {};
+                });
             });
 
             inject(function ($compile, $state, $rootScope, $templateCache, $modal, $window, creativeRecordService, ENUMS) {
@@ -51,6 +62,7 @@ define(function (require) {
         });
 
         function setUpScope() {
+
             var parentScope = rootScope.$new();
             var html = compile('<div creative-thumbnails></div>')(parentScope);
             parentScope.$apply();
@@ -99,14 +111,33 @@ define(function (require) {
                 expect(window.open).toHaveBeenCalled();
             });
 
+            it('should open a preview page', function () {
+                spyOn(window, 'open');
+
+                var scope = setUpScope();
+
+                scope.openPreviewPage({id: 1});
+
+                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/container?id=1', '_blank');
+            });
+
             it('should open a studio page', function () {
                 spyOn(window, 'open');
 
                 var scope = setUpScope();
 
-                scope.openStudio(1);
+                scope.openStudio({id: 1});
 
                 expect(window.open).toHaveBeenCalled();
+            });
+
+            it('should open a studio page with creative.id', function () {
+                spyOn(window, 'open');
+                var scope = setUpScope();
+
+                scope.openStudio({id: 1, campaignId:'_id_'});
+
+                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/studio?filter=%7B%22campaignId%22:%22_id_%22%7D&guid=1&sdf=open', '_blank');
             });
 
             it('should update the filter on stateChange', function () {

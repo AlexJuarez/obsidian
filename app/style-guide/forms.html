@@ -81,7 +81,7 @@
     &lt;div class=&quot;form-group&quot;&gt;
         &lt;label class=&quot;form-label&quot;&gt;
             &lt;span class=&quot;sr-only&quot;&gt;Select Options&lt;/span&gt;
-            &lt;select select2 ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
+            &lt;select select2 ng-model=&quot;selected&quot; s2-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
         &lt;/label&gt;
     &lt;/div&gt;
     &lt;div class=&quot;form-group&quot;&gt;
@@ -263,7 +263,7 @@
     <div class="form-group">
         <label class="form-label"><span>Single Select w/o Search</span></label>
         <div>
-            <select select2 ng-model="selected" ng-options="item.name for item in select3 track by item.value"></select>
+            <select select2 ng-model="selected" s2-options="item.name for item in select3 track by item.value"></select>
         </div>
     </div>
 </form>
@@ -271,7 +271,7 @@
 <pre><code class="html">
 &lt;label class=&quot;form-label&quot;&gt;
     &lt;span&gt;Single Select w/o Search&lt;/span&gt;
-    &lt;select select2 ng-model=&quot;selected&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
+    &lt;select select2 ng-model=&quot;selected&quot; s2-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
 &lt;/label&gt;
 </code></pre>
 </div>
@@ -279,17 +279,17 @@
 
 <form class="form" role="form">
     <div class="form-group">
-        <label class="form-label">
+        <div class="form-label">
             <span>Single Select w/ Search</span>
-            <select select2 ng-model="selected" minimum-results-for-search="0" ng-options="item.name for item in select3 track by item.value"></select>
-        </label>
+            <select select2 ng-model="selected" minimum-results-for-search="0" s2-options="item.name for item in select3 track by item.value"></select>
+        </div>
     </div>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
 &lt;label class=&quot;form-label&quot;&gt;
     &lt;span&gt;Single Select w/ Search&lt;/span&gt;
-    &lt;select select2 ng-model=&quot;selected&quot; minimum-results-for-search=&quot;0&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
+    &lt;select select2 ng-model=&quot;selected&quot; minimum-results-for-search=&quot;0&quot; s2-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
 &lt;/label&gt;
 </code></pre>
 </div>
@@ -297,17 +297,17 @@
 
 <form class="form" role="form">
     <div class="form-group">
-        <label class="form-label theme-dark">
+        <div class="form-label theme-dark">
             <span>Dark Single Select w/ Search</span>
             <select select2 ng-model="selected2" minimum-results-for-search="0" s2-options="value for (key, value) in select2 track by key"></select>
-        </label>
+        </div>
     </div>
 </form>
 <div class="highlight" highlight>
 <pre><code class="html">
 &lt;label class=&quot;form-label theme-dark&quot;&gt;
     &lt;span&gt;Dark Single Select w/ Search&lt;/span&gt;
-    &lt;select select2 ng-model=&quot;selected&quot; minimum-results-for-search=&quot;0&quot; ng-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
+    &lt;select select2 ng-model=&quot;selected&quot; minimum-results-for-search=&quot;0&quot; s2-options=&quot;item.name for item in select track by item.value&quot;&gt;&lt;/select&gt;
 &lt;/label&gt;
 </code></pre>
 </div>

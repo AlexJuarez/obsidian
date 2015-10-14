@@ -176,12 +176,16 @@ define(function (require) {
                         return {
                             name: name,
                             values: data.map(function(d) {
-                                return {
-                                    name: name,
-                                    date: d[interval],
-                                    datum: +(d.metrics[show] || 0),
-                                    metrics: d.metrics
+                                if (typeof d[interval] !== 'undefined') {
+                                    return {
+                                        name: name,
+                                        date: d[interval],
+                                        datum: +(d.metrics[show] || 0),
+                                        metrics: d.metrics
+                                    }
                                 }
+                            }).filter(function(d) {
+                                return typeof d !== 'undefined';
                             })
                         }
                     });

@@ -1,26 +1,17 @@
-<nav class="row tab-header" role="form">
-    <div class="col-lg-5 col-md-4 col-xs-12">
-        <div class="filters left">
-            <b>View By:</b>
-            <a ui-sref-active="active" ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers || 0}})</a>
-            <a ui-sref-active="active" ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives || 0}})</a>
-            <a ui-sref-active="active" ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types || 0}})</a>
-        </div>
+<nav ng-if="!noContent" class="row tab-header" role="form">
+    <div class="col-lg-5 col-md-6 col-xs-12">
+        <ul class="filters left">
+            <li><b>View By:</b></li>
+            <li><a ui-sref-active="active" ui-sref=".({viewBy: ''})">Publisher ({{placementsMeta.publishers || 0}})</a></li>
+            <li><a ui-sref-active="active" ui-sref=".({viewBy: 'creative'})">Creative ({{placementsMeta.creatives || 0}})</a></li>
+            <li><a ui-sref-active="active" ui-sref=".({viewBy: 'ad-type'})">Ad type ({{placementsMeta.types || 0}})</a></li>
+        </ul>
         <label class="form-label search left">
             <input class="input" placeholder="Search" type="search"/>
         </label>
     </div>
-    <div class="col-lg-7 col-md-8 col-xs-12">
+    <div class="col-lg-7 col-md-6 col-xs-12">
         <div class="row">
-            <!--<div class="col-sm-4 col-lg-offset-1 col-lg-3">
-                <div class="dropdown dropdown-xs-12">
-                    <a class="dropdown-toggle btn-default btn solid">New Placements<i class="glyph-chevron-down"></i></a>
-                    <ul class="dropdown-menu" role="menu">
-                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">New Placement</a></li>
-                        <li role="presentation"><a role="menuitem" tabindex="-1" href="">Upload Media Plan</a></li>
-                    </ul>
-                </div>
-            </div>-->
             <div class="text-right-sm col-lg-12">
                 <div class="btn-group">
                     <button ng-click="openNewPlacementModal()" class="btn btn-primary solid">New Placement</button>
@@ -32,3 +23,5 @@
         </div>
     </div>
 </nav>
+
+<div no-content></div>

@@ -93,6 +93,7 @@ define(function (require) {
             sort: sortClients,
             removeObserver: topClients.removeObserver,
             data: topClients.all,
+            isLoaded: topClients.isLoaded,
             all: all
         };
     }]);

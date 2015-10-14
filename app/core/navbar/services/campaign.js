@@ -5,9 +5,14 @@ define(function (require) {
     var utils = require('./util');
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', function ($http, dataFactory, accounts, $state, campaignRecordService, notification) {
+        
         var campaigns = dataFactory(sortByStartDateDescending);
-
+        
         campaignRecordService.observe(campaignUpdate, undefined, true);
+
+        function isLoaded() {
+            return campaigns.isLoaded();
+        }
 
         function init(apiConfig) {
             return campaigns.init(apiConfig, function (data) {
@@ -208,6 +213,7 @@ define(function (require) {
 
         return {
             init: init,
+            isLoaded: isLoaded,
             setData: campaigns.setData,
             addData: campaigns.addData,
             quarterMap: quarterMap,
