@@ -18,8 +18,14 @@
 				 class="help-block">
 				ad tag is required
 			</p>
+		</div>
+	</div>
 
-			<textarea>{{adTagText}}</textarea>
+	<div class="form-group row" ng-show="placement.adTagId">
+
+		<label for="ad-tag" class="col-sm-3 form-label"><span>Ad Tag</span></label>
+		<div class="col-sm-9">
+			<textarea rows="8" style="resize:none;" class="form-control" disabled>{{adTagText}}</textarea>
 		</div>
 	</div>
 </div>

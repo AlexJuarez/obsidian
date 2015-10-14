@@ -2,9 +2,8 @@ define(function (require) {
 	'use strict';
 
 	var module = require('./../../module');
-	var cache = {};
 
-	module.service('adTags', ['placementRecordService', 'adTagService', '$interpolate', '$q', function (placementRecordService, adTagService, $interpolate, $q) {
+	module.service('adTags', ['placements', 'placementRecordService', 'adTagService', '$interpolate', '$q', function (placements, placementRecordService, adTagService, $interpolate, $q) {
 		var tagTemplates = [];
 		adTagService.init();
 		adTagService.observe(function() {
