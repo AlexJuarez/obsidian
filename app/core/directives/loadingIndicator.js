@@ -20,6 +20,7 @@ define(function (require) {
                         childScope.isLoaded = val;
                         if (val) {
                             element.removeClass('indicate-loading');
+                            childScope.showLoader = false;
                         }
                     });
 
