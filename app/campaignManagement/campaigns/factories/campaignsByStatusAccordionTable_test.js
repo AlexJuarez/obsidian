@@ -4,7 +4,6 @@ define(function(require) {
     require('./campaignsByStatusAccordionTable');
     require('angularMocks');
     var ng = require('angular');
-    var $ = require('jquery');
 
     var campaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_campaigns.json'));
     var sortedCampaignJSON = JSON.parse(require('text!/base/assets/fixtures/campaignsByStatus_sortedCampaigns.json'));
