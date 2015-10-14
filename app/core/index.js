@@ -4,14 +4,11 @@ define(function(require) {
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
-    require('./constants/apiURI');
-    require('./constants/creativeSettings');
-    require('./constants/enums');
-    require('./constants/urlRegex');
-    require('./constants/moneyRegex');
+    require('./constants/index');
     require('./creativePreview/index');
     require('./notifications/index');
     require('./select2/index');
+    require('./ngPerfectScrollbar/index');
 
     services();
     filters();

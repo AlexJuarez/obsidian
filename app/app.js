@@ -5,7 +5,6 @@ define(function (require) {
     'use strict';
 
     var ng = require('angular');
-    require('ng-perfect-scrollbar');
     require('ui-router');
     require('ng-datepicker');
     require('./chart/index');
@@ -17,7 +16,6 @@ define(function (require) {
 
     return ng.module('app', [
         'ui.bootstrap.datepicker',
-        'perfect_scrollbar',
         'app.home',
         'app.campaign-management',
         'app.analytics',
