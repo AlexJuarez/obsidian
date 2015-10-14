@@ -3,7 +3,7 @@ define(function (require) {
 
     var app = require('./../../../module');
 
-    require('tpl!./placementOptions.html');
+    require('tpl!./placement-options.html');
 
     app.directive('placementOptions', [function () {
         return {
@@ -12,7 +12,7 @@ define(function (require) {
             scope: {
                 id: '='
             },
-            templateUrl: 'campaignManagement/campaigns/placements/directives/placementOptions.html',
+            templateUrl: 'campaignManagement/campaigns/placements/directives/placement-options.html',
             controller: ['$scope', '$modal', function ($scope, $modal) {
                 $scope.openEditPlacementModal = openEditPlacementModal;
 
