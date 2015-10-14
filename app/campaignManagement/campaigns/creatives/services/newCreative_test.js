@@ -5,7 +5,7 @@ define(function (require) {
     require('./newCreative');
     require('angularMocks');
 
-    describe('newCreative spec', function () {
+    describe('newCreativeService spec', function () {
         var newCreative, scope, window, httpBackend;
 
         beforeEach(function () {
