@@ -33,6 +33,10 @@ define(function (require) {
             current: 45300
         };
 
+        $http.get('/api/crud/creatives').then(function(resp) {
+            $scope.creativePreviewId = resp.data[0].id;
+        });
+
         $scope.groupByExample = [
             {
                 name: 'First Choice',

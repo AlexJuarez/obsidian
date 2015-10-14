@@ -16,8 +16,8 @@ table {
     border-spacing: 0;
 }
 .table-wrapper {
-    overflow-y: auto;
     overflow-x: auto;
+    overflow-y: hidden;
 
     width: 100%;
     height: 100%;
@@ -27,14 +27,9 @@ table {
 }
 
 .table {
-    overflow-y: auto;
-    overflow-x: auto;
-
-    .tooltip {
-        .main {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .tooltip .main, .creative-preview-link {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     width: 100%;
@@ -266,6 +261,7 @@ table {
                         }
 
                         &:before {
+                            margin-right: 0.5rem;
                             content: attr(data-header);
                             display: block;
                             float: left;

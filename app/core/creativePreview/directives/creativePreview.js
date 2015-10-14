@@ -10,7 +10,7 @@ define(function (require) {
         return {
             restrict: 'A',
             scope: {
-                id: '@creativePreview'
+                id: '=creativePreview'
             },
             controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'studioUrlBuilder', '$interval',
                 function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, studioUrlBuilder, $interval) {
@@ -90,6 +90,8 @@ define(function (require) {
 
                     function calculatePosition(height, width) {
                         var dims = calculateSpace();
+                        var doc = $document[0].documentElement;
+
                         var output = '';
                         var offset = $element.offset();
                         var top, left;
@@ -105,6 +107,9 @@ define(function (require) {
                         if (dims.left > width && dims.right > width) {
                             output += 'center';
                             left = offset.left + Math.round($element.width()/2);
+                        } else if (doc.clientWidth < 500) { //special condition for mobile sizing
+                            output += 'center';
+                            left = doc.clientWidth/2;
                         } else if (dims.left > dims.right) {
                             output += 'left';
                             left = offset.left;

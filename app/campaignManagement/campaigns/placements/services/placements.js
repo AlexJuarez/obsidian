@@ -20,7 +20,7 @@ define(function (require) {
 
     var rules = {
         checked: '',
-        placementName: '',
+        placementName: 'tooltip',
         delivering: 'delivering',
         startDate: 'date',
         endDate: 'date',
