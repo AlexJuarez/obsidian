@@ -19,11 +19,6 @@ table {
     overflow-y: auto;
     overflow-x: auto;
 
-    @media(min-width: @screen-sm-min) {
-        overflow-y: visible;
-        overflow-x: visible;
-    }
-
     width: 100%;
     height: 100%;
     .table {
@@ -35,9 +30,11 @@ table {
     overflow-y: auto;
     overflow-x: auto;
 
-    @media(min-width: @screen-sm-min) {
-        overflow-y: visible;
-        overflow-x: visible;
+    .tooltip {
+        .main {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     width: 100%;
