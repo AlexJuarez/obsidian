@@ -14,8 +14,8 @@ define(function (require) {
                 limit: '='
             },
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS', 'studioUrlBuilder',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS, studioUrlBuilder) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'ENUMS', 'studioLocation', 'openCreativeService',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, ENUMS, studioLocation, openCreativeService) {
 
                     var editCreativeModals = {};
                     var mixpoURL = studioLocation.host();
@@ -58,10 +58,7 @@ define(function (require) {
                     }
 
                     function openStudio(creative) {
-                        var url = studioUrlBuilder.open(creative.id, creative.campaignId)
-                            .setHostname(mixpoURL)
-                            .build();
-                        $window.open(url, '_blank');
+                        openCreativeService(creative, mixpoURL);
                     }
 
                     var removeNulls = function(creative) {

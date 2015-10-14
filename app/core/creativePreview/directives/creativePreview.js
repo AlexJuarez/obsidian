@@ -10,10 +10,10 @@ define(function (require) {
         return {
             restrict: 'A',
             scope: {
-                id: '@creativePreview'
+                id: '=creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'studioUrlBuilder', '$interval',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, studioUrlBuilder, $interval) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'openCreativeService', '$interval',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, openCreativeService, $interval) {
                     $scope.isOpen = false;
                     $scope.clicked = false;
                     $scope.previewInPage = previewInPage;
@@ -69,11 +69,11 @@ define(function (require) {
                     }
 
                     function openInStudio() {
-                        var url = studioUrlBuilder
-                            .open($scope.id, $scope.campaignId)
-                            .setHostname(mixpoURL)
-                            .build();
-                        $window.open(url, '_blank');
+                        var creative = {
+                            id: $scope.id,
+                            campaignId: $scope.campaignId
+                        };
+                        openCreativeService(creative, mixpoURL);
                     }
 
                     function calculateSpace() {
@@ -90,6 +90,8 @@ define(function (require) {
 
                     function calculatePosition(height, width) {
                         var dims = calculateSpace();
+                        var doc = $document[0].documentElement;
+
                         var output = '';
                         var offset = $element.offset();
                         var top, left;
@@ -105,6 +107,9 @@ define(function (require) {
                         if (dims.left > width && dims.right > width) {
                             output += 'center';
                             left = offset.left + Math.round($element.width()/2);
+                        } else if (doc.clientWidth < 500) { //special condition for mobile sizing
+                            output += 'center';
+                            left = doc.clientWidth/2;
                         } else if (dims.left > dims.right) {
                             output += 'left';
                             left = offset.left;

@@ -7,6 +7,7 @@
 @nav-subtitle-border: #003c60;
 @nav-border-hover: #99d2f3;
 @navbar-min-width: @screen-lg-min;
+@navbar-xs-height: 50px;
 
 .navbar-header {
     .logo {
@@ -130,6 +131,7 @@
     }
 
     @media (max-width: @navbar-min-width) {
+        height: @navbar-xs-height;
         &.jumbo {
             padding-top: 0;
             padding-left: 0;
@@ -390,19 +392,23 @@
     }
 
     @media (max-width: @navbar-min-width) {
+        .navbar-collapse-wrapper {
+            padding-bottom: @navbar-xs-height;
+            box-sizing: border-box;
+            position: relative;
+            min-height: 100%;
+        }
+
         visibility: hidden;
         -webkit-overflow-scrolling: touch;
-        transform: translateX(-100%);
         position: fixed;
         z-index: 10;
         top: 0;
         bottom: 0;
         left: 0;
-        width: 80%;
+        width: 100%;
         overflow-y: auto;
         height: 100%;
-        max-width: 348px;
-        background: @brand-color;
 
         .dropdown {
             width: 100%;
@@ -419,6 +425,7 @@
 
         .dropdown-menu {
             position: static;
+            float: none;
             z-index: 10;
             width: 100%;
         }
@@ -438,7 +445,24 @@
             }
         }
 
+        .navbar-bg {
+            transform: translateX(-100%);
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 6;
+            max-width: 348px;
+            width: 80%;
+            background: @brand-color;
+        }
+
         .navbar-right, .navbar-left {
+            transform: translateX(-100%);
+            z-index: 10;
+            position: relative;
+            max-width: 348px;
+            width: 80%;
             margin-top: 0;
             float: none;
         }
@@ -447,7 +471,7 @@
 
 .navbar-overlay {
     @media (max-width: @navbar-min-width) {
-        position: fixed;
+        position: absolute;
         top: 0;
         left: 0;
         right: 0;
@@ -455,7 +479,7 @@
         cursor: pointer;
         background-color: rgba(0, 0, 0, .6);
         opacity: 0;
-        z-index: 9;
+        z-index: 5;
         -webkit-transition: opacity .25s linear;
         transition: opacity .25s linear;
     }
@@ -471,9 +495,11 @@
 
     .navbar-collapse {
         @media (max-width: @navbar-min-width) {
-            transition: 300ms ease;
             visibility: visible;
-            transform: translateX(0%);
+            .navbar-right, .navbar-left, .navbar-bg {
+                transition: 300ms ease;
+                transform: translateX(0%);
+            }
         }
     }
 }
