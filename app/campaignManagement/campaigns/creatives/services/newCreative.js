@@ -32,12 +32,11 @@ define(function(require) {
                 }
 
                 var strategy = getAdTypeStrategy(creative.type);
-                strategy(creative, mediaItem, function(err, url){
+                strategy(creative, mediaItem, function(err, data){
                     if(err) {
-                        deferred.reject(err);
-                        return;
+                        return deferred.reject(err);
                     }
-                    deferred.resolve(url);
+                    deferred.resolve(data);
                 });
             });
             return deferred.promise;
