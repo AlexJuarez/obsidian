@@ -3,7 +3,6 @@ define(function (require) {
 
     var ng = require('angular');
     require('ui-router');
-    require('ng-perfect-scrollbar');
     require('ng-datepicker');
     require('./core/index');
     require('./table/index');
@@ -13,7 +12,6 @@ define(function (require) {
 
     return ng.module('app', [
         'ui.bootstrap.datepicker',
-        'perfect_scrollbar',
         'app.campaign-management',
         'app.analytics',
         'tpl',
