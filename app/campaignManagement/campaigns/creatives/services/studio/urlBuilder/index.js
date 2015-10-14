@@ -65,11 +65,24 @@ define(function(require) {
             /**
              * Select a media item from the media library Fluent url builder
              *
+             * @param {string} adType The ad type SWF, IMG
+             * @param {string} environment The ad environment multiscreen | desktop | tabletphone | inappmraid
+             * @param {string} title The title of the ad
+             * @param {string} clickthroughUrl The clickthrough url
+             * @param {string} campaignId The campaignId of the new ad
              * @returns {Object} builder
              */
-            mediaselect: function() {
+            mediaselect: function(campaignId) {
                 return require('./mediaselect')
-                    ($httpParamSerializer);
+                    ($httpParamSerializer)
+                    // Studio uses Mixin's to parse the options from the servlet,
+                    // after offical params are passed the filter object is
+                    // parsed using mixin's, thus any filters can stomp default
+                    // values, or in this case fill values which would otherwise
+                    // be null.
+                    .setFilter({
+                        campaignId: campaignId
+                    });
             }
         };
     }]);
