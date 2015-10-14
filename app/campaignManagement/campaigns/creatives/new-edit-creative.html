@@ -192,10 +192,14 @@
             </div>
         </div>
 
-        <div ng-show="creative.campaignId" class="form-group row">
+        <div ng-show="creative.campaignId && creative.type === 'Display'" class="form-group row">
           <label class="col-sm-3 form-label">Upload</label>
           <div class="col-sm-9 file-selection-wrapper form-inline">
-            <button ng-click="selectMedia()">Select Media</button>
+            <button class="btn btn-default" ng-click="selectMedia()">
+              Select
+              <span ng-show="creative.subtype==='SWF'">SWF</span>
+              <span ng-show="creative.subtype==='IMG'">Image</span>
+            </button>
           </div>
         </div>
         <!--<div ng-if="creative.subtype == 'SWF' && !editing">-->
