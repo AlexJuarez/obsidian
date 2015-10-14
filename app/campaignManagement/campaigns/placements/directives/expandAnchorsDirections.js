@@ -39,7 +39,6 @@ define(function(require) {
 						};
 
 						$scope.$watch('placement.expandDirection', function() {
-							console.log($scope.placement.expandDirection);
 							if(typeof $scope.placement.expandDirection === 'string') {
 								$scope.expandAnchors = [];
 								var expandAnchors = expandAnchorPossibilities[$scope.placement.expandDirection];
@@ -49,6 +48,8 @@ define(function(require) {
 										value: anchor
 									});
 								});
+
+								$scope.placement.expandAnchor = $scope.expandAnchors[0].value;
 							}
 						});
 

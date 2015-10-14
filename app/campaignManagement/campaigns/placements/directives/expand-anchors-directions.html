@@ -16,7 +16,7 @@
         </div>
         <div class="row col-sm-9">
           <div class="col-sm-2" ng-repeat="anchor in expandAnchors">
-            <div class="expand-anchor" ng-class="{selected:placement.expandAnchor===anchor.value}">
+            <div class="expand-anchor" ng-class="{selected:placement.expandAnchor === anchor.value}">
               <img ng-click="setExpandAnchor(anchor.value)" ng-src="{{anchor.image}}" />
             </div>
           </div>

@@ -22,8 +22,10 @@ define(function(require) {
 			var record;
 			var placementPromises = [];
 			var r, id;
+
 			// Editing placement(s)
 			if(modalState.placementIds) {
+				$scope.placement = {};
 				for(var i = 0; i < modalState.placementIds.length; i ++) {
 					id = modalState.placementIds[i];
 					r = placementRecordService.get(id);
@@ -38,7 +40,7 @@ define(function(require) {
 			}
 
 			// Creating a new placement under a campaign
-			if(modalState.originalPlacement.campaignId) {
+			if(modalState.originalPlacement && modalState.originalPlacement.campaignId) {
 				record = placementRecordService.create(modalState.originalPlacement);
 				record.set(modalState.placement);
 				record.observe(update, $scope);
@@ -73,8 +75,6 @@ define(function(require) {
 				$scope.placement.clickTrackers = '';
 				$scope.placement.impressionTrackers = '';
 				$scope.placement.viewTrackers = '';
-				$scope.placement.adTagId = '41a72be8-492f-4da0-8e8f-8bcb2f34d93e';
-				//console.log(JSON.stringify($scope.placement));
 				if(ng.equals({}, errors) || ! errors) {
 					var onSuccess = function() {
 						$scope.placement = {};
