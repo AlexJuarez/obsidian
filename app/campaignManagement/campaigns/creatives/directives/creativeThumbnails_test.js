@@ -122,8 +122,8 @@ define(function (require) {
             });
 
             it('should open a studio page', function () {
-                spyOn(window, 'open');
-
+                var fakeWindow = {};
+                spyOn(window, 'open').and.returnValue(fakeWindow);
                 var scope = setUpScope();
 
                 scope.openStudio({id: 1});
@@ -132,12 +132,13 @@ define(function (require) {
             });
 
             it('should open a studio page with creative.id', function () {
-                spyOn(window, 'open');
+                var fakeWindow = {};
+                spyOn(window, 'open').and.returnValue(fakeWindow);
                 var scope = setUpScope();
 
                 scope.openStudio({id: 1, campaignId:'_id_'});
 
-                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/studio?filter=%7B%22campaignId%22:%22_id_%22%7D&guid=1&sdf=open', '_blank');
+                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/studio?filter=%7B%22campaignId%22:%22_id_%22%7D&guid=1&sdf=open', 'mixpo_studio');
             });
 
             it('should update the filter on stateChange', function () {

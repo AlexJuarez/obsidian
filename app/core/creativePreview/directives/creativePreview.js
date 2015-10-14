@@ -12,8 +12,8 @@ define(function (require) {
             scope: {
                 id: '=creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'studioUrlBuilder', '$interval',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, studioUrlBuilder, $interval) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'openCreativeService', '$interval',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, openCreativeService, $interval) {
                     $scope.isOpen = false;
                     $scope.clicked = false;
                     $scope.previewInPage = previewInPage;
@@ -69,11 +69,11 @@ define(function (require) {
                     }
 
                     function openInStudio() {
-                        var url = studioUrlBuilder
-                            .open($scope.id, $scope.campaignId)
-                            .setHostname(mixpoURL)
-                            .build();
-                        $window.open(url, '_blank');
+                        var creative = {
+                            id: $scope.id,
+                            campaignId: $scope.campaignId
+                        };
+                        openCreativeService(creative, mixpoURL);
                     }
 
                     function calculateSpace() {
