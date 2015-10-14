@@ -40,19 +40,19 @@
 			<label class="col-sm-3 form-label"><span>Play Mode</span></label>
 			<div class="col-sm-9">
 				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="rollover" type="radio" name="playMode" class="radio radio-light" />
+					<input ng-model="placement.playMode" ng-value="'rollover'" type="radio" name="playMode" class="radio radio-light" />
 							<span>
 									Roll Over to Play
 							</span>
 				</label>
 				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="click" type="radio" name="playMode" class="radio radio-light" />
+					<input ng-model="placement.playMode" ng-value="'click'" type="radio" name="playMode" class="radio radio-light" />
 							<span>
 									Click to Play
 							</span>
 				</label>
 				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="auto" type="radio" name="playMode" class="radio radio-light" />
+					<input ng-model="placement.playMode" ng-value="'auto'" type="radio" name="playMode" class="radio radio-light" />
 							<span>
 									Autoplay
 							</span>
@@ -82,22 +82,22 @@
 
 	<div ng-if="creativeType === 'inBannerVideo' && isExpanding">
 		<div class="form-group row">
-			<label for="creative" class="col-sm-3 form-label"><span>Play Mode</span></label>
+			<label for="creative" class="col-sm-3 form-label required"><span>Expand Initiation</span></label>
 			<div class="col-sm-9">
 				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="rollover" type="radio" name="playMode" class="radio radio-light" />
+					<input ng-model="placement.playMode" ng-value="'rollover'" type="radio" name="playMode" class="radio radio-light" />
 							<span>
 									Roll Over to Expand
 							</span>
 				</label>
 				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="click" type="radio" name="playMode" class="radio radio-light" />
+					<input ng-model="placement.playMode" ng-value="'click'" type="radio" name="playMode" class="radio radio-light" />
 							<span>
 									Click to Expand
 							</span>
 				</label>
 				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="auto" type="radio" name="playMode" class="radio radio-light" />
+					<input ng-model="placement.playMode" ng-value="'auto'" type="radio" name="playMode" class="radio radio-light" />
 							<span>
 									Auto Expand
 							</span>
@@ -105,22 +105,22 @@
 			</div>
 		</div>
 		<div class="form-group row">
-			<label class="col-sm-3 form-label"><span>Expand Type</span></label>
+			<label class="col-sm-3 form-label required"><span>Expand Type</span></label>
 			<div class="col-sm-9">
 				<label class="radio-inline">
-					<input ng-model="placement.expandType" ng-value="directional" type="radio" name="expandType" class="radio radio-light" />
+					<input ng-model="placement.expandType" ng-value="'directional'" type="radio" name="expandType" class="radio radio-light" />
 							<span>
 									Directional
 							</span>
 				</label>
 				<label class="radio-inline">
-					<input ng-model="placement.expandType" ng-value="pushdown" type="radio" name="expandType" class="radio radio-light" />
+					<input ng-model="placement.expandType" ng-value="'pushdown'" type="radio" name="expandType" class="radio radio-light" />
 							<span>
 									Pushdown
 							</span>
 				</label>
 				<label class="radio-inline">
-					<input ng-model="placement.expandType" ng-value="takeover" type="radio" name="expandType" class="radio radio-light" />
+					<input ng-model="placement.expandType" ng-value="'takeover'" type="radio" name="expandType" class="radio radio-light" />
 							<span>
 									Full Page Takeover
 							</span>
@@ -142,8 +142,30 @@
 					<span>Audio Off</span>
 				</label>
 				<label>
+					<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />
+					<span>Mute on Roll Out</span>
+				</label>
+				<label>
 					<input ng-model="collapseOnRollOut" type="checkbox" class="checkbox checkbox-light" />
 					<span>Collapse on Roll Out</span>
+				</label>
+			</div>
+		</div>
+
+		<div class="form-group row">
+			<label class="col-sm-3 form-label required"><span>Expand Type</span></label>
+			<div class="col-sm-9">
+				<label class="radio-inline">
+					<input ng-model="placement.expandBeforeCountdown" ng-value="true" type="radio" name="expandBeforeCountdown" class="radio radio-light" />
+							<span>
+									Before Countdown / Loading
+							</span>
+				</label>
+				<label class="radio-inline">
+					<input ng-model="placement.expandBeforeCountdown" ng-value="false" type="radio" name="expandBeforeCountdown" class="radio radio-light" />
+							<span>
+									After Countdown / Loading
+							</span>
 				</label>
 			</div>
 		</div>

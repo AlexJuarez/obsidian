@@ -13,12 +13,18 @@ define(function (require) {
 			templateUrl: 'campaignManagement/campaigns/placements/directives/assign-creative.html',
 			controller: ['$scope', 'creatives', 'ENUMS', function ($scope, creativeService, ENUMS) {
 
+				// setup defaults
+				$scope.placement.expandBeforeCountdown = $scope.placement.expandBeforeCountdown || true;
+				$scope.placement.playMode = $scope.placement.playMode || 'rollover';
+				$scope.placement.expandType = $scope.placement.expandType || 'directional';
+
 				var creativeTypes = ENUMS.down.creativeTypes;
 
 				creativeService.observe(updateCreativesByAdType, $scope);
 				function updateCreativesByAdType() {
 					var adTypes = {};
 					var creatives = creativeService.data().all();
+
 					creatives.forEach(function(creative) {
 						if(! adTypes[creative.type]) {
 							adTypes[creative.type] = [];
@@ -36,6 +42,13 @@ define(function (require) {
 						if ($scope.creative.expandedWidth) {
 							$scope.isExpanding = true;
 						}
+
+						$scope.placement.targetId = $scope.creative.id;
+						$scope.placement.embedWidth = $scope.creative.embedWidth;
+						$scope.placement.embedHeight = $scope.creative.embedHeight;
+
+						// TODO: Set this to $scope.creative.clickthroughUrl once it's in the api
+						$scope.placement.clickthroughUrl = $scope.creative.clickthroughUrl || 'http://www.mixpo.com';
 					}
 				});
 			}]

@@ -10,7 +10,7 @@ define(function(require) {
         queryParams: {
             dimensions: [
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
-                'embedHeight', 'expandedWidth', 'expandedHeight',
+                'embedHeight', 'expandedWidth', 'expandedHeight', //'clickthroughUrl',
                 'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
             limit: 500

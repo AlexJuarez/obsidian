@@ -3,7 +3,7 @@ define(function (require) {
 
 	var module = require('./../../module');
 
-	module.service('adTags', ['placements', 'placementRecordService', 'adTagService', '$interpolate', '$q', function (placements, placementRecordService, adTagService, $interpolate, $q) {
+	module.service('adTags', ['placements', 'placementRecordService', 'adTagService', '$interpolate', '$q', 'cdnLocation', function (placements, placementRecordService, adTagService, $interpolate, $q, cdnLocation) {
 		var tagTemplates = [];
 		adTagService.init();
 		adTagService.observe(function() {
@@ -30,7 +30,7 @@ define(function (require) {
 				});
 
 				if (placements.length > 0) {
-					var firstPlacementName = placements[0].all().name;
+					var firstPlacementName = placements[0].data.name;
 					download(firstPlacementName + '_tags.txt', tags);
 				}
 			});
@@ -41,7 +41,6 @@ define(function (require) {
 			if (tagTemplate) {
 				// Interpolate in "all-or-nothing" mode to avoid missing variables
 				var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
-
 				return adTag(getPlacementInterpolateObject(placement, tagTemplate));
 			} else {
 				return '';
@@ -60,20 +59,26 @@ define(function (require) {
 		}
 
 		function getPlacementInterpolateObject(placement, adTagType) {
-			return {
+			var object = {
 				width: placement.embedWidth,
 				height: placement.embedHeight,
 				id: placement.targetId, // The creative guid / entry point for multi-creative
 
 				// TODO: ad real url here
 				prerenderUrl: 'http://www.google.com', // Image to show before load
-				clickThroughUrl: placement.clickthroughUrl,
+				clickthroughUrl: placement.clickthroughUrl,
 
 				// TODO: add real data here
 				version: '1.1.1', // The current build version
-				clicktag: adTagType.attributes.clicktag,
-				folder: placement.targetId.slice(0, 2) // The first 2 letters of the id
+				folder: placement.targetId.slice(0, 2), // The first 2 letters of the id
+				domain: cdnLocation.host().replace('//', '')
 			};
+
+			if (adTagType.attributes && adTagType.attributes.clicktag) {
+				object.clicktag = adTagType.attributes.clicktag;
+			}
+
+			return object;
 		}
 
 		function getPlacementTagText(placement) {
