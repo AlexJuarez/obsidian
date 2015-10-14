@@ -1,0 +1,34 @@
+<div class="form-group row"
+		 ng-class="{'has-error': (newPlacement.costPer.$invalid || newPlacement.totalCost.$invalid) && submitted}">
+	<label
+		class="col-sm-3 form-label"><span>Cost</span></label>
+
+	<div class="col-sm-3">
+		<select name="types" select2
+						ng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"
+						ng-model="placement.rateType">
+		</select>
+	</div>
+	<div class="col-sm-3" ng-if="showCostPer">
+		<input name="costPer" ng-model="placement.costPerRate" type="text" ng-pattern="MONEY_REGEX"
+					 class="form-control col-sm-4" id="costPer"
+					 placeholder="Cost Per"/>
+		<p ng-class="{'help-block':newPlacement.costPer.$invalid && submitted}">
+			cost per
+			<span ng-show="newPlacement.costPer.$invalid && submitted">
+				must be valid
+			</span>
+		</p>
+	</div>
+	<div class="col-sm-3" ng-if="showTotalCost">
+		<input name="totalCost" ng-model="placement.budget" type="text" ng-pattern="MONEY_REGEX"
+					 class="form-control" id="totalCost"
+					 placeholder="Total Cost"/>
+		<p ng-class="{'help-block':newPlacement.totalCost.$invalid && submitted}">
+			total cost
+			<span ng-show="newPlacement.totalCost.$invalid && submitted">
+				must be valid
+			</span>
+		</p>
+	</div>
+</div>
