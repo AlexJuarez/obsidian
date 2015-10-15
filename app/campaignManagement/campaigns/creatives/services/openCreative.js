@@ -13,116 +13,67 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('openCreativeService', ['$q', '$window', 'studioUrlBuilder',
-        function($q, $window, studioUrlBuilder) {
-            function buildUrl(creative, hostname) {
-                return studioUrlBuilder.open(creative.id, creative.campaignId)
-                    .setHostname(hostname)
-                    .build();
-            }
+    module.service('openCreativeService', ['$q', '$window', 'studioUrlBuilder', 'studioConnector', function($q, $window, studioUrlBuilder, studioConnector) {
 
-            function createPoller(tickMs, timeoutMs, onTick, onTimeout) {
-                var poll, timeout;
-
-                function start() {
-                    poll = setInterval(onTick, tickMs);
-                    timeout = setInterval(function() {
-                        stop();
-                        onTimeout();
-                    }, timeoutMs);
-                    return this;
-                }
-
-                function stop() {
-                    clearInterval(poll);
-                    clearInterval(timeout);
+        /**
+         * construct the StudioDirectHandler window object
+         *
+         * @param tabWindow
+         * @param deferred
+         */
+        function createStudioDirectHandler(tabWindow, deferred) {
+            tabWindow.StudioDirectHandler = (function(){
+                function onClose(code, detail) {
+                    if(code && detail) {
+                        //return deferred.reject(err);
+                    }
+                    tabWindow.close();
+                    deferred.resolve();
                 }
 
                 return {
-                    start: start,
-                    stop: stop
+                    onClose: onClose
                 };
-            }
+            })();
+        }
 
-            function createFallbackHandler(tabWindow, deferred) {
-                tabWindow.StudioDirectHandler = (function(){
-                    function onClose(code, detail) {
-                        if(code && detail) {
-                            //return deferred.reject(err);
-                        }
-                        tabWindow.close();
-                        deferred.resolve();
-                    }
+        /**
+         * Opens studio and returns a promise.
+         *
+         * @param creative
+         * @returns {Object} promise
+         */
+        return function(creative, hostname) {
+            var deferred = $q.defer();
 
-                    return {
-                        onClose: onClose
-                    };
-                })();
-            }
+            var url = studioUrlBuilder
+                .open(creative.id, creative.campaignId)
+                .setHostname(hostname)
+                .build();
+            var tabWindow = $window.open(
+                url,
+                'mixpo_studio'
+            );
 
-            function studioConnector(window, tabWindow, callback) {
-                // poll for connection
-                var poller = createPoller(500, 3000, function onTick() {
-                    tabWindow.postMessage('connect', '*');
-                }, function onTimeout() {
-                    callback('timeout');
-                }).start();
-
-                function onMessage(event) {
-                    // security?
-                    //if (event.origin !== "http://example.org")
-                    //   return;
-
-                    if(event.data !== 'connected') {
-                        return;
-                    }
-
-                    poller.stop();
-                    window.removeEventListener('message', onMessage);
-                    callback(null, function(subscriber) {
-                        function onConvert(event) {
-                            var data = JSON.parse(event.data);
-                            subscriber(data.command, data.data);
-                        }
-                        window.addEventListener('message', onConvert, false);
-                    });
+            var connector = studioConnector(window, tabWindow, function onConnection(err, notifier) {
+                if(err) {
+                    // studio Connect error does not team open failed,
+                    // just that supporting postMessage() failed.
+                    createStudioDirectHandler(tabWindow, deferred);
+                    return deferred.promise;
                 }
-                window.addEventListener('message', onMessage, false);
-            }
 
-            /**
-             * Opens studio and returns a promise.
-             *
-             * @param creative
-             * @returns {Object} promise
-             */
-            return function(creative, hostname) {
-                var deferred = $q.defer();
-
-                var url = buildUrl(creative, hostname);
-                var tabWindow = $window.open(
-                    url,
-                    'mixpo_studio'
-                );
-
-                studioConnector(window, tabWindow, function(err, notifier) {
-                    if(err) {
-                        // studio Connect error does not team open failed,
-                        // just that supporting postMessage() failed.
-                        createFallbackHandler(tabWindow, deferred);
-                        return deferred.promise;
+                notifier(function(command, data){
+                    if(command === 'closeStudio') {
+                        tabWindow.close();
+                        deferred.resolve(data);
+                        connector.shutdown();
+                    } else {
+                        // unhandled event type
                     }
-
-                    notifier(function(command, data){
-                        if(command === 'closeStudio') {
-                            tabWindow.close();
-                            deferred.resolve(data);
-                        } else {
-                            // unhandled event type
-                        }
-                    });
                 });
-                return deferred.promise;
-            };
-        }]);
+            });
+            return deferred.promise;
+        };
+    }]);
 });
