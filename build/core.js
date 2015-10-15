@@ -9642,8 +9642,886 @@ return jQuery;
 
 }));
 
+/* Copyright (c) 2015 Hyunje Alex Jun and other contributors
+ * Licensed under the MIT License
+ */
+(function (factory) {
+  'use strict';
+
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('perfect-scrollbar',['jquery'], factory);
+  } else if (typeof exports === 'object') {
+    // Node/CommonJS
+    factory(require('jquery'));
+  } else {
+    // Browser globals
+    factory(jQuery);
+  }
+})(function ($) {
+  'use strict';
+
+  function getInt(x) {
+    if (typeof x === 'string') {
+      return parseInt(x, 10);
+    } else {
+      return ~~x;
+    }
+  }
+
+  var defaultSettings = {
+    wheelSpeed: 1,
+    wheelPropagation: false,
+    swipePropagation: true,
+    minScrollbarLength: null,
+    maxScrollbarLength: null,
+    useBothWheelAxes: false,
+    useKeyboard: true,
+    suppressScrollX: false,
+    suppressScrollY: false,
+    scrollXMarginOffset: 0,
+    scrollYMarginOffset: 0,
+    includePadding: false
+  };
+
+  var incrementingId = 0;
+  var eventClassFactory = function () {
+    var id = incrementingId++;
+    return function (eventName) {
+      var className = '.perfect-scrollbar-' + id;
+      if (typeof eventName === 'undefined') {
+        return className;
+      } else {
+        return eventName + className;
+      }
+    };
+  };
+
+  var isWebkit = 'WebkitAppearance' in document.documentElement.style;
+
+  $.fn.perfectScrollbar = function (suppliedSettings, option) {
+
+    return this.each(function () {
+      var settings = $.extend(true, {}, defaultSettings);
+      var $this = $(this);
+      var isPluginAlive = function () { return !!$this; };
+
+      if (typeof suppliedSettings === "object") {
+        // Override default settings with any supplied
+        $.extend(true, settings, suppliedSettings);
+      } else {
+        // If no setting was supplied, then the first param must be the option
+        option = suppliedSettings;
+      }
+
+      // Catch options
+      if (option === 'update') {
+        if ($this.data('perfect-scrollbar-update')) {
+          $this.data('perfect-scrollbar-update')();
+        }
+        return $this;
+      }
+      else if (option === 'destroy') {
+        if ($this.data('perfect-scrollbar-destroy')) {
+          $this.data('perfect-scrollbar-destroy')();
+        }
+        return $this;
+      }
+
+      if ($this.data('perfect-scrollbar')) {
+        // if there's already perfect-scrollbar
+        return $this.data('perfect-scrollbar');
+      }
+
+
+      // Or generate new perfectScrollbar
+
+      $this.addClass('ps-container');
+
+      var containerWidth;
+      var containerHeight;
+      var contentWidth;
+      var contentHeight;
+
+      var isRtl = $this.css('direction') === "rtl";
+      var eventClass = eventClassFactory();
+      var ownerDocument = this.ownerDocument || document;
+
+      var $scrollbarXRail = $("<div class='ps-scrollbar-x-rail'>").appendTo($this);
+      var $scrollbarX = $("<div class='ps-scrollbar-x'>").appendTo($scrollbarXRail);
+      var scrollbarXActive;
+      var scrollbarXWidth;
+      var scrollbarXLeft;
+      var scrollbarXBottom = getInt($scrollbarXRail.css('bottom'));
+      var isScrollbarXUsingBottom = scrollbarXBottom === scrollbarXBottom; // !isNaN
+      var scrollbarXTop = isScrollbarXUsingBottom ? null : getInt($scrollbarXRail.css('top'));
+      var railBorderXWidth = getInt($scrollbarXRail.css('borderLeftWidth')) + getInt($scrollbarXRail.css('borderRightWidth'));
+      var railXMarginWidth = getInt($scrollbarXRail.css('marginLeft')) + getInt($scrollbarXRail.css('marginRight'));
+      var railXWidth;
+
+      var $scrollbarYRail = $("<div class='ps-scrollbar-y-rail'>").appendTo($this);
+      var $scrollbarY = $("<div class='ps-scrollbar-y'>").appendTo($scrollbarYRail);
+      var scrollbarYActive;
+      var scrollbarYHeight;
+      var scrollbarYTop;
+      var scrollbarYRight = getInt($scrollbarYRail.css('right'));
+      var isScrollbarYUsingRight = scrollbarYRight === scrollbarYRight; // !isNaN
+      var scrollbarYLeft = isScrollbarYUsingRight ? null : getInt($scrollbarYRail.css('left'));
+      var railBorderYWidth = getInt($scrollbarYRail.css('borderTopWidth')) + getInt($scrollbarYRail.css('borderBottomWidth'));
+      var railYMarginHeight = getInt($scrollbarYRail.css('marginTop')) + getInt($scrollbarYRail.css('marginBottom'));
+      var railYHeight;
+
+      function updateScrollTop(currentTop, deltaY) {
+        var newTop = currentTop + deltaY;
+        var maxTop = containerHeight - scrollbarYHeight;
+
+        if (newTop < 0) {
+          scrollbarYTop = 0;
+        } else if (newTop > maxTop) {
+          scrollbarYTop = maxTop;
+        } else {
+          scrollbarYTop = newTop;
+        }
+
+        var scrollTop = getInt(scrollbarYTop * (contentHeight - containerHeight) / (containerHeight - scrollbarYHeight));
+        $this.scrollTop(scrollTop);
+      }
+
+      function updateScrollLeft(currentLeft, deltaX) {
+        var newLeft = currentLeft + deltaX;
+        var maxLeft = containerWidth - scrollbarXWidth;
+
+        if (newLeft < 0) {
+          scrollbarXLeft = 0;
+        } else if (newLeft > maxLeft) {
+          scrollbarXLeft = maxLeft;
+        } else {
+          scrollbarXLeft = newLeft;
+        }
+
+        var scrollLeft = getInt(scrollbarXLeft * (contentWidth - containerWidth) / (containerWidth - scrollbarXWidth));
+        $this.scrollLeft(scrollLeft);
+      }
+
+      function getThumbSize(thumbSize) {
+        if (settings.minScrollbarLength) {
+          thumbSize = Math.max(thumbSize, settings.minScrollbarLength);
+        }
+        if (settings.maxScrollbarLength) {
+          thumbSize = Math.min(thumbSize, settings.maxScrollbarLength);
+        }
+        return thumbSize;
+      }
+
+      function updateCss() {
+        var xRailOffset = {width: railXWidth};
+        if (isRtl) {
+          xRailOffset.left = $this.scrollLeft() + containerWidth - contentWidth;
+        } else {
+          xRailOffset.left = $this.scrollLeft();
+        }
+        if (isScrollbarXUsingBottom) {
+          xRailOffset.bottom = scrollbarXBottom - $this.scrollTop();
+        } else {
+          xRailOffset.top = scrollbarXTop + $this.scrollTop();
+        }
+        $scrollbarXRail.css(xRailOffset);
+
+        var railYOffset = {top: $this.scrollTop(), height: railYHeight};
+
+        if (isScrollbarYUsingRight) {
+          if (isRtl) {
+            railYOffset.right = contentWidth - $this.scrollLeft() - scrollbarYRight - $scrollbarY.outerWidth();
+          } else {
+            railYOffset.right = scrollbarYRight - $this.scrollLeft();
+          }
+        } else {
+          if (isRtl) {
+            railYOffset.left = $this.scrollLeft() + containerWidth * 2 - contentWidth - scrollbarYLeft - $scrollbarY.outerWidth();
+          } else {
+            railYOffset.left = scrollbarYLeft + $this.scrollLeft();
+          }
+        }
+        $scrollbarYRail.css(railYOffset);
+
+        $scrollbarX.css({left: scrollbarXLeft, width: scrollbarXWidth - railBorderXWidth});
+        $scrollbarY.css({top: scrollbarYTop, height: scrollbarYHeight - railBorderYWidth});
+      }
+
+      function updateGeometry() {
+        // Hide scrollbars not to affect scrollWidth and scrollHeight
+        $this.removeClass('ps-active-x');
+        $this.removeClass('ps-active-y');
+
+        containerWidth = settings.includePadding ? $this.innerWidth() : $this.width();
+        containerHeight = settings.includePadding ? $this.innerHeight() : $this.height();
+        contentWidth = $this.prop('scrollWidth');
+        contentHeight = $this.prop('scrollHeight');
+
+        if (!settings.suppressScrollX && containerWidth + settings.scrollXMarginOffset < contentWidth) {
+          scrollbarXActive = true;
+          railXWidth = containerWidth - railXMarginWidth;
+          scrollbarXWidth = getThumbSize(getInt(railXWidth * containerWidth / contentWidth));
+          scrollbarXLeft = getInt($this.scrollLeft() * (railXWidth - scrollbarXWidth) / (contentWidth - containerWidth));
+        } else {
+          scrollbarXActive = false;
+          scrollbarXWidth = 0;
+          scrollbarXLeft = 0;
+          $this.scrollLeft(0);
+        }
+
+        if (!settings.suppressScrollY && containerHeight + settings.scrollYMarginOffset < contentHeight) {
+          scrollbarYActive = true;
+          railYHeight = containerHeight - railYMarginHeight;
+          scrollbarYHeight = getThumbSize(getInt(railYHeight * containerHeight / contentHeight));
+          scrollbarYTop = getInt($this.scrollTop() * (railYHeight - scrollbarYHeight) / (contentHeight - containerHeight));
+        } else {
+          scrollbarYActive = false;
+          scrollbarYHeight = 0;
+          scrollbarYTop = 0;
+          $this.scrollTop(0);
+        }
+
+        if (scrollbarXLeft >= railXWidth - scrollbarXWidth) {
+          scrollbarXLeft = railXWidth - scrollbarXWidth;
+        }
+        if (scrollbarYTop >= railYHeight - scrollbarYHeight) {
+          scrollbarYTop = railYHeight - scrollbarYHeight;
+        }
+
+        updateCss();
+
+        if (scrollbarXActive) {
+          $this.addClass('ps-active-x');
+        }
+        if (scrollbarYActive) {
+          $this.addClass('ps-active-y');
+        }
+      }
+
+      function bindMouseScrollXHandler() {
+        var currentLeft;
+        var currentPageX;
+
+        var mouseMoveHandler = function (e) {
+          updateScrollLeft(currentLeft, e.pageX - currentPageX);
+          updateGeometry();
+          e.stopPropagation();
+          e.preventDefault();
+        };
+
+        var mouseUpHandler = function (e) {
+          $this.removeClass('ps-in-scrolling');
+          $(ownerDocument).unbind(eventClass('mousemove'), mouseMoveHandler);
+        };
+
+        $scrollbarX.bind(eventClass('mousedown'), function (e) {
+          currentPageX = e.pageX;
+          currentLeft = $scrollbarX.position().left;
+          $this.addClass('ps-in-scrolling');
+
+          $(ownerDocument).bind(eventClass('mousemove'), mouseMoveHandler);
+          $(ownerDocument).one(eventClass('mouseup'), mouseUpHandler);
+
+          e.stopPropagation();
+          e.preventDefault();
+        });
+
+        currentLeft =
+        currentPageX = null;
+      }
+
+      function bindMouseScrollYHandler() {
+        var currentTop;
+        var currentPageY;
+
+        var mouseMoveHandler = function (e) {
+          updateScrollTop(currentTop, e.pageY - currentPageY);
+          updateGeometry();
+          e.stopPropagation();
+          e.preventDefault();
+        };
+
+        var mouseUpHandler = function (e) {
+          $this.removeClass('ps-in-scrolling');
+          $(ownerDocument).unbind(eventClass('mousemove'), mouseMoveHandler);
+        };
+
+        $scrollbarY.bind(eventClass('mousedown'), function (e) {
+          currentPageY = e.pageY;
+          currentTop = $scrollbarY.position().top;
+          $this.addClass('ps-in-scrolling');
+
+          $(ownerDocument).bind(eventClass('mousemove'), mouseMoveHandler);
+          $(ownerDocument).one(eventClass('mouseup'), mouseUpHandler);
+
+          e.stopPropagation();
+          e.preventDefault();
+        });
+
+        currentTop =
+        currentPageY = null;
+      }
+
+      function shouldPreventWheel(deltaX, deltaY) {
+        var scrollTop = $this.scrollTop();
+        if (deltaX === 0) {
+          if (!scrollbarYActive) {
+            return false;
+          }
+          if ((scrollTop === 0 && deltaY > 0) || (scrollTop >= contentHeight - containerHeight && deltaY < 0)) {
+            return !settings.wheelPropagation;
+          }
+        }
+
+        var scrollLeft = $this.scrollLeft();
+        if (deltaY === 0) {
+          if (!scrollbarXActive) {
+            return false;
+          }
+          if ((scrollLeft === 0 && deltaX < 0) || (scrollLeft >= contentWidth - containerWidth && deltaX > 0)) {
+            return !settings.wheelPropagation;
+          }
+        }
+        return true;
+      }
+
+      function shouldPreventSwipe(deltaX, deltaY) {
+        var scrollTop = $this.scrollTop();
+        var scrollLeft = $this.scrollLeft();
+        var magnitudeX = Math.abs(deltaX);
+        var magnitudeY = Math.abs(deltaY);
+
+        if (magnitudeY > magnitudeX) {
+          // user is perhaps trying to swipe up/down the page
+
+          if (((deltaY < 0) && (scrollTop === contentHeight - containerHeight)) ||
+              ((deltaY > 0) && (scrollTop === 0))) {
+            return !settings.swipePropagation;
+          }
+        } else if (magnitudeX > magnitudeY) {
+          // user is perhaps trying to swipe left/right across the page
+
+          if (((deltaX < 0) && (scrollLeft === contentWidth - containerWidth)) ||
+              ((deltaX > 0) && (scrollLeft === 0))) {
+            return !settings.swipePropagation;
+          }
+        }
+
+        return true;
+      }
+
+      function bindMouseWheelHandler() {
+        var shouldPrevent = false;
+
+        function getDeltaFromEvent(e) {
+          var deltaX = e.originalEvent.deltaX;
+          var deltaY = -1 * e.originalEvent.deltaY;
+
+          if (typeof deltaX === "undefined" || typeof deltaY === "undefined") {
+            // OS X Safari
+            deltaX = -1 * e.originalEvent.wheelDeltaX / 6;
+            deltaY = e.originalEvent.wheelDeltaY / 6;
+          }
+
+          if (e.originalEvent.deltaMode && e.originalEvent.deltaMode === 1) {
+            // Firefox in deltaMode 1: Line scrolling
+            deltaX *= 10;
+            deltaY *= 10;
+          }
+
+          if (deltaX !== deltaX && deltaY !== deltaY/* NaN checks */) {
+            // IE in some mouse drivers
+            deltaX = 0;
+            deltaY = e.originalEvent.wheelDelta;
+          }
+
+          return [deltaX, deltaY];
+        }
+
+        function mousewheelHandler(e) {
+          // FIXME: this is a quick fix for the select problem in FF and IE.
+          // If there comes an effective way to deal with the problem,
+          // this lines should be removed.
+          if (!isWebkit && $this.find('select:focus').length > 0) {
+            return;
+          }
+
+          var delta = getDeltaFromEvent(e);
+
+          var deltaX = delta[0];
+          var deltaY = delta[1];
+
+          shouldPrevent = false;
+          if (!settings.useBothWheelAxes) {
+            // deltaX will only be used for horizontal scrolling and deltaY will
+            // only be used for vertical scrolling - this is the default
+            $this.scrollTop($this.scrollTop() - (deltaY * settings.wheelSpeed));
+            $this.scrollLeft($this.scrollLeft() + (deltaX * settings.wheelSpeed));
+          } else if (scrollbarYActive && !scrollbarXActive) {
+            // only vertical scrollbar is active and useBothWheelAxes option is
+            // active, so let's scroll vertical bar using both mouse wheel axes
+            if (deltaY) {
+              $this.scrollTop($this.scrollTop() - (deltaY * settings.wheelSpeed));
+            } else {
+              $this.scrollTop($this.scrollTop() + (deltaX * settings.wheelSpeed));
+            }
+            shouldPrevent = true;
+          } else if (scrollbarXActive && !scrollbarYActive) {
+            // useBothWheelAxes and only horizontal bar is active, so use both
+            // wheel axes for horizontal bar
+            if (deltaX) {
+              $this.scrollLeft($this.scrollLeft() + (deltaX * settings.wheelSpeed));
+            } else {
+              $this.scrollLeft($this.scrollLeft() - (deltaY * settings.wheelSpeed));
+            }
+            shouldPrevent = true;
+          }
+
+          updateGeometry();
+
+          shouldPrevent = (shouldPrevent || shouldPreventWheel(deltaX, deltaY));
+          if (shouldPrevent) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }
+
+        if (typeof window.onwheel !== "undefined") {
+          $this.bind(eventClass('wheel'), mousewheelHandler);
+        } else if (typeof window.onmousewheel !== "undefined") {
+          $this.bind(eventClass('mousewheel'), mousewheelHandler);
+        }
+      }
+
+      function bindKeyboardHandler() {
+        var hovered = false;
+        $this.bind(eventClass('mouseenter'), function (e) {
+          hovered = true;
+        });
+        $this.bind(eventClass('mouseleave'), function (e) {
+          hovered = false;
+        });
+
+        var shouldPrevent = false;
+        $(ownerDocument).bind(eventClass('keydown'), function (e) {
+          if (e.isDefaultPrevented && e.isDefaultPrevented()) {
+            return;
+          }
+
+          if (!hovered) {
+            return;
+          }
+
+          var activeElement = document.activeElement ? document.activeElement : ownerDocument.activeElement;
+
+          if (activeElement) {
+            // go deeper if element is a webcomponent
+            while (activeElement.shadowRoot) {
+              activeElement = activeElement.shadowRoot.activeElement;
+            }
+            if ($(activeElement).is(":input,[contenteditable]")) {
+              return;
+            }
+          }
+
+          var deltaX = 0;
+          var deltaY = 0;
+
+          switch (e.which) {
+          case 37: // left
+            deltaX = -30;
+            break;
+          case 38: // up
+            deltaY = 30;
+            break;
+          case 39: // right
+            deltaX = 30;
+            break;
+          case 40: // down
+            deltaY = -30;
+            break;
+          case 33: // page up
+            deltaY = 90;
+            break;
+          case 32: // space bar
+          case 34: // page down
+            deltaY = -90;
+            break;
+          case 35: // end
+            if (e.ctrlKey) {
+              deltaY = -contentHeight;
+            } else {
+              deltaY = -containerHeight;
+            }
+            break;
+          case 36: // home
+            if (e.ctrlKey) {
+              deltaY = $this.scrollTop();
+            } else {
+              deltaY = containerHeight;
+            }
+            break;
+          default:
+            return;
+          }
+
+          $this.scrollTop($this.scrollTop() - deltaY);
+          $this.scrollLeft($this.scrollLeft() + deltaX);
+
+          shouldPrevent = shouldPreventWheel(deltaX, deltaY);
+          if (shouldPrevent) {
+            e.preventDefault();
+          }
+        });
+      }
+
+      function bindRailClickHandler() {
+        function stopPropagation(e) { e.stopPropagation(); }
+
+        $scrollbarY.bind(eventClass('click'), stopPropagation);
+        $scrollbarYRail.bind(eventClass('click'), function (e) {
+          var halfOfScrollbarLength = getInt(scrollbarYHeight / 2);
+          var positionTop = e.pageY - $scrollbarYRail.offset().top - halfOfScrollbarLength;
+          var maxPositionTop = containerHeight - scrollbarYHeight;
+          var positionRatio = positionTop / maxPositionTop;
+
+          if (positionRatio < 0) {
+            positionRatio = 0;
+          } else if (positionRatio > 1) {
+            positionRatio = 1;
+          }
+
+          $this.scrollTop((contentHeight - containerHeight) * positionRatio);
+        });
+
+        $scrollbarX.bind(eventClass('click'), stopPropagation);
+        $scrollbarXRail.bind(eventClass('click'), function (e) {
+          var halfOfScrollbarLength = getInt(scrollbarXWidth / 2);
+          var positionLeft = e.pageX - $scrollbarXRail.offset().left - halfOfScrollbarLength;
+          var maxPositionLeft = containerWidth - scrollbarXWidth;
+          var positionRatio = positionLeft / maxPositionLeft;
+
+          if (positionRatio < 0) {
+            positionRatio = 0;
+          } else if (positionRatio > 1) {
+            positionRatio = 1;
+          }
+
+          $this.scrollLeft((contentWidth - containerWidth) * positionRatio);
+        });
+      }
+
+      function bindSelectionHandler() {
+        function getRangeNode() {
+          var selection = window.getSelection ? window.getSelection() :
+                          document.getSlection ? document.getSlection() : {rangeCount: 0};
+          if (selection.rangeCount === 0) {
+            return null;
+          } else {
+            return selection.getRangeAt(0).commonAncestorContainer;
+          }
+        }
+
+        var scrollingLoop = null;
+        var scrollDiff = {top: 0, left: 0};
+        function startScrolling() {
+          if (!scrollingLoop) {
+            scrollingLoop = setInterval(function () {
+              if (!isPluginAlive()) {
+                clearInterval(scrollingLoop);
+                return;
+              }
+
+              $this.scrollTop($this.scrollTop() + scrollDiff.top);
+              $this.scrollLeft($this.scrollLeft() + scrollDiff.left);
+              updateGeometry();
+            }, 50); // every .1 sec
+          }
+        }
+        function stopScrolling() {
+          if (scrollingLoop) {
+            clearInterval(scrollingLoop);
+            scrollingLoop = null;
+          }
+          $this.removeClass('ps-in-scrolling');
+          $this.removeClass('ps-in-scrolling');
+        }
+
+        var isSelected = false;
+        $(ownerDocument).bind(eventClass('selectionchange'), function (e) {
+          if ($.contains($this[0], getRangeNode())) {
+            isSelected = true;
+          } else {
+            isSelected = false;
+            stopScrolling();
+          }
+        });
+        $(window).bind(eventClass('mouseup'), function (e) {
+          if (isSelected) {
+            isSelected = false;
+            stopScrolling();
+          }
+        });
+
+        $(window).bind(eventClass('mousemove'), function (e) {
+          if (isSelected) {
+            var mousePosition = {x: e.pageX, y: e.pageY};
+            var containerOffset = $this.offset();
+            var containerGeometry = {
+              left: containerOffset.left,
+              right: containerOffset.left + $this.outerWidth(),
+              top: containerOffset.top,
+              bottom: containerOffset.top + $this.outerHeight()
+            };
+
+            if (mousePosition.x < containerGeometry.left + 3) {
+              scrollDiff.left = -5;
+              $this.addClass('ps-in-scrolling');
+            } else if (mousePosition.x > containerGeometry.right - 3) {
+              scrollDiff.left = 5;
+              $this.addClass('ps-in-scrolling');
+            } else {
+              scrollDiff.left = 0;
+            }
+
+            if (mousePosition.y < containerGeometry.top + 3) {
+              if (containerGeometry.top + 3 - mousePosition.y < 5) {
+                scrollDiff.top = -5;
+              } else {
+                scrollDiff.top = -20;
+              }
+              $this.addClass('ps-in-scrolling');
+            } else if (mousePosition.y > containerGeometry.bottom - 3) {
+              if (mousePosition.y - containerGeometry.bottom + 3 < 5) {
+                scrollDiff.top = 5;
+              } else {
+                scrollDiff.top = 20;
+              }
+              $this.addClass('ps-in-scrolling');
+            } else {
+              scrollDiff.top = 0;
+            }
+
+            if (scrollDiff.top === 0 && scrollDiff.left === 0) {
+              stopScrolling();
+            } else {
+              startScrolling();
+            }
+          }
+        });
+      }
+
+      function bindTouchHandler(supportsTouch, supportsIePointer) {
+        function applyTouchMove(differenceX, differenceY) {
+          $this.scrollTop($this.scrollTop() - differenceY);
+          $this.scrollLeft($this.scrollLeft() - differenceX);
+
+          updateGeometry();
+        }
+
+        var startOffset = {};
+        var startTime = 0;
+        var speed = {};
+        var easingLoop = null;
+        var inGlobalTouch = false;
+        var inLocalTouch = false;
+
+        function globalTouchStart(e) {
+          inGlobalTouch = true;
+        }
+        function globalTouchEnd(e) {
+          inGlobalTouch = false;
+        }
+
+        function getTouch(e) {
+          if (e.originalEvent.targetTouches) {
+            return e.originalEvent.targetTouches[0];
+          } else {
+            // Maybe IE pointer
+            return e.originalEvent;
+          }
+        }
+        function shouldHandle(e) {
+          var event = e.originalEvent;
+          if (event.targetTouches && event.targetTouches.length === 1) {
+            return true;
+          }
+          if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== event.MSPOINTER_TYPE_MOUSE) {
+            return true;
+          }
+          return false;
+        }
+        function touchStart(e) {
+          if (shouldHandle(e)) {
+            inLocalTouch = true;
+
+            var touch = getTouch(e);
+
+            startOffset.pageX = touch.pageX;
+            startOffset.pageY = touch.pageY;
+
+            startTime = (new Date()).getTime();
+
+            if (easingLoop !== null) {
+              clearInterval(easingLoop);
+            }
+
+            e.stopPropagation();
+          }
+        }
+        function touchMove(e) {
+          if (!inGlobalTouch && inLocalTouch && shouldHandle(e)) {
+            var touch = getTouch(e);
+
+            var currentOffset = {pageX: touch.pageX, pageY: touch.pageY};
+
+            var differenceX = currentOffset.pageX - startOffset.pageX;
+            var differenceY = currentOffset.pageY - startOffset.pageY;
+
+            applyTouchMove(differenceX, differenceY);
+            startOffset = currentOffset;
+
+            var currentTime = (new Date()).getTime();
+
+            var timeGap = currentTime - startTime;
+            if (timeGap > 0) {
+              speed.x = differenceX / timeGap;
+              speed.y = differenceY / timeGap;
+              startTime = currentTime;
+            }
+
+            if (shouldPreventSwipe(differenceX, differenceY)) {
+              e.stopPropagation();
+              e.preventDefault();
+            }
+          }
+        }
+        function touchEnd(e) {
+          if (!inGlobalTouch && inLocalTouch) {
+            inLocalTouch = false;
+
+            clearInterval(easingLoop);
+            easingLoop = setInterval(function () {
+              if (!isPluginAlive()) {
+                clearInterval(easingLoop);
+                return;
+              }
+
+              if (Math.abs(speed.x) < 0.01 && Math.abs(speed.y) < 0.01) {
+                clearInterval(easingLoop);
+                return;
+              }
+
+              applyTouchMove(speed.x * 30, speed.y * 30);
+
+              speed.x *= 0.8;
+              speed.y *= 0.8;
+            }, 10);
+          }
+        }
+
+        if (supportsTouch) {
+          $(window).bind(eventClass("touchstart"), globalTouchStart);
+          $(window).bind(eventClass("touchend"), globalTouchEnd);
+          $this.bind(eventClass("touchstart"), touchStart);
+          $this.bind(eventClass("touchmove"), touchMove);
+          $this.bind(eventClass("touchend"), touchEnd);
+        }
+
+        if (supportsIePointer) {
+          if (window.PointerEvent) {
+            $(window).bind(eventClass("pointerdown"), globalTouchStart);
+            $(window).bind(eventClass("pointerup"), globalTouchEnd);
+            $this.bind(eventClass("pointerdown"), touchStart);
+            $this.bind(eventClass("pointermove"), touchMove);
+            $this.bind(eventClass("pointerup"), touchEnd);
+          } else if (window.MSPointerEvent) {
+            $(window).bind(eventClass("MSPointerDown"), globalTouchStart);
+            $(window).bind(eventClass("MSPointerUp"), globalTouchEnd);
+            $this.bind(eventClass("MSPointerDown"), touchStart);
+            $this.bind(eventClass("MSPointerMove"), touchMove);
+            $this.bind(eventClass("MSPointerUp"), touchEnd);
+          }
+        }
+      }
+
+      function bindScrollHandler() {
+        $this.bind(eventClass('scroll'), function (e) {
+          updateGeometry();
+        });
+      }
+
+      function destroy() {
+        $this.unbind(eventClass());
+        $(window).unbind(eventClass());
+        $(ownerDocument).unbind(eventClass());
+        $this.data('perfect-scrollbar', null);
+        $this.data('perfect-scrollbar-update', null);
+        $this.data('perfect-scrollbar-destroy', null);
+        $scrollbarX.remove();
+        $scrollbarY.remove();
+        $scrollbarXRail.remove();
+        $scrollbarYRail.remove();
+
+        // clean all variables
+        $this =
+        $scrollbarXRail =
+        $scrollbarYRail =
+        $scrollbarX =
+        $scrollbarY =
+        scrollbarXActive =
+        scrollbarYActive =
+        containerWidth =
+        containerHeight =
+        contentWidth =
+        contentHeight =
+        scrollbarXWidth =
+        scrollbarXLeft =
+        scrollbarXBottom =
+        isScrollbarXUsingBottom =
+        scrollbarXTop =
+        scrollbarYHeight =
+        scrollbarYTop =
+        scrollbarYRight =
+        isScrollbarYUsingRight =
+        scrollbarYLeft =
+        isRtl =
+        eventClass = null;
+      }
+
+      var supportsTouch = (('ontouchstart' in window) || window.DocumentTouch && document instanceof window.DocumentTouch);
+      var supportsIePointer = window.navigator.msMaxTouchPoints !== null;
+
+      function initialize() {
+        updateGeometry();
+        bindScrollHandler();
+        bindMouseScrollXHandler();
+        bindMouseScrollYHandler();
+        bindRailClickHandler();
+        bindSelectionHandler();
+        bindMouseWheelHandler();
+
+        if (supportsTouch || supportsIePointer) {
+          bindTouchHandler(supportsTouch, supportsIePointer);
+        }
+        if (settings.useKeyboard) {
+          bindKeyboardHandler();
+        }
+        $this.data('perfect-scrollbar', $this);
+        $this.data('perfect-scrollbar-update', updateGeometry);
+        $this.data('perfect-scrollbar-destroy', destroy);
+      }
+
+      initialize();
+
+      return $this;
+    });
+  };
+});
+
 /**
- * @license AngularJS v1.4.5
+ * @license AngularJS v1.4.3
  * (c) 2010-2015 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -9701,7 +10579,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message += '\nhttp://errors.angularjs.org/1.4.5/' +
+    message += '\nhttp://errors.angularjs.org/1.4.3/' +
       (module ? module + '/' : '') + code;
 
     for (i = SKIP_INDEXES, paramPrefix = '?'; i < templateArgs.length; i++, paramPrefix = '&') {
@@ -10067,8 +10945,6 @@ function baseExtend(dst, objs, deep) {
       if (deep && isObject(src)) {
         if (isDate(src)) {
           dst[key] = new Date(src.valueOf());
-        } else if (isRegExp(src)) {
-          dst[key] = new RegExp(src);
         } else {
           if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
           baseExtend(dst[key], [src], true);
@@ -10699,39 +11575,22 @@ function equals(o1, o2) {
 }
 
 var csp = function() {
-  if (!isDefined(csp.rules)) {
+  if (isDefined(csp.isActive_)) return csp.isActive_;
 
+  var active = !!(document.querySelector('[ng-csp]') ||
+                  document.querySelector('[data-ng-csp]'));
 
-    var ngCspElement = (document.querySelector('[ng-csp]') ||
-                    document.querySelector('[data-ng-csp]'));
-
-    if (ngCspElement) {
-      var ngCspAttribute = ngCspElement.getAttribute('ng-csp') ||
-                    ngCspElement.getAttribute('data-ng-csp');
-      csp.rules = {
-        noUnsafeEval: !ngCspAttribute || (ngCspAttribute.indexOf('no-unsafe-eval') !== -1),
-        noInlineStyle: !ngCspAttribute || (ngCspAttribute.indexOf('no-inline-style') !== -1)
-      };
-    } else {
-      csp.rules = {
-        noUnsafeEval: noUnsafeEval(),
-        noInlineStyle: false
-      };
-    }
-  }
-
-  return csp.rules;
-
-  function noUnsafeEval() {
+  if (!active) {
     try {
       /* jshint -W031, -W054 */
       new Function('');
       /* jshint +W031, +W054 */
-      return false;
     } catch (e) {
-      return true;
+      active = true;
     }
   }
+
+  return (csp.isActive_ = active);
 };
 
 /**
@@ -10963,19 +11822,13 @@ function tryDecodeURIComponent(value) {
  * @returns {Object.<string,boolean|Array>}
  */
 function parseKeyValue(/**string*/keyValue) {
-  var obj = {};
+  var obj = {}, key_value, key;
   forEach((keyValue || "").split('&'), function(keyValue) {
-    var splitPoint, key, val;
     if (keyValue) {
-      key = keyValue = keyValue.replace(/\+/g,'%20');
-      splitPoint = keyValue.indexOf('=');
-      if (splitPoint !== -1) {
-        key = keyValue.substring(0, splitPoint);
-        val = keyValue.substring(splitPoint + 1);
-      }
-      key = tryDecodeURIComponent(key);
+      key_value = keyValue.replace(/\+/g,'%20').split('=');
+      key = tryDecodeURIComponent(key_value[0]);
       if (isDefined(key)) {
-        val = isDefined(val) ? tryDecodeURIComponent(val) : true;
+        var val = isDefined(key_value[1]) ? tryDecodeURIComponent(key_value[1]) : true;
         if (!hasOwnProperty.call(obj, key)) {
           obj[key] = val;
         } else if (isArray(obj[key])) {
@@ -11571,8 +12424,8 @@ function setupModuleLoader(window) {
      * All modules (angular core or 3rd party) that should be available to an application must be
      * registered using this mechanism.
      *
-     * Passing one argument retrieves an existing {@link angular.Module},
-     * whereas passing more than one argument creates a new {@link angular.Module}
+     * When passed two or more arguments, a new module is created.  If passed only one argument, an
+     * existing module (the name passed as the first argument to `module`) is retrieved.
      *
      *
      * # Module
@@ -11913,6 +12766,7 @@ function toDebugString(obj) {
 /* global angularModule: true,
   version: true,
 
+  $LocaleProvider,
   $CompileProvider,
 
   htmlAnchorDirective,
@@ -11929,6 +12783,7 @@ function toDebugString(obj) {
   ngClassDirective,
   ngClassEvenDirective,
   ngClassOddDirective,
+  ngCspDirective,
   ngCloakDirective,
   ngControllerDirective,
   ngFormDirective,
@@ -11965,7 +12820,6 @@ function toDebugString(obj) {
 
   $AnchorScrollProvider,
   $AnimateProvider,
-  $CoreAnimateCssProvider,
   $$CoreAnimateQueueProvider,
   $$CoreAnimateRunnerProvider,
   $BrowserProvider,
@@ -11974,7 +12828,6 @@ function toDebugString(obj) {
   $DocumentProvider,
   $ExceptionHandlerProvider,
   $FilterProvider,
-  $$ForceReflowProvider,
   $InterpolateProvider,
   $IntervalProvider,
   $$HashMapProvider,
@@ -12018,11 +12871,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.4.5',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.4.3',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 4,
-  dot: 5,
-  codeName: 'permanent-internship'
+  dot: 3,
+  codeName: 'foam-acceleration'
 };
 
 
@@ -12061,6 +12914,11 @@ function publishExternalAPI(angular) {
   });
 
   angularModule = setupModuleLoader(window);
+  try {
+    angularModule('ngLocale');
+  } catch (e) {
+    angularModule('ngLocale', []).provider('$locale', $LocaleProvider);
+  }
 
   angularModule('ng', ['ngLocale'], ['$provide',
     function ngModule($provide) {
@@ -12123,7 +12981,6 @@ function publishExternalAPI(angular) {
       $provide.provider({
         $anchorScroll: $AnchorScrollProvider,
         $animate: $AnimateProvider,
-        $animateCss: $CoreAnimateCssProvider,
         $$animateQueue: $$CoreAnimateQueueProvider,
         $$AnimateRunner: $$CoreAnimateRunnerProvider,
         $browser: $BrowserProvider,
@@ -12132,7 +12989,6 @@ function publishExternalAPI(angular) {
         $document: $DocumentProvider,
         $exceptionHandler: $ExceptionHandlerProvider,
         $filter: $FilterProvider,
-        $$forceReflow: $$ForceReflowProvider,
         $interpolate: $InterpolateProvider,
         $interval: $IntervalProvider,
         $http: $HttpProvider,
@@ -12227,7 +13083,7 @@ function publishExternalAPI(angular) {
  * - [`html()`](http://api.jquery.com/html/)
  * - [`next()`](http://api.jquery.com/next/) - Does not support selectors
  * - [`on()`](http://api.jquery.com/on/) - Does not support namespaces, selectors or eventData
- * - [`off()`](http://api.jquery.com/off/) - Does not support namespaces, selectors or event object as parameter
+ * - [`off()`](http://api.jquery.com/off/) - Does not support namespaces or selectors
  * - [`one()`](http://api.jquery.com/one/) - Does not support namespaces or selectors
  * - [`parent()`](http://api.jquery.com/parent/) - Does not support selectors
  * - [`prepend()`](http://api.jquery.com/prepend/)
@@ -12241,7 +13097,7 @@ function publishExternalAPI(angular) {
  * - [`text()`](http://api.jquery.com/text/)
  * - [`toggleClass()`](http://api.jquery.com/toggleClass/)
  * - [`triggerHandler()`](http://api.jquery.com/triggerHandler/) - Passes a dummy event object to handlers.
- * - [`unbind()`](http://api.jquery.com/unbind/) - Does not support namespaces or event object as parameter
+ * - [`unbind()`](http://api.jquery.com/unbind/) - Does not support namespaces
  * - [`val()`](http://api.jquery.com/val/)
  * - [`wrap()`](http://api.jquery.com/wrap/)
  *
@@ -13352,7 +14208,7 @@ var $$HashMapProvider = [function() {
  * Implicit module which gets automatically added to each {@link auto.$injector $injector}.
  */
 
-var FN_ARGS = /^[^\(]*\(\s*([^\)]*)\)/m;
+var FN_ARGS = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
 var FN_ARG_SPLIT = /,/;
 var FN_ARG = /^\s*(_?)(\S+?)\1\s*$/;
 var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
@@ -14008,7 +14864,6 @@ function createInjector(modulesToLoad, strictDi) {
   // Module Loading
   ////////////////////////////////////
   function loadModules(modulesToLoad) {
-    assertArg(isUndefined(modulesToLoad) || isArray(modulesToLoad), 'modulesToLoad', 'not an array');
     var runBlocks = [], moduleFn;
     forEach(modulesToLoad, function(module) {
       if (loadedModules.get(module)) return;
@@ -14518,31 +15373,31 @@ var $$CoreAnimateQueueProvider = function() {
     };
 
     function addRemoveClassesPostDigest(element, add, remove) {
-      var classVal, data = postDigestQueue.get(element);
+      var data = postDigestQueue.get(element);
+      var classVal;
 
       if (!data) {
         postDigestQueue.put(element, data = {});
         postDigestElements.push(element);
       }
 
-      var updateData = function(classes, value) {
-        var changed = false;
-        if (classes) {
-          classes = isString(classes) ? classes.split(' ') :
-                    isArray(classes) ? classes : [];
-          forEach(classes, function(className) {
-            if (className) {
-              changed = true;
-              data[className] = value;
-            }
-          });
-        }
-        return changed;
-      };
+      if (add) {
+        forEach(add.split(' '), function(className) {
+          if (className) {
+            data[className] = true;
+          }
+        });
+      }
 
-      var classesAdded = updateData(add, true);
-      var classesRemoved = updateData(remove, false);
-      if ((!classesAdded && !classesRemoved) || postDigestElements.length > 1) return;
+      if (remove) {
+        forEach(remove.split(' '), function(className) {
+          if (className) {
+            data[className] = false;
+          }
+        });
+      }
+
+      if (postDigestElements.length > 1) return;
 
       $rootScope.$$postDigest(function() {
         forEach(postDigestElements, function(element) {
@@ -15001,88 +15856,15 @@ var $AnimateProvider = ['$provide', function($provide) {
   }];
 }];
 
-/**
- * @ngdoc service
- * @name $animateCss
- * @kind object
- *
- * @description
- * This is the core version of `$animateCss`. By default, only when the `ngAnimate` is included,
- * then the `$animateCss` service will actually perform animations.
- *
- * Click here {@link ngAnimate.$animateCss to read the documentation for $animateCss}.
- */
-var $CoreAnimateCssProvider = function() {
-  this.$get = ['$$rAF', '$q', function($$rAF, $q) {
-
-    var RAFPromise = function() {};
-    RAFPromise.prototype = {
-      done: function(cancel) {
-        this.defer && this.defer[cancel === true ? 'reject' : 'resolve']();
-      },
-      end: function() {
-        this.done();
-      },
-      cancel: function() {
-        this.done(true);
-      },
-      getPromise: function() {
-        if (!this.defer) {
-          this.defer = $q.defer();
-        }
-        return this.defer.promise;
-      },
-      then: function(f1,f2) {
-        return this.getPromise().then(f1,f2);
-      },
-      'catch': function(f1) {
-        return this.getPromise()['catch'](f1);
-      },
-      'finally': function(f1) {
-        return this.getPromise()['finally'](f1);
-      }
-    };
-
-    return function(element, options) {
-      if (options.from) {
-        element.css(options.from);
-        options.from = null;
-      }
-
-      var closed, runner = new RAFPromise();
-      return {
-        start: run,
-        end: run
+function $$AsyncCallbackProvider() {
+  this.$get = ['$$rAF', '$timeout', function($$rAF, $timeout) {
+    return $$rAF.supported
+      ? function(fn) { return $$rAF(fn); }
+      : function(fn) {
+        return $timeout(fn, 0, false);
       };
-
-      function run() {
-        $$rAF(function() {
-          close();
-          if (!closed) {
-            runner.done();
-          }
-          closed = true;
-        });
-        return runner;
-      }
-
-      function close() {
-        if (options.addClass) {
-          element.addClass(options.addClass);
-          options.addClass = null;
-        }
-        if (options.removeClass) {
-          element.removeClass(options.removeClass);
-          options.removeClass = null;
-        }
-        if (options.to) {
-          element.css(options.to);
-          options.to = null;
-        }
-      }
-    };
   }];
-};
+}
 
 /* global stripHash: true */
 
@@ -16246,7 +17028,7 @@ function $TemplateCacheProvider() {
  *     otherwise the {@link error:$compile:ctreq Missing Required Controller} error is thrown.
  *
  *     Note that you can also require the directive's own controller - it will be made available like
- *     any other controller.
+ *     like any other controller.
  *
  *   * `transcludeFn` - A transclude linking function pre-bound to the correct transclusion scope.
  *     This is the same as the `$transclude`
@@ -16272,7 +17054,7 @@ function $TemplateCacheProvider() {
  *
  * ### Transclusion
  *
- * Transclusion is the process of extracting a collection of DOM elements from one part of the DOM and
+ * Transclusion is the process of extracting a collection of DOM element from one part of the DOM and
  * copying them to another part of the DOM, while maintaining their connection to the original AngularJS
  * scope from where they were taken.
  *
@@ -17027,7 +17809,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
         listeners.push(fn);
         $rootScope.$evalAsync(function() {
-          if (!listeners.$$inter && attrs.hasOwnProperty(key) && !isUndefined(attrs[key])) {
+          if (!listeners.$$inter && attrs.hasOwnProperty(key)) {
             // no one registered attribute interpolation function, so lets call it manually
             fn(attrs[key]);
           }
@@ -18406,19 +19188,24 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         lastValue,
         parentGet, parentSet, compare;
 
+        if (!hasOwnProperty.call(attrs, attrName)) {
+          // In the case of user defined a binding with the same name as a method in Object.prototype but didn't set
+          // the corresponding attribute. We need to make sure subsequent code won't access to the prototype function
+          attrs[attrName] = undefined;
+        }
+
         switch (mode) {
 
           case '@':
-            if (!optional && !hasOwnProperty.call(attrs, attrName)) {
-              destination[scopeName] = attrs[attrName] = void 0;
+            if (!attrs[attrName] && !optional) {
+              destination[scopeName] = undefined;
             }
+
             attrs.$observe(attrName, function(value) {
-              if (isString(value)) {
-                destination[scopeName] = value;
-              }
+              destination[scopeName] = value;
             });
             attrs.$$observers[attrName].$$scope = scope;
-            if (isString(attrs[attrName])) {
+            if (attrs[attrName]) {
               // If the attribute has been provided then we trigger an interpolation to ensure
               // the value is there for use in the link fn
               destination[scopeName] = $interpolate(attrs[attrName])(scope);
@@ -18426,13 +19213,11 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '=':
-            if (!hasOwnProperty.call(attrs, attrName)) {
-              if (optional) break;
-              attrs[attrName] = void 0;
+            if (optional && !attrs[attrName]) {
+              return;
             }
-            if (optional && !attrs[attrName]) break;
-
             parentGet = $parse(attrs[attrName]);
+
             if (parentGet.literal) {
               compare = equals;
             } else {
@@ -18471,8 +19256,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             break;
 
           case '&':
-            // Don't assign Object.prototype method to scope
-            parentGet = attrs.hasOwnProperty(attrName) ? $parse(attrs[attrName]) : noop;
+            parentGet = $parse(attrs[attrName]);
 
             // Don't assign noop to destination if expression is not valid
             if (parentGet === noop && optional) break;
@@ -18849,29 +19633,6 @@ function $ExceptionHandlerProvider() {
   }];
 }
 
-var $$ForceReflowProvider = function() {
-  this.$get = ['$document', function($document) {
-    return function(domNode) {
-      //the line below will force the browser to perform a repaint so
-      //that all the animated elements within the animation frame will
-      //be properly updated and drawn on screen. This is required to
-      //ensure that the preparation animation is properly flushed so that
-      //the active state picks up from there. DO NOT REMOVE THIS LINE.
-      //DO NOT OPTIMIZE THIS LINE. THE MINIFIER WILL REMOVE IT OTHERWISE WHICH
-      //WILL RESULT IN AN UNPREDICTABLE BUG THAT IS VERY HARD TO TRACK DOWN AND
-      //WILL TAKE YEARS AWAY FROM YOUR LIFE.
-      if (domNode) {
-        if (!domNode.nodeType && domNode instanceof jqLite) {
-          domNode = domNode[0];
-        }
-      } else {
-        domNode = $document[0].body;
-      }
-      return domNode.offsetWidth + 1;
-    };
-  }];
-};
-
 var APPLICATION_JSON = 'application/json';
 var CONTENT_TYPE_APPLICATION_JSON = {'Content-Type': APPLICATION_JSON + ';charset=utf-8'};
 var JSON_START = /^\[|^\{(?!\{)/;
@@ -18880,12 +19641,6 @@ var JSON_ENDS = {
   '{': /}$/
 };
 var JSON_PROTECTION_PREFIX = /^\)\]\}',?\n/;
-var $httpMinErr = minErr('$http');
-var $httpMinErrLegacyFn = function(method) {
-  return function() {
-    throw $httpMinErr('legacy', 'The method `{0}` on the promise returned from `$http` has been disabled.', method);
-  };
-};
 
 function serializeValue(v) {
   if (isObject(v)) {
@@ -18986,8 +19741,8 @@ function $HttpParamSerializerJQLikeProvider() {
       function serialize(toSerialize, prefix, topLevel) {
         if (toSerialize === null || isUndefined(toSerialize)) return;
         if (isArray(toSerialize)) {
-          forEach(toSerialize, function(value, index) {
-            serialize(value, prefix + '[' + (isObject(value) ? index : '') + ']');
+          forEach(toSerialize, function(value) {
+            serialize(value, prefix + '[]');
           });
         } else if (isObject(toSerialize) && !isDate(toSerialize)) {
           forEachSorted(toSerialize, function(value, key) {
@@ -19208,30 +19963,6 @@ function $HttpProvider() {
     return useApplyAsync;
   };
 
-  var useLegacyPromise = true;
-  /**
-   * @ngdoc method
-   * @name $httpProvider#useLegacyPromiseExtensions
-   * @description
-   *
-   * Configure `$http` service to return promises without the shorthand methods `success` and `error`.
-   * This should be used to make sure that applications work without these methods.
-   *
-   * Defaults to false. If no value is specified, returns the current configured value.
-   *
-   * @param {boolean=} value If true, `$http` will return a normal promise without the `success` and `error` methods.
-   *
-   * @returns {boolean|Object} If a value is specified, returns the $httpProvider for chaining.
-   *    otherwise, returns the current configured value.
-   **/
-  this.useLegacyPromiseExtensions = function(value) {
-    if (isDefined(value)) {
-      useLegacyPromise = !!value;
-      return this;
-    }
-    return useLegacyPromise;
-  };
-
   /**
    * @ngdoc property
    * @name $httpProvider#interceptors
@@ -19298,15 +20029,17 @@ function $HttpProvider() {
      *
      * ## General usage
      * The `$http` service is a function which takes a single argument — a configuration object —
-     * that is used to generate an HTTP request and returns  a {@link ng.$q promise}.
+     * that is used to generate an HTTP request and returns  a {@link ng.$q promise}
+     * with two $http specific methods: `success` and `error`.
      *
      * ```js
      *   // Simple GET request example :
      *   $http.get('/someUrl').
-     *     then(function(response) {
+     *     success(function(data, status, headers, config) {
      *       // this callback will be called asynchronously
      *       // when the response is available
-     *     }, function(response) {
+     *     }).
+     *     error(function(data, status, headers, config) {
      *       // called asynchronously if an error occurs
      *       // or server returns response with an error status.
      *     });
@@ -19315,23 +20048,21 @@ function $HttpProvider() {
      * ```js
      *   // Simple POST request example (passing data) :
      *   $http.post('/someUrl', {msg:'hello word!'}).
-     *     then(function(response) {
+     *     success(function(data, status, headers, config) {
      *       // this callback will be called asynchronously
      *       // when the response is available
-     *     }, function(response) {
+     *     }).
+     *     error(function(data, status, headers, config) {
      *       // called asynchronously if an error occurs
      *       // or server returns response with an error status.
      *     });
      * ```
      *
-     * The response object has these properties:
      *
-     *   - **data** – `{string|Object}` – The response body transformed with the transform
-     *     functions.
-     *   - **status** – `{number}` – HTTP status code of the response.
-     *   - **headers** – `{function([headerName])}` – Header getter function.
-     *   - **config** – `{Object}` – The configuration object that was used to generate the request.
-     *   - **statusText** – `{string}` – HTTP status text of the response.
+     * Since the returned value of calling the $http function is a `promise`, you can also use
+     * the `then` method to register callbacks, and these callbacks will receive a single argument –
+     * an object representing the response. See the API signature and type info below for more
+     * details.
      *
      * A response status code between 200 and 299 is considered a success status and
      * will result in the success callback being called. Note that if the response is a redirect,
@@ -19355,8 +20086,8 @@ function $HttpProvider() {
      * request data must be passed in for POST/PUT requests.
      *
      * ```js
-     *   $http.get('/someUrl').then(successCallback);
-     *   $http.post('/someUrl', data).then(successCallback);
+     *   $http.get('/someUrl').success(successCallback);
+     *   $http.post('/someUrl', data).success(successCallback);
      * ```
      *
      * Complete list of shortcut methods:
@@ -19369,14 +20100,6 @@ function $HttpProvider() {
      * - {@link ng.$http#jsonp $http.jsonp}
      * - {@link ng.$http#patch $http.patch}
      *
-     *
-     * ## Deprecation Notice
-     * <div class="alert alert-danger">
-     *   The `$http` legacy promise methods `success` and `error` have been deprecated.
-     *   Use the standard `then` method instead.
-     *   If {@link $httpProvider#useLegacyPromiseExtensions `$httpProvider.useLegacyPromiseExtensions`} is set to
-     *   `false` then these methods will throw {@link $http:legacy `$http/legacy`} error.
-     * </div>
      *
      * ## Setting HTTP Headers
      *
@@ -19421,7 +20144,7 @@ function $HttpProvider() {
      *  data: { test: 'test' }
      * }
      *
-     * $http(req).then(function(){...}, function(){...});
+     * $http(req).success(function(){...}).error(function(){...});
      * ```
      *
      * ## Transforming Requests and Responses
@@ -19653,6 +20376,7 @@ function $HttpProvider() {
      * In order to prevent collisions in environments where multiple Angular apps share the
      * same domain or subdomain, we recommend that each application uses unique cookie name.
      *
+     *
      * @param {object} config Object describing the request to be made and how it should be
      *    processed. The object has following properties:
      *
@@ -19697,9 +20421,20 @@ function $HttpProvider() {
      *    - **responseType** - `{string}` - see
      *      [XMLHttpRequest.responseType](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#xmlhttprequest-responsetype).
      *
-     * @returns {HttpPromise} Returns a {@link ng.$q `Promise}` that will be resolved to a response object
-     *                        when the request succeeds or fails.
+     * @returns {HttpPromise} Returns a {@link ng.$q promise} object with the
+     *   standard `then` method and two http specific methods: `success` and `error`. The `then`
+     *   method takes two arguments a success and an error callback which will be called with a
+     *   response object. The `success` and `error` methods take a single argument - a function that
+     *   will be called when the request succeeds or fails respectively. The arguments passed into
+     *   these functions are destructured representation of the response object passed into the
+     *   `then` method. The response object has these properties:
      *
+     *   - **data** – `{string|Object}` – The response body transformed with the transform
+     *     functions.
+     *   - **status** – `{number}` – HTTP status code of the response.
+     *   - **headers** – `{function([headerName])}` – Header getter function.
+     *   - **config** – `{Object}` – The configuration object that was used to generate the request.
+     *   - **statusText** – `{string}` – HTTP status text of the response.
      *
      * @property {Array.<Object>} pendingRequests Array of config objects for currently pending
      *   requests. This is primarily meant to be used for debugging purposes.
@@ -19741,12 +20476,13 @@ function $HttpProvider() {
           $scope.response = null;
 
           $http({method: $scope.method, url: $scope.url, cache: $templateCache}).
-            then(function(response) {
-              $scope.status = response.status;
-              $scope.data = response.data;
-            }, function(response) {
-              $scope.data = response.data || "Request failed";
-              $scope.status = response.status;
+            success(function(data, status) {
+              $scope.status = status;
+              $scope.data = data;
+            }).
+            error(function(data, status) {
+              $scope.data = data || "Request failed";
+              $scope.status = status;
           });
         };
 
@@ -19851,28 +20587,23 @@ function $HttpProvider() {
         promise = promise.then(thenFn, rejectFn);
       }
 
-      if (useLegacyPromise) {
-        promise.success = function(fn) {
-          assertArgFn(fn, 'fn');
+      promise.success = function(fn) {
+        assertArgFn(fn, 'fn');
 
-          promise.then(function(response) {
-            fn(response.data, response.status, response.headers, config);
-          });
-          return promise;
-        };
+        promise.then(function(response) {
+          fn(response.data, response.status, response.headers, config);
+        });
+        return promise;
+      };
 
-        promise.error = function(fn) {
-          assertArgFn(fn, 'fn');
+      promise.error = function(fn) {
+        assertArgFn(fn, 'fn');
 
-          promise.then(null, function(response) {
-            fn(response.data, response.status, response.headers, config);
-          });
-          return promise;
-        };
-      } else {
-        promise.success = $httpMinErrLegacyFn('success');
-        promise.error = $httpMinErrLegacyFn('error');
-      }
+        promise.then(null, function(response) {
+          fn(response.data, response.status, response.headers, config);
+        });
+        return promise;
+      };
 
       return promise;
 
@@ -20251,7 +20982,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       xhr.onload = function requestLoaded() {
         var statusText = xhr.statusText || '';
 
-        // responseText is the old-school way of retrieving response (supported by IE9)
+        // responseText is the old-school way of retrieving response (supported by IE8 & 9)
         // response/responseType properties were introduced in XHR Level2 spec (supported by IE10)
         var response = ('response' in xhr) ? xhr.response : xhr.responseText;
 
@@ -20889,7 +21620,7 @@ function $IntervalProvider() {
       * @description
       * Cancels a task associated with the `promise`.
       *
-      * @param {Promise=} promise returned by the `$interval` function.
+      * @param {promise} promise returned by the `$interval` function.
       * @returns {boolean} Returns `true` if the task was successfully canceled.
       */
     interval.cancel = function(promise) {
@@ -20916,6 +21647,75 @@ function $IntervalProvider() {
  *
  * * `id` – `{string}` – locale id formatted as `languageId-countryId` (e.g. `en-us`)
  */
+function $LocaleProvider() {
+  this.$get = function() {
+    return {
+      id: 'en-us',
+
+      NUMBER_FORMATS: {
+        DECIMAL_SEP: '.',
+        GROUP_SEP: ',',
+        PATTERNS: [
+          { // Decimal Pattern
+            minInt: 1,
+            minFrac: 0,
+            maxFrac: 3,
+            posPre: '',
+            posSuf: '',
+            negPre: '-',
+            negSuf: '',
+            gSize: 3,
+            lgSize: 3
+          },{ //Currency Pattern
+            minInt: 1,
+            minFrac: 2,
+            maxFrac: 2,
+            posPre: '\u00A4',
+            posSuf: '',
+            negPre: '(\u00A4',
+            negSuf: ')',
+            gSize: 3,
+            lgSize: 3
+          }
+        ],
+        CURRENCY_SYM: '$'
+      },
+
+      DATETIME_FORMATS: {
+        MONTH:
+            'January,February,March,April,May,June,July,August,September,October,November,December'
+            .split(','),
+        SHORTMONTH:  'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec'.split(','),
+        DAY: 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'.split(','),
+        SHORTDAY: 'Sun,Mon,Tue,Wed,Thu,Fri,Sat'.split(','),
+        AMPMS: ['AM','PM'],
+        medium: 'MMM d, y h:mm:ss a',
+        'short': 'M/d/yy h:mm a',
+        fullDate: 'EEEE, MMMM d, y',
+        longDate: 'MMMM d, y',
+        mediumDate: 'MMM d, y',
+        shortDate: 'M/d/yy',
+        mediumTime: 'h:mm:ss a',
+        shortTime: 'h:mm a',
+        ERANAMES: [
+          "Before Christ",
+          "Anno Domini"
+        ],
+        ERAS: [
+          "BC",
+          "AD"
+        ]
+      },
+
+      pluralCat: function(num) {
+        if (num === 1) {
+          return 'one';
+        }
+        return 'other';
+      }
+    };
+  };
+}
 
 var PATH_MATCH = /^([^\?#]*)(\?([^#]*))?(#(.*))?$/,
     DEFAULT_PORTS = {'http': 80, 'https': 443, 'ftp': 21};
@@ -21006,12 +21806,12 @@ function serverBase(url) {
  *
  * @constructor
  * @param {string} appBase application base URL
- * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} basePrefix url path prefix
  */
-function LocationHtml5Url(appBase, appBaseNoFile, basePrefix) {
+function LocationHtml5Url(appBase, basePrefix) {
   this.$$html5 = true;
   basePrefix = basePrefix || '';
+  var appBaseNoFile = stripFile(appBase);
   parseAbsoluteUrl(appBase, this);
 
 
@@ -21085,10 +21885,10 @@ function LocationHtml5Url(appBase, appBaseNoFile, basePrefix) {
  *
  * @constructor
  * @param {string} appBase application base URL
- * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} hashPrefix hashbang prefix
  */
-function LocationHashbangUrl(appBase, appBaseNoFile, hashPrefix) {
+function LocationHashbangUrl(appBase, hashPrefix) {
+  var appBaseNoFile = stripFile(appBase);
 
   parseAbsoluteUrl(appBase, this);
 
@@ -21197,12 +21997,13 @@ function LocationHashbangUrl(appBase, appBaseNoFile, hashPrefix) {
  *
  * @constructor
  * @param {string} appBase application base URL
- * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} hashPrefix hashbang prefix
  */
-function LocationHashbangInHtml5Url(appBase, appBaseNoFile, hashPrefix) {
+function LocationHashbangInHtml5Url(appBase, hashPrefix) {
   this.$$html5 = true;
   LocationHashbangUrl.apply(this, arguments);
+
+  var appBaseNoFile = stripFile(appBase);
 
   this.$$parseLinkUrl = function(url, relHref) {
     if (relHref && relHref[0] === '#') {
@@ -21233,7 +22034,7 @@ function LocationHashbangInHtml5Url(appBase, appBaseNoFile, hashPrefix) {
         hash = this.$$hash ? '#' + encodeUriSegment(this.$$hash) : '';
 
     this.$$url = encodePath(this.$$path) + (search ? '?' + search : '') + hash;
-    // include hashPrefix in $$absUrl when $$url is empty so IE9 does not reload page because of removal of '#'
+    // include hashPrefix in $$absUrl when $$url is empty so IE8 & 9 do not reload page because of removal of '#'
     this.$$absUrl = appBase + hashPrefix + this.$$url;
   };
 
@@ -21742,9 +22543,7 @@ function $LocationProvider() {
       appBase = stripHash(initialUrl);
       LocationMode = LocationHashbangUrl;
     }
-    var appBaseNoFile = stripFile(appBase);
-
-    $location = new LocationMode(appBase, appBaseNoFile, '#' + hashPrefix);
+    $location = new LocationMode(appBase, '#' + hashPrefix);
     $location.$$parseLinkUrl(initialUrl, initialUrl);
 
     $location.$$state = $browser.state();
@@ -21824,13 +22623,6 @@ function $LocationProvider() {
 
     // update $location when $browser url changes
     $browser.onUrlChange(function(newUrl, newState) {
-
-      if (isUndefined(beginsWith(appBaseNoFile, newUrl))) {
-        // If we are navigating outside of the app then force a reload
-        $window.location.href = newUrl;
-        return;
-      }
-
       $rootScope.$evalAsync(function() {
         var oldUrl = $location.absUrl();
         var oldState = $location.$$state;
@@ -23680,6 +24472,29 @@ Parser.prototype = {
   }
 };
 
+//////////////////////////////////////////////////
+// Parser helper functions
+//////////////////////////////////////////////////
+
+function setter(obj, path, setValue, fullExp) {
+  ensureSafeObject(obj, fullExp);
+
+  var element = path.split('.'), key;
+  for (var i = 0; element.length > 1; i++) {
+    key = ensureSafeMemberName(element.shift(), fullExp);
+    var propertyObj = ensureSafeObject(obj[key], fullExp);
+    if (!propertyObj) {
+      propertyObj = {};
+      obj[key] = propertyObj;
+    }
+    obj = propertyObj;
+  }
+  key = ensureSafeMemberName(element.shift(), fullExp);
+  ensureSafeObject(obj[key], fullExp);
+  obj[key] = setValue;
+  return setValue;
+}
+
 var getterFnCacheDefault = createMap();
 var getterFnCacheExpensive = createMap();
 
@@ -23748,14 +24563,13 @@ function $ParseProvider() {
   var cacheDefault = createMap();
   var cacheExpensive = createMap();
 
-  this.$get = ['$filter', function($filter) {
-    var noUnsafeEval = csp().noUnsafeEval;
+  this.$get = ['$filter', '$sniffer', function($filter, $sniffer) {
     var $parseOptions = {
-          csp: noUnsafeEval,
+          csp: $sniffer.csp,
           expensiveChecks: false
         },
         $parseOptionsExpensive = {
-          csp: noUnsafeEval,
+          csp: $sniffer.csp,
           expensiveChecks: true
         };
 
@@ -24230,11 +25044,8 @@ function qFactory(nextTick, exceptionHandler) {
     this.$$state = { status: 0 };
   }
 
-  extend(Promise.prototype, {
+  Promise.prototype = {
     then: function(onFulfilled, onRejected, progressBack) {
-      if (isUndefined(onFulfilled) && isUndefined(onRejected) && isUndefined(progressBack)) {
-        return this;
-      }
       var result = new Deferred();
 
       this.$$state.pending = this.$$state.pending || [];
@@ -24255,7 +25066,7 @@ function qFactory(nextTick, exceptionHandler) {
         return handleCallback(error, false, callback);
       }, progressBack);
     }
-  });
+  };
 
   //Faster, more basic than angular.bind http://jsperf.com/angular-bind-vs-custom-vs-native
   function simpleBind(context, fn) {
@@ -24302,7 +25113,7 @@ function qFactory(nextTick, exceptionHandler) {
     this.notify = simpleBind(this, this.notify);
   }
 
-  extend(Deferred.prototype, {
+  Deferred.prototype = {
     resolve: function(val) {
       if (this.promise.$$state.status) return;
       if (val === this.promise) {
@@ -24365,7 +25176,7 @@ function qFactory(nextTick, exceptionHandler) {
         });
       }
     }
-  });
+  };
 
   /**
    * @ngdoc method
@@ -24448,9 +25259,6 @@ function qFactory(nextTick, exceptionHandler) {
    * the promise comes from a source that can't be trusted.
    *
    * @param {*} value Value or a promise
-   * @param {Function=} successCallback
-   * @param {Function=} errorCallback
-   * @param {Function=} progressCallback
    * @returns {Promise} Returns a promise of the passed value or promise
    */
 
@@ -24470,9 +25278,6 @@ function qFactory(nextTick, exceptionHandler) {
    * Alias of {@link ng.$q#when when} to maintain naming consistency with ES6.
    *
    * @param {*} value Value or a promise
-   * @param {Function=} successCallback
-   * @param {Function=} errorCallback
-   * @param {Function=} progressCallback
    * @returns {Promise} Returns a promise of the passed value or promise
    */
   var resolve = when;
@@ -24561,7 +25366,7 @@ function $$RAFProvider() { //rAF
                                $window.webkitCancelRequestAnimationFrame;
 
     var rafSupported = !!requestAnimationFrame;
-    var raf = rafSupported
+    var rafFn = rafSupported
       ? function(fn) {
           var id = requestAnimationFrame(fn);
           return function() {
@@ -24575,9 +25380,47 @@ function $$RAFProvider() { //rAF
           };
         };
 
-    raf.supported = rafSupported;
+    queueFn.supported = rafSupported;
 
-    return raf;
+    var cancelLastRAF;
+    var taskCount = 0;
+    var taskQueue = [];
+    return queueFn;
+
+    function flush() {
+      for (var i = 0; i < taskQueue.length; i++) {
+        var task = taskQueue[i];
+        if (task) {
+          taskQueue[i] = null;
+          task();
+        }
+      }
+      taskCount = taskQueue.length = 0;
+    }
+
+    function queueFn(asyncFn) {
+      var index = taskQueue.length;
+
+      taskCount++;
+      taskQueue.push(asyncFn);
+
+      if (index === 0) {
+        cancelLastRAF = rafFn(flush);
+      }
+
+      return function cancelQueueFn() {
+        if (index >= 0) {
+          taskQueue[index] = null;
+          index = null;
+
+          if (--taskCount === 0 && cancelLastRAF) {
+            cancelLastRAF();
+            cancelLastRAF = null;
+            taskQueue.length = 0;
+          }
+        }
+      };
+    }
   }];
 }
 
@@ -24690,9 +25533,12 @@ function $RootScopeProvider() {
      * A root scope can be retrieved using the {@link ng.$rootScope $rootScope} key from the
      * {@link auto.$injector $injector}. Child scopes are created using the
      * {@link ng.$rootScope.Scope#$new $new()} method. (Most scopes are created automatically when
-     * compiled HTML template is executed.) See also the {@link guide/scope Scopes guide} for
-     * an in-depth introduction and usage examples.
+     * compiled HTML template is executed.)
      *
+     * Here is a simple scope snippet to show how you can interact with the scope.
+     * ```html
+     * <file src="./test/ng/rootScopeSpec.js" tag="docs1" />
+     * ```
      *
      * # Inheritance
      * A scope can inherit from a parent scope, as in this example:
@@ -24854,9 +25700,9 @@ function $RootScopeProvider() {
        *
        *
        * If you want to be notified whenever {@link ng.$rootScope.Scope#$digest $digest} is called,
-       * you can register a `watchExpression` function with no `listener`. (Be prepared for
-       * multiple calls to your `watchExpression` because it will execute multiple times in a
-       * single {@link ng.$rootScope.Scope#$digest $digest} cycle if a change is detected.)
+       * you can register a `watchExpression` function with no `listener`. (Since `watchExpression`
+       * can execute multiple times per {@link ng.$rootScope.Scope#$digest $digest} cycle when a
+       * change is detected, be prepared for multiple calls to your listener.)
        *
        * After a watcher is registered with the scope, the `listener` fn is called asynchronously
        * (via {@link ng.$rootScope.Scope#$evalAsync $evalAsync}) to initialize the
@@ -25618,14 +26464,11 @@ function $RootScopeProvider() {
       $apply: function(expr) {
         try {
           beginPhase('$apply');
-          try {
-            return this.$eval(expr);
-          } finally {
-            clearPhase();
-          }
+          return this.$eval(expr);
         } catch (e) {
           $exceptionHandler(e);
         } finally {
+          clearPhase();
           try {
             $rootScope.$digest();
           } catch (e) {
@@ -26541,10 +27384,10 @@ function $SceDelegateProvider() {
  *    - There are exactly **two wildcard sequences** - `*` and `**`.  All other characters
  *      match themselves.
  *    - `*`: matches zero or more occurrences of any character other than one of the following 6
- *      characters: '`:`', '`/`', '`.`', '`?`', '`&`' and '`;`'.  It's a useful wildcard for use
+ *      characters: '`:`', '`/`', '`.`', '`?`', '`&`' and ';'.  It's a useful wildcard for use
  *      in a whitelist.
  *    - `**`: matches zero or more occurrences of *any* character.  As such, it's not
- *      appropriate for use in a scheme, domain, etc. as it would match too much.  (e.g.
+ *      not appropriate to use in for a scheme, domain, etc. as it would match too much.  (e.g.
  *      http://**.example.com/ would match http://evil.com/?ignore=.example.com/ and that might
  *      not have been the intention.)  Its usage at the very end of the path is ok.  (e.g.
  *      http://foo.example.com/templates/**).
@@ -26552,11 +27395,11 @@ function $SceDelegateProvider() {
  *    - *Caveat*:  While regular expressions are powerful and offer great flexibility,  their syntax
  *      (and all the inevitable escaping) makes them *harder to maintain*.  It's easy to
  *      accidentally introduce a bug when one updates a complex expression (imho, all regexes should
- *      have good test coverage).  For instance, the use of `.` in the regex is correct only in a
+ *      have good test coverage.).  For instance, the use of `.` in the regex is correct only in a
  *      small number of cases.  A `.` character in the regex used when matching the scheme or a
  *      subdomain could be matched against a `:` or literal `.` that was likely not intended.   It
  *      is highly recommended to use the string patterns and only fall back to regular expressions
- *      as a last resort.
+ *      if they as a last resort.
  *    - The regular expression must be an instance of RegExp (i.e. not a string.)  It is
  *      matched against the **entire** *normalized / absolute URL* of the resource being tested
  *      (even when the RegExp did not have the `^` and `$` codes.)  In addition, any flags
@@ -26566,7 +27409,7 @@ function $SceDelegateProvider() {
  *      remember to escape your regular expression (and be aware that you might need more than
  *      one level of escaping depending on your templating engine and the way you interpolated
  *      the value.)  Do make use of your platform's escaping mechanism as it might be good
- *      enough before coding your own.  E.g. Ruby has
+ *      enough before coding your own.  e.g. Ruby has
  *      [Regexp.escape(str)](http://www.ruby-doc.org/core-2.0.0/Regexp.html#method-c-escape)
  *      and Python has [re.escape](http://docs.python.org/library/re.html#re.escape).
  *      Javascript lacks a similar built in function for escaping.  Take a look at Google
@@ -27454,12 +28297,19 @@ var originUrl = urlResolve(window.location.href);
  *
  * Implementation Notes for IE
  * ---------------------------
- * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * IE >= 8 and <= 10 normalizes the URL when assigned to the anchor node similar to the other
  * browsers.  However, the parsed components will not be set if the URL assigned did not specify
  * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
  * work around that by performing the parsing in a 2nd step by taking a previously normalized
  * URL (e.g. by assigning to a.href) and assigning it a.href again.  This correctly populates the
  * properties such as protocol, hostname, port, etc.
+ *
+ * IE7 does not normalize the URL when assigned to an anchor node.  (Apparently, it does, if one
+ * uses the inner HTML approach to assign the URL as part of an HTML snippet -
+ * http://stackoverflow.com/a/472729)  However, setting img[src] does normalize the URL.
+ * Unfortunately, setting img[src] to something like "javascript:foo" on IE throws an exception.
+ * Since the primary usage for normalizing URLs is to sanitize such URLs, we can't use that
+ * method and IE < 8 is unsupported.
  *
  * References:
  *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
@@ -27740,7 +28590,6 @@ function $FilterProvider($provide) {
    *    your filters, then you can use capitalization (`myappSubsectionFilterx`) or underscores
    *    (`myapp_subsection_filterx`).
    *    </div>
-    * @param {Function} factory If the first argument was a string, a factory function for the filter to be registered.
    * @returns {Object} Registered filter instance, or if a map of filters was provided then a map
    *    of the registered filter instances.
    */
@@ -28088,9 +28937,9 @@ function getTypeForFilter(val) {
          }
          element(by.model('amount')).clear();
          element(by.model('amount')).sendKeys('-1234');
-         expect(element(by.id('currency-default')).getText()).toBe('-$1,234.00');
-         expect(element(by.id('currency-custom')).getText()).toBe('-USD$1,234.00');
-         expect(element(by.id('currency-no-fractions')).getText()).toBe('-USD$1,234');
+         expect(element(by.id('currency-default')).getText()).toBe('($1,234.00)');
+         expect(element(by.id('currency-custom')).getText()).toBe('(USD$1,234.00)');
+         expect(element(by.id('currency-no-fractions')).getText()).toBe('(USD$1,234)');
        });
      </file>
    </example>
@@ -28930,10 +29779,6 @@ function orderByFilter($parse) {
     if (sortPredicate.length === 0) { sortPredicate = ['+']; }
 
     var predicates = processPredicates(sortPredicate, reverseOrder);
-    // Add a predicate at the end that evaluates to the element index. This makes the
-    // sort stable as it works as a tie-breaker when all the input predicates cannot
-    // distinguish between two elements.
-    predicates.push({ get: function() { return {}; }, descending: reverseOrder ? -1 : 1});
 
     // The next three lines are a version of a Swartzian Transform idiom from Perl
     // (sometimes called the Decorate-Sort-Undecorate idiom)
@@ -29934,6 +30779,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
        </script>
        <style>
         .my-form {
+          -webkit-transition:all linear 0.5s;
           transition:all linear 0.5s;
           background: transparent;
         }
@@ -29978,7 +30824,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
  *                       related scope, under this name.
  */
 var formDirectiveFactory = function(isNgForm) {
-  return ['$timeout', '$parse', function($timeout, $parse) {
+  return ['$timeout', function($timeout) {
     var formDirective = {
       name: 'form',
       restrict: isNgForm ? 'EAC' : 'E',
@@ -30020,21 +30866,21 @@ var formDirectiveFactory = function(isNgForm) {
             }
 
             var parentFormCtrl = controller.$$parentForm;
-            var setter = nameAttr ? getSetter(controller.$name) : noop;
 
             if (nameAttr) {
-              setter(scope, controller);
+              setter(scope, controller.$name, controller, controller.$name);
               attr.$observe(nameAttr, function(newValue) {
                 if (controller.$name === newValue) return;
-                setter(scope, undefined);
+                setter(scope, controller.$name, undefined, controller.$name);
                 parentFormCtrl.$$renameControl(controller, newValue);
-                setter = getSetter(controller.$name);
-                setter(scope, controller);
+                setter(scope, controller.$name, controller, controller.$name);
               });
             }
             formElement.on('$destroy', function() {
               parentFormCtrl.$removeControl(controller);
-              setter(scope, undefined);
+              if (nameAttr) {
+                setter(scope, attr[nameAttr], undefined, controller.$name);
+              }
               extend(controller, nullFormCtrl); //stop propagating child destruction handlers upwards
             });
           }
@@ -30043,14 +30889,6 @@ var formDirectiveFactory = function(isNgForm) {
     };
 
     return formDirective;
-
-    function getSetter(expression) {
-      if (expression === '') {
-        //create an assignable expression, so forms with an empty name can be renamed later
-        return $parse('this[""]').assign;
-      }
-      return $parse(expression).assign || noop;
-    }
   }];
 };
 
@@ -30063,7 +30901,7 @@ var ngFormDirective = formDirectiveFactory(true);
   DIRTY_CLASS: false,
   UNTOUCHED_CLASS: false,
   TOUCHED_CLASS: false,
-  ngModelMinErr: false,
+  $ngModelMinErr: false,
 */
 
 // Regex code is obtained from SO: https://stackoverflow.com/questions/3143070/javascript-regex-iso-datetime#answer-3143231
@@ -31185,11 +32023,7 @@ function baseInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   element.on('change', listener);
 
   ctrl.$render = function() {
-    // Workaround for Firefox validation #12102.
-    var value = ctrl.$isEmpty(ctrl.$viewValue) ? '' : ctrl.$viewValue;
-    if (element.val() !== value) {
-      element.val(value);
-    }
+    element.val(ctrl.$isEmpty(ctrl.$viewValue) ? '' : ctrl.$viewValue);
   };
 }
 
@@ -31300,7 +32134,7 @@ function createDateInputType(type, regexp, parseDate, format) {
 
     ctrl.$formatters.push(function(value) {
       if (value && !isDate(value)) {
-        throw ngModelMinErr('datefmt', 'Expected `{0}` to be a date', value);
+        throw $ngModelMinErr('datefmt', 'Expected `{0}` to be a date', value);
       }
       if (isValidDate(value)) {
         previousDate = value;
@@ -31376,7 +32210,7 @@ function numberInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   ctrl.$formatters.push(function(value) {
     if (!ctrl.$isEmpty(value)) {
       if (!isNumber(value)) {
-        throw ngModelMinErr('numfmt', 'Expected `{0}` to be a number', value);
+        throw $ngModelMinErr('numfmt', 'Expected `{0}` to be a number', value);
       }
       value = value.toString();
     }
@@ -31469,7 +32303,7 @@ function parseConstantExpr($parse, context, name, expression, fallback) {
   if (isDefined(expression)) {
     parseFn = $parse(expression);
     if (!parseFn.constant) {
-      throw ngModelMinErr('constexpr', 'Expected constant expression for `{0}`, but saw ' +
+      throw minErr('ngModel')('constexpr', 'Expected constant expression for `{0}`, but saw ' +
                                    '`{1}`.', name, expression);
     }
     return parseFn(context);
@@ -32322,6 +33156,7 @@ function classDirective(name, selector) {
      </file>
      <file name="style.css">
        .base-class {
+         -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
          transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
        }
 
@@ -32754,29 +33589,27 @@ var ngControllerDirective = [function() {
  *
  * @element html
  * @description
- *
- * Angular has some features that can break certain
- * [CSP (Content Security Policy)](https://developer.mozilla.org/en/Security/CSP) rules.
- *
- * If you intend to implement these rules then you must tell Angular not to use these features.
+ * Enables [CSP (Content Security Policy)](https://developer.mozilla.org/en/Security/CSP) support.
  *
  * This is necessary when developing things like Google Chrome Extensions or Universal Windows Apps.
  *
+ * CSP forbids apps to use `eval` or `Function(string)` generated functions (among other things).
+ * For Angular to be CSP compatible there are only two things that we need to do differently:
  *
- * The following rules affect Angular:
+ * - don't use `Function` constructor to generate optimized value getters
+ * - don't inject custom stylesheet into the document
  *
- * * `unsafe-eval`: this rule forbids apps to use `eval` or `Function(string)` generated functions
- * (among other things). Angular makes use of this in the {@link $parse} service to provide a 30%
- * increase in the speed of evaluating Angular expressions.
+ * AngularJS uses `Function(string)` generated functions as a speed optimization. Applying the `ngCsp`
+ * directive will cause Angular to use CSP compatibility mode. When this mode is on AngularJS will
+ * evaluate all expressions up to 30% slower than in non-CSP mode, but no security violations will
+ * be raised.
  *
- * * `unsafe-inline`: this rule forbids apps from inject custom styles into the document. Angular
- * makes use of this to include some CSS rules (e.g. {@link ngCloak} and {@link ngHide}).
- * To make these directives work when a CSP rule is blocking inline styles, you must link to the
- * `angular-csp.css` in your HTML manually.
+ * CSP forbids JavaScript to inline stylesheet rules. In non CSP mode Angular automatically
+ * includes some CSS rules (e.g. {@link ng.directive:ngCloak ngCloak}).
+ * To make those directives work in CSP mode, include the `angular-csp.css` manually.
  *
- * If you do not provide `ngCsp` then Angular tries to autodetect if CSP is blocking unsafe-eval
- * and automatically deactivates this feature in the {@link $parse} service. This autodetection,
- * however, triggers a CSP error to be logged in the console:
+ * Angular tries to autodetect if CSP is active and automatically turn on the CSP-safe mode. This
+ * autodetection however triggers a CSP error to be logged in the console:
  *
  * ```
  * Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of
@@ -32785,38 +33618,10 @@ var ngControllerDirective = [function() {
  * ```
  *
  * This error is harmless but annoying. To prevent the error from showing up, put the `ngCsp`
- * directive on an element of the HTML document that appears before the `<script>` tag that loads
- * the `angular.js` file.
+ * directive on the root element of the application or on the `angular.js` script tag, whichever
+ * appears first in the html document.
  *
  * *Note: This directive is only available in the `ng-csp` and `data-ng-csp` attribute form.*
- *
- * You can specify which of the CSP related Angular features should be deactivated by providing
- * a value for the `ng-csp` attribute. The options are as follows:
- *
- * * no-inline-style: this stops Angular from injecting CSS styles into the DOM
- *
- * * no-unsafe-eval: this stops Angular from optimising $parse with unsafe eval of strings
- *
- * You can use these values in the following combinations:
- *
- *
- * * No declaration means that Angular will assume that you can do inline styles, but it will do
- * a runtime check for unsafe-eval. E.g. `<body>`. This is backwardly compatible with previous versions
- * of Angular.
- *
- * * A simple `ng-csp` (or `data-ng-csp`) attribute will tell Angular to deactivate both inline
- * styles and unsafe eval. E.g. `<body ng-csp>`. This is backwardly compatible with previous versions
- * of Angular.
- *
- * * Specifying only `no-unsafe-eval` tells Angular that we must not use eval, but that we can inject
- * inline styles. E.g. `<body ng-csp="no-unsafe-eval">`.
- *
- * * Specifying only `no-inline-style` tells Angular that we must not inject styles, but that we can
- * run eval - no automcatic check for unsafe eval will occur. E.g. `<body ng-csp="no-inline-style">`
- *
- * * Specifying both `no-unsafe-eval` and `no-inline-style` tells Angular that we must not inject
- * styles nor use eval, which is the same as an empty: ng-csp.
- * E.g.`<body ng-csp="no-inline-style;no-unsafe-eval">`
  *
  * @example
  * This example shows how to apply the `ngCsp` directive to the `html` tag.
@@ -32949,7 +33754,7 @@ var ngControllerDirective = [function() {
 
 // ngCsp is not implemented as a proper directive any more, because we need it be processed while we
 // bootstrap the system (before $parse is instantiated), for this reason we just have
-// the csp() fn that looks for the `ng-csp` attribute anywhere in the current doc
+// the csp.isActive() fn that looks for ng-csp attribute anywhere in the current doc
 
 /**
  * @ngdoc directive
@@ -33496,6 +34301,7 @@ forEach(
       }
 
       .animate-if.ng-enter, .animate-if.ng-leave {
+        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
         transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
       }
 
@@ -33644,6 +34450,7 @@ var ngIfDirective = ['$animate', function($animate) {
       }
 
       .slide-animate.ng-enter, .slide-animate.ng-leave {
+        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
         transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
 
         position:absolute;
@@ -34063,7 +34870,8 @@ var VALID_CLASS = 'ng-valid',
     TOUCHED_CLASS = 'ng-touched',
     PENDING_CLASS = 'ng-pending';
 
-var ngModelMinErr = minErr('ngModel');
+
+var $ngModelMinErr = new minErr('ngModel');
 
 /**
  * @ngdoc type
@@ -34314,7 +35122,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
         }
       };
     } else if (!parsedNgModel.assign) {
-      throw ngModelMinErr('nonassign', "Expression '{0}' is non-assignable. Element: {1}",
+      throw $ngModelMinErr('nonassign', "Expression '{0}' is non-assignable. Element: {1}",
           $attr.ngModel, startingTag($element));
     }
   };
@@ -34645,7 +35453,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
       forEach(ctrl.$asyncValidators, function(validator, name) {
         var promise = validator(modelValue, viewValue);
         if (!isPromiseLike(promise)) {
-          throw ngModelMinErr("$asyncValidators",
+          throw $ngModelMinErr("$asyncValidators",
             "Expected asynchronous validator to return a promise but got '{0}' instead.", promise);
         }
         setValidity(name, undefined);
@@ -34982,6 +35790,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
        </script>
        <style>
          .my-input {
+           -webkit-transition:all linear 0.5s;
            transition:all linear 0.5s;
            background: transparent;
          }
@@ -35498,7 +36307,7 @@ var ngOptionsMinErr = minErr('ngOptions');
  * Consider the following example:
  *
  * ```html
- * <select ng-options="item.subItem as item.label for item in values track by item.id" ng-model="selected"></select>
+ * <select ng-options="item.subItem as item.label for item in values track by item.id" ng-model="selected">
  * ```
  *
  * ```js
@@ -35960,7 +36769,7 @@ var ngOptionsDirective = ['$compile', '$parse', function($compile, $parse) {
 
           forEach(selectedValues, function(value) {
             var option = options.selectValueMap[value];
-            if (option && !option.disabled) selections.push(options.getViewValueFromOption(option));
+            if (!option.disabled) selections.push(options.getViewValueFromOption(option));
           });
 
           return selections;
@@ -36655,6 +37464,7 @@ var ngPluralizeDirective = ['$locale', '$interpolate', '$log', function($locale,
       .animate-repeat.ng-move,
       .animate-repeat.ng-enter,
       .animate-repeat.ng-leave {
+        -webkit-transition:all linear 0.5s;
         transition:all linear 0.5s;
       }
 
@@ -37051,7 +37861,9 @@ var NG_HIDE_IN_PROGRESS_CLASS = 'ng-hide-animate';
         background: white;
       }
 
-      .animate-show.ng-hide-add, .animate-show.ng-hide-remove {
+      .animate-show.ng-hide-add.ng-hide-add-active,
+      .animate-show.ng-hide-remove.ng-hide-remove-active {
+        -webkit-transition: all linear 0.5s;
         transition: all linear 0.5s;
       }
 
@@ -37208,6 +38020,7 @@ var ngShowDirective = ['$animate', function($animate) {
     </file>
     <file name="animations.css">
       .animate-hide {
+        -webkit-transition: all linear 0.5s;
         transition: all linear 0.5s;
         line-height: 20px;
         opacity: 1;
@@ -37406,6 +38219,7 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
       }
 
       .animate-switch.ng-animate {
+        -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
         transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s;
 
         position:absolute;
@@ -37746,162 +38560,31 @@ var SelectController =
  * @description
  * HTML `SELECT` element with angular data-binding.
  *
- * The `select` directive is used together with {@link ngModel `ngModel`} to provide data-binding
- * between the scope and the `<select>` control (including setting default values).
- * Ìt also handles dynamic `<option>` elements, which can be added using the {@link ngRepeat `ngRepeat}` or
- * {@link ngOptions `ngOptions`} directives.
+ * In many cases, `ngRepeat` can be used on `<option>` elements instead of {@link ng.directive:ngOptions
+ * ngOptions} to achieve a similar result. However, `ngOptions` provides some benefits such as reducing
+ * memory and increasing speed by not creating a new scope for each repeated instance, as well as providing
+ * more flexibility in how the `<select>`'s model is assigned via the `select` **`as`** part of the
+ * comprehension expression.
  *
- * When an item in the `<select>` menu is selected, the value of the selected option will be bound
- * to the model identified by the `ngModel` directive. With static or repeated options, this is
- * the content of the `value` attribute or the textContent of the `<option>`, if the value attribute is missing.
- * If you want dynamic value attributes, you can use interpolation inside the value attribute.
+ * When an item in the `<select>` menu is selected, the array element or object property
+ * represented by the selected option will be bound to the model identified by the `ngModel`
+ * directive.
  *
- * <div class="alert alert-warning">
- * Note that the value of a `select` directive used without `ngOptions` is always a string.
- * When the model needs to be bound to a non-string value, you must either explictly convert it
- * using a directive (see example below) or use `ngOptions` to specify the set of options.
- * This is because an option element can only be bound to string values at present.
- * </div>
- *
- * If the viewValue of `ngModel` does not match any of the options, then the control
- * will automatically add an "unknown" option, which it then removes when the mismatch is resolved.
+ * If the viewValue contains a value that doesn't match any of the options then the control
+ * will automatically add an "unknown" option, which it then removes when this is resolved.
  *
  * Optionally, a single hard-coded `<option>` element, with the value set to an empty string, can
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
  * <div class="alert alert-info">
- * In many cases, `ngRepeat` can be used on `<option>` elements instead of {@link ng.directive:ngOptions
- * ngOptions} to achieve a similar result. However, `ngOptions` provides some benefits, such as
- * more flexibility in how the `<select>`'s model is assigned via the `select` **`as`** part of the
- * comprehension expression, and additionally in reducing memory and increasing speed by not creating
- * a new scope for each repeated instance.
+ * The value of a `select` directive used without `ngOptions` is always a string.
+ * When the model needs to be bound to a non-string value, you must either explictly convert it
+ * using a directive (see example below) or use `ngOptions` to specify the set of options.
+ * This is because an option element can only be bound to string values at present.
  * </div>
  *
- *
- * @param {string} ngModel Assignable angular expression to data-bind to.
- * @param {string=} name Property name of the form under which the control is published.
- * @param {string=} required Sets `required` validation error key if the value is not entered.
- * @param {string=} ngRequired Adds required attribute and required validation constraint to
- * the element when the ngRequired expression evaluates to true. Use ngRequired instead of required
- * when you want to data-bind to the required attribute.
- * @param {string=} ngChange Angular expression to be executed when selected option(s) changes due to user
- *    interaction with the select element.
- * @param {string=} ngOptions sets the options that the select is populated with and defines what is
- * set on the model on selection. See {@link ngOptions `ngOptions`}.
- *
- * @example
- * ### Simple `select` elements with static options
- *
- * <example name="static-select" module="staticSelect">
- * <file name="index.html">
- * <div ng-controller="ExampleController">
- *   <form name="myForm">
- *     <label for="singleSelect"> Single select: </label><br>
- *     <select name="singleSelect" ng-model="data.singleSelect">
- *       <option value="option-1">Option 1</option>
- *       <option value="option-2">Option 2</option>
- *     </select><br>
- *
- *     <label for="singleSelect"> Single select with "not selected" option and dynamic option values: </label><br>
- *     <select name="singleSelect" ng-model="data.singleSelect">
- *       <option value="">---Please select---</option> <!-- not selected / blank option -->
- *       <option value="{{data.option1}}">Option 1</option> <!-- interpolation -->
- *       <option value="option-2">Option 2</option>
- *     </select><br>
- *     <button ng-click="forceUnknownOption()">Force unknown option</button><br>
- *     <tt>singleSelect = {{data.singleSelect}}</tt>
- *
- *     <hr>
- *     <label for="multipleSelect"> Multiple select: </label><br>
- *     <select name="multipleSelect" id="multipleSelect" ng-model="data.multipleSelect" multiple>
- *       <option value="option-1">Option 1</option>
- *       <option value="option-2">Option 2</option>
- *       <option value="option-3">Option 3</option>
- *     </select><br>
- *     <tt>multipleSelect = {{data.multipleSelect}}</tt><br/>
- *   </form>
- * </div>
- * </file>
- * <file name="app.js">
- *  angular.module('staticSelect', [])
- *    .controller('ExampleController', ['$scope', function($scope) {
- *      $scope.data = {
- *       singleSelect: null,
- *       multipleSelect: [],
- *       option1: 'option-1',
- *      };
- *
- *      $scope.forceUnknownOption = function() {
- *        $scope.data.singleSelect = 'nonsense';
- *      };
- *   }]);
- * </file>
- *</example>
- *
- * ### Using `ngRepeat` to generate `select` options
- * <example name="ngrepeat-select" module="ngrepeatSelect">
- * <file name="index.html">
- * <div ng-controller="ExampleController">
- *   <form name="myForm">
- *     <label for="repeatSelect"> Repeat select: </label>
- *     <select name="repeatSelect" ng-model="data.repeatSelect">
- *       <option ng-repeat="option in data.availableOptions" value="{{option.id}}">{{option.name}}</option>
- *     </select>
- *   </form>
- *   <hr>
- *   <tt>repeatSelect = {{data.repeatSelect}}</tt><br/>
- * </div>
- * </file>
- * <file name="app.js">
- *  angular.module('ngrepeatSelect', [])
- *    .controller('ExampleController', ['$scope', function($scope) {
- *      $scope.data = {
- *       singleSelect: null,
- *       availableOptions: [
- *         {id: '1', name: 'Option A'},
- *         {id: '2', name: 'Option B'},
- *         {id: '3', name: 'Option C'}
- *       ],
- *      };
- *   }]);
- * </file>
- *</example>
- *
- *
- * ### Using `select` with `ngOptions` and setting a default value
- * See the {@link ngOptions ngOptions documentation} for more `ngOptions` usage examples.
- *
- * <example name="select-with-default-values" module="defaultValueSelect">
- * <file name="index.html">
- * <div ng-controller="ExampleController">
- *   <form name="myForm">
- *     <label for="mySelect">Make a choice:</label>
- *     <select name="mySelect" id="mySelect"
- *       ng-options="option.name for option in data.availableOptions track by option.id"
- *       ng-model="data.selectedOption"></select>
- *   </form>
- *   <hr>
- *   <tt>option = {{data.selectedOption}}</tt><br/>
- * </div>
- * </file>
- * <file name="app.js">
- *  angular.module('defaultValueSelect', [])
- *    .controller('ExampleController', ['$scope', function($scope) {
- *      $scope.data = {
- *       availableOptions: [
- *         {id: '1', name: 'Option A'},
- *         {id: '2', name: 'Option B'},
- *         {id: '3', name: 'Option C'}
- *       ],
- *       selectedOption: {id: '3', name: 'Option C'} //This sets the default value of the select in the ui
- *       };
- *   }]);
- * </file>
- *</example>
- *
- *
- * ### Binding `select` to a non-string value via `ngModel` parsing / formatting
+ * ### Example (binding `select` to a non-string value)
  *
  * <example name="select-with-non-string-options" module="nonStringSelect">
  *   <file name="index.html">
@@ -38135,9 +38818,8 @@ var patternDirective = function() {
         ctrl.$validate();
       });
 
-      ctrl.$validators.pattern = function(modelValue, viewValue) {
-        // HTML5 pattern constraint validates the input value, so we validate the viewValue
-        return ctrl.$isEmpty(viewValue) || isUndefined(regexp) || regexp.test(viewValue);
+      ctrl.$validators.pattern = function(value) {
+        return ctrl.$isEmpty(value) || isUndefined(regexp) || regexp.test(value);
       };
     }
   };
@@ -38183,145 +38865,17 @@ var minlengthDirective = function() {
   };
 };
 
-if (window.angular.bootstrap) {
-  //AngularJS is already loaded, so we can return here...
-  console.log('WARNING: Tried to load angular more than once.');
-  return;
-}
-
-//try to bind to jquery now so that one can write jqLite(document).ready()
-//but we will rebind on bootstrap again.
-bindJQuery();
-
-publishExternalAPI(angular);
-
-angular.module("ngLocale", [], ["$provide", function($provide) {
-var PLURAL_CATEGORY = {ZERO: "zero", ONE: "one", TWO: "two", FEW: "few", MANY: "many", OTHER: "other"};
-function getDecimals(n) {
-  n = n + '';
-  var i = n.indexOf('.');
-  return (i == -1) ? 0 : n.length - i - 1;
-}
-
-function getVF(n, opt_precision) {
-  var v = opt_precision;
-
-  if (undefined === v) {
-    v = Math.min(getDecimals(n), 3);
+  if (window.angular.bootstrap) {
+    //AngularJS is already loaded, so we can return here...
+    console.log('WARNING: Tried to load angular more than once.');
+    return;
   }
 
-  var base = Math.pow(10, v);
-  var f = ((n * base) | 0) % base;
-  return {v: v, f: f};
-}
+  //try to bind to jquery now so that one can write jqLite(document).ready()
+  //but we will rebind on bootstrap again.
+  bindJQuery();
 
-$provide.value("$locale", {
-  "DATETIME_FORMATS": {
-    "AMPMS": [
-      "AM",
-      "PM"
-    ],
-    "DAY": [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday"
-    ],
-    "ERANAMES": [
-      "Before Christ",
-      "Anno Domini"
-    ],
-    "ERAS": [
-      "BC",
-      "AD"
-    ],
-    "FIRSTDAYOFWEEK": 6,
-    "MONTH": [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December"
-    ],
-    "SHORTDAY": [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat"
-    ],
-    "SHORTMONTH": [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
-    ],
-    "WEEKENDRANGE": [
-      5,
-      6
-    ],
-    "fullDate": "EEEE, MMMM d, y",
-    "longDate": "MMMM d, y",
-    "medium": "MMM d, y h:mm:ss a",
-    "mediumDate": "MMM d, y",
-    "mediumTime": "h:mm:ss a",
-    "short": "M/d/yy h:mm a",
-    "shortDate": "M/d/yy",
-    "shortTime": "h:mm a"
-  },
-  "NUMBER_FORMATS": {
-    "CURRENCY_SYM": "$",
-    "DECIMAL_SEP": ".",
-    "GROUP_SEP": ",",
-    "PATTERNS": [
-      {
-        "gSize": 3,
-        "lgSize": 3,
-        "maxFrac": 3,
-        "minFrac": 0,
-        "minInt": 1,
-        "negPre": "-",
-        "negSuf": "",
-        "posPre": "",
-        "posSuf": ""
-      },
-      {
-        "gSize": 3,
-        "lgSize": 3,
-        "maxFrac": 2,
-        "minFrac": 2,
-        "minInt": 1,
-        "negPre": "-\u00a4",
-        "negSuf": "",
-        "posPre": "\u00a4",
-        "posSuf": ""
-      }
-    ]
-  },
-  "id": "en-us",
-  "pluralCat": function(n, opt_precision) {  var i = n | 0;  var vf = getVF(n, opt_precision);  if (i == 1 && vf.v == 0) {    return PLURAL_CATEGORY.ONE;  }  return PLURAL_CATEGORY.OTHER;}
-});
-}]);
+  publishExternalAPI(angular);
 
   jqLite(document).ready(function() {
     angularInit(document, bootstrap);
@@ -38329,8 +38883,8 @@ $provide.value("$locale", {
 
 })(window, document);
 
-!window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-define("angular", ["jquery"], (function (global) {
+!window.angular.$$csp() && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
+define("angular", ["jquery","perfect-scrollbar"], (function (global) {
     return function () {
         var ret, fn;
         return ret || global.angular;
@@ -38576,7 +39130,7 @@ angular.module('ui.router.util', ['ng']);
 /**
  * @ngdoc overview
  * @name ui.router.router
- * 
+ *
  * @requires ui.router.util
  *
  * @description
@@ -38590,7 +39144,7 @@ angular.module('ui.router.router', ['ui.router.util']);
 /**
  * @ngdoc overview
  * @name ui.router.state
- * 
+ *
  * @requires ui.router.router
  * @requires ui.router.util
  *
@@ -38599,7 +39153,7 @@ angular.module('ui.router.router', ['ui.router.util']);
  *
  * This module is a dependency of the main ui.router module. Do not include this module as a dependency
  * in your angular app (use {@link ui.router} module instead).
- * 
+ *
  */
 angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
 
@@ -38611,17 +39165,17 @@ angular.module('ui.router.state', ['ui.router.router', 'ui.router.util']);
  *
  * @description
  * # ui.router
- * 
- * ## The main module for ui.router 
+ *
+ * ## The main module for ui.router
  * There are several sub-modules included with the ui.router module, however only this module is needed
- * as a dependency within your angular app. The other modules are for organization purposes. 
+ * as a dependency within your angular app. The other modules are for organization purposes.
  *
  * The modules are:
  * * ui.router - the main "umbrella" module
- * * ui.router.router - 
- * 
+ * * ui.router.router -
+ *
  * *You'll need to include **only** this module as the dependency within your angular app.*
- * 
+ *
  * <pre>
  * <!doctype html>
  * <html ng-app="myApp">
@@ -38655,14 +39209,14 @@ angular.module('ui.router.compat', ['ui.router']);
  */
 $Resolve.$inject = ['$q', '$injector'];
 function $Resolve(  $q,    $injector) {
-  
+
   var VISIT_IN_PROGRESS = 1,
       VISIT_DONE = 2,
       NOTHING = {},
       NO_DEPENDENCIES = [],
       NO_LOCALS = NOTHING,
       NO_PARENT = extend($q.when(NOTHING), { $$promises: NOTHING, $$values: NOTHING });
-  
+
 
   /**
    * @ngdoc function
@@ -38678,7 +39232,7 @@ function $Resolve(  $q,    $injector) {
    * <pre>
    * $resolve.resolve(invocables, locals, parent, self)
    * </pre>
-   * but the former is more efficient (in fact `resolve` just calls `study` 
+   * but the former is more efficient (in fact `resolve` just calls `study`
    * internally).
    *
    * @param {object} invocables Invocable objects
@@ -38687,19 +39241,19 @@ function $Resolve(  $q,    $injector) {
   this.study = function (invocables) {
     if (!isObject(invocables)) throw new Error("'invocables' must be an object");
     var invocableKeys = objectKeys(invocables || {});
-    
+
     // Perform a topological sort of invocables to build an ordered plan
     var plan = [], cycle = [], visited = {};
     function visit(value, key) {
       if (visited[key] === VISIT_DONE) return;
-      
+
       cycle.push(key);
       if (visited[key] === VISIT_IN_PROGRESS) {
         cycle.splice(0, indexOf(cycle, key));
         throw new Error("Cyclic dependency: " + cycle.join(" -> "));
       }
       visited[key] = VISIT_IN_PROGRESS;
-      
+
       if (isString(value)) {
         plan.push(key, [ function() { return $injector.get(value); }], NO_DEPENDENCIES);
       } else {
@@ -38709,17 +39263,17 @@ function $Resolve(  $q,    $injector) {
         });
         plan.push(key, value, params);
       }
-      
+
       cycle.pop();
       visited[key] = VISIT_DONE;
     }
     forEach(invocables, visit);
     invocables = cycle = visited = null; // plan is all that's required
-    
+
     function isResolve(value) {
       return isObject(value) && value.then && value.$$promises;
     }
-    
+
     return function (locals, parent, self) {
       if (isResolve(locals) && self === undefined) {
         self = parent; parent = locals; locals = null;
@@ -38727,12 +39281,12 @@ function $Resolve(  $q,    $injector) {
       if (!locals) locals = NO_LOCALS;
       else if (!isObject(locals)) {
         throw new Error("'locals' must be an object");
-      }       
+      }
       if (!parent) parent = NO_PARENT;
       else if (!isResolve(parent)) {
         throw new Error("'parent' must be a promise returned by $resolve.resolve()");
       }
-      
+
       // To complete the overall resolution, we have to wait for the parent
       // promise and for the promise for each invokable in our plan.
       var resolution = $q.defer(),
@@ -38741,18 +39295,18 @@ function $Resolve(  $q,    $injector) {
           values = extend({}, locals),
           wait = 1 + plan.length/3,
           merged = false;
-          
+
       function done() {
         // Merge parent values we haven't got yet and publish our own $$values
         if (!--wait) {
-          if (!merged) merge(values, parent.$$values); 
+          if (!merged) merge(values, parent.$$values);
           result.$$values = values;
           result.$$promises = result.$$promises || true; // keep for isResolve()
           delete result.$$inheritedValues;
           resolution.resolve(values);
         }
       }
-      
+
       function fail(reason) {
         result.$$failure = reason;
         resolution.reject(reason);
@@ -38763,7 +39317,7 @@ function $Resolve(  $q,    $injector) {
         fail(parent.$$failure);
         return result;
       }
-      
+
       if (parent.$$inheritedValues) {
         merge(values, omit(parent.$$inheritedValues, invocableKeys));
       }
@@ -38778,16 +39332,16 @@ function $Resolve(  $q,    $injector) {
       } else {
         if (parent.$$inheritedValues) {
           result.$$inheritedValues = omit(parent.$$inheritedValues, invocableKeys);
-        }        
+        }
         parent.then(done, fail);
       }
-      
+
       // Process each invocable in the plan, but ignore any where a local of the same name exists.
       for (var i=0, ii=plan.length; i<ii; i+=3) {
         if (locals.hasOwnProperty(plan[i])) done();
         else invoke(plan[i], plan[i+1], plan[i+2]);
       }
-      
+
       function invoke(key, invocable, params) {
         // Create a deferred for this invocation. Failures will propagate to the resolution as well.
         var invocation = $q.defer(), waitParams = 0;
@@ -38822,65 +39376,65 @@ function $Resolve(  $q,    $injector) {
         // Publish promise synchronously; invocations further down in the plan may depend on it.
         promises[key] = invocation.promise;
       }
-      
+
       return result;
     };
   };
-  
+
   /**
    * @ngdoc function
    * @name ui.router.util.$resolve#resolve
    * @methodOf ui.router.util.$resolve
    *
    * @description
-   * Resolves a set of invocables. An invocable is a function to be invoked via 
-   * `$injector.invoke()`, and can have an arbitrary number of dependencies. 
+   * Resolves a set of invocables. An invocable is a function to be invoked via
+   * `$injector.invoke()`, and can have an arbitrary number of dependencies.
    * An invocable can either return a value directly,
-   * or a `$q` promise. If a promise is returned it will be resolved and the 
-   * resulting value will be used instead. Dependencies of invocables are resolved 
+   * or a `$q` promise. If a promise is returned it will be resolved and the
+   * resulting value will be used instead. Dependencies of invocables are resolved
    * (in this order of precedence)
    *
    * - from the specified `locals`
    * - from another invocable that is part of this `$resolve` call
-   * - from an invocable that is inherited from a `parent` call to `$resolve` 
+   * - from an invocable that is inherited from a `parent` call to `$resolve`
    *   (or recursively
    * - from any ancestor `$resolve` of that parent).
    *
-   * The return value of `$resolve` is a promise for an object that contains 
+   * The return value of `$resolve` is a promise for an object that contains
    * (in this order of precedence)
    *
    * - any `locals` (if specified)
    * - the resolved return values of all injectables
    * - any values inherited from a `parent` call to `$resolve` (if specified)
    *
-   * The promise will resolve after the `parent` promise (if any) and all promises 
-   * returned by injectables have been resolved. If any invocable 
-   * (or `$injector.invoke`) throws an exception, or if a promise returned by an 
-   * invocable is rejected, the `$resolve` promise is immediately rejected with the 
-   * same error. A rejection of a `parent` promise (if specified) will likewise be 
-   * propagated immediately. Once the `$resolve` promise has been rejected, no 
+   * The promise will resolve after the `parent` promise (if any) and all promises
+   * returned by injectables have been resolved. If any invocable
+   * (or `$injector.invoke`) throws an exception, or if a promise returned by an
+   * invocable is rejected, the `$resolve` promise is immediately rejected with the
+   * same error. A rejection of a `parent` promise (if specified) will likewise be
+   * propagated immediately. Once the `$resolve` promise has been rejected, no
    * further invocables will be called.
-   * 
+   *
    * Cyclic dependencies between invocables are not permitted and will caues `$resolve`
-   * to throw an error. As a special case, an injectable can depend on a parameter 
-   * with the same name as the injectable, which will be fulfilled from the `parent` 
-   * injectable of the same name. This allows inherited values to be decorated. 
+   * to throw an error. As a special case, an injectable can depend on a parameter
+   * with the same name as the injectable, which will be fulfilled from the `parent`
+   * injectable of the same name. This allows inherited values to be decorated.
    * Note that in this case any other injectable in the same `$resolve` with the same
    * dependency would see the decorated value, not the inherited value.
    *
-   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an 
-   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous) 
+   * Note that missing dependencies -- unlike cyclic dependencies -- will cause an
+   * (asynchronous) rejection of the `$resolve` promise rather than a (synchronous)
    * exception.
    *
-   * Invocables are invoked eagerly as soon as all dependencies are available. 
+   * Invocables are invoked eagerly as soon as all dependencies are available.
    * This is true even for dependencies inherited from a `parent` call to `$resolve`.
    *
-   * As a special case, an invocable can be a string, in which case it is taken to 
-   * be a service name to be passed to `$injector.get()`. This is supported primarily 
-   * for backwards-compatibility with the `resolve` property of `$routeProvider` 
+   * As a special case, an invocable can be a string, in which case it is taken to
+   * be a service name to be passed to `$injector.get()`. This is supported primarily
+   * for backwards-compatibility with the `resolve` property of `$routeProvider`
    * routes.
    *
-   * @param {object} invocables functions to invoke or 
+   * @param {object} invocables functions to invoke or
    * `$injector` services to fetch.
    * @param {object} locals  values to make available to the injectables
    * @param {object} parent  a promise returned by another call to `$resolve`.
@@ -38916,23 +39470,23 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @methodOf ui.router.util.$templateFactory
    *
    * @description
-   * Creates a template from a configuration object. 
+   * Creates a template from a configuration object.
    *
-   * @param {object} config Configuration object for which to load a template. 
-   * The following properties are search in the specified order, and the first one 
+   * @param {object} config Configuration object for which to load a template.
+   * The following properties are search in the specified order, and the first one
    * that is defined is used to create the template:
    *
-   * @param {string|object} config.template html string template or function to 
+   * @param {string|object} config.template html string template or function to
    * load via {@link ui.router.util.$templateFactory#fromString fromString}.
-   * @param {string|object} config.templateUrl url to load or a function returning 
+   * @param {string|object} config.templateUrl url to load or a function returning
    * the url to load via {@link ui.router.util.$templateFactory#fromUrl fromUrl}.
-   * @param {Function} config.templateProvider function to invoke via 
+   * @param {Function} config.templateProvider function to invoke via
    * {@link ui.router.util.$templateFactory#fromProvider fromProvider}.
    * @param {object} params  Parameters to pass to the template function.
-   * @param {object} locals Locals to pass to `invoke` if the template is loaded 
+   * @param {object} locals Locals to pass to `invoke` if the template is loaded
    * via a `templateProvider`. Defaults to `{ params: params }`.
    *
-   * @return {string|object}  The template html as a string, or a promise for 
+   * @return {string|object}  The template html as a string, or a promise for
    * that string,or `null` if no template is configured.
    */
   this.fromConfig = function (config, params, locals) {
@@ -38952,11 +39506,11 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @description
    * Creates a template from a string or a function returning a string.
    *
-   * @param {string|object} template html template as a string or function that 
+   * @param {string|object} template html template as a string or function that
    * returns an html template as a string.
    * @param {object} params Parameters to pass to the template function.
    *
-   * @return {string|object} The template html as a string, or a promise for that 
+   * @return {string|object} The template html as a string, or a promise for that
    * string.
    */
   this.fromString = function (template, params) {
@@ -38967,14 +39521,14 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    * @ngdoc function
    * @name ui.router.util.$templateFactory#fromUrl
    * @methodOf ui.router.util.$templateFactory
-   * 
+   *
    * @description
    * Loads a template from the a URL via `$http` and `$templateCache`.
    *
-   * @param {string|Function} url url of the template to load, or a function 
+   * @param {string|Function} url url of the template to load, or a function
    * that returns a url.
    * @param {Object} params Parameters to pass to the url function.
-   * @return {string|Promise.<string>} The template html as a string, or a promise 
+   * @return {string|Promise.<string>} The template html as a string, or a promise
    * for that string.
    */
   this.fromUrl = function (url, params) {
@@ -38995,9 +39549,9 @@ function $TemplateFactory(  $http,   $templateCache,   $injector) {
    *
    * @param {Function} provider Function to invoke via `$injector.invoke`
    * @param {Object} params Parameters for the template.
-   * @param {Object} locals Locals to pass to `invoke`. Defaults to 
+   * @param {Object} locals Locals to pass to `invoke`. Defaults to
    * `{ params: params }`.
-   * @return {string|Promise.<string>} The template html as a string, or a promise 
+   * @return {string|Promise.<string>} The template html as a string, or a promise
    * for that string.
    */
   this.fromProvider = function (provider, params, locals) {
@@ -40066,9 +40620,9 @@ angular.module('ui.router.util').run(['$urlMatcherFactory', function($urlMatcher
  * @requires $locationProvider
  *
  * @description
- * `$urlRouterProvider` has the responsibility of watching `$location`. 
- * When `$location` changes it runs through a list of rules one by one until a 
- * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify 
+ * `$urlRouterProvider` has the responsibility of watching `$location`.
+ * When `$location` changes it runs through a list of rules one by one until a
+ * match is found. `$urlRouterProvider` is used behind the scenes anytime you specify
  * a url in a state configuration. All urls are compiled into a UrlMatcher object.
  *
  * There are several methods on `$urlRouterProvider` that make it useful to use directly
@@ -40153,8 +40707,8 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
    * });
    * </pre>
    *
-   * @param {string|object} rule The url path you want to redirect to or a function 
-   * rule that returns the url path. The function version is passed two params: 
+   * @param {string|object} rule The url path you want to redirect to or a function
+   * rule that returns the url path. The function version is passed two params:
    * `$injector` and `$location` services, and must return a url string.
    *
    * @return {object} `$urlRouterProvider` - `$urlRouterProvider` instance
@@ -40456,7 +41010,7 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
         if (angular.isObject(isHtml5)) {
           isHtml5 = isHtml5.enabled;
         }
-        
+
         var url = urlMatcher.format(params);
         options = options || {};
 
@@ -40610,7 +41164,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
     if (path) {
       if (!base) throw new Error("No reference point given for path '"  + name + "'");
       base = findState(base);
-      
+
       var rel = name.split("."), i = 0, pathLength = rel.length, current = base;
 
       for (; i < pathLength; i++) {
@@ -40745,9 +41299,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @methodOf ui.router.state.$stateProvider
    *
    * @description
-   * Allows you to extend (carefully) or override (at your own peril) the 
-   * `stateBuilder` object used internally by `$stateProvider`. This can be used 
-   * to add custom functionality to ui-router, for example inferring templateUrl 
+   * Allows you to extend (carefully) or override (at your own peril) the
+   * `stateBuilder` object used internally by `$stateProvider`. This can be used
+   * to add custom functionality to ui-router, for example inferring templateUrl
    * based on the state name.
    *
    * When passing only a name, it returns the current (original or decorated) builder
@@ -40756,14 +41310,14 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * The builder functions that can be decorated are listed below. Though not all
    * necessarily have a good use case for decoration, that is up to you to decide.
    *
-   * In addition, users can attach custom decorators, which will generate new 
-   * properties within the state's internal definition. There is currently no clear 
-   * use-case for this beyond accessing internal states (i.e. $state.$current), 
-   * however, expect this to become increasingly relevant as we introduce additional 
+   * In addition, users can attach custom decorators, which will generate new
+   * properties within the state's internal definition. There is currently no clear
+   * use-case for this beyond accessing internal states (i.e. $state.$current),
+   * however, expect this to become increasingly relevant as we introduce additional
    * meta-programming features.
    *
-   * **Warning**: Decorators should not be interdependent because the order of 
-   * execution of the builder functions in non-deterministic. Builder functions 
+   * **Warning**: Decorators should not be interdependent because the order of
+   * execution of the builder functions in non-deterministic. Builder functions
    * should only be dependent on the state definition object and super function.
    *
    *
@@ -40774,21 +41328,21 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *   overridden by own values (if any).
    * - **url** `{object}` - returns a {@link ui.router.util.type:UrlMatcher UrlMatcher}
    *   or `null`.
-   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is 
+   * - **navigable** `{object}` - returns closest ancestor state that has a URL (aka is
    *   navigable).
-   * - **params** `{object}` - returns an array of state params that are ensured to 
+   * - **params** `{object}` - returns an array of state params that are ensured to
    *   be a super-set of parent's params.
-   * - **views** `{object}` - returns a views object where each key is an absolute view 
-   *   name (i.e. "viewName@stateName") and each value is the config object 
-   *   (template, controller) for the view. Even when you don't use the views object 
+   * - **views** `{object}` - returns a views object where each key is an absolute view
+   *   name (i.e. "viewName@stateName") and each value is the config object
+   *   (template, controller) for the view. Even when you don't use the views object
    *   explicitly on a state config, one is still created for you internally.
-   *   So by decorating this builder function you have access to decorating template 
+   *   So by decorating this builder function you have access to decorating template
    *   and controller properties.
-   * - **ownParams** `{object}` - returns an array of params that belong to the state, 
+   * - **ownParams** `{object}` - returns an array of params that belong to the state,
    *   not including any params defined by ancestor states.
-   * - **path** `{string}` - returns the full path from the root down to this state. 
+   * - **path** `{string}` - returns the full path from the root down to this state.
    *   Needed for state activation.
-   * - **includes** `{object}` - returns an object that includes every state that 
+   * - **includes** `{object}` - returns an object that includes every state that
    *   would pass a `$state.includes()` test.
    *
    * @example
@@ -40817,12 +41371,12 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * // ...
    *
    * $state.go('home');
-   * // Auto-populates list and item views with /partials/home/contact/list.html,
+   * // Auto-populates list and item views with /partials/home/contact/placementsList.html,
    * // and /partials/home/contact/item.html, respectively.
    * </pre>
    *
-   * @param {string} name The name of the builder function to decorate. 
-   * @param {object} func A function that is responsible for decorating the original 
+   * @param {string} name The name of the builder function to decorate.
+   * @param {object} func A function that is responsible for decorating the original
    * builder function. The function receives two parameters:
    *
    *   - `{object}` - state - The state config object.
@@ -40861,9 +41415,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @param {string|function=} stateConfig.template
    * <a id='template'></a>
    *   html template as a string or a function that returns
-   *   an html template as a string which should be used by the uiView directives. This property 
+   *   an html template as a string which should be used by the uiView directives. This property
    *   takes precedence over templateUrl.
-   *   
+   *
    *   If `template` is a function, it will be called with the following parameters:
    *
    *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
@@ -40881,10 +41435,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *
    *   path or function that returns a path to an html
    *   template that should be used by uiView.
-   *   
+   *
    *   If `templateUrl` is a function, it will be called with the following parameters:
    *
-   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by 
+   *   - {array.&lt;object&gt;} - state parameters extracted from the current $location.path() by
    *     applying the current state
    *
    * <pre>templateUrl: "home.html"</pre>
@@ -40928,7 +41482,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *
    * @param {string=} stateConfig.controllerAs
    * <a id='controllerAs'></a>
-   * 
+   *
    * A controller alias name. If present the controller will be
    *   published to scope under the controllerAs name.
    * <pre>controllerAs: "myCtrl"</pre>
@@ -40944,17 +41498,17 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='resolve'></a>
    *
    * An optional map&lt;string, function&gt; of dependencies which
-   *   should be injected into the controller. If any of these dependencies are promises, 
+   *   should be injected into the controller. If any of these dependencies are promises,
    *   the router will wait for them all to be resolved before the controller is instantiated.
    *   If all the promises are resolved successfully, the $stateChangeSuccess event is fired
    *   and the values of the resolved promises are injected into any controllers that reference them.
    *   If any  of the promises are rejected the $stateChangeError event is fired.
    *
    *   The map object is:
-   *   
+   *
    *   - key - {string}: name of dependency to be injected into controller
-   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function, 
-   *     it is injected and return value it treated as dependency. If result is a promise, it is 
+   *   - factory - {string|function}: If string then it is alias for service. Otherwise if function,
+   *     it is injected and return value it treated as dependency. If result is a promise, it is
    *     resolved before its value is injected into controller.
    *
    * <pre>resolve: {
@@ -40968,7 +41522,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='url'></a>
    *
    *   A url fragment with optional parameters. When a state is navigated or
-   *   transitioned to, the `$stateParams` service will be populated with any 
+   *   transitioned to, the `$stateParams` service will be populated with any
    *   parameters that were passed.
    *
    *   (See {@link ui.router.util.type:UrlMatcher UrlMatcher} `UrlMatcher`} for
@@ -40996,7 +41550,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <pre>views: {
    *     header: {
    *       controller: "headerCtrl",
-   *       templateUrl: "header.html"
+   *       templateUrl: "placementTableHeader.html"
    *     }, body: {
    *       controller: "bodyCtrl",
    *       templateUrl: "body.html"
@@ -41051,7 +41605,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * <a id='reloadOnSearch'></a>
    *
    * If `false`, will not retrigger the same state
-   *   just because a search/query parameter has changed (via $location.search() or $location.hash()). 
+   *   just because a search/query parameter has changed (via $location.search() or $location.hash()).
    *   Useful for when you'd like to modify $location.search() without triggering a reload.
    * <pre>reloadOnSearch: false</pre>
    *
@@ -41186,11 +41740,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * @requires ui.router.state.$stateParams
    * @requires ui.router.router.$urlRouter
    *
-   * @property {object} params A param object, e.g. {sectionId: section.id)}, that 
+   * @property {object} params A param object, e.g. {sectionId: section.id)}, that
    * you'd like to test against the current active state.
-   * @property {object} current A reference to the state's config object. However 
+   * @property {object} current A reference to the state's config object. However
    * you passed it in. Useful for accessing custom data.
-   * @property {object} transition Currently pending transition. A promise that'll 
+   * @property {object} transition Currently pending transition. A promise that'll
    * resolve or reject.
    *
    * @description
@@ -41303,7 +41857,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *
      * `reload()` is just an alias for:
      * <pre>
-     * $state.transitionTo($state.current, $stateParams, { 
+     * $state.transitionTo($state.current, $stateParams, {
      *   reload: true, inherit: false, notify: true
      * });
      * </pre>
@@ -41311,7 +41865,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @param {string=|object=} state - A state name or a state object, which is the root of the resolves to be re-resolved.
      * @example
      * <pre>
-     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item' 
+     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item'
      * //and current state is 'contacts.detail.item'
      * var app angular.module('app', ['ui.router']);
      *
@@ -41325,7 +41879,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *
      * `reload()` is just an alias for:
      * <pre>
-     * $state.transitionTo($state.current, $stateParams, { 
+     * $state.transitionTo($state.current, $stateParams, {
      *   reload: true, inherit: false, notify: true
      * });
      * </pre>
@@ -41343,11 +41897,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @methodOf ui.router.state.$state
      *
      * @description
-     * Convenience method for transitioning to a new state. `$state.go` calls 
-     * `$state.transitionTo` internally but automatically sets options to 
-     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`. 
-     * This allows you to easily use an absolute or relative to path and specify 
-     * only the parameters you'd like to update (while letting unspecified parameters 
+     * Convenience method for transitioning to a new state. `$state.go` calls
+     * `$state.transitionTo` internally but automatically sets options to
+     * `{ location: true, inherit: true, relative: $state.$current, notify: true }`.
+     * This allows you to easily use an absolute or relative to path and specify
+     * only the parameters you'd like to update (while letting unspecified parameters
      * inherit from the currently active ancestor states).
      *
      * @example
@@ -41369,8 +41923,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - `$state.go('^.sibling')` - will go to a sibling state
      * - `$state.go('.child.grandchild')` - will go to grandchild state
      *
-     * @param {object=} params A map of the parameters that will be sent to the state, 
-     * will populate $stateParams. Any parameters that are not specified will be inherited from currently 
+     * @param {object=} params A map of the parameters that will be sent to the state,
+     * will populate $stateParams. Any parameters that are not specified will be inherited from currently
      * defined parameters. This allows, for example, going to a sibling state that shares parameters
      * specified in a parent state. Parameter inheritance only works between common ancestor states, I.e.
      * transitioning to a sibling will get you the parameters for all parents, transitioning to a child
@@ -41380,10 +41934,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
      *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
      * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'),
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params 
+     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
      *
@@ -41435,10 +41989,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`location`** - {boolean=true|string=} - If `true` will update the url in the location bar, if `false`
      *    will not. If string, must be `"replace"`, which will update url and also replace last history record.
      * - **`inherit`** - {boolean=false}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'), 
+     * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'),
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params 
+     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
      *    if String, then will reload the state with the name given in reload, and any children.
@@ -41501,7 +42055,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
         if (isObject(options.reload) && !options.reload.name) {
           throw new Error('Invalid reload state object');
         }
-        
+
         var reloadState = options.reload === true ? fromPath[0] : findState(options.reload);
         if (options.reload && !reloadState) {
           throw new Error("No such reload state '" + (isString(options.reload) ? options.reload : options.reload.name) + "'");
@@ -41817,10 +42371,10 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      *    first parameter, then the constructed href url will be built from the first navigable ancestor (aka
      *    ancestor with a valid url).
      * - **`inherit`** - {boolean=true}, If `true` will inherit url parameters from current url.
-     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'), 
+     * - **`relative`** - {object=$state.$current}, When transitioning with relative path (e.g '^'),
      *    defines which state to be relative from.
      * - **`absolute`** - {boolean=false},  If true will generate an absolute url, e.g. "http://www.example.com/fullurl".
-     * 
+     *
      * @returns {string} compiled state url
      */
     $state.href = function href(stateOrName, params, options) {
@@ -41835,7 +42389,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
 
       if (!isDefined(state)) return null;
       if (options.inherit) params = inheritParams($stateParams, params || {}, $state.$current, state);
-      
+
       var nav = (state && options.lossy) ? state.navigable : state;
 
       if (!nav || nav.url === undefined || nav.url === null) {
@@ -42105,26 +42659,26 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  * functionality, call `$uiViewScrollProvider.useAnchorScroll()`.*
  *
  * @param {string=} onload Expression to evaluate whenever the view updates.
- * 
+ *
  * @example
- * A view can be unnamed or named. 
+ * A view can be unnamed or named.
  * <pre>
  * <!-- Unnamed -->
- * <div ui-view></div> 
- * 
+ * <div ui-view></div>
+ *
  * <!-- Named -->
  * <div ui-view="viewName"></div>
  * </pre>
  *
- * You can only have one unnamed view within any template (or root html). If you are only using a 
+ * You can only have one unnamed view within any template (or root html). If you are only using a
  * single view and it is unnamed then you can populate it like so:
  * <pre>
- * <div ui-view></div> 
+ * <div ui-view></div>
  * $stateProvider.state("home", {
  *   template: "<h1>HELLO!</h1>"
  * })
  * </pre>
- * 
+ *
  * The above is a convenient shortcut equivalent to specifying your view explicitly with the {@link ui.router.state.$stateProvider#views `views`}
  * config property, by name, in this case an empty name:
  * <pre>
@@ -42133,33 +42687,33 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  *     "": {
  *       template: "<h1>HELLO!</h1>"
  *     }
- *   }    
+ *   }
  * })
  * </pre>
- * 
- * But typically you'll only use the views property if you name your view or have more than one view 
- * in the same template. There's not really a compelling reason to name a view if its the only one, 
+ *
+ * But typically you'll only use the views property if you name your view or have more than one view
+ * in the same template. There's not really a compelling reason to name a view if its the only one,
  * but you could if you wanted, like so:
  * <pre>
  * <div ui-view="main"></div>
- * </pre> 
+ * </pre>
  * <pre>
  * $stateProvider.state("home", {
  *   views: {
  *     "main": {
  *       template: "<h1>HELLO!</h1>"
  *     }
- *   }    
+ *   }
  * })
  * </pre>
- * 
+ *
  * Really though, you'll use views to set up multiple views:
  * <pre>
  * <div ui-view></div>
- * <div ui-view="chart"></div> 
- * <div ui-view="data"></div> 
+ * <div ui-view="chart"></div>
+ * <div ui-view="data"></div>
  * </pre>
- * 
+ *
  * <pre>
  * $stateProvider.state("home", {
  *   views: {
@@ -42172,7 +42726,7 @@ angular.module('ui.router.state').provider('$uiViewScroll', $ViewScrollProvider)
  *     "data": {
  *       template: "<data_thing/>"
  *     }
- *   }    
+ *   }
  * })
  * </pre>
  *
@@ -42407,17 +42961,17 @@ function stateContext(el) {
  * @restrict A
  *
  * @description
- * A directive that binds a link (`<a>` tag) to a state. If the state has an associated 
- * URL, the directive will automatically generate & update the `href` attribute via 
- * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking 
- * the link will trigger a state transition with optional parameters. 
+ * A directive that binds a link (`<a>` tag) to a state. If the state has an associated
+ * URL, the directive will automatically generate & update the `href` attribute via
+ * the {@link ui.router.state.$state#methods_href $state.href()} method. Clicking
+ * the link will trigger a state transition with optional parameters.
  *
- * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be 
+ * Also middle-clicking, right-clicking, and ctrl-clicking on the link will be
  * handled natively by the browser.
  *
- * You can also use relative state paths within ui-sref, just like the relative 
+ * You can also use relative state paths within ui-sref, just like the relative
  * paths passed to `$state.go()`. You just need to be aware that the path is relative
- * to the state that the link lives in, in other words the state that loaded the 
+ * to the state that the link lives in, in other words the state that loaded the
  * template containing the link.
  *
  * You can specify options to pass to {@link ui.router.state.$state#go $state.go()}
@@ -42425,22 +42979,22 @@ function stateContext(el) {
  * and `reload`.
  *
  * @example
- * Here's an example of how you'd use ui-sref and how it would compile. If you have the 
+ * Here's an example of how you'd use ui-sref and how it would compile. If you have the
  * following template:
  * <pre>
  * <a ui-sref="home">Home</a> | <a ui-sref="about">About</a> | <a ui-sref="{page: 2}">Next page</a>
- * 
+ *
  * <ul>
  *     <li ng-repeat="contact in contacts">
  *         <a ui-sref="contacts.detail({ id: contact.id })">{{ contact.name }}</a>
  *     </li>
  * </ul>
  * </pre>
- * 
+ *
  * Then the compiled html would be (assuming Html5Mode is off and current state is contacts):
  * <pre>
  * <a href="#/home" ui-sref="home">Home</a> | <a href="#/about" ui-sref="about">About</a> | <a href="#/contacts?page=2" ui-sref="{page: 2}">Next page</a>
- * 
+ *
  * <ul>
  *     <li ng-repeat="contact in contacts">
  *         <a href="#/contacts/1" ui-sref="contacts.detail({ id: contact.id })">Joe</a>
@@ -42709,960 +43263,6 @@ angular.module('ui.router.state')
 })(window, window.angular);
 
 define("ui-router", ["angular"], function(){});
-
-/* Copyright (c) 2015 Hyunje Alex Jun and other contributors
- * Licensed under the MIT License
- */
-(function (factory) {
-  'use strict';
-
-  if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('perfect-scrollbar',['jquery'], factory);
-  } else if (typeof exports === 'object') {
-    // Node/CommonJS
-    factory(require('jquery'));
-  } else {
-    // Browser globals
-    factory(jQuery);
-  }
-})(function ($) {
-  'use strict';
-
-  function getInt(x) {
-    if (typeof x === 'string') {
-      return parseInt(x, 10);
-    } else {
-      return ~~x;
-    }
-  }
-
-  var defaultSettings = {
-    wheelSpeed: 1,
-    wheelPropagation: false,
-    swipePropagation: true,
-    minScrollbarLength: null,
-    maxScrollbarLength: null,
-    useBothWheelAxes: false,
-    useKeyboard: true,
-    suppressScrollX: false,
-    suppressScrollY: false,
-    scrollXMarginOffset: 0,
-    scrollYMarginOffset: 0,
-    includePadding: false
-  };
-
-  var incrementingId = 0;
-  var eventClassFactory = function () {
-    var id = incrementingId++;
-    return function (eventName) {
-      var className = '.perfect-scrollbar-' + id;
-      if (typeof eventName === 'undefined') {
-        return className;
-      } else {
-        return eventName + className;
-      }
-    };
-  };
-
-  var isWebkit = 'WebkitAppearance' in document.documentElement.style;
-
-  $.fn.perfectScrollbar = function (suppliedSettings, option) {
-
-    return this.each(function () {
-      var settings = $.extend(true, {}, defaultSettings);
-      var $this = $(this);
-      var isPluginAlive = function () { return !!$this; };
-
-      if (typeof suppliedSettings === "object") {
-        // Override default settings with any supplied
-        $.extend(true, settings, suppliedSettings);
-      } else {
-        // If no setting was supplied, then the first param must be the option
-        option = suppliedSettings;
-      }
-
-      // Catch options
-      if (option === 'update') {
-        if ($this.data('perfect-scrollbar-update')) {
-          $this.data('perfect-scrollbar-update')();
-        }
-        return $this;
-      }
-      else if (option === 'destroy') {
-        if ($this.data('perfect-scrollbar-destroy')) {
-          $this.data('perfect-scrollbar-destroy')();
-        }
-        return $this;
-      }
-
-      if ($this.data('perfect-scrollbar')) {
-        // if there's already perfect-scrollbar
-        return $this.data('perfect-scrollbar');
-      }
-
-
-      // Or generate new perfectScrollbar
-
-      $this.addClass('ps-container');
-
-      var containerWidth;
-      var containerHeight;
-      var contentWidth;
-      var contentHeight;
-
-      var isRtl = $this.css('direction') === "rtl";
-      var eventClass = eventClassFactory();
-      var ownerDocument = this.ownerDocument || document;
-
-      var $scrollbarXRail = $("<div class='ps-scrollbar-x-rail'>").appendTo($this);
-      var $scrollbarX = $("<div class='ps-scrollbar-x'>").appendTo($scrollbarXRail);
-      var scrollbarXActive;
-      var scrollbarXWidth;
-      var scrollbarXLeft;
-      var scrollbarXBottom = getInt($scrollbarXRail.css('bottom'));
-      var isScrollbarXUsingBottom = scrollbarXBottom === scrollbarXBottom; // !isNaN
-      var scrollbarXTop = isScrollbarXUsingBottom ? null : getInt($scrollbarXRail.css('top'));
-      var railBorderXWidth = getInt($scrollbarXRail.css('borderLeftWidth')) + getInt($scrollbarXRail.css('borderRightWidth'));
-      var railXMarginWidth = getInt($scrollbarXRail.css('marginLeft')) + getInt($scrollbarXRail.css('marginRight'));
-      var railXWidth;
-
-      var $scrollbarYRail = $("<div class='ps-scrollbar-y-rail'>").appendTo($this);
-      var $scrollbarY = $("<div class='ps-scrollbar-y'>").appendTo($scrollbarYRail);
-      var scrollbarYActive;
-      var scrollbarYHeight;
-      var scrollbarYTop;
-      var scrollbarYRight = getInt($scrollbarYRail.css('right'));
-      var isScrollbarYUsingRight = scrollbarYRight === scrollbarYRight; // !isNaN
-      var scrollbarYLeft = isScrollbarYUsingRight ? null : getInt($scrollbarYRail.css('left'));
-      var railBorderYWidth = getInt($scrollbarYRail.css('borderTopWidth')) + getInt($scrollbarYRail.css('borderBottomWidth'));
-      var railYMarginHeight = getInt($scrollbarYRail.css('marginTop')) + getInt($scrollbarYRail.css('marginBottom'));
-      var railYHeight;
-
-      function updateScrollTop(currentTop, deltaY) {
-        var newTop = currentTop + deltaY;
-        var maxTop = containerHeight - scrollbarYHeight;
-
-        if (newTop < 0) {
-          scrollbarYTop = 0;
-        } else if (newTop > maxTop) {
-          scrollbarYTop = maxTop;
-        } else {
-          scrollbarYTop = newTop;
-        }
-
-        var scrollTop = getInt(scrollbarYTop * (contentHeight - containerHeight) / (containerHeight - scrollbarYHeight));
-        $this.scrollTop(scrollTop);
-      }
-
-      function updateScrollLeft(currentLeft, deltaX) {
-        var newLeft = currentLeft + deltaX;
-        var maxLeft = containerWidth - scrollbarXWidth;
-
-        if (newLeft < 0) {
-          scrollbarXLeft = 0;
-        } else if (newLeft > maxLeft) {
-          scrollbarXLeft = maxLeft;
-        } else {
-          scrollbarXLeft = newLeft;
-        }
-
-        var scrollLeft = getInt(scrollbarXLeft * (contentWidth - containerWidth) / (containerWidth - scrollbarXWidth));
-        $this.scrollLeft(scrollLeft);
-      }
-
-      function getThumbSize(thumbSize) {
-        if (settings.minScrollbarLength) {
-          thumbSize = Math.max(thumbSize, settings.minScrollbarLength);
-        }
-        if (settings.maxScrollbarLength) {
-          thumbSize = Math.min(thumbSize, settings.maxScrollbarLength);
-        }
-        return thumbSize;
-      }
-
-      function updateCss() {
-        var xRailOffset = {width: railXWidth};
-        if (isRtl) {
-          xRailOffset.left = $this.scrollLeft() + containerWidth - contentWidth;
-        } else {
-          xRailOffset.left = $this.scrollLeft();
-        }
-        if (isScrollbarXUsingBottom) {
-          xRailOffset.bottom = scrollbarXBottom - $this.scrollTop();
-        } else {
-          xRailOffset.top = scrollbarXTop + $this.scrollTop();
-        }
-        $scrollbarXRail.css(xRailOffset);
-
-        var railYOffset = {top: $this.scrollTop(), height: railYHeight};
-
-        if (isScrollbarYUsingRight) {
-          if (isRtl) {
-            railYOffset.right = contentWidth - $this.scrollLeft() - scrollbarYRight - $scrollbarY.outerWidth();
-          } else {
-            railYOffset.right = scrollbarYRight - $this.scrollLeft();
-          }
-        } else {
-          if (isRtl) {
-            railYOffset.left = $this.scrollLeft() + containerWidth * 2 - contentWidth - scrollbarYLeft - $scrollbarY.outerWidth();
-          } else {
-            railYOffset.left = scrollbarYLeft + $this.scrollLeft();
-          }
-        }
-        $scrollbarYRail.css(railYOffset);
-
-        $scrollbarX.css({left: scrollbarXLeft, width: scrollbarXWidth - railBorderXWidth});
-        $scrollbarY.css({top: scrollbarYTop, height: scrollbarYHeight - railBorderYWidth});
-      }
-
-      function updateGeometry() {
-        // Hide scrollbars not to affect scrollWidth and scrollHeight
-        $this.removeClass('ps-active-x');
-        $this.removeClass('ps-active-y');
-
-        containerWidth = settings.includePadding ? $this.innerWidth() : $this.width();
-        containerHeight = settings.includePadding ? $this.innerHeight() : $this.height();
-        contentWidth = $this.prop('scrollWidth');
-        contentHeight = $this.prop('scrollHeight');
-
-        if (!settings.suppressScrollX && containerWidth + settings.scrollXMarginOffset < contentWidth) {
-          scrollbarXActive = true;
-          railXWidth = containerWidth - railXMarginWidth;
-          scrollbarXWidth = getThumbSize(getInt(railXWidth * containerWidth / contentWidth));
-          scrollbarXLeft = getInt($this.scrollLeft() * (railXWidth - scrollbarXWidth) / (contentWidth - containerWidth));
-        } else {
-          scrollbarXActive = false;
-          scrollbarXWidth = 0;
-          scrollbarXLeft = 0;
-          $this.scrollLeft(0);
-        }
-
-        if (!settings.suppressScrollY && containerHeight + settings.scrollYMarginOffset < contentHeight) {
-          scrollbarYActive = true;
-          railYHeight = containerHeight - railYMarginHeight;
-          scrollbarYHeight = getThumbSize(getInt(railYHeight * containerHeight / contentHeight));
-          scrollbarYTop = getInt($this.scrollTop() * (railYHeight - scrollbarYHeight) / (contentHeight - containerHeight));
-        } else {
-          scrollbarYActive = false;
-          scrollbarYHeight = 0;
-          scrollbarYTop = 0;
-          $this.scrollTop(0);
-        }
-
-        if (scrollbarXLeft >= railXWidth - scrollbarXWidth) {
-          scrollbarXLeft = railXWidth - scrollbarXWidth;
-        }
-        if (scrollbarYTop >= railYHeight - scrollbarYHeight) {
-          scrollbarYTop = railYHeight - scrollbarYHeight;
-        }
-
-        updateCss();
-
-        if (scrollbarXActive) {
-          $this.addClass('ps-active-x');
-        }
-        if (scrollbarYActive) {
-          $this.addClass('ps-active-y');
-        }
-      }
-
-      function bindMouseScrollXHandler() {
-        var currentLeft;
-        var currentPageX;
-
-        var mouseMoveHandler = function (e) {
-          updateScrollLeft(currentLeft, e.pageX - currentPageX);
-          updateGeometry();
-          e.stopPropagation();
-          e.preventDefault();
-        };
-
-        var mouseUpHandler = function (e) {
-          $this.removeClass('ps-in-scrolling');
-          $(ownerDocument).unbind(eventClass('mousemove'), mouseMoveHandler);
-        };
-
-        $scrollbarX.bind(eventClass('mousedown'), function (e) {
-          currentPageX = e.pageX;
-          currentLeft = $scrollbarX.position().left;
-          $this.addClass('ps-in-scrolling');
-
-          $(ownerDocument).bind(eventClass('mousemove'), mouseMoveHandler);
-          $(ownerDocument).one(eventClass('mouseup'), mouseUpHandler);
-
-          e.stopPropagation();
-          e.preventDefault();
-        });
-
-        currentLeft =
-        currentPageX = null;
-      }
-
-      function bindMouseScrollYHandler() {
-        var currentTop;
-        var currentPageY;
-
-        var mouseMoveHandler = function (e) {
-          updateScrollTop(currentTop, e.pageY - currentPageY);
-          updateGeometry();
-          e.stopPropagation();
-          e.preventDefault();
-        };
-
-        var mouseUpHandler = function (e) {
-          $this.removeClass('ps-in-scrolling');
-          $(ownerDocument).unbind(eventClass('mousemove'), mouseMoveHandler);
-        };
-
-        $scrollbarY.bind(eventClass('mousedown'), function (e) {
-          currentPageY = e.pageY;
-          currentTop = $scrollbarY.position().top;
-          $this.addClass('ps-in-scrolling');
-
-          $(ownerDocument).bind(eventClass('mousemove'), mouseMoveHandler);
-          $(ownerDocument).one(eventClass('mouseup'), mouseUpHandler);
-
-          e.stopPropagation();
-          e.preventDefault();
-        });
-
-        currentTop =
-        currentPageY = null;
-      }
-
-      function shouldPreventWheel(deltaX, deltaY) {
-        var scrollTop = $this.scrollTop();
-        if (deltaX === 0) {
-          if (!scrollbarYActive) {
-            return false;
-          }
-          if ((scrollTop === 0 && deltaY > 0) || (scrollTop >= contentHeight - containerHeight && deltaY < 0)) {
-            return !settings.wheelPropagation;
-          }
-        }
-
-        var scrollLeft = $this.scrollLeft();
-        if (deltaY === 0) {
-          if (!scrollbarXActive) {
-            return false;
-          }
-          if ((scrollLeft === 0 && deltaX < 0) || (scrollLeft >= contentWidth - containerWidth && deltaX > 0)) {
-            return !settings.wheelPropagation;
-          }
-        }
-        return true;
-      }
-
-      function shouldPreventSwipe(deltaX, deltaY) {
-        var scrollTop = $this.scrollTop();
-        var scrollLeft = $this.scrollLeft();
-        var magnitudeX = Math.abs(deltaX);
-        var magnitudeY = Math.abs(deltaY);
-
-        if (magnitudeY > magnitudeX) {
-          // user is perhaps trying to swipe up/down the page
-
-          if (((deltaY < 0) && (scrollTop === contentHeight - containerHeight)) ||
-              ((deltaY > 0) && (scrollTop === 0))) {
-            return !settings.swipePropagation;
-          }
-        } else if (magnitudeX > magnitudeY) {
-          // user is perhaps trying to swipe left/right across the page
-
-          if (((deltaX < 0) && (scrollLeft === contentWidth - containerWidth)) ||
-              ((deltaX > 0) && (scrollLeft === 0))) {
-            return !settings.swipePropagation;
-          }
-        }
-
-        return true;
-      }
-
-      function bindMouseWheelHandler() {
-        var shouldPrevent = false;
-
-        function getDeltaFromEvent(e) {
-          var deltaX = e.originalEvent.deltaX;
-          var deltaY = -1 * e.originalEvent.deltaY;
-
-          if (typeof deltaX === "undefined" || typeof deltaY === "undefined") {
-            // OS X Safari
-            deltaX = -1 * e.originalEvent.wheelDeltaX / 6;
-            deltaY = e.originalEvent.wheelDeltaY / 6;
-          }
-
-          if (e.originalEvent.deltaMode && e.originalEvent.deltaMode === 1) {
-            // Firefox in deltaMode 1: Line scrolling
-            deltaX *= 10;
-            deltaY *= 10;
-          }
-
-          if (deltaX !== deltaX && deltaY !== deltaY/* NaN checks */) {
-            // IE in some mouse drivers
-            deltaX = 0;
-            deltaY = e.originalEvent.wheelDelta;
-          }
-
-          return [deltaX, deltaY];
-        }
-
-        function mousewheelHandler(e) {
-          // FIXME: this is a quick fix for the select problem in FF and IE.
-          // If there comes an effective way to deal with the problem,
-          // this lines should be removed.
-          if (!isWebkit && $this.find('select:focus').length > 0) {
-            return;
-          }
-
-          var delta = getDeltaFromEvent(e);
-
-          var deltaX = delta[0];
-          var deltaY = delta[1];
-
-          shouldPrevent = false;
-          if (!settings.useBothWheelAxes) {
-            // deltaX will only be used for horizontal scrolling and deltaY will
-            // only be used for vertical scrolling - this is the default
-            $this.scrollTop($this.scrollTop() - (deltaY * settings.wheelSpeed));
-            $this.scrollLeft($this.scrollLeft() + (deltaX * settings.wheelSpeed));
-          } else if (scrollbarYActive && !scrollbarXActive) {
-            // only vertical scrollbar is active and useBothWheelAxes option is
-            // active, so let's scroll vertical bar using both mouse wheel axes
-            if (deltaY) {
-              $this.scrollTop($this.scrollTop() - (deltaY * settings.wheelSpeed));
-            } else {
-              $this.scrollTop($this.scrollTop() + (deltaX * settings.wheelSpeed));
-            }
-            shouldPrevent = true;
-          } else if (scrollbarXActive && !scrollbarYActive) {
-            // useBothWheelAxes and only horizontal bar is active, so use both
-            // wheel axes for horizontal bar
-            if (deltaX) {
-              $this.scrollLeft($this.scrollLeft() + (deltaX * settings.wheelSpeed));
-            } else {
-              $this.scrollLeft($this.scrollLeft() - (deltaY * settings.wheelSpeed));
-            }
-            shouldPrevent = true;
-          }
-
-          updateGeometry();
-
-          shouldPrevent = (shouldPrevent || shouldPreventWheel(deltaX, deltaY));
-          if (shouldPrevent) {
-            e.stopPropagation();
-            e.preventDefault();
-          }
-        }
-
-        if (typeof window.onwheel !== "undefined") {
-          $this.bind(eventClass('wheel'), mousewheelHandler);
-        } else if (typeof window.onmousewheel !== "undefined") {
-          $this.bind(eventClass('mousewheel'), mousewheelHandler);
-        }
-      }
-
-      function bindKeyboardHandler() {
-        var hovered = false;
-        $this.bind(eventClass('mouseenter'), function (e) {
-          hovered = true;
-        });
-        $this.bind(eventClass('mouseleave'), function (e) {
-          hovered = false;
-        });
-
-        var shouldPrevent = false;
-        $(ownerDocument).bind(eventClass('keydown'), function (e) {
-          if (e.isDefaultPrevented && e.isDefaultPrevented()) {
-            return;
-          }
-
-          if (!hovered) {
-            return;
-          }
-
-          var activeElement = document.activeElement ? document.activeElement : ownerDocument.activeElement;
-
-          if (activeElement) {
-            // go deeper if element is a webcomponent
-            while (activeElement.shadowRoot) {
-              activeElement = activeElement.shadowRoot.activeElement;
-            }
-            if ($(activeElement).is(":input,[contenteditable]")) {
-              return;
-            }
-          }
-
-          var deltaX = 0;
-          var deltaY = 0;
-
-          switch (e.which) {
-          case 37: // left
-            deltaX = -30;
-            break;
-          case 38: // up
-            deltaY = 30;
-            break;
-          case 39: // right
-            deltaX = 30;
-            break;
-          case 40: // down
-            deltaY = -30;
-            break;
-          case 33: // page up
-            deltaY = 90;
-            break;
-          case 32: // space bar
-          case 34: // page down
-            deltaY = -90;
-            break;
-          case 35: // end
-            if (e.ctrlKey) {
-              deltaY = -contentHeight;
-            } else {
-              deltaY = -containerHeight;
-            }
-            break;
-          case 36: // home
-            if (e.ctrlKey) {
-              deltaY = $this.scrollTop();
-            } else {
-              deltaY = containerHeight;
-            }
-            break;
-          default:
-            return;
-          }
-
-          $this.scrollTop($this.scrollTop() - deltaY);
-          $this.scrollLeft($this.scrollLeft() + deltaX);
-
-          shouldPrevent = shouldPreventWheel(deltaX, deltaY);
-          if (shouldPrevent) {
-            e.preventDefault();
-          }
-        });
-      }
-
-      function bindRailClickHandler() {
-        function stopPropagation(e) { e.stopPropagation(); }
-
-        $scrollbarY.bind(eventClass('click'), stopPropagation);
-        $scrollbarYRail.bind(eventClass('click'), function (e) {
-          var halfOfScrollbarLength = getInt(scrollbarYHeight / 2);
-          var positionTop = e.pageY - $scrollbarYRail.offset().top - halfOfScrollbarLength;
-          var maxPositionTop = containerHeight - scrollbarYHeight;
-          var positionRatio = positionTop / maxPositionTop;
-
-          if (positionRatio < 0) {
-            positionRatio = 0;
-          } else if (positionRatio > 1) {
-            positionRatio = 1;
-          }
-
-          $this.scrollTop((contentHeight - containerHeight) * positionRatio);
-        });
-
-        $scrollbarX.bind(eventClass('click'), stopPropagation);
-        $scrollbarXRail.bind(eventClass('click'), function (e) {
-          var halfOfScrollbarLength = getInt(scrollbarXWidth / 2);
-          var positionLeft = e.pageX - $scrollbarXRail.offset().left - halfOfScrollbarLength;
-          var maxPositionLeft = containerWidth - scrollbarXWidth;
-          var positionRatio = positionLeft / maxPositionLeft;
-
-          if (positionRatio < 0) {
-            positionRatio = 0;
-          } else if (positionRatio > 1) {
-            positionRatio = 1;
-          }
-
-          $this.scrollLeft((contentWidth - containerWidth) * positionRatio);
-        });
-      }
-
-      function bindSelectionHandler() {
-        function getRangeNode() {
-          var selection = window.getSelection ? window.getSelection() :
-                          document.getSlection ? document.getSlection() : {rangeCount: 0};
-          if (selection.rangeCount === 0) {
-            return null;
-          } else {
-            return selection.getRangeAt(0).commonAncestorContainer;
-          }
-        }
-
-        var scrollingLoop = null;
-        var scrollDiff = {top: 0, left: 0};
-        function startScrolling() {
-          if (!scrollingLoop) {
-            scrollingLoop = setInterval(function () {
-              if (!isPluginAlive()) {
-                clearInterval(scrollingLoop);
-                return;
-              }
-
-              $this.scrollTop($this.scrollTop() + scrollDiff.top);
-              $this.scrollLeft($this.scrollLeft() + scrollDiff.left);
-              updateGeometry();
-            }, 50); // every .1 sec
-          }
-        }
-        function stopScrolling() {
-          if (scrollingLoop) {
-            clearInterval(scrollingLoop);
-            scrollingLoop = null;
-          }
-          $this.removeClass('ps-in-scrolling');
-          $this.removeClass('ps-in-scrolling');
-        }
-
-        var isSelected = false;
-        $(ownerDocument).bind(eventClass('selectionchange'), function (e) {
-          if ($.contains($this[0], getRangeNode())) {
-            isSelected = true;
-          } else {
-            isSelected = false;
-            stopScrolling();
-          }
-        });
-        $(window).bind(eventClass('mouseup'), function (e) {
-          if (isSelected) {
-            isSelected = false;
-            stopScrolling();
-          }
-        });
-
-        $(window).bind(eventClass('mousemove'), function (e) {
-          if (isSelected) {
-            var mousePosition = {x: e.pageX, y: e.pageY};
-            var containerOffset = $this.offset();
-            var containerGeometry = {
-              left: containerOffset.left,
-              right: containerOffset.left + $this.outerWidth(),
-              top: containerOffset.top,
-              bottom: containerOffset.top + $this.outerHeight()
-            };
-
-            if (mousePosition.x < containerGeometry.left + 3) {
-              scrollDiff.left = -5;
-              $this.addClass('ps-in-scrolling');
-            } else if (mousePosition.x > containerGeometry.right - 3) {
-              scrollDiff.left = 5;
-              $this.addClass('ps-in-scrolling');
-            } else {
-              scrollDiff.left = 0;
-            }
-
-            if (mousePosition.y < containerGeometry.top + 3) {
-              if (containerGeometry.top + 3 - mousePosition.y < 5) {
-                scrollDiff.top = -5;
-              } else {
-                scrollDiff.top = -20;
-              }
-              $this.addClass('ps-in-scrolling');
-            } else if (mousePosition.y > containerGeometry.bottom - 3) {
-              if (mousePosition.y - containerGeometry.bottom + 3 < 5) {
-                scrollDiff.top = 5;
-              } else {
-                scrollDiff.top = 20;
-              }
-              $this.addClass('ps-in-scrolling');
-            } else {
-              scrollDiff.top = 0;
-            }
-
-            if (scrollDiff.top === 0 && scrollDiff.left === 0) {
-              stopScrolling();
-            } else {
-              startScrolling();
-            }
-          }
-        });
-      }
-
-      function bindTouchHandler(supportsTouch, supportsIePointer) {
-        function applyTouchMove(differenceX, differenceY) {
-          $this.scrollTop($this.scrollTop() - differenceY);
-          $this.scrollLeft($this.scrollLeft() - differenceX);
-
-          updateGeometry();
-        }
-
-        var startOffset = {};
-        var startTime = 0;
-        var speed = {};
-        var easingLoop = null;
-        var inGlobalTouch = false;
-        var inLocalTouch = false;
-
-        function globalTouchStart(e) {
-          inGlobalTouch = true;
-        }
-        function globalTouchEnd(e) {
-          inGlobalTouch = false;
-        }
-
-        function getTouch(e) {
-          if (e.originalEvent.targetTouches) {
-            return e.originalEvent.targetTouches[0];
-          } else {
-            // Maybe IE pointer
-            return e.originalEvent;
-          }
-        }
-        function shouldHandle(e) {
-          var event = e.originalEvent;
-          if (event.targetTouches && event.targetTouches.length === 1) {
-            return true;
-          }
-          if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== event.MSPOINTER_TYPE_MOUSE) {
-            return true;
-          }
-          return false;
-        }
-        function touchStart(e) {
-          if (shouldHandle(e)) {
-            inLocalTouch = true;
-
-            var touch = getTouch(e);
-
-            startOffset.pageX = touch.pageX;
-            startOffset.pageY = touch.pageY;
-
-            startTime = (new Date()).getTime();
-
-            if (easingLoop !== null) {
-              clearInterval(easingLoop);
-            }
-
-            e.stopPropagation();
-          }
-        }
-        function touchMove(e) {
-          if (!inGlobalTouch && inLocalTouch && shouldHandle(e)) {
-            var touch = getTouch(e);
-
-            var currentOffset = {pageX: touch.pageX, pageY: touch.pageY};
-
-            var differenceX = currentOffset.pageX - startOffset.pageX;
-            var differenceY = currentOffset.pageY - startOffset.pageY;
-
-            applyTouchMove(differenceX, differenceY);
-            startOffset = currentOffset;
-
-            var currentTime = (new Date()).getTime();
-
-            var timeGap = currentTime - startTime;
-            if (timeGap > 0) {
-              speed.x = differenceX / timeGap;
-              speed.y = differenceY / timeGap;
-              startTime = currentTime;
-            }
-
-            if (shouldPreventSwipe(differenceX, differenceY)) {
-              e.stopPropagation();
-              e.preventDefault();
-            }
-          }
-        }
-        function touchEnd(e) {
-          if (!inGlobalTouch && inLocalTouch) {
-            inLocalTouch = false;
-
-            clearInterval(easingLoop);
-            easingLoop = setInterval(function () {
-              if (!isPluginAlive()) {
-                clearInterval(easingLoop);
-                return;
-              }
-
-              if (Math.abs(speed.x) < 0.01 && Math.abs(speed.y) < 0.01) {
-                clearInterval(easingLoop);
-                return;
-              }
-
-              applyTouchMove(speed.x * 30, speed.y * 30);
-
-              speed.x *= 0.8;
-              speed.y *= 0.8;
-            }, 10);
-          }
-        }
-
-        if (supportsTouch) {
-          $(window).bind(eventClass("touchstart"), globalTouchStart);
-          $(window).bind(eventClass("touchend"), globalTouchEnd);
-          $this.bind(eventClass("touchstart"), touchStart);
-          $this.bind(eventClass("touchmove"), touchMove);
-          $this.bind(eventClass("touchend"), touchEnd);
-        }
-
-        if (supportsIePointer) {
-          if (window.PointerEvent) {
-            $(window).bind(eventClass("pointerdown"), globalTouchStart);
-            $(window).bind(eventClass("pointerup"), globalTouchEnd);
-            $this.bind(eventClass("pointerdown"), touchStart);
-            $this.bind(eventClass("pointermove"), touchMove);
-            $this.bind(eventClass("pointerup"), touchEnd);
-          } else if (window.MSPointerEvent) {
-            $(window).bind(eventClass("MSPointerDown"), globalTouchStart);
-            $(window).bind(eventClass("MSPointerUp"), globalTouchEnd);
-            $this.bind(eventClass("MSPointerDown"), touchStart);
-            $this.bind(eventClass("MSPointerMove"), touchMove);
-            $this.bind(eventClass("MSPointerUp"), touchEnd);
-          }
-        }
-      }
-
-      function bindScrollHandler() {
-        $this.bind(eventClass('scroll'), function (e) {
-          updateGeometry();
-        });
-      }
-
-      function destroy() {
-        $this.unbind(eventClass());
-        $(window).unbind(eventClass());
-        $(ownerDocument).unbind(eventClass());
-        $this.data('perfect-scrollbar', null);
-        $this.data('perfect-scrollbar-update', null);
-        $this.data('perfect-scrollbar-destroy', null);
-        $scrollbarX.remove();
-        $scrollbarY.remove();
-        $scrollbarXRail.remove();
-        $scrollbarYRail.remove();
-
-        // clean all variables
-        $this =
-        $scrollbarXRail =
-        $scrollbarYRail =
-        $scrollbarX =
-        $scrollbarY =
-        scrollbarXActive =
-        scrollbarYActive =
-        containerWidth =
-        containerHeight =
-        contentWidth =
-        contentHeight =
-        scrollbarXWidth =
-        scrollbarXLeft =
-        scrollbarXBottom =
-        isScrollbarXUsingBottom =
-        scrollbarXTop =
-        scrollbarYHeight =
-        scrollbarYTop =
-        scrollbarYRight =
-        isScrollbarYUsingRight =
-        scrollbarYLeft =
-        isRtl =
-        eventClass = null;
-      }
-
-      var supportsTouch = (('ontouchstart' in window) || window.DocumentTouch && document instanceof window.DocumentTouch);
-      var supportsIePointer = window.navigator.msMaxTouchPoints !== null;
-
-      function initialize() {
-        updateGeometry();
-        bindScrollHandler();
-        bindMouseScrollXHandler();
-        bindMouseScrollYHandler();
-        bindRailClickHandler();
-        bindSelectionHandler();
-        bindMouseWheelHandler();
-
-        if (supportsTouch || supportsIePointer) {
-          bindTouchHandler(supportsTouch, supportsIePointer);
-        }
-        if (settings.useKeyboard) {
-          bindKeyboardHandler();
-        }
-        $this.data('perfect-scrollbar', $this);
-        $this.data('perfect-scrollbar-update', updateGeometry);
-        $this.data('perfect-scrollbar-destroy', destroy);
-      }
-
-      initialize();
-
-      return $this;
-    });
-  };
-});
-
-angular.module('perfect_scrollbar', []).directive('perfectScrollbar',
-  ['$parse', '$window', function($parse, $window) {
-  var psOptions = [
-    'wheelSpeed', 'wheelPropagation', 'minScrollbarLength', 'useBothWheelAxes',
-    'useKeyboard', 'suppressScrollX', 'suppressScrollY', 'scrollXMarginOffset',
-    'scrollYMarginOffset', 'includePadding'//, 'onScroll', 'scrollDown'
-  ];
-
-  return {
-    restrict: 'EA',
-    transclude: true,
-    template: '<div><div ng-transclude></div></div>',
-    replace: true,
-    link: function($scope, $elem, $attr) {
-      var jqWindow = angular.element($window);
-      var options = {};
-
-      for (var i=0, l=psOptions.length; i<l; i++) {
-        var opt = psOptions[i];
-        if ($attr[opt] !== undefined) {
-          options[opt] = $parse($attr[opt])();
-        }
-      }
-
-      $scope.$evalAsync(function() {
-        $elem.perfectScrollbar(options);
-        var onScrollHandler = $parse($attr.onScroll)
-        $elem.scroll(function(){
-          var scrollTop = $elem.scrollTop()
-          var scrollHeight = $elem.prop('scrollHeight') - $elem.height()
-          $scope.$apply(function() {
-            onScrollHandler($scope, {
-              scrollTop: scrollTop,
-              scrollHeight: scrollHeight
-            })
-          })
-        });
-      });
-
-      function update(event) {
-        $scope.$evalAsync(function() {
-          if ($attr.scrollDown == 'true' && event != 'mouseenter') {
-            setTimeout(function () {
-              $($elem).scrollTop($($elem).prop("scrollHeight"));
-            }, 100);
-          }
-          $elem.perfectScrollbar('update');
-        });
-      }
-
-      // This is necessary when you don't watch anything with the scrollbar
-      $elem.bind('mouseenter', update('mouseenter'));
-
-      // Possible future improvement - check the type here and use the appropriate watch for non-arrays
-      if ($attr.refreshOnChange) {
-        $scope.$watchCollection($attr.refreshOnChange, function() {
-          update();
-        });
-      }
-
-      // this is from a pull request - I am not totally sure what the original issue is but seems harmless
-      if ($attr.refreshOnResize) {
-        jqWindow.on('resize', update);
-      }
-
-      $elem.bind('$destroy', function() {
-        jqWindow.off('resize', update);
-        $elem.perfectScrollbar('destroy');
-      });
-
-    }
-  };
-}]);
-
-define("ng-perfect-scrollbar", ["angular","perfect-scrollbar"], function(){});
 
 /*
  * angular-ui-bootstrap
@@ -45793,7 +45393,7 @@ define('core/datepicker/index',['require','tpl!./datepicker.html','tpl!./day.htm
 });
 
 
-define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar jumbo navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button id="navbar-open-button" type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <ul class="nav navbar-right">\n            <li><a id="navbar-campaign-management-tab" ng-click="transition(\'cm\', $event)" ng-class="{\'active\': $state.includes(\'cm\')}">Campaign Management</a></li>\n            <li><a id="navbar-analytics-tab" ng-click="transition(\'analytics\', $event)" ng-class="{\'active\': $state.includes(\'analytics\')}">Analytics</a></li>\n        </ul>\n        <ul class="nav navbar-left">\n            <li id="navbar-client-dropdown" class="dropdown" client-dropdown>\n            </li>\n            <li id="navbar-division-dropdown" class="dropdown" division-dropdown>\n            </li>\n            <li id="navbar-account-dropdown" class="dropdown" account-dropdown>\n            </li>\n            <li id="navbar-campaign-dropdown" class="dropdown" campaign-dropdown>\n            </li>\n        </ul>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
+define('tpl!core/navbar/navbar.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/navbar/navbar.html', '<nav class="navbar jumbo navbar-default" ng-class="{\'navbar-open\': open}">\n    <!-- Brand and toggle get grouped for better mobile display -->\n    <div class="navbar-header">\n        <button id="navbar-open-button" type="button" class="navbar-toggle" ng-click="open = !open">\n            <span class="sr-only">Toggle navigation</span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n            <span class="icon-bar"></span>\n        </button>\n        <div class="dropdown navbar-right settings">\n            <a href="" class="btn btn-primary solid dropdown-toggle"><i class="glyph-chevron-down"></i>Settings</a>\n            <ul class="dropdown-menu" role="menu">\n                <li><a href="#">Action</a></li>\n                <li><a href="#">Another action</a></li>\n                <li><a href="#">Something else here</a></li>\n                <li class="divider"></li>\n                <li><a href="#">Separated link</a></li>\n                <li class="divider"></li>\n                <li><a href="#">One more separated </a></li>\n            </ul>\n        </div>\n        <a class="logo" href=""></a>\n    </div>\n    <!-- Collect the nav links, forms, and other content for toggling -->\n    <div class="navbar-collapse">\n        <div class="navbar-collapse-wrapper">\n            <div class="navbar-overlay" ng-if="open" ng-click="$parent.open = false"></div>\n            <div class="navbar-bg"></div>\n            <ul class="nav navbar-right">\n                <li><a id="navbar-campaign-management-tab" ng-click="transition(\'cm\', $event)" ng-class="{\'active\': $state.includes(\'cm\')}">Campaign Management</a></li>\n                <li><a id="navbar-analytics-tab" ng-click="transition(\'analytics\', $event)" ng-class="{\'active\': $state.includes(\'analytics\')}">Analytics</a></li>\n            </ul>\n            <ul class="nav navbar-left">\n                <li id="navbar-client-dropdown" class="dropdown" client-dropdown>\n                </li>\n                <li id="navbar-division-dropdown" class="dropdown" division-dropdown>\n                </li>\n                <li id="navbar-account-dropdown" class="dropdown" account-dropdown>\n                </li>\n                <li id="navbar-campaign-dropdown" class="dropdown" campaign-dropdown>\n                </li>\n            </ul>\n        </div>\n    </div><!-- /.navbar-collapse -->\n</nav>\n'); });
 
 /**
  * Created by alex on 4/15/15.
@@ -47239,6 +46839,30 @@ define('core/constants/moneyRegex',['require','./../module'],function (require) 
 	module.constant('MONEY_REGEX', new RegExp('^\\d+((\\.|\\,)\\d{2})?$'));
 });
 
+define('core/constants/isMobile',['require','./../module'],function(require) {
+    'use strict';
+
+    var module = require('./../module');
+
+    module.constant('IS_MOBILE', isMobile());
+
+    function isMobile() {
+        try{ document.createEvent('TouchEvent'); return true; }
+        catch(e){ return false; }
+    }
+});
+
+define('core/constants/index',['require','./apiURI','./creativeSettings','./enums','./urlRegex','./moneyRegex','./isMobile'],function(require) {
+    'use strict';
+
+    require('./apiURI');
+    require('./creativeSettings');
+    require('./enums');
+    require('./urlRegex');
+    require('./moneyRegex');
+    require('./isMobile');
+});
+
 
 define('tpl!core/creativePreview/directives/preview.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'core/creativePreview/directives/preview.html', '<div class="creative-preview">\n\t<div class="preview-modal-header">\n\t\t<a ng-click="previewInPage()" class="preview-link" title="Preview in Page"><i class="glyph-view"></i>Preview in Page</a>\n\t\t<a ng-click="openInStudio()" class="edit-link" title="Edit in Studio"><i class="glyph-edit"></i>Edit in Studio</a>\n\t\t<a class="close" ng-click="close()" title="Close"><i class="glyph-close"></i></a>\n\t</div>\n\n\t<div class="thumbnail-wrapper">\n\t\t<div ng-class="{\'loading\': !creative}" class="ratio-box">\n\t\t\t<!-- <div ng-click="previewInPage()" class="preview-overlay"><span><i class="glyph-view"></i>Preview in Page</span></div> -->\n\t\t\t<img ng-src="https://swf.mixpo.com{{creative.thumbnailUrlPrefix}}JPG320.jpg" class="preview-thumbnail"/>\n\t\t</div>\n\t</div>\n\t<table class="preview-info">\n\t\t<tbody>\n\t\t\t<tr>\n\t\t\t\t<td>Ad Type</td>\n\t\t\t\t<td>{{creative.type}}</td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td>Size</td>\n\t\t\t\t<td ng-hide="!creative">{{creative.embedWidth}}px <i>x</i> {{creative.embedHeight}}px > {{creative.expandedWidth}}px <i>x</i> {{creative.expandedHeight}}px</td>\n\t\t\t</tr>\n\t\t\t<tr>\n\t\t\t\t<td>Creative ID</td>\n\t\t\t\t<td>{{creative.id}}</td>\n\t\t\t</tr>\n\t\t</tbody>\n\t</table>\n\n</div>\n'); });
 
@@ -47257,10 +46881,10 @@ define('core/creativePreview/directives/creativePreview',['require','./../../mod
         return {
             restrict: 'A',
             scope: {
-                id: '@creativePreview'
+                id: '=creativePreview'
             },
-            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'studioUrlBuilder', '$interval',
-                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, studioUrlBuilder, $interval) {
+            controller: ['$scope', '$element', '$compile', '$templateRequest', 'creativeService', '$window', '$document', 'studioLocation', 'openCreativeService', '$interval',
+                function($scope, $element, $compile, $templateRequest, creativeService, $window, $document, studioLocation, openCreativeService, $interval) {
                     $scope.isOpen = false;
                     $scope.clicked = false;
                     $scope.previewInPage = previewInPage;
@@ -47316,11 +46940,11 @@ define('core/creativePreview/directives/creativePreview',['require','./../../mod
                     }
 
                     function openInStudio() {
-                        var url = studioUrlBuilder
-                            .open($scope.id, $scope.campaignId)
-                            .setHostname(mixpoURL)
-                            .build();
-                        $window.open(url, '_blank');
+                        var creative = {
+                            id: $scope.id,
+                            campaignId: $scope.campaignId
+                        };
+                        openCreativeService(creative, mixpoURL);
                     }
 
                     function calculateSpace() {
@@ -47337,6 +46961,8 @@ define('core/creativePreview/directives/creativePreview',['require','./../../mod
 
                     function calculatePosition(height, width) {
                         var dims = calculateSpace();
+                        var doc = $document[0].documentElement;
+
                         var output = '';
                         var offset = $element.offset();
                         var top, left;
@@ -47352,6 +46978,9 @@ define('core/creativePreview/directives/creativePreview',['require','./../../mod
                         if (dims.left > width && dims.right > width) {
                             output += 'center';
                             left = offset.left + Math.round($element.width()/2);
+                        } else if (doc.clientWidth < 500) { //special condition for mobile sizing
+                            output += 'center';
+                            left = doc.clientWidth/2;
                         } else if (dims.left > dims.right) {
                             output += 'left';
                             left = offset.left;
@@ -54444,6 +54073,96 @@ define('core/select2/index',['require','./directives/ng-select2','./factories/tr
     require('./factories/modelSync');
 });
 
+define('core/ngPerfectScrollbar/perfectScrollbar',['require','angular','./../module'],function(require){
+    'use strict';
+
+    var ng = require('angular');
+    var module = require('./../module');
+
+    module.directive('perfectScrollbar',
+        ['$parse', '$window', 'IS_MOBILE', function($parse, $window, IS_MOBILE) {
+            var psOptions = [
+                'wheelSpeed', 'wheelPropagation', 'minScrollbarLength', 'useBothWheelAxes',
+                'useKeyboard', 'suppressScrollX', 'suppressScrollY', 'scrollXMarginOffset',
+                'scrollYMarginOffset', 'includePadding'//, 'onScroll', 'scrollDown'
+            ];
+
+            return {
+                restrict: 'EA',
+                transclude: true,
+                template: '<div><div ng-transclude></div></div>',
+                replace: true,
+                link: function($scope, $elem, $attr) {
+                    if (!IS_MOBILE) {
+                        var jqWindow = ng.element($window);
+                        var options = {};
+
+                        for (var i=0, l=psOptions.length; i<l; i++) {
+                            var opt = psOptions[i];
+                            if ($attr[opt] !== undefined) {
+                                options[opt] = $parse($attr[opt])();
+                            }
+                        }
+
+                        $scope.$evalAsync(function() {
+                            $elem.perfectScrollbar(options);
+                            var onScrollHandler = $parse($attr.onScroll);
+                            $elem.scroll(function(){
+                                var scrollTop = $elem.scrollTop();
+                                var scrollHeight = $elem.prop('scrollHeight') - $elem.height();
+                                $scope.$apply(function() {
+                                    onScrollHandler($scope, {
+                                        scrollTop: scrollTop,
+                                        scrollHeight: scrollHeight
+                                    });
+                                });
+                            });
+                        });
+
+                        // This is necessary when you don't watch anything with the scrollbar
+                        $elem.bind('mouseenter', update('mouseenter'));
+
+                        // Possible future improvement - check the type here and use the appropriate watch for non-arrays
+                        if ($attr.refreshOnChange) {
+                            $scope.$watchCollection($attr.refreshOnChange, function() {
+                                update();
+                            });
+                        }
+
+                        // this is from a pull request - I am not totally sure what the original issue is but seems harmless
+                        if ($attr.refreshOnResize) {
+                            jqWindow.on('resize', update);
+                        }
+
+                        $elem.bind('$destroy', function() {
+                            jqWindow.off('resize', update);
+                            $elem.perfectScrollbar('destroy');
+                        });
+                    } else {
+                        $elem.css('overflow-y', 'scroll');
+                    }
+
+                    function update(event) {
+                        $scope.$evalAsync(function() {
+                            if ($attr.scrollDown === 'true' && event !== 'mouseenter') {
+                                setTimeout(function () {
+                                    $elem.scrollTop($elem.prop('scrollHeight'));
+                                }, 100);
+                            }
+                            $elem.perfectScrollbar('update');
+                        });
+                    }
+                }
+            };
+        }]);
+});
+
+define('core/ngPerfectScrollbar/index',['require','./perfectScrollbar'],function(require) {
+    'use strict';
+
+    require('./perfectScrollbar');
+});
+
 define('core/factories/data',['require','./../module','angular'],function (require) {
     'use strict';
 
@@ -55312,7 +55031,7 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                         var content = $compile(template)(scope);
                         elem.find('.content').html(content);
                     }
-                });
+                }, true);
 
                 function closeTooltip() {
                     scope.isOpen = false;
@@ -55467,7 +55186,7 @@ define('core/directives/placeholder',['require','./../module','tpl!./placeholder
 
 /**
  * Simple Ajax Uploader
- * Version 2.1.1
+ * Version 2.1
  * https://github.com/LPology/Simple-Ajax-Uploader
  *
  * Copyright 2012-2015 LPology, LLC
@@ -56782,7 +56501,7 @@ ss.XhrUpload = {
             ext = ss.getExt( filename );
             size = Math.round( files[i].size / 1024 );
 
-            if ( false === this._opts.onChange.call( this, filename, ext, this._overBtn, size ) ) {
+            if ( false === this._opts.onChange.call( this, filename, ext, size ) ) {
                 return false;
             }
 
@@ -57344,6 +57063,7 @@ ss.extendObj(ss.SimpleUpload.prototype, {
 window.ss = ss;
 
 })( window, document );
+
 define("simpleUpload", ["jquery"], (function (global) {
     return function () {
         var ret, fn;
@@ -58367,20 +58087,53 @@ define('core/services/studioLocation',['require','./../module'],function(require
     }]);
 });
 
-define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./constants/apiURI','./constants/creativeSettings','./constants/enums','./constants/urlRegex','./constants/moneyRegex','./creativePreview/index','./notifications/index','./select2/index','./factories/data','./factories/cache','./factories/pagination','./factories/record','./factories/recordPool','./factories/domainInterceptor','./factories/observer','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/fallbackSrc','./directives/placeholder','./directives/filePicker','./directives/youWorkOn','./directives/loadingIndicator','./directives/noContent','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./filters/percentage','./filters/adTypeOrder','./services/channel','./services/clientRecord','./services/divisionRecord','./services/accountRecord','./services/campaignRecord','./services/creativeRecord','./services/placementRecord','./services/clientPublisherRecord','./services/industry','./services/tags','./services/enums','./services/clientSet','./services/divisionSet','./services/apiURIGenerator','./services/studioLocation'],function(require) {
+define('core/services/cdnLocation',['require','./../module'],function(require) {
+	'use strict';
+
+	var module = require('./../module');
+
+	/**
+	 * Service return the location of studio using the familiar API of $location
+	 *
+	 * @memberof app
+	 * @ngdoc service
+	 * @name studioLocation
+	 * @ngInject
+	 */
+	module.service('cdnLocation', ['$location', function($location) {
+		/**
+		 * Gets the studio host, 'host' is used to match API of $location
+		 *
+		 * @returns {string} path to studio
+		 */
+		function host() {
+			var hostname = $location.host();
+			if (hostname.indexOf('studio') > -1) {
+				return '//' + hostname.replace(/([-]?)studio/, '$1swf');
+			} else if (hostname.indexOf('mixpo.com') > -1) {
+				return '//' + hostname.replace(/(w*)\.mixpo\.com/, '-swf.mixpo.com');
+			} else {
+				return '//alpha-swf.mixpo.com';
+			}
+		}
+
+		return {
+			host: host
+		};
+	}]);
+});
+
+define('core/index',['require','./modal/index','./datepicker/index','./navbar/index','./constants/index','./creativePreview/index','./notifications/index','./select2/index','./ngPerfectScrollbar/index','./factories/data','./factories/cache','./factories/pagination','./factories/record','./factories/recordPool','./factories/domainInterceptor','./factories/observer','./directives/dropdown','./directives/limit','./directives/tooltip','./directives/compile','./directives/fallbackSrc','./directives/placeholder','./directives/filePicker','./directives/youWorkOn','./directives/loadingIndicator','./directives/noContent','./filters/safe','./filters/interpolate','./filters/errorCount','./filters/date','./filters/truncateNumber','./filters/percentage','./filters/adTypeOrder','./services/channel','./services/clientRecord','./services/divisionRecord','./services/accountRecord','./services/campaignRecord','./services/creativeRecord','./services/placementRecord','./services/clientPublisherRecord','./services/industry','./services/tags','./services/enums','./services/clientSet','./services/divisionSet','./services/apiURIGenerator','./services/studioLocation','./services/cdnLocation'],function(require) {
     'use strict';
 
     require('./modal/index');
     require('./datepicker/index');
     require('./navbar/index');
-    require('./constants/apiURI');
-    require('./constants/creativeSettings');
-    require('./constants/enums');
-    require('./constants/urlRegex');
-    require('./constants/moneyRegex');
+    require('./constants/index');
     require('./creativePreview/index');
     require('./notifications/index');
     require('./select2/index');
+    require('./ngPerfectScrollbar/index');
 
     services();
     filters();
@@ -58436,6 +58189,7 @@ define('core/index',['require','./modal/index','./datepicker/index','./navbar/in
         require('./services/divisionSet');
         require('./services/apiURIGenerator');
         require('./services/studioLocation');
+        require('./services/cdnLocation');
     }
 });
 
@@ -58503,7 +58257,7 @@ define('table/filters/format',['require','./../module','angular'],function (requ
             case 'delivering':
                 return '<span table-delivering delivering="row.' + input + '"></div>';
             case 'tooltip':
-                return '<div class="tooltip tooltip-basic tooltip-light" tooltip="\'' + data + '\'">' + data + '</div>';
+                return '<div class="tooltip tooltip-basic tooltip-light" tooltip-overflow="true" tooltip="row.' + input + '">{{row.' + input + '}}</div>';
             default:
                 return data;
             }
@@ -58512,15 +58266,16 @@ define('table/filters/format',['require','./../module','angular'],function (requ
 });
 
 
-define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" ng-bind-html="row.header|interpolate:row|safe" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-wrapper table-xs-scroll">\n                <div class="table-hover" basic-table="row.content"></div>\n            </div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!table/directives/accordionTable.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/accordionTable.html', '<div class="table-collapse-group">\n    <div ng-if="row.content.data.length" ng-init="init(row.content.data.length, this)" ng-repeat="row in table track by $index" class="table-collapse" ng-class="{\'open\': open}">\n        <div class="header" table-header="row.header" ng-click="open = !open">\n        </div>\n        <div class="content">\n            <div class="table-wrapper table-xs-scroll">\n                <div class="table-hover" basic-table="row.content"></div>\n            </div>\n            <div ng-if="row.options.more && row.content.data.length >= 10" class="table-footer">\n                <a ng-click="row.options.more()">Show More</a>\n            </div>\n        </div>\n    </div>\n</div>\n'); });
 
-define('table/directives/accordionTable',['require','./../module','tpl!./accordionTable.html'],function (require) {
+define('table/directives/accordionTable',['require','./../module','angular','tpl!./accordionTable.html'],function (require) {
     'use strict';
 
     var app = require('./../module');
+    var ng = require('angular');
     require('tpl!./accordionTable.html');
 
-    app.directive('accordionTable', [function () {
+    app.directive('accordionTable', ['$timeout', function ($timeout) {
         return {
             restrict: 'A',
             templateUrl: 'table/directives/accordionTable.html',
@@ -58541,6 +58296,55 @@ define('table/directives/accordionTable',['require','./../module','tpl!./accordi
                         s.open = opened = true;
                     }
                 }
+
+                if (ng.isArray(scope.table)) {
+                    scope.$watchCollection('table', function(val) {
+                        scope.table = val;
+                        $timeout(function() {
+                            scope.$apply();
+                        });
+                    }, true);
+                } else {
+                    scope.$watch('table', function(val) {
+                        scope.table = val;
+                        $timeout(function() {
+                            scope.$apply();
+                        });
+                    }, true);
+                }
+            }
+        };
+    }]);
+});
+
+define('table/directives/tableHeader',['require','./../module','angular'],function (require) {
+    'use strict';
+
+    var app = require('./../module');
+    var ng = require('angular');
+
+    app.directive('tableHeader', ['$compile', function ($compile) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function (scope, rootElement, attrs) {
+                var element;
+                scope.$watch(attrs.tableHeader, function(val) {
+                    if (element) {
+                        element.remove();
+                        element = null;
+                    }
+
+                    if (ng.isObject(val) && val.template) {
+                        element = ng.element(val.template);
+                        ng.extend(scope, val.locals);
+                    } else {
+                        element = ng.element(val);
+                    }
+
+                    $compile(element)(scope);
+                    rootElement.append(element);
+                }, true);
             }
         };
     }]);
@@ -58619,7 +58423,7 @@ define('table/directives/tableIcons',['require','./../module','tpl!./tableIcons.
 });
 
 
-define('tpl!table/directives/tableCreatives.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableCreatives.html', '<div ng-repeat="creative in creatives">\n    <div creative-preview="{{creative.id}}">{{creative.name}}</div>\n</div>\n'); });
+define('tpl!table/directives/tableCreatives.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'table/directives/tableCreatives.html', '<div ng-repeat="creative in creatives">\n    <div class="creative-preview-link" creative-preview="creative.id">{{creative.name}}</div>\n</div>\n'); });
 
 define('table/directives/tableCreatives',['require','./../module','tpl!./tableCreatives.html'],function (require) {
     'use strict';
@@ -58666,11 +58470,12 @@ define('table/directives/tableDelivering',['require','./../module','tpl!./tableD
 /**
  * Created by Alex on 3/1/2015.
  */
-define('table/index',['require','./filters/format','./directives/accordionTable','./directives/basicTable','./directives/tableIcons','./directives/tableCreatives','./directives/tableDelivering'],function (require) {
+define('table/index',['require','./filters/format','./directives/accordionTable','./directives/tableHeader','./directives/basicTable','./directives/tableIcons','./directives/tableCreatives','./directives/tableDelivering'],function (require) {
     'use strict';
 
     require('./filters/format');
     require('./directives/accordionTable');
+    require('./directives/tableHeader');
     require('./directives/basicTable');
     require('./directives/tableIcons');
     require('./directives/tableCreatives');
@@ -68847,9 +68652,6 @@ define('chart/index',['require','./directives/comparisonChart','./directives/ana
     require('./services/analyticsChart');
 });
 
-/**
- * Created by Alex on 3/1/2015.
- */
 define('campaignManagement/module',['require','angular','ui-router','./../chart/index','./../table/index','./../core/index'],function (require) {
     'use strict';
 
@@ -68977,10 +68779,10 @@ define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angu
 define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav ng-if="!noContent" class="row tab-header" role="form">\n    <div class="col-lg-5 col-md-6 col-xs-12">\n        <ul class="filters left">\n            <li><b>View By:</b></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers || 0}})</a></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives || 0}})</a></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types || 0}})</a></li>\n        </ul>\n        <label class="form-label search left">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n    </div>\n    <div class="col-lg-7 col-md-6 col-xs-12">\n        <div class="row">\n            <div class="text-right-sm col-lg-12">\n                <div class="btn-group">\n                    <button ng-click="openNewPlacementModal()" class="btn btn-primary solid">New Placement</button>\n                    <button ng-show="selectedPlacements.length > 0" ng-click="editPlacements()" class="btn btn-default">Edit Placement<span ng-show="selectedPlacements.length > 1">s</span></button>\n                    <button class="btn btn-default">Set Trackers</button>\n                    <button ng-click="pullTags()" class="btn btn-default">Pull Tags</button>\n                </div>\n            </div>\n        </div>\n    </div>\n</nav>\n\n<div no-content></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/new-edit-placement.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/new-edit-placement.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newPlacement">\n        <div ng-pluralize ng-show="newPlacement.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newPlacement.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="!multiplePlacements" class="form-group row"\n             ng-class="{\'has-error\': newPlacement.name.$invalid && submitted}">\n            <label for="inputName" ng-class="{required:!multiplePlacements}" class="col-sm-3 form-label"><span>Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="placement.name" type="text" name="name"\n                       class="form-control" id="inputName" placeholder="Name"\n                       ng-required="!multiplePlacements"/>\n\n                <p ng-show="newPlacement.name.$invalid && submitted"\n                   class="help-block">\n                    name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newPlacement.type.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Publisher</span></label>\n\n            <div class="col-sm-9">\n                <select name="types" select2\n                        s2-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"\n                        ng-model="placement.publisherId" required>\n                </select>\n\n                <p ng-show="newPlacement.type.$invalid && submitted"\n                   class="help-block">\n                    publisher is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="placement.flightStart"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="placement.flightEnd"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newPlacement.startDate.$invalid || newPlacement.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>\n            <div class="col-sm-9">\n                <input ng-model="placement.bookedImpressions" type="text"\n                       class="form-control" id="bookedImpressions" name="bookedImpressions"\n                       placeholder="Planned Impressions"/>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label\n                class="col-sm-3 form-label"><span>Cost</span></label>\n\n            <div class="col-sm-3">\n                <select name="types" select2\n                        s2-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"\n                        ng-model="placement.rateType">\n                </select>\n            </div>\n            <div class="col-sm-3" ng-if="showCostPer">\n                <input name="costPer" ng-model="placement.costPer" type="text"\n                       class="form-control" id="costPer"\n                       placeholder="Cost Per"/>\n            </div>\n            <div class="col-sm-3" ng-if="showTotalCost">\n                <input name="totalCost" ng-model="placement.totalCost" type="text"\n                       class="form-control" id="totalCost"\n                       placeholder="Total Cost"/>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="keywords" class="col-sm-3 form-label"><span>Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywordString" type="text"\n                       class="form-control" id="keywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n\n        <div expand-anchors-directions></div>\n\n        <div class="form-group row">\n            <label class="col-sm-3 form-label"><span>Ad Type</span></label>\n            <div class="col-sm-9">\n              <select id="adtype" select2\n                      s2-options="key as key for (key, value) in creativesByAdType track by key"\n                      ng-model="adType">\n              </select>\n            </div>\n        </div>\n\n        <div class="form-group row">\n          <label class="col-sm-3 form-label"><span>Creative</span></label>\n          <div class="col-sm-9">\n            <select id="creative" select2\n                    s2-options="item as item.name for item in creativesByAdType[adType] track by item.id"\n                    ng-model="creative">\n            </select>\n          </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save\n        Placement\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/new-edit-placement.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/new-edit-placement.html', '<div class="modal-header">\n\t<i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n\t<h2 class="modal-title">\n\t\t<span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span>\n\t</h2>\n</div>\n<div class="modal-body">\n\t<form class="form form-horizontal" role="form" novalidate name="newPlacement">\n\t\t<div ng-pluralize ng-show="newPlacement.$invalid && submitted"\n\t\t\t\t class="alert alert-danger"\n\t\t\t\t count="(newPlacement.$error | errorCount)"\n\t\t\t\t when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n\t\t</div>\n\t\t<div ng-if="!multiplePlacements" class="form-group row"\n\t\t\t\t ng-class="{\'has-error\': newPlacement.name.$invalid && submitted}">\n\t\t\t<label for="inputName" ng-class="{required:!multiplePlacements}"\n\t\t\t\t\t\t class="col-sm-3 form-label"><span>Name</span></label>\n\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<input ng-model="placement.name" type="text" name="name"\n\t\t\t\t\t\t\t class="form-control" id="inputName" placeholder="Name"\n\t\t\t\t\t\t\t ng-required="!multiplePlacements"/>\n\n\t\t\t\t<p ng-show="newPlacement.name.$invalid && submitted"\n\t\t\t\t\t class="help-block">\n\t\t\t\t\tname is required\n\t\t\t\t</p>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<div assign-publisher></div>\n\n\t\t<div start-end-dates></div>\n\n\t\t<div class="form-group row"\n\t\t\t\t ng-class="{\'has-error\': newPlacement.bookedImpressions.$invalid && submitted}">\n\t\t\t<label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>\n\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<input ng-model="placement.bookedImpressions" type="number"\n\t\t\t\t\t\t\t ng-pattern="\'[0-9]*\'"\n\t\t\t\t\t\t\t class="form-control" id="bookedImpressions"\n\t\t\t\t\t\t\t name="bookedImpressions"\n\t\t\t\t\t\t\t placeholder="Planned Impressions"/>\n\n\t\t\t\t<p ng-show="newPlacement.bookedImpressions.$invalid && submitted"\n\t\t\t\t\t class="help-block">\n\t\t\t\t\tbooked impressions must be valid\n\t\t\t\t</p>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<div rate-types placement="placement"></div>\n\n\t\t<div class="form-group row">\n\t\t\t<label for="keywords"\n\t\t\t\t\t\t class="col-sm-3 form-label"><span>Keywords</span></label>\n\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<input ng-model="campaign.keywordString" type="text"\n\t\t\t\t\t\t\t class="form-control" id="keywords"\n\t\t\t\t\t\t\t placeholder="Keywords"/>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<h3>\n\t\t\t<span>Assign Creative</span>\n\t\t</h3>\n\t\t<hr>\n\n\t\t<div assign-creative></div>\n\n\t\t<div ad-tag-types></div>\n\t</form>\n</div>\n<div class="modal-footer">\n\t<button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save\n\t\tPlacement\n\t</button>\n\t<button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span>\n<span class="muted normal right">\n\t<span>{{group.meta.count}} Placements</span>\n\t<span>{{group.meta.numDelivering}} Delivering</span>\n\t<span>{{group.meta.impressions}} of {{group.meta.bookedImpressions}} Impressions</span>\n</span>\n'); });
+define('tpl!campaignManagement/campaigns/placements/services/placementTableHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/services/placementTableHeader.html', '<span>{{group.name}}</span>\n<span class="muted normal right">\n\t<span>{{group.meta.count}} Placements</span>\n\t<span>{{group.meta.numDelivering}} Delivering</span>\n\t<span>{{group.meta.impressions|truncateNumber}} <span ng-if="group.meta.bookedImpressions > 0">of {{group.meta.bookedImpressions|truncateNumber}}</span> Impressions</span>\n</span>\n'); });
 
 define('campaignManagement/campaigns/placements/routes',['require','./../../module','tpl!./placementsList.html','tpl!./placementsHeader.html','tpl!./new-edit-placement.html','tpl!./services/placementTableHeader.html'],function (require) {
     'use strict';
@@ -69011,7 +68813,7 @@ define('campaignManagement/campaigns/placements/routes',['require','./../../modu
 });
 
 
-define('tpl!campaignManagement/campaigns/creatives/creatives.content.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creatives.content.html', '<div ng-if="!viewAs">\n    <div creative-thumbnails></div>\n</div>\n<div ng-if="viewAs == \'list\'" ng-controller="creativesListCtrl">\n    <div class="table-wrapper table-xs-scroll">\n        <div loading-indicator="creativesAreLoaded" show-loader="showLoader" basic-table="creatives" class="table table-hover"></div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creatives.content.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creatives.content.html', '<div ng-if="!viewAs">\n    <div creative-thumbnails></div>\n</div>\n<div ng-if="viewAs == \'list\'" ng-controller="creativesListCtrl">\n    <div loading-indicator="creativesAreLoaded" show-loader="showLoader" class="table-wrapper table-xs-scroll">\n        <div basic-table="creatives" class="table table-hover"></div>\n    </div>\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row tab-header" role="form">\n    <div ng-if="!noContent">\n        <div class="col-sm-8 col-xs-12">\n            <ul class="icons left">\n                <li><a id="creatives-header-view-thumnails" ui-sref-active="active" ui-sref=".({viewAs: \'\'})"><i class="glyph-grid"></i></a></li>\n                <li><a id="creatives-header-view-list" ui-sref-active="active" ui-sref=".({ viewAs: \'list\' })"><i class="glyph-list"></i></a></li>\n            </ul>\n            <ul class="filters left">\n                <li><b>Filter:</b></li>\n                <li><a id="creatives-header-filter-all" ui-sref-active="active" ui-sref=".({filter: \'\'})">All ({{creativesMeta.all}})</a></li>\n                <li><a id="creatives-header-filter-ibv" ui-sref-active="active" ui-sref=".({filter: \'inBannerVideo\'})">In-Banner ({{creativesMeta.inBannerVideo}})</a></li>\n                <li><a id="creatives-header-filter-is" ui-sref-active="active" ui-sref=".({filter: \'inStream\'})">In-Stream ({{creativesMeta.inStream}})</a></li>\n                <li><a id="creatives-header-filter-rm" ui-sref-active="active" ui-sref=".({filter: \'richMedia\'})">Rich Media ({{creativesMeta.richMedia}})</a></li>\n            </ul>\n            <label class="form-label search left">\n                <input id="creatives-header-search-field" class="input" placeholder="Search" type="search" />\n            </label>\n        </div>\n        <div class="col-sm-4 col-xs-12">\n            <div class="btn-group right">\n                <button id="creatives-header-newcreative-btn" class="btn btn-primary solid" ng-click="openNewCreativeModal()">New Creative</button>\n                <button id="creatives-header-settrackers-btn" class="btn btn-default">Set Trackers</button>\n            </div>\n        </div>\n    </div>\n</nav>\n\n<div no-content></div>\n'); });
@@ -69064,13 +68866,13 @@ define('tpl!campaignManagement/campaigns/campaigns.html', ['angular', 'tpl'], fu
 define('tpl!campaignManagement/campaigns/campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaign.html', '<div analytics-line-chart></div>\n<ul class="nav-tabs">\n    <li><a ui-sref="cm.campaigns.detail.placements" ui-sref-active="active">Placements</a></li>\n    <li><a ui-sref="cm.campaigns.detail.creatives" ui-sref-active="active">Creatives</a></li>\n</ul>\n<div style="min-height: 700px" class="nav-tabs-content">\n    <div ui-view="tab-header"></div>\n    <div ui-view="table"></div>\n</div>\n\n'); });
 
 
-define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})\n'); });
+define('tpl!campaignManagement/campaigns/campaignsByStatusHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/campaignsByStatusHeader.html', '<div><span class="icon-status" ng-class="{\'success\': countPlacementsLive}"></span>{{title}} ({{count|truncateNumber}})</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/analytics-preview.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/analytics-preview.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n    <h2 class="modal-title">{{name}}</h2>\n</div>\n<div class="modal-body analytics-preview">\n\n    <h3 class="impressions">Total Campaign Impressions: {{impressions|number}}</h3>\n    <div class="ad-types row">\n\n        <div class="cell" ng-class="colClasses" ng-repeat="adUnit in creativeData | adTypeOrder">\n            <div class="top">\n                <h4 class="thin-header">{{adUnit.type}}<span ng-if="adUnit.type === \'In-Stream\' || adUnit.type === \'In-Banner\'"> Video</span></h4>\n                <p>Placements:&nbsp;<strong>{{adUnit.metrics.countPlacements|number}}</strong></p>\n                <p>Impressions:&nbsp;<strong>{{adUnit.metrics.impressions|truncateNumber}}</strong></p>\n                <p ng-if="adUnit.type != \'In-Stream\' && adUnit.type != \'Display\'">View Rate:&nbsp;<strong>{{adUnit.metrics.viewRate|percentage}}&#37;</strong></p>\n                <p>User Action Rate:&nbsp;<strong>{{adUnit.metrics.useractionRate|percentage}}&#37;</strong></p>\n                <p>Clickthrough Rate:&nbsp;<strong>{{adUnit.metrics.clickthroughRate|percentage}}&#37;</strong></p>\n                <p ng-if="adUnit.type != \'Rich Media\' && adUnit.type != \'Display\'">Avg. &#37; Complete:&nbsp;<strong>{{adUnit.metrics.averagePercentComplete|percentage}}&#37;</strong></p>\n\n            </div>\n\n            <div quartiles quartile-data=adUnit.metrics class="bottom" ng-if="adUnit.type != \'Rich Media\' && adUnit.type != \'Display\'"></div>\n\n        </div>\n\n    </div>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid left"><i class="glyph-icon glyph-preview"></i>View Complete Analytics</button>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<span>{{name}} </span><span class="muted normal">{{metrics.countCampaigns}} live campaigns | {{metrics.countCampaignsPreFlight}} work in progress | {{metrics.countCampaignsCompleted}} completed</span>\n'); });
+define('tpl!campaignManagement/campaigns/services/campaignsByAccountHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/services/campaignsByAccountHeader.html', '<div><span class="title">{{name}} </span><span class="muted normal right">{{metrics.countCampaigns}} live campaigns | {{metrics.countCampaignsPreFlight}} work in progress | {{metrics.countCampaignsCompleted}} completed</span></div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/directives/campaignDetails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignDetails.html', '<div>\n    <ul class="list">\n        <li>\n            <span>status</span>\n            <span class="status"><i class="glyph-dot small" ng-class="{\'success\': details.live}"></i> {{details.status|campaignStatus}}</span>\n        </li>\n    </ul>\n    <ul ng-if="details.startDate" class="list">\n        <li>\n            <span>flight dates</span>\n            <span>{{details.startDate|date:\'MMM d, yyyy\'}} - {{details.endDate|date:\'MMM d, yyyy\'}}</span>\n        </li>\n    </ul>\n    <ul ng-if="details.metrics.impressions || details.metrics.bookedImpressions" class="list">\n        <li ng-if="details.metrics.impressions">\n            <span>total impressions</span>\n            <span>{{details.metrics.impressions|truncateNumber}}</span>\n        </li>\n        <li ng-if="details.metrics.bookedImpressions">\n            <span>booked impressions</span>\n            <span>{{details.metrics.bookedImpressions|truncateNumber}}</span>\n        </li>\n    </ul>\n    <ul class="list">\n        <li>\n            <span>publishers</span>\n            <span>{{details.distinctPublishers|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>creatives</span>\n            <span>{{details.countCreatives|truncateNumber}}</span>\n        </li>\n        <li>\n            <span>placements</span>\n            <span>{{details.countPlacements|truncateNumber}}</span>\n        </li>\n    </ul>\n</div>\n'); });
@@ -69082,7 +68884,7 @@ define('tpl!campaignManagement/campaigns/directives/campaignsByAccount.html', ['
 define('tpl!campaignManagement/campaigns/directives/campaignsByStatus.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/directives/campaignsByStatus.html', '<div accordion-table="byStatus" class="table table-hover"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/new-edit-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-edit-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Campaign</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="accounts" class="form-group row"\n             ng-class="{\'has-error\': newCampaign.accountId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Account</span></label>\n\n            <div class="col-sm-9">\n                <select name="accounts" select2\n                        s2-options="account.id as account.name for account in accounts track by account.id"\n                        ng-model="campaign.accountId" required>\n                </select>\n\n                <p ng-show="newCampaign.accountId.$invalid && submitted"\n                   class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCampaign.name.$invalid && submitted}">\n            <label for="new-edit-campaign-name" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-campaign-name" ng-model="campaign.name" type="text" name="name"\n                       class="form-control"\n                       placeholder="Campaign Name" required/>\n\n                <p ng-show="newCampaign.name.$invalid && submitted"\n                   class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywordString" type="text"\n                       class="form-control" id="campaignKeywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           name="startDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="campaign.startDate"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           name="endDate"\n                                           datepicker-popup="{{format}}"\n                                           ng-blur="formatDate($event)"\n                                           ng-model="campaign.endDate"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.budget.$invalid && submitted}">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="number" ng-pattern="MONEY_REGEX"\n                       class="form-control" id="budget" name="budget"\n                       placeholder="Enter your budget"/>\n                <p ng-show="newCampaign.budget.$invalid && submitted" class="help-block">\n                    please enter budget in a format like "1234.56"\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm">Options</div>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-model="campaign.measureReach" type="checkbox"\n                           class="checkbox checkbox-light"/>\n                    <span>Measure Reach &amp; Frequency</span>\n                </label>\n            </div>\n        </div>\n\n        <!--Disabled until after Alpha-->\n\n        <!--<div class="form-group row">-->\n            <!--<div class="col-sm-offset-3 col-sm-9">-->\n                <!--<label>-->\n                    <!--<input model="enableGeotargeting" type="checkbox" class="checkbox checkbox-light"/>-->\n                    <!--<span>Enable Geotargeting</span>-->\n                <!--</label>-->\n            <!--</div>-->\n        <!--</div>-->\n        <!--<div class="form-group row">-->\n          <!--<label class="col-sm-3 form-label">Upload CSV file</label>-->\n\n          <!--<div class="col-sm-9 file-selection-wrapper">-->\n            <!--<div file-picker ng-model="campaign.csv"></div>-->\n          <!--</div>-->\n        <!--</div>-->\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.conversionTracking"\n                           type="checkbox" class="checkbox checkbox-light"/>\n                    <span>Enable Conversion Tracking</span>\n                </label>\n            </div>\n        </div>\n\n        <div ng-show="campaign.conversionTracking">\n            <div class="form-group row" ng-class="{\'has-error\': newCampaign.conversionDomain.$invalid && submitted}">\n                <label for="conversionDomain"\n                       class="col-sm-3 form-label"><span>Conversion Page Domain</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionDomain" type="text" name="conversionDomain"\n                           class="form-control" id="conversionDomain" ng-pattern="URL_REGEX"\n                           placeholder="Conversion Page Domain"/>\n                    <p ng-show="newCampaign.conversionDomain.$invalid && submitted"\n                       class="help-block">\n                      conversion domain is invalid\n                    </p>\n                </div>\n            </div>\n            <div class="form-group row">\n                <label for="conversionEvent"\n                       class="col-sm-3 form-label"><span>Conversion Event Name</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionEvent" type="text"\n                           class="form-control" id="conversionEvent"\n                           placeholder="Conversion Event Name"/>\n                </div>\n            </div>\n            <div class="form-group row">\n                <div class="col-sm-3 text-right-sm">Conversion Embed Snippet</div>\n                <div class="col-sm-9">\n                    <textarea disabled ng-model="conversionEmbedSnippetText" class="form-control"></textarea>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repName.$invalid || errors.repName) && submitted}">\n            <label for="repName" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text"\n                       class="form-control" name="repName" id="repName"\n                       placeholder="Enter AE/Rep Name" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repName.$invalid && submitted"\n                   class="help-block">\n                    rep name is invalid\n                </p>\n                <p ng-show="errors.repName && submitted" class="help-block">\n                    {{errors.repName}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repEmail.$invalid || errors.repEmail) && submitted}">\n            <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="email"\n                       class="form-control" name="repEmail" id="repEmail"\n                       placeholder="Enter AE/Rep Email" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repEmail.$invalid && submitted"\n                   class="help-block">\n                    rep email is invalid\n                </p>\n                <p ng-show="errors.repEmail && submitted" class="help-block">\n                    {{errors.repEmail}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n          <div class="col-sm-3 text-right-sm">Description</div>\n          <div class="col-sm-9">\n            <textarea ng-model="campaign.description" class="form-control"></textarea>\n          </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save\n        Campaign\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/new-edit-campaign.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/new-edit-campaign.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Campaign</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCampaign">\n        <div ng-pluralize ng-show="newCampaign.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCampaign.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-if="accounts" class="form-group row"\n             ng-class="{\'has-error\': newCampaign.accountId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Account</span></label>\n\n            <div class="col-sm-9">\n                <select name="accounts" select2\n                        s2-options="account.id as account.name for account in accounts track by account.id"\n                        ng-model="campaign.accountId" required>\n                </select>\n\n                <p ng-show="newCampaign.accountId.$invalid && submitted"\n                   class="help-block">\n                    account is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCampaign.name.$invalid && submitted}">\n            <label for="new-edit-campaign-name" class="col-sm-3 form-label required"><span>Campaign Name</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-campaign-name" ng-model="campaign.name" type="text" name="name"\n                       class="form-control"\n                       placeholder="Campaign Name" required/>\n\n                <p ng-show="newCampaign.name.$invalid && submitted"\n                   class="help-block">\n                    campaign name is required\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <label for="campaignKeywords" class="col-sm-3 form-label"><span>Campaign Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.keywords" type="text"\n                       class="form-control" id="campaignKeywords"\n                       placeholder="Keywords"/>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n            <div class="col-sm-9">\n                <div class="row">\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                Start Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           name="startDate"\n                                           ng-blur="formatDate($event)"\n                                           datepicker-popup="{{format}}"\n                                           ng-model="campaign.startDate"\n                                           is-open="datePickers.startDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'startDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <div class="col-sm-6">\n                        <div class="row">\n                            <div class="col-sm-4">\n                                End Date:\n                            </div>\n                            <div class="col-sm-8">\n                                <div class="input-group">\n                                    <input class="form-control" type="text"\n                                           name="endDate"\n                                           datepicker-popup="{{format}}"\n                                           ng-blur="formatDate($event)"\n                                           ng-model="campaign.endDate"\n                                           is-open="datePickers.endDateOpened"\n                                           min-date="minDate"\n                                           datepicker-options="dateOptions"\n                                           date-disabled="false"\n                                           ng-required="true" close-text="Close"\n                                           show-weeks="false"/>\n                                    <span class="input-group-btn">\n                                        <button class="btn btn-inline"\n                                                ng-click="openPicker($event, \'endDateOpened\')">\n                                            <i class="glyph-calendar"></i>\n                                        </button>\n                                    </span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                    <p ng-show="(newCampaign.startDate.$invalid || newCampaign.endDate.$invalid) && submitted"\n                       class="help-block">\n                        start and end dates are required\n                    </p>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row" ng-class="{\'has-error\': newCampaign.budget.$invalid && submitted}">\n            <label for="budget" class="col-sm-3 form-label"><span>Budget</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.budget" type="number" ng-pattern="MONEY_REGEX"\n                       class="form-control" id="budget" name="budget"\n                       placeholder="Enter your budget"/>\n                <p ng-show="newCampaign.budget.$invalid && submitted" class="help-block">\n                    please enter budget in a format like "1234.56"\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n            <div class="col-sm-3 text-right-sm">Options</div>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-model="campaign.measureReach" type="checkbox"\n                           class="checkbox checkbox-light"/>\n                    <span>Measure Reach &amp; Frequency</span>\n                </label>\n            </div>\n        </div>\n\n        <!--Disabled until after Alpha-->\n\n        <!--<div class="form-group row">-->\n            <!--<div class="col-sm-offset-3 col-sm-9">-->\n                <!--<label>-->\n                    <!--<input model="enableGeotargeting" type="checkbox" class="checkbox checkbox-light"/>-->\n                    <!--<span>Enable Geotargeting</span>-->\n                <!--</label>-->\n            <!--</div>-->\n        <!--</div>-->\n        <!--<div class="form-group row">-->\n          <!--<label class="col-sm-3 form-label">Upload CSV file</label>-->\n\n          <!--<div class="col-sm-9 file-selection-wrapper">-->\n            <!--<div file-picker ng-model="campaign.csv"></div>-->\n          <!--</div>-->\n        <!--</div>-->\n        <div class="form-group row">\n            <div class="col-sm-offset-3 col-sm-9">\n                <label>\n                    <input ng-model="campaign.conversionTracking"\n                           type="checkbox" class="checkbox checkbox-light"/>\n                    <span>Enable Conversion Tracking</span>\n                </label>\n            </div>\n        </div>\n\n        <div ng-show="campaign.conversionTracking">\n            <div class="form-group row" ng-class="{\'has-error\': newCampaign.conversionDomain.$invalid && submitted}">\n                <label for="conversionDomain"\n                       class="col-sm-3 form-label"><span>Conversion Page Domain</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionDomain" type="text" name="conversionDomain"\n                           class="form-control" id="conversionDomain" ng-pattern="URL_REGEX"\n                           placeholder="Conversion Page Domain"/>\n                    <p ng-show="newCampaign.conversionDomain.$invalid && submitted"\n                       class="help-block">\n                      conversion domain is invalid\n                    </p>\n                </div>\n            </div>\n            <div class="form-group row">\n                <label for="conversionEvent"\n                       class="col-sm-3 form-label"><span>Conversion Event Name</span></label>\n\n                <div class="col-sm-9">\n                    <input ng-model="campaign.conversionEvent" type="text"\n                           class="form-control" id="conversionEvent"\n                           placeholder="Conversion Event Name"/>\n                </div>\n            </div>\n            <div class="form-group row">\n                <div class="col-sm-3 text-right-sm">Conversion Embed Snippet</div>\n                <div class="col-sm-9">\n                    <textarea disabled ng-model="conversionEmbedSnippetText" class="form-control"></textarea>\n                </div>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repName.$invalid || errors.repName) && submitted}">\n            <label for="repName" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Name</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repName" type="text"\n                       class="form-control" name="repName" id="repName"\n                       placeholder="Enter AE/Rep Name" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repName.$invalid && submitted"\n                   class="help-block">\n                    rep name is invalid\n                </p>\n                <p ng-show="errors.repName && submitted" class="help-block">\n                    {{errors.repName}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row"\n             ng-class="{\'has-error\': (newCampaign.repEmail.$invalid || errors.repEmail) && submitted}">\n            <label for="repEmail" ng-class="{required: isRepInfoRequired}" class="col-sm-3 form-label"><span>AE/Rep Email</span></label>\n\n            <div class="col-sm-9">\n                <input ng-model="campaign.repEmail" type="email"\n                       class="form-control" name="repEmail" id="repEmail"\n                       placeholder="Enter AE/Rep Email" ng-required="isRepInfoRequired"/>\n\n                <p ng-show="newCampaign.repEmail.$invalid && submitted"\n                   class="help-block">\n                    rep email is invalid\n                </p>\n                <p ng-show="errors.repEmail && submitted" class="help-block">\n                    {{errors.repEmail}}\n                </p>\n            </div>\n        </div>\n        <div class="form-group row">\n          <div class="col-sm-3 text-right-sm">Description</div>\n          <div class="col-sm-9">\n            <textarea ng-model="campaign.description" class="form-control"></textarea>\n          </div>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button class="btn btn-primary solid" ng-click="ok(newCampaign.$error)">Save\n        Campaign\n    </button>\n    <button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
 
 define('campaignManagement/campaigns/routes',['require','./../module','./placements/routes','./creatives/routes','tpl!./index.html','tpl!./campaign.summary.html','tpl!./campaigns.html','tpl!./campaign.html','tpl!./campaignsByStatusHeader.html','tpl!./analytics-preview.html','tpl!./services/campaignsByAccountHeader.html','tpl!./directives/campaignDetails.html','tpl!./directives/campaignsByAccount.html','tpl!./directives/campaignsByStatus.html','tpl!./new-edit-campaign.html'],function (require) {
     'use strict';
@@ -69297,492 +69099,298 @@ define('campaignManagement/campaigns/placements/controllers/placementsList',['re
 
 
 define('campaignManagement/campaigns/placements/controllers/placementsHeader',['require','./../../../module'],function(require) {
-    var app = require('./../../../module');
+	var app = require('./../../../module');
 
-    app.controller('placementsHeader', [
-        '$scope', '$modal', '$rootScope', '$q', '$interpolate', '$state', 'placements', 'adTagService', 'placementRecordService',
-        function($scope, $modal, $rootScope, $q, $interpolate, $state, placements, adTagService, placementRecordService) {
+	app.controller('placementsHeader', [
+		'$scope', '$modal', '$rootScope', '$state', 'placements', 'adTags',
+		function($scope, $modal, $rootScope, $state, placements, adTags) {
 
-            $scope.openNewPlacementModal = openNewPlacementModal;
-            $scope.editPlacements = editPlacements;
-            $scope.pullTags = pullTags;
-            $scope.selectedPlacements = [];
+			$scope.openNewPlacementModal = openNewPlacementModal;
+			$scope.editPlacements = editPlacements;
+			$scope.pullTags = adTags.pullTags;
+			$scope.selectedPlacements = [];
 
-            var newPlacementModal;
+			var newPlacementModal;
 
-            function openNewPlacementModal() {
-                if(! newPlacementModal) {
-                    newPlacementModal = {
-                        action: 'New',
-                        originalPlacement: {
-                            campaignId: $state.params.campaignId,
-                            flightStart: new Date(),
-                            flightEnd: new Date()
-                        }
-                    };
-                }
+			function openNewPlacementModal() {
+				if(! newPlacementModal) {
+					newPlacementModal = {
+						action: 'New',
+						originalPlacement: {
+							campaignId: $state.params.campaignId,
+							flightStart: new Date(),
+							flightEnd: new Date()
+						}
+					};
+				}
 
-                $modal.open({
-                    animation: 'true',
-                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
-                    controller: 'newEditPlacementCtrl',
-                    resolve: {
-                        modalState: function() {
-                            return newPlacementModal;
-                        }
-                    },
-                    size: 'lg'
-                });
-            }
+				$modal.open({
+					animation: 'true',
+					templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
+					controller: 'newEditPlacementCtrl',
+					resolve: {
+						modalState: function() {
+							return newPlacementModal;
+						}
+					},
+					size: 'lg'
+				});
+			}
 
-            function update() {
-                updateMeta();
-                updateSelected();
-                $scope.noContent = placements.noContent();
-            }
+			function update() {
+				updateMeta();
+				updateSelected();
+				$scope.noContent = placements.noContent();
+			}
 
-            function updateMeta() {
-                var allPlacements = placements.all(true);
+			function updateMeta() {
+				var allPlacements = placements.all(true);
 
-                if(allPlacements && placements.data().isLoaded()) {
-                    var placement;
-                    var creative;
+				if(allPlacements && placements.data().isLoaded()) {
+					var placement;
+					var creative;
 
-                    var publishers = [];
-                    var creatives = [];
-                    var types = [];
+					var publishers = [];
+					var creatives = [];
+					var types = [];
 
-                    for(var i = 0; i < allPlacements.length; i ++) {
-                        placement = allPlacements[i];
+					for(var i = 0; i < allPlacements.length; i ++) {
+						placement = allPlacements[i];
 
-                        pushUnique(publishers, placement.publisher.id);
-                        pushUnique(types, placement.type);
+						pushUnique(publishers, placement.publisher.id);
+						pushUnique(types, placement.type);
 
-                        if(placement.creatives) {
-                            for(var k = 0; k < placement.creatives.length; k ++) {
-                                creative = placement.creatives[k];
+						if(placement.creatives) {
+							for(var k = 0; k < placement.creatives.length; k ++) {
+								creative = placement.creatives[k];
 
-                                pushUnique(creatives, creative.id);
+								pushUnique(creatives, creative.id);
 
-                            }
-                        }
-                    }
+							}
+						}
+					}
 
-                    $scope.placementsMeta = {
-                        publishers: publishers.length,
-                        creatives: creatives.length,
-                        types: types.length
-                    };
+					$scope.placementsMeta = {
+						publishers: publishers.length,
+						creatives: creatives.length,
+						types: types.length
+					};
 
-                }
-            }
+				}
+			}
 
-            function updateSelected() {
-                $scope.selectedPlacements = placements.getSelectedPlacementIds();
-            }
+			function updateSelected() {
+				$scope.selectedPlacements = placements.getSelectedPlacementIds();
+			}
 
-            update();
-            placements.observe(update, $scope, true);
+			update();
+			placements.observe(update, $scope, true);
 
-            // Edit Placements
-            var editPlacementsModal, selectedPlacements;
+			// Edit Placements
+			var editPlacementsModal, selectedPlacements;
 
-            function editPlacements() {
-                if(! editPlacementsModal || selectedPlacementsChanged()) {
-                    selectedPlacements = $scope.selectedPlacements;
-                    editPlacementsModal = {
-                        placementIds: $scope.selectedPlacements,
-                        originalPlacement: {
-                            flightStart: new Date(),
-                            flightEnd: new Date()
-                        },
-                        action: 'Edit'
-                    };
-                }
+			function editPlacements() {
+				if(! editPlacementsModal || selectedPlacementsChanged()) {
+					selectedPlacements = $scope.selectedPlacements;
+					editPlacementsModal = {
+						placementIds: $scope.selectedPlacements,
+						originalPlacement: {
+							flightStart: new Date(),
+							flightEnd: new Date()
+						},
+						action: 'Edit'
+					};
+				}
 
-                $modal.open({
-                    animation: 'true',
-                    templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
-                    controller: 'newEditPlacementCtrl',
-                    resolve: {
-                        modalState: function() {
-                            return editPlacementsModal;
-                        }
-                    },
-                    size: 'lg'
-                });
-            }
+				$modal.open({
+					animation: 'true',
+					templateUrl: 'campaignManagement/campaigns/placements/new-edit-placement.html',
+					controller: 'newEditPlacementCtrl',
+					resolve: {
+						modalState: function() {
+							return editPlacementsModal;
+						}
+					},
+					size: 'lg'
+				});
+			}
 
-            function selectedPlacementsChanged() {
-                return arraysAreDifferent(selectedPlacements, $scope.selectedPlacements);
-            }
+			function selectedPlacementsChanged() {
+				return arraysAreDifferent(selectedPlacements, $scope.selectedPlacements);
+			}
 
-            /**
-             * Push an item to an array if the item isn't already in the array
-             * @param array
-             * @param item
-             */
-            function pushUnique(array, item) {
-                if(! inArray(item, array)) {
-                    array.push(item);
-                }
-            }
+			/**
+			 * Push an item to an array if the item isn't already in the array
+			 * @param array
+			 * @param item
+			 */
+			function pushUnique(array, item) {
+				if(! inArray(item, array)) {
+					array.push(item);
+				}
+			}
 
-            function inArray(needle, haystack) {
-                return haystack.indexOf(needle) > - 1;
-            }
+			function inArray(needle, haystack) {
+				return haystack.indexOf(needle) > - 1;
+			}
 
-            /**
-             * Returns true if two arrays are different
-             *
-             * @param a {Array<number>}
-             * @param b {Array<number>}
-             *
-             * @returns {boolean}
-             */
-            function arraysAreDifferent(a, b) {
-                return ! isSubsetOf(a, b) || ! isSubsetOf(b, a);
-            }
+			/**
+			 * Returns true if two arrays are different
+			 *
+			 * @param a {Array<number>}
+			 * @param b {Array<number>}
+			 *
+			 * @returns {boolean}
+			 */
+			function arraysAreDifferent(a, b) {
+				return ! isSubsetOf(a, b) || ! isSubsetOf(b, a);
+			}
 
-            /**
-             * Returns true if b is a subset of a
-             *
-             * @param a {Array<number>}
-             * @param b {Array<number>}
-             *
-             * @returns {boolean}
-             */
-            function isSubsetOf(a, b) {
-                var difference = a.filter(function(i) {
-                    return b.indexOf(i) < 0;
-                });
+			/**
+			 * Returns true if b is a subset of a
+			 *
+			 * @param a {Array<number>}
+			 * @param b {Array<number>}
+			 *
+			 * @returns {boolean}
+			 */
+			function isSubsetOf(a, b) {
+				var difference = a.filter(function(i) {
+					return b.indexOf(i) < 0;
+				});
 
-                return difference.length === 0;
-            }
-
-            var tagTemplates = [];
-            adTagService.init();
-            adTagService.observe(function() {
-                tagTemplates = adTagService.all();
-            });
-
-            function pullTags() {
-                var placementIds = placements.getSelectedPlacementIds();
-                if (placementIds.length === 0) {
-                    window.alert('No ad tags to pull!');
-                    return;
-                }
-                var tags = '';
-                var placementPromises = [];
-
-                placementIds.forEach(function(placementId) {
-                    placementPromises.push(placementRecordService.fetch(placementId));
-                });
-
-                $q.all(placementPromises).then(function(placements) {
-                    placements.forEach(function(resp) {
-                        var placement = resp.data;
-                        tags += getPlacementTagText(placement);
-                    });
-
-                    if (placements.length > 0) {
-                        var firstPlacementName = placements[0].data.name;
-                        download(firstPlacementName + '_tags.txt', tags);
-                    }
-                });
-            }
-
-            function getPlacementTagTemplate(placement) {
-                var placementTagTemplate = false;
-                tagTemplates.forEach(function(tagTemplate) {
-                   if (tagTemplate.id === placement.adTagId) {
-                       placementTagTemplate = tagTemplate;
-                   }
-                });
-
-                return placementTagTemplate;
-            }
-
-            function getPlacementInterpolateObject(placement, adTagType) {
-                return {
-                    width: placement.embedWidth,
-                    height: placement.embedHeight,
-                    id: placement.targetId, // The creative guid / entry point for multi-creative
-                    // TODO: ad real url here
-                    prerenderUrl: 'http://www.google.com', // Image to show before load
-                    clickThroughUrl: placement.clickthroughUrl,
-                    // TODO: add real data here
-                    version: '1.1.1', // The current build version
-                    clicktag: adTagType.attributes.clicktag,
-                    folder: placement.targetId.slice(0, 2) // The first 2 letters of the id
-                };
-            }
-
-            function getPlacementTagText(placement) {
-                var tagTemplate = getPlacementTagTemplate(placement);
-                if (tagTemplate) {
-                    // Interpolate in "all-or-nothing" mode to avoid missing variables
-                    var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
-                    var tag = '';
-
-                    tag += 'Title: ' + placement.name + '\n';
-                    tag += 'Identifier: ' + placement.id + '\n';
-                    tag += 'Primary URL: ' + placement.clickthroughUrl + '\n';
-                    tag += 'Play Mode: ' + placement.playMode + '\n';
-                    tag += 'Ad Tag: \n';
-                    tag += adTag(getPlacementInterpolateObject(placement, tagTemplate));
-                    tag += '\n\n---\n\n';
-
-                    return tag;
-                } else {
-                    return '';
-                }
-            }
-
-            function download(filename, text) {
-                var pom = document.createElement('a');
-                pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-                pom.setAttribute('download', filename);
-
-                if(document.createEvent) {
-                    var event = document.createEvent('MouseEvents');
-                    event.initEvent('click', true, true);
-                    pom.dispatchEvent(event);
-                }
-                else {
-                    pom.click();
-                }
-            }
-        }
-    ]);
+				return difference.length === 0;
+			}
+		}
+	]);
 });
 
 /* globals confirm */
-define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['require','./../../../module','angular'],function (require) {
-    'use strict';
+define('campaignManagement/campaigns/placements/controllers/newEditPlacement',['require','./../../../module','angular'],function(require) {
+	'use strict';
 
-    var app = require('./../../../module');
+	var app = require('./../../../module');
 
-    var ng = require('angular');
+	var ng = require('angular');
 
-    app.controller('newEditPlacementCtrl', [
-        '$scope', '$q', '$modalInstance', '$timeout', '$filter', 'placements',
-        'placementRecordService', 'campaignRecordService',
-        'accountRecordService', 'divisionRecordService',
-        'clientRecordService', 'clientPublisherRecordService',
-        'modalState', 'creatives',
-    function ($scope, $q, $modalInstance, $timeout, $filter, placements,
-            placementRecordService, campaignRecordService,
-            accountRecordService, divisionRecordService,
-            clientRecordService, clientPublisherRecordService,
-    modalState, creativeService) {
+	app.controller('newEditPlacementCtrl', [
+		'$scope', '$q', '$modalInstance', '$timeout', 'placements',
+		'placementRecordService', 'modalState',
+		function($scope, $q, $modalInstance, $timeout, placements,
+						 placementRecordService, modalState) {
 
-        $scope.ok = ok;
-        $scope.cancel = cancel;
-        $scope.action = modalState.action;
-        $scope.multiplePlacements = modalState.placementIds && modalState.placementIds.length > 1;
-        $scope.formatDate = formatDate;
+			$scope.numberRegex = /^[0-9]*$/;
+			$scope.ok = ok;
+			$scope.cancel = cancel;
+			$scope.action = modalState.action;
+			$scope.multiplePlacements = modalState.placementIds && modalState.placementIds.length > 1;
 
-        var records = [];
-        var record;
+			var records = [];
+			var record;
+			var placementPromises = [];
+			var r, id;
 
-        setupDatePickers();
-        setupRateTypes();
-        setupPickCreative();
-        setupModal();
+			// Editing placement(s)
+			if(modalState.placementIds) {
+				$scope.placement = {};
+				for(var i = 0; i < modalState.placementIds.length; i ++) {
+					id = modalState.placementIds[i];
+					r = placementRecordService.get(id);
+					placementPromises.push(r.fetch(id));
+					records.push(r);
+				}
 
-        creativeService.observe(setupPickCreative, $scope);
-
-        function setupDatePickers() {
-            $scope.format = 'MM/dd/yyyy';
-            $scope.openPicker = openPicker;
-            $scope.datePickers = {};
-            $scope.dateOptions = {
-                formatYear: 'yy',
-                startingDay: 0,
-                maxMode: 'day'
-            };
-
-            function openPicker($event, name) {
-                $event.preventDefault();
-                $event.stopPropagation();
-
-                ng.forEach($scope.datePickers, function (value, key) {
-                    $scope.datePickers[key] = false;
-                });
-
-                $scope.datePickers[name] = true;
-            }
-        }
-
-        function setupRateTypes() {
-            $scope.rateTypes = [
-                {id: 'CPM', name: 'CPM'},
-                {id: 'CPC', name: 'CPC'},
-                {id: 'CPV', name: 'CPV'},
-                {id: 'CPCV', name: 'CPCV'},
-                {id: 'FIXED', name: 'Fixed Fee'},
-                {id: 'ADDEDV', name: 'Added Value'}
-            ];
-
-            $scope.rateTypeFields = {
-                CPM: { showCostPer: true, showTotalCost: true },
-                CPC: { showCostPer: true, showTotalCost: true },
-                CPV: { showCostPer: true, showTotalCost: true },
-                CPCV: { showCostPer: true, showTotalCost: true },
-                FIXED: { showCostPer: false, showTotalCost: true },
-                ADDEDV: { showCostPer: false, showTotalCost: false }
-            };
-
-            $scope.$watch('placement.rateType', function() {
-                var rateType = $scope.placement && $scope.placement.rateType;
-                if (rateType) {
-                    var fields = $scope.rateTypeFields[rateType];
-                    if(fields) {
-                        $scope.showCostPer = fields.showCostPer;
-                        $scope.showTotalCost = fields.showTotalCost;
-                    }
-                }
-            });
-        }
-
-        function setupPickCreative() {
-            var adTypes = {};
-            var creatives = creativeService.data().all();
-
-            creatives.forEach(function(creative) {
-                if (!adTypes[creative.type]) {
-                    adTypes[creative.type] = [];
-                }
-
-                adTypes[creative.type].push(creative);
-            });
-
-            $scope.creativesByAdType = adTypes;
-        }
-
-        function setupModal() {
-            var placementPromises = [];
-            var r, id;
-            // Editing placement(s)
-            if (modalState.placementIds) {
-                for (var i=0; i<modalState.placementIds.length; i++) {
-                    id = modalState.placementIds[i];
-                    r = placementRecordService.get(id);
-                    placementPromises.push(placementRecordService.fetch(id));
-                    records.push(r);
-                }
-
-                $q.all(placementPromises).then(function() {
-                    record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
+                if (placementPromises.length === 1) {
+                    record = records[0];
                     record.observe(update, $scope);
-                });
-            }
-
-            // Creating a new placement under a campaign
-            if (modalState.originalPlacement.campaignId) {
-                record = placementRecordService.create(modalState.originalPlacement);
-                record.set(modalState.placement);
-                record.observe(update, $scope);
-            }
-
-            function update() {
-                $scope.placement = record.get();
-                $scope.errors = record.errors();
-                updatePublishers(record.get().campaignId);
-            }
-
-            /**
-             * Returns an object filled with the equal properties of all the objects
-             * in the placements array
-             *
-             * @param placements {Array<Object>}
-             */
-            function getIntersection(placements) {
-                var intersection = placements.pop().get();
-                var curr;
-
-                for (var i=0; i<placements.length; i++) {
-                    curr = placements[i];
-                    intersection = curr.intersect(intersection, curr.get());
-                }
-
-                return intersection;
-            }
-
-            function updatePublishers(campaignId) {
-                campaignRecordService.fetch(campaignId)
-                    .then(function(resp) {
-                        accountRecordService.fetch(resp.data.accountId)
-                            .then(function(resp) {
-                                divisionRecordService.fetch(resp.data.divisionId)
-                                    .then(function(resp) {
-                                        clientRecordService.fetch(resp.data.clientId)
-                                            .then(function(resp) {
-                                                clientPublisherRecordService.fetch(resp.data.id)
-                                                    .then(function(resp) {
-                                                        $scope.publishers = resp.data;
-                                                    });
-                                            });
-                                    });
-                            });
-                    });
-            }
-        }
-
-        function ok(errors) {
-            if (ng.equals({}, errors) || !errors) {
-                var onSuccess = function() {
-                    $scope.placement = {};
-                    $modalInstance.dismiss('cancel');
-                };
-
-                if(records.length) {
-
                 } else {
-                    record.save().then(onSuccess);
+                    $q.all(placementPromises).then(function() {
+                        record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
+                        record.observe(update, $scope);
+                    });
                 }
-            }
-            $scope.submitted = true;
-        }
+			}
 
-        function cancel() {
-            if (record.hasChanges()) {
-                if (confirm('You have unsaved changes. Really close?')) {
-                    record.reset();
-                    $scope.placement = record.get();
-                    $modalInstance.dismiss('cancel');
-                }
-            } else {
-                $modalInstance.dismiss('cancel');
-            }
-        }
+			// Creating a new placement under a campaign
+			if(modalState.originalPlacement && modalState.originalPlacement.campaignId) {
+				record = placementRecordService.create(modalState.originalPlacement);
+				record.set(modalState.placement);
+				record.observe(update, $scope);
+			}
 
-        $scope.$on('$destroy', function() {
-            modalState.placement = $scope.placement;
-        });
+			function update() {
+				$scope.placement = record.get();
+				$scope.errors = record.errors();
+			}
 
-        function formatDate($event) {
-            var date = new Date($event.target.value);
-            if (isNaN( date.getTime() )) {
+			/**
+			 * Returns an object filled with the equal properties of all the objects
+			 * in the placements array
+			 *
+			 * @param placements {Array<Object>}
+			 */
+			function getIntersection(placements) {
+				var intersection = placements.pop().get();
+				var curr;
 
-                // Date doesn't parse!
-                date = new Date('Jan 1 2000');
-            }
-            $event.target.value = $filter('date')(date, 'M/d/yyyy');
-        }
-    }]);
+				for(var i = 0; i < placements.length; i ++) {
+					curr = placements[i];
+					intersection = curr.intersect(intersection, curr.get());
+				}
+
+				return intersection;
+			}
+
+			function ok(errors) {
+				$scope.placement.expandBeforeCountdown = true;
+				$scope.placement.spanish = true;
+				$scope.placement.clickTrackers = '';
+				$scope.placement.impressionTrackers = '';
+				$scope.placement.viewTrackers = '';
+				if(ng.equals({}, errors) || ! errors) {
+					var onSuccess = function() {
+						$scope.placement = {};
+						$modalInstance.dismiss('cancel');
+					};
+
+					if(records.length) {
+
+					} else {
+						record.save().then(onSuccess);
+					}
+				}
+				$scope.submitted = true;
+			}
+
+			function cancel() {
+                console.log(record.changes());
+				if(record.hasChanges()) {
+					if(confirm('You have unsaved changes. Really close?')) {
+						record.reset();
+						$scope.placement = record.get();
+						$modalInstance.dismiss('cancel');
+					}
+				} else {
+					$modalInstance.dismiss('cancel');
+				}
+			}
+
+			$scope.$on('$destroy', function() {
+				modalState.placement = $scope.placement;
+			});
+		}
+	]);
 });
 
 
-define('tpl!campaignManagement/campaigns/placements/directives/placementOptions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/placementOptions.html', '<span class="placement-options">\n    <a ng-click="openEditPlacementModal()"><i class="glyph-icon glyph-settings"></i></a>\n    <a><i class="glyph-icon glyph-copy"></i></a>\n    <a><i class="glyph-icon glyph-close"></i></a>\n</span>'); });
+define('tpl!campaignManagement/campaigns/placements/directives/placement-options.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/placement-options.html', '<span class="placement-options">\n    <a title="Placement Settings" ng-click="openEditPlacementModal()"><i class="glyph-icon glyph-settings"></i></a>\n    <a title="Copy Placement"><i class="glyph-icon glyph-copy"></i></a>\n    <a title="Delete Placement"><i class="glyph-icon glyph-close"></i></a>\n</span>\n'); });
 
-define('campaignManagement/campaigns/placements/directives/placementOptions',['require','./../../../module','tpl!./placementOptions.html'],function (require) {
+define('campaignManagement/campaigns/placements/directives/placementOptions',['require','./../../../module','tpl!./placement-options.html'],function (require) {
     'use strict';
 
     var app = require('./../../../module');
 
-    require('tpl!./placementOptions.html');
+    require('tpl!./placement-options.html');
 
     app.directive('placementOptions', [function () {
         return {
@@ -69791,7 +69399,7 @@ define('campaignManagement/campaigns/placements/directives/placementOptions',['r
             scope: {
                 id: '='
             },
-            templateUrl: 'campaignManagement/campaigns/placements/directives/placementOptions.html',
+            templateUrl: 'campaignManagement/campaigns/placements/directives/placement-options.html',
             controller: ['$scope', '$modal', function ($scope, $modal) {
                 $scope.openEditPlacementModal = openEditPlacementModal;
 
@@ -69823,68 +69431,300 @@ define('campaignManagement/campaigns/placements/directives/placementOptions',['r
 });
 
 
-define('tpl!campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html', '<div>\n    <div class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Direction</span></div>\n        <div class="col-sm-9">\n            <select select2\n                    s2-options="direction.id as direction.name for direction in expandDirections track by direction.id"\n                    ng-model="expandDirection">\n            </select>\n        </div>\n    </div>\n    <div ng-show="expandDirection" class="form-group row">\n        <div class="col-sm-3 text-right-sm">\n            <span>Expand Anchor</span>\n        </div>\n        <div class="row col-sm-9">\n          <div class="col-sm-2" ng-repeat="anchor in expandAnchors">\n            <div class="expand-anchor" ng-class="{selected:expandAnchor===anchor.value}">\n              <img ng-click="setExpandAnchor(anchor.value)" ng-src="{{anchor.image}}" />\n            </div>\n          </div>\n        </div>\n    </div>\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/directives/rate-types.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/rate-types.html', '<div class="form-group row"\n\t\t ng-class="{\'has-error\': (newPlacement.costPer.$invalid || newPlacement.totalCost.$invalid) && submitted}">\n\t<label\n\t\tclass="col-sm-3 form-label"><span>Cost</span></label>\n\n\t<div class="col-sm-3">\n\t\t<select name="types" select2\n\t\t\t\t\t\tng-options="rateType.id as rateType.name for rateType in rateTypes track by rateType.id"\n\t\t\t\t\t\tng-model="placement.rateType">\n\t\t</select>\n\t</div>\n\t<div class="col-sm-3" ng-if="showCostPer">\n\t\t<input name="costPer" ng-model="placement.costPerRate" type="text" ng-pattern="MONEY_REGEX"\n\t\t\t\t\t class="form-control col-sm-4" id="costPer"\n\t\t\t\t\t placeholder="Cost Per"/>\n\t\t<p ng-class="{\'help-block\':newPlacement.costPer.$invalid && submitted}">\n\t\t\tcost per\n\t\t\t<span ng-show="newPlacement.costPer.$invalid && submitted">\n\t\t\t\tmust be valid\n\t\t\t</span>\n\t\t</p>\n\t</div>\n\t<div class="col-sm-3" ng-if="showTotalCost">\n\t\t<input name="totalCost" ng-model="placement.budget" type="text" ng-pattern="MONEY_REGEX"\n\t\t\t\t\t class="form-control" id="totalCost"\n\t\t\t\t\t placeholder="Total Cost"/>\n\t\t<p ng-class="{\'help-block\':newPlacement.totalCost.$invalid && submitted}">\n\t\t\ttotal cost\n\t\t\t<span ng-show="newPlacement.totalCost.$invalid && submitted">\n\t\t\t\tmust be valid\n\t\t\t</span>\n\t\t</p>\n\t</div>\n</div>'); });
 
-define('campaignManagement/campaigns/placements/directives/expandAnchorsDirections',['require','./../../../module','tpl!./expandAnchorsDirections.html'],function (require) {
-    'use strict';
+define('campaignManagement/campaigns/placements/directives/rateTypes',['require','./../../../module','tpl!./rate-types.html'],function (require) {
+	'use strict';
 
-    var app = require('./../../../module');
+	var app = require('./../../../module');
 
-    require('tpl!./expandAnchorsDirections.html');
+	require('tpl!./rate-types.html');
 
-    app.directive('expandAnchorsDirections', [function () {
-        return {
-            restrict: 'A',
-            replace: true,
-            scope: {
-                expandAnchor: '=',
-                expandDirection: '='
-            },
-            templateUrl: 'campaignManagement/campaigns/placements/directives/expandAnchorsDirections.html',
-            controller: ['$scope', function ($scope) {
-                var imageDirectory = '/images/anchorsExpandDirections/';
-                $scope.expandAnchors = [];
-                $scope.expandDirections = [
-                    {id: 'left', name: 'Expand to Left'},
-                    {id: 'right', name: 'Expand to Right'},
-                    {id: 'up', name: 'Expand Upwards'},
-                    {id: 'down', name: 'Expand Downwards'}
-                ];
-                $scope.expandDirection = 'left';
+	app.directive('rateTypes', [function () {
+		return {
+			restrict: 'A',
+			replace: true,
+			scope: false,
+			templateUrl: 'campaignManagement/campaigns/placements/directives/rate-types.html',
+			controller: ['$scope', 'MONEY_REGEX', function ($scope, MONEY_REGEX) {
 
-                var commonAnchors = [
-                    'bottomright',
-                    'topright',
-                    'bottomleft',
-                    'topleft'
-                ];
+				$scope.MONEY_REGEX = MONEY_REGEX;
+				$scope.rateTypes = [
+					{id: 'CPM', name: 'CPM'},
+					{id: 'CPC', name: 'CPC'},
+					{id: 'CPV', name: 'CPV'},
+					{id: 'CPCV', name: 'CPCV'},
+					{id: 'FIXED', name: 'Fixed Fee'},
+					{id: 'ADDEDV', name: 'Added Value'}
+				];
 
-                var expandAnchorPossibilities = {
-                    left: ['left', 'right'].concat(commonAnchors),
-                    right: ['left', 'right'].concat(commonAnchors),
-                    up: ['top', 'bottom'].concat(commonAnchors),
-                    down: ['top', 'bottom'].concat(commonAnchors)
-                };
+				$scope.rateTypeFields = {
+					CPM: { showCostPer: true, showTotalCost: true },
+					CPC: { showCostPer: true, showTotalCost: true },
+					CPV: { showCostPer: true, showTotalCost: true },
+					CPCV: { showCostPer: true, showTotalCost: true },
+					FIXED: { showCostPer: false, showTotalCost: true },
+					ADDEDV: { showCostPer: false, showTotalCost: false }
+				};
 
-                $scope.$watch('expandDirection', function() {
-                    if (typeof $scope.expandDirection === 'string') {
-                        $scope.expandAnchors = [];
-                        var expandAnchors = expandAnchorPossibilities[$scope.expandDirection];
-                        expandAnchors.forEach(function(anchor) {
-                            $scope.expandAnchors.push({
-                                image: imageDirectory + $scope.expandDirection + '_' + anchor + '.svg',
-                                value: anchor
-                            });
-                        });
-                    }
-                });
+				$scope.$watch('placement.rateType', function() {
+					var rateType = $scope.placement && $scope.placement.rateType;
+					if (rateType) {
+						var fields = $scope.rateTypeFields[rateType];
+						if(fields) {
+							$scope.showCostPer = fields.showCostPer;
+							$scope.showTotalCost = fields.showTotalCost;
+						}
+					}
+				});
+			}]
+		};
+	}]);
+});
 
-                $scope.setExpandAnchor = function(anchor) {
-                    $scope.expandAnchor = anchor;
-                };
-            }]
-        };
-    }]);
+
+define('tpl!campaignManagement/campaigns/placements/directives/start-end-dates.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/start-end-dates.html', '<div>\n\t<div class="form-group row"\n\t\t\t ng-class="{\'has-error\': (newPlacement.flightStart.$invalid || newPlacement.flightEnd.$invalid) && submitted}">\n\t\t<label\n\t\t\tclass="col-sm-3 form-label required"><span>Flight Dates</span></label>\n\n\t\t<div class="col-sm-9">\n\t\t\t<div class="row">\n\t\t\t\t<div class="col-sm-6">\n\t\t\t\t\t<div class="row">\n\t\t\t\t\t\t<div class="col-sm-4">\n\t\t\t\t\t\t\tStart Date:\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="col-sm-8">\n\t\t\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t\t\t<input class="form-control" type="text"\n\t\t\t\t\t\t\t\t\t\t\t name="flightStart"\n\t\t\t\t\t\t\t\t\t\t\t datepicker-popup="{{format}}"\n\t\t\t\t\t\t\t\t\t\t\t ng-model="placement.flightStart"\n\t\t\t\t\t\t\t\t\t\t\t is-open="datePickers.startDateOpened"\n\t\t\t\t\t\t\t\t\t\t\t min-date="minDate"\n\t\t\t\t\t\t\t\t\t\t\t datepicker-options="dateOptions"\n\t\t\t\t\t\t\t\t\t\t\t date-disabled="false"\n\t\t\t\t\t\t\t\t\t\t\t ng-required="true" close-text="Close"\n\t\t\t\t\t\t\t\t\t\t\t show-weeks="false"/>\n\t\t\t\t\t\t\t\t\t<span class="input-group-btn">\n\t\t\t\t\t\t\t\t\t\t\t<button class="btn btn-inline"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tng-click="openPicker($event, \'startDateOpened\')">\n\t\t\t\t\t\t\t\t\t\t\t\t<i class="glyph-calendar"></i>\n\t\t\t\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div class="col-sm-6">\n\t\t\t\t\t<div class="row">\n\t\t\t\t\t\t<div class="col-sm-4">\n\t\t\t\t\t\t\tEnd Date:\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="col-sm-8">\n\t\t\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t\t\t<input class="form-control" type="text"\n\t\t\t\t\t\t\t\t\t\t\t name="flightEnd"\n\t\t\t\t\t\t\t\t\t\t\t datepicker-popup="{{format}}"\n\t\t\t\t\t\t\t\t\t\t\t ng-model="placement.flightEnd"\n\t\t\t\t\t\t\t\t\t\t\t is-open="datePickers.endDateOpened"\n\t\t\t\t\t\t\t\t\t\t\t min-date="minDate"\n\t\t\t\t\t\t\t\t\t\t\t datepicker-options="dateOptions"\n\t\t\t\t\t\t\t\t\t\t\t date-disabled="false"\n\t\t\t\t\t\t\t\t\t\t\t ng-required="true" close-text="Close"\n\t\t\t\t\t\t\t\t\t\t\t show-weeks="false"/>\n\t\t\t\t\t\t\t\t<span class="input-group-btn">\n\t\t\t\t\t\t\t\t\t\t<button class="btn btn-inline"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tng-click="openPicker($event, \'endDateOpened\')">\n\t\t\t\t\t\t\t\t\t\t\t<i class="glyph-calendar"></i>\n\t\t\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<p\n\t\t\t\t\tng-show="(newPlacement.flightEnd.$invalid || newPlacement.flightStart.$invalid) && submitted"\n\t\t\t\t\tclass="help-block">\n\t\t\t\t\tstart and end dates are required\n\t\t\t\t</p>\n\t\t\t</div>\n\n\t\t</div>\n\t</div>\n</div>'); });
+
+define('campaignManagement/campaigns/placements/directives/startEndDates',['require','./../../../module','angular','tpl!./start-end-dates.html'],function (require) {
+	'use strict';
+
+	var app = require('./../../../module');
+	var ng = require('angular');
+
+	require('tpl!./start-end-dates.html');
+
+	app.directive('startEndDates', [function() {
+		return {
+			restrict: 'A',
+			replace: true,
+			scope: false,
+			templateUrl: 'campaignManagement/campaigns/placements/directives/start-end-dates.html',
+			controller: ['$scope', function($scope) {
+				$scope.format = 'MM/dd/yyyy';
+				$scope.openPicker = openPicker;
+				$scope.datePickers = {};
+				$scope.dateOptions = {
+					formatYear: 'yy',
+					startingDay: 0,
+					maxMode: 'day'
+				};
+
+				function openPicker($event, name) {
+					$event.preventDefault();
+					$event.stopPropagation();
+
+					ng.forEach($scope.datePickers, function (value, key) {
+						$scope.datePickers[key] = false;
+					});
+
+					$scope.datePickers[name] = true;
+				}
+			}]
+		};
+	}]);
+});
+
+
+define('tpl!campaignManagement/campaigns/placements/directives/assign-publisher.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/assign-publisher.html', '<div class="form-group row"\n\t\t ng-class="{\'has-error\': newPlacement.publisherId.$invalid && submitted}">\n\t<label\n\t\tclass="col-sm-3 form-label required"><span>Publisher</span></label>\n\n\t<div class="col-sm-9">\n\t\t<select name="publisherId" select2\n\t\t\t\t\t\tng-options="publisher.id as publisher.name for publisher in publishers track by publisher.id"\n\t\t\t\t\t\tng-model="placement.publisherId" required>\n\t\t</select>\n\n\t\t<p ng-show="newPlacement.publisherId.$invalid && submitted"\n\t\t\t class="help-block">\n\t\t\tpublisher is required\n\t\t</p>\n\t</div>\n</div>'); });
+
+define('campaignManagement/campaigns/placements/directives/assignPublisher',['require','./../../../module','tpl!./assign-publisher.html'],function(require) {
+	'use strict';
+
+	var app = require('./../../../module');
+
+	require('tpl!./assign-publisher.html');
+
+	app.directive('assignPublisher', [
+		function() {
+			return {
+				restrict: 'A',
+				replace: true,
+				scope: false,
+				templateUrl: 'campaignManagement/campaigns/placements/directives/assign-publisher.html',
+				controller: [
+					'$scope', 'navbarService', 'clientPublisherRecordService',
+					function($scope, navbar, clientPublisherRecordService) {
+						updatePublishers();
+						navbar.observe(function() {
+							updatePublishers();
+						});
+
+						function updatePublishers() {
+							var navbarData = navbar.all();
+							if(navbarData && navbarData.client && navbarData.client.id) {
+								clientPublisherRecordService.fetch(navbarData.client.id)
+									.then(function(resp) {
+										$scope.publishers = resp.data;
+									});
+							}
+						}
+					}
+				]
+			};
+		}
+	]);
+});
+
+
+define('tpl!campaignManagement/campaigns/placements/directives/assign-creative.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/assign-creative.html', '<div>\n\t<div class="form-group row"\n\t\t\t ng-class="{\'has-error\': newPlacement.type.$invalid && submitted}">\n\t\t<label for="adtype" class="col-sm-3 form-label required"><span>Ad Type</span></label>\n\t\t<div class="col-sm-9">\n\t\t\t<select id="adtype" select2\n\t\t\t\t\t\t\tname="type"\n\t\t\t\t\t\t\tng-options="key as key for (key, value) in creativesByAdType track by key"\n\t\t\t\t\t\t\tng-model="placement.type" required>\n\t\t\t</select>\n\n\t\t\t<p ng-show="newPlacement.type.$invalid && submitted"\n\t\t\t\t class="help-block">\n\t\t\t\tad type is required\n\t\t\t</p>\n\t\t</div>\n\t</div>\n\n\t<div class="form-group row"\n\t\t\t ng-class="{\'has-error\': newPlacement.creative.$invalid && submitted}">\n\t\t<label for="creative" class="col-sm-3 form-label required"><span>Creative</span></label>\n\t\t<div class="col-sm-9">\n\t\t\t<select id="creative" select2\n\t\t\t\t\t\t\tname="creative"\n\t\t\t\t\t\t\tng-options="item as item.name for item in creativesByAdType[placement.type] track by item.id"\n\t\t\t\t\t\t\tng-model="creative" required>\n\t\t\t</select>\n\n\t\t\t<p ng-show="newPlacement.creative.$invalid && submitted"\n\t\t\t\t class="help-block">\n\t\t\t\tcreative is required\n\t\t\t</p>\n\t\t</div>\n\t</div>\n\n\t<!-- IN BANNER VIDEO NON-EXPANDING -->\n\n\t<div ng-if="creativeType === \'inBannerVideo\' && !isExpanding">\n\t\t<div class="form-group row">\n\t\t\t<label class="col-sm-3 form-label"><span>Play Mode</span></label>\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.playMode" ng-value="\'rollover\'" type="radio" name="playMode" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tRoll Over to Play\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.playMode" ng-value="\'click\'" type="radio" name="playMode" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tClick to Play\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.playMode" ng-value="\'auto\'" type="radio" name="playMode" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tAutoplay\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="form-group row">\n\t\t\t<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="skip321" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Skip Countdown</span>\n\t\t\t\t</label>\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="audioOff" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Audio Off</span>\n\t\t\t\t</label>\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Mute Audio on Roll Out</span>\n\t\t\t\t</label>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n\t<!-- IN BANNER VIDEO EXPANDING -->\n\n\t<div ng-if="creativeType === \'inBannerVideo\' && isExpanding">\n\t\t<div class="form-group row">\n\t\t\t<label for="creative" class="col-sm-3 form-label required"><span>Expand Initiation</span></label>\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.playMode" ng-value="\'rollover\'" type="radio" name="playMode" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tRoll Over to Expand\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.playMode" ng-value="\'click\'" type="radio" name="playMode" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tClick to Expand\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.playMode" ng-value="\'auto\'" type="radio" name="playMode" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tAuto Expand\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="form-group row">\n\t\t\t<label class="col-sm-3 form-label required"><span>Expand Type</span></label>\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.expandType" ng-value="\'directional\'" type="radio" name="expandType" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tDirectional\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.expandType" ng-value="\'pushdown\'" type="radio" name="expandType" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tPushdown\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.expandType" ng-value="\'takeover\'" type="radio" name="expandType" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tFull Page Takeover\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<div expand-anchors-directions></div>\n\n\t\t<div class="form-group row">\n\t\t\t<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="skip321" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Skip Countdown</span>\n\t\t\t\t</label>\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="audioOff" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Audio Off</span>\n\t\t\t\t</label>\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Mute on Roll Out</span>\n\t\t\t\t</label>\n\t\t\t\t<label>\n\t\t\t\t\t<input ng-model="collapseOnRollOut" type="checkbox" class="checkbox checkbox-light" />\n\t\t\t\t\t<span>Collapse on Roll Out</span>\n\t\t\t\t</label>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<div class="form-group row">\n\t\t\t<label class="col-sm-3 form-label required"><span>Expand Type</span></label>\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.expandBeforeCountdown" ng-value="true" type="radio" name="expandBeforeCountdown" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tBefore Countdown / Loading\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t\t<label class="radio-inline">\n\t\t\t\t\t<input ng-model="placement.expandBeforeCountdown" ng-value="false" type="radio" name="expandBeforeCountdown" class="radio radio-light" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t\tAfter Countdown / Loading\n\t\t\t\t\t\t\t</span>\n\t\t\t\t</label>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n</div>'); });
+
+define('campaignManagement/campaigns/placements/directives/assignCreative',['require','./../../../module','tpl!./assign-creative.html'],function (require) {
+	'use strict';
+
+	var app = require('./../../../module');
+
+	require('tpl!./assign-creative.html');
+
+	app.directive('assignCreative', [function () {
+		return {
+			restrict: 'A',
+			replace: true,
+			scope: false,
+			templateUrl: 'campaignManagement/campaigns/placements/directives/assign-creative.html',
+			controller: ['$scope', 'creatives', 'ENUMS', function ($scope, creativeService, ENUMS) {
+
+				// setup defaults
+				$scope.placement.expandBeforeCountdown = $scope.placement.expandBeforeCountdown || true;
+				$scope.placement.playMode = $scope.placement.playMode || 'rollover';
+				$scope.placement.expandType = $scope.placement.expandType || 'directional';
+
+				var creativeTypes = ENUMS.down.creativeTypes;
+
+				creativeService.observe(updateCreativesByAdType, $scope);
+				function updateCreativesByAdType() {
+					var adTypes = {};
+					var creatives = creativeService.data().all();
+
+					creatives.forEach(function(creative) {
+						if(! adTypes[creative.type]) {
+							adTypes[creative.type] = [];
+						}
+
+						adTypes[creative.type].push(creative);
+					});
+					$scope.creativesByAdType = adTypes;
+				}
+
+				$scope.$watch('creative', function() {
+					$scope.isExpanding = false;
+					if ($scope.creative) {
+						$scope.creativeType = creativeTypes[$scope.creative.type];
+						if ($scope.creative.expandedWidth) {
+							$scope.isExpanding = true;
+						}
+
+						$scope.placement.targetId = $scope.creative.id;
+						$scope.placement.embedWidth = $scope.creative.embedWidth;
+						$scope.placement.embedHeight = $scope.creative.embedHeight;
+
+						// TODO: Set this to $scope.creative.clickthroughUrl once it's in the api
+						$scope.placement.clickthroughUrl = $scope.creative.clickthroughUrl || 'http://www.mixpo.com';
+					}
+				});
+			}]
+		};
+	}]);
+});
+
+
+define('tpl!campaignManagement/campaigns/placements/directives/ad-tag-types.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/ad-tag-types.html', '<div ng-if="creativeType && creativeType !== \'inStreamVideo\'">\n\t<div class="form-group row"\n\t\t\t ng-class="{\'has-error\': newPlacement.adTag.$invalid && submitted}">\n\t\t<h3>\n\t\t\t<span>Setup Ad Tag</span>\n\t\t</h3>\n\t\t<hr>\n\n\t\t<label for="ad-tag" class="col-sm-3 form-label required"><span>Ad Tag Type</span></label>\n\t\t<div class="col-sm-9">\n\t\t\t<select id="ad-tag" select2\n\t\t\t\t\t\t\tname="adTag"\n\t\t\t\t\t\t\tng-options="tag.id as tag.name for tag in tagTemplates track by tag.id"\n\t\t\t\t\t\t\tng-model="placement.adTagId" required>\n\t\t\t</select>\n\n\t\t\t<p ng-show="newPlacement.adTag.$invalid && submitted"\n\t\t\t\t class="help-block">\n\t\t\t\tad tag is required\n\t\t\t</p>\n\t\t</div>\n\t</div>\n\n\t<div class="form-group row" ng-show="placement.adTagId">\n\n\t\t<label for="ad-tag" class="col-sm-3 form-label"><span>Ad Tag</span></label>\n\t\t<div class="col-sm-9">\n\t\t\t<textarea rows="8" style="resize:none;" class="form-control" disabled>{{adTagText}}</textarea>\n\t\t</div>\n\t</div>\n</div>'); });
+
+define('campaignManagement/campaigns/placements/directives/adTagTypes',['require','./../../../module','tpl!./ad-tag-types.html'],function (require) {
+	'use strict';
+
+	var app = require('./../../../module');
+
+	require('tpl!./ad-tag-types.html');
+
+	app.directive('adTagTypes', [function () {
+		return {
+			restrict: 'A',
+			replace: true,
+			scope: false,
+			templateUrl: 'campaignManagement/campaigns/placements/directives/ad-tag-types.html',
+			controller: ['$scope', 'adTagService', 'adTags', function ($scope, adTagService, adTags) {
+				$scope.tagTemplates = [];
+
+				adTagService.init();
+				adTagService.observe(function() {
+					$scope.tagTemplates = adTagService.all();
+					console.log($scope.tagTemplates);
+				});
+
+				$scope.$watch('placement.adTagId', function() {
+					$scope.adTagText = adTags.pullTag($scope.placement);
+				});
+			}]
+		};
+	}]);
+});
+
+
+define('tpl!campaignManagement/campaigns/placements/directives/expand-anchors-directions.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/directives/expand-anchors-directions.html', '<div>\n    <div class="form-group row">\n        <label class="col-sm-3 form-label required"><span>Expand Direction</span></label>\n        <div class="col-sm-9">\n            <select select2\n                    name="expandDirection"\n                    s2-options="direction.id as direction.name for direction in expandDirections track by direction.id"\n                    ng-model="placement.expandDirection">\n            </select>\n        </div>\n    </div>\n    <div ng-show="placement.expandDirection" class="form-group row">\n        <label class="col-sm-3 form-label required"><span>Expand Anchor</span></label>\n        <div class="row col-sm-9">\n          <div class="col-sm-2" ng-repeat="anchor in expandAnchors">\n            <div class="expand-anchor" ng-class="{selected:placement.expandAnchor === anchor.value}">\n              <img ng-click="setExpandAnchor(anchor.value)" ng-src="{{anchor.image}}" />\n            </div>\n          </div>\n        </div>\n    </div>\n</div>\n'); });
+
+define('campaignManagement/campaigns/placements/directives/expandAnchorsDirections',['require','./../../../module','tpl!./expand-anchors-directions.html'],function(require) {
+	'use strict';
+
+	var app = require('./../../../module');
+
+	require('tpl!./expand-anchors-directions.html');
+
+	app.directive('expandAnchorsDirections', [
+		function() {
+			return {
+				restrict: 'A',
+				replace: true,
+				scope: false,
+				templateUrl: 'campaignManagement/campaigns/placements/directives/expand-anchors-directions.html',
+				controller: [
+					'$scope', function($scope) {
+						var imageDirectory = '/images/anchorsExpandDirections/';
+						$scope.expandAnchors = [];
+						$scope.expandDirections = [
+							{id: 'left', name: 'Expand to Left'},
+							{id: 'right', name: 'Expand to Right'},
+							{id: 'up', name: 'Expand Upwards'},
+							{id: 'down', name: 'Expand Downwards'}
+						];
+						$scope.placement.expandDirection = 'left';
+
+						var commonAnchors = [
+							'bottomright',
+							'topright',
+							'bottomleft',
+							'topleft'
+						];
+
+						var expandAnchorPossibilities = {
+							left: ['left', 'right'].concat(commonAnchors),
+							right: ['left', 'right'].concat(commonAnchors),
+							up: ['top', 'bottom'].concat(commonAnchors),
+							down: ['top', 'bottom'].concat(commonAnchors)
+						};
+
+						$scope.$watch('placement.expandDirection', function() {
+							if(typeof $scope.placement.expandDirection === 'string') {
+								$scope.expandAnchors = [];
+								var expandAnchors = expandAnchorPossibilities[$scope.placement.expandDirection];
+								expandAnchors.forEach(function(anchor) {
+									$scope.expandAnchors.push({
+										image: imageDirectory + $scope.placement.expandDirection + '_' + anchor + '.svg',
+										value: anchor
+									});
+								});
+
+								$scope.placement.expandAnchor = $scope.expandAnchors[0].value;
+							}
+						});
+
+						$scope.setExpandAnchor = function(anchor) {
+							$scope.placement.expandAnchor = anchor;
+						};
+					}
+				]
+			};
+		}
+	]);
 });
 
 define('campaignManagement/campaigns/placements/services/placements',['require','./../../../module','tpl!./placementTableHeader.html','angular'],function (require) {
@@ -69909,7 +69749,7 @@ define('campaignManagement/campaigns/placements/services/placements',['require',
 
     var rules = {
         checked: '',
-        placementName: '',
+        placementName: 'tooltip',
         delivering: 'delivering',
         startDate: 'date',
         endDate: 'date',
@@ -69963,7 +69803,10 @@ define('campaignManagement/campaigns/placements/services/placements',['require',
             for(var i=0; i<groups.length; i++) {
                 groupData = groups[i];
                 transformedGroup = {
-                    header: $interpolate(tableHeaderTemplate)(groupData),
+                    header: {
+                        template: tableHeaderTemplate,
+                        locals: groupData
+                    },
                     content: {
                         rules: rules,
                         headers: headers,
@@ -70360,18 +70203,23 @@ define('campaignManagement/campaigns/placements/services/placementsByAdType',['r
     }]);
 });
 
-define('campaignManagement/campaigns/placements/index',['require','./controllers/placementsList','./controllers/placementsHeader','./controllers/newEditPlacement','./directives/placementOptions','./directives/expandAnchorsDirections','./services/placements','./services/placementsByPublisher','./services/placementsByCreative','./services/placementsByAdType'],function (require) {
-    'use strict';
+define('campaignManagement/campaigns/placements/index',['require','./controllers/placementsList','./controllers/placementsHeader','./controllers/newEditPlacement','./directives/placementOptions','./directives/rateTypes','./directives/startEndDates','./directives/assignPublisher','./directives/assignCreative','./directives/adTagTypes','./directives/expandAnchorsDirections','./services/placements','./services/placementsByPublisher','./services/placementsByCreative','./services/placementsByAdType'],function(require) {
+	'use strict';
 
-    require('./controllers/placementsList');
-    require('./controllers/placementsHeader');
-    require('./controllers/newEditPlacement');
-    require('./directives/placementOptions');
-    require('./directives/expandAnchorsDirections');
-    require('./services/placements');
-    require('./services/placementsByPublisher');
-    require('./services/placementsByCreative');
-    require('./services/placementsByAdType');
+	require('./controllers/placementsList');
+	require('./controllers/placementsHeader');
+	require('./controllers/newEditPlacement');
+	require('./directives/placementOptions');
+	require('./directives/rateTypes');
+	require('./directives/startEndDates');
+	require('./directives/assignPublisher');
+	require('./directives/assignCreative');
+	require('./directives/adTagTypes');
+	require('./directives/expandAnchorsDirections');
+	require('./services/placements');
+	require('./services/placementsByPublisher');
+	require('./services/placementsByCreative');
+	require('./services/placementsByAdType');
 });
 
 
@@ -70817,8 +70665,8 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
                 limit: '='
             },
             templateUrl: 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html',
-            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'studioLocation', 'ENUMS', 'studioUrlBuilder',
-                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, studioLocation, ENUMS, studioUrlBuilder) {
+            controller: ['$scope', '$window', '$modal', '$location', '$state', '$rootScope', '$filter', 'creatives', 'creativeRecordService', 'ENUMS', 'studioLocation', 'openCreativeService',
+                function ($scope, $window, $modal, $location, $state, $rootScope, $filter, creatives, creativeRecordService, ENUMS, studioLocation, openCreativeService) {
 
                     var editCreativeModals = {};
                     var mixpoURL = studioLocation.host();
@@ -70861,10 +70709,7 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
                     }
 
                     function openStudio(creative) {
-                        var url = studioUrlBuilder.open(creative.id, creative.campaignId)
-                            .setHostname(mixpoURL)
-                            .build();
-                        $window.open(url, '_blank');
+                        openCreativeService(creative, mixpoURL);
                     }
 
                     var removeNulls = function(creative) {
@@ -71027,7 +70872,7 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
         queryParams: {
             dimensions: [
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
-                'embedHeight', 'expandedWidth', 'expandedHeight',
+                'embedHeight', 'expandedWidth', 'expandedHeight', //'clickthroughUrl',
                 'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
             limit: 500
@@ -71122,29 +70967,29 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
                 };
 
                 if (creatives && creatives.length) {
-                    for(var i = 0; i < creatives.length; i ++) {
-                        creative = creatives[i];
-                        transformedTable.data.push({
-                            checked: false,
-                            creativeName: creative.name,
-                            delivering: creative.live,
-                            type: creative.type,
-                            dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                            expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                            campaignId: creative.campaign.id,
-                            numPlacements: {
-                                name: creative.countPlacements || 0,
-                                route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
-                            },
-                            options: '<div creative-options id="\'' + creative.id + '\'"></div>',
+                for(var i = 0; i < creatives.length; i ++) {
+                    creative = creatives[i];
+                    transformedTable.data.push({
+                        checked: false,
+                        creativeName: creative.name,
+                        delivering: creative.live,
+                        type: creative.type,
+                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                        campaignId: creative.campaign.id,
+                        numPlacements: {
+                            name: creative.countPlacements || 0,
+                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                        },
+                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
-                            // These properties are needed by thumbnails but aren't
-                            // in the table
-                            id: creative.id,
-                            lastModified: creative.modifiedDate,
-                            thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
-                        });
-                    }
+                        // These properties are needed by thumbnails but aren't
+                        // in the table
+                        id: creative.id,
+                        lastModified: creative.modifiedDate,
+                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
+                    });
+                }
                 }
                 return transformedTable;
             }
@@ -71828,6 +71673,58 @@ define('campaignManagement/campaigns/creatives/services/newCreative',['require',
     }]);
 });
 
+define('campaignManagement/campaigns/creatives/services/openCreative',['require','./../../../module'],function(require) {
+    'use strict';
+
+    var module = require('./../../../module');
+
+    /**
+     * The openCreativeService wraps the setup of opening Studio in a
+     * new tab and creating the expected JS callback object Studio's
+     * js is looking for.
+     *
+     * @memberof app
+     * @ngdoc service
+     * @name newCreativeService
+     * @ngInject
+     */
+    module.service('openCreativeService', ['$q', '$window', 'studioUrlBuilder',
+        function($q, $window, studioUrlBuilder) {
+            /**
+             * Opens studio and returns a promise.
+             *
+             * @param creative
+             * @returns {Object} promise
+             */
+            return function(creative, hostname) {
+                var deferred = $q.defer();
+                var url = studioUrlBuilder.open(creative.id, creative.campaignId)
+                    .setHostname(hostname)
+                    .build();
+                var tabWindow = $window.open(
+                    url,
+                    'mixpo_studio'
+                );
+
+                tabWindow.StudioDirectHandler = (function(){
+                    function onClose(code, detail) {
+                        if(code && detail) {
+                            //return deferred.reject(err);
+                        }
+                        tabWindow.close();
+                        deferred.resolve();
+                    }
+
+                    return {
+                        onClose: onClose
+                    };
+                })();
+
+                return deferred.promise;
+            };
+        }]);
+});
+
 define('campaignManagement/campaigns/creatives/services/creative',['require','./../../../module','angular'],function(require) {
     'use strict';
 
@@ -71895,7 +71792,7 @@ define('campaignManagement/campaigns/creatives/services/creative',['require','./
     }]);
 });
 
-define('campaignManagement/campaigns/creatives/index',['require','./controllers/creativesHeader','./controllers/creativesList','./controllers/newEditCreative','./controllers/creativesCtrl','./directives/creativeThumbnails','./directives/creativeOptions','./services/creatives','./services/studio/urlBuilder/index','./services/newCreative','./services/creative'],function (require) {
+define('campaignManagement/campaigns/creatives/index',['require','./controllers/creativesHeader','./controllers/creativesList','./controllers/newEditCreative','./controllers/creativesCtrl','./directives/creativeThumbnails','./directives/creativeOptions','./services/creatives','./services/studio/urlBuilder/index','./services/newCreative','./services/openCreative','./services/creative'],function (require) {
     'use strict';
 
     require('./controllers/creativesHeader');
@@ -71907,7 +71804,134 @@ define('campaignManagement/campaigns/creatives/index',['require','./controllers/
     require('./services/creatives');
     require('./services/studio/urlBuilder/index');
     require('./services/newCreative');
+    require('./services/openCreative');
     require('./services/creative');
+});
+
+define('campaignManagement/campaigns/services/adTags',['require','./../../module'],function (require) {
+	'use strict';
+
+	var module = require('./../../module');
+
+	module.service('adTags', ['placements', 'placementRecordService', 'adTagService', '$interpolate', '$q', 'cdnLocation', function (placements, placementRecordService, adTagService, $interpolate, $q, cdnLocation) {
+		var tagTemplates = [];
+		adTagService.init();
+		adTagService.observe(function() {
+			tagTemplates = adTagService.all();
+		});
+
+		function pullTags() {
+			var placementIds = placements.getSelectedPlacementIds();
+			if (placementIds.length === 0) {
+				window.alert('No ad tags to pull!');
+				return;
+			}
+			var tags = '';
+			var placementPromises = [];
+
+			placementIds.forEach(function(placementId) {
+				placementPromises.push(placementRecordService.fetch(placementId));
+			});
+
+			$q.all(placementPromises).then(function(placements) {
+				placements.forEach(function(resp) {
+					var placement = resp.data;
+					tags += getPlacementTagText(placement);
+				});
+
+				if (placements.length > 0) {
+					var firstPlacementName = placements[0].data.name;
+					download(firstPlacementName + '_tags.txt', tags);
+				}
+			});
+		}
+
+		function pullTag(placement) {
+			var tagTemplate = getPlacementTagTemplate(placement);
+			if (tagTemplate) {
+				// Interpolate in "all-or-nothing" mode to avoid missing variables
+				var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
+				return adTag(getPlacementInterpolateObject(placement, tagTemplate));
+			} else {
+				return '';
+			}
+		}
+
+		function getPlacementTagTemplate(placement) {
+			var placementTagTemplate = false;
+			tagTemplates.forEach(function(tagTemplate) {
+				if (tagTemplate.id === placement.adTagId) {
+					placementTagTemplate = tagTemplate;
+				}
+			});
+
+			return placementTagTemplate;
+		}
+
+		function getPlacementInterpolateObject(placement, adTagType) {
+			var object = {
+				width: placement.embedWidth,
+				height: placement.embedHeight,
+				id: placement.targetId, // The creative guid / entry point for multi-creative
+
+				// TODO: ad real url here
+				prerenderUrl: 'http://www.google.com', // Image to show before load
+				clickthroughUrl: placement.clickthroughUrl,
+
+				// TODO: add real data here
+				version: '1.1.1', // The current build version
+				folder: placement.targetId.slice(0, 2), // The first 2 letters of the id
+				domain: cdnLocation.host().replace('//', '')
+			};
+
+			if (adTagType.attributes && adTagType.attributes.clicktag) {
+				object.clicktag = adTagType.attributes.clicktag;
+			}
+
+			return object;
+		}
+
+		function getPlacementTagText(placement) {
+			var tagTemplate = getPlacementTagTemplate(placement);
+			if (tagTemplate) {
+				// Interpolate in "all-or-nothing" mode to avoid missing variables
+				var adTag = $interpolate(tagTemplate.template || tagTemplates[0].template, false, null, true);
+				var tag = '';
+
+				tag += 'Title: ' + placement.name + '\n';
+				tag += 'Identifier: ' + placement.id + '\n';
+				tag += 'Primary URL: ' + placement.clickthroughUrl + '\n';
+				tag += 'Play Mode: ' + placement.playMode + '\n';
+				tag += 'Ad Tag: \n';
+				tag += adTag(getPlacementInterpolateObject(placement, tagTemplate));
+				tag += '\n\n---\n\n';
+
+				return tag;
+			} else {
+				return '';
+			}
+		}
+
+		function download(filename, text) {
+			var pom = document.createElement('a');
+			pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+			pom.setAttribute('download', filename);
+
+			if(document.createEvent) {
+				var event = document.createEvent('MouseEvents');
+				event.initEvent('click', true, true);
+				pom.dispatchEvent(event);
+			}
+			else {
+				pom.click();
+			}
+		}
+
+		return {
+			pullTags: pullTags,
+			pullTag: pullTag
+		};
+	}]);
 });
 
 define('campaignManagement/campaigns/services/campaignCache',['require','./../../module'],function (require) {
@@ -72399,8 +72423,7 @@ define('campaignManagement/campaigns/services/campaignsHeader',['require','./../
         });
 
         function getApiUriConfig() {
-            var newConfig = {};
-            ng.extend(newConfig, apiConfig);
+            var newConfig = ng.copy(apiConfig);
             newConfig.queryParams.filters = filter();
             return newConfig;
         }
@@ -73016,12 +73039,12 @@ define('campaignManagement/campaigns/directives/campaignsByStatus',['require','.
             scope: true,
             templateUrl: 'campaignManagement/campaigns/directives/campaignsByStatus.html',
             controller: ['$scope', 'campaignsByStatus', function ($scope, campaignsByStatus) {
-                
+
                 function updateByStatus() {
                     $scope.byStatus = campaignsByStatus.all();
                 }
 
-                campaignsByStatus.observe(updateByStatus, $scope, true);
+                campaignsByStatus.observe(updateByStatus, $scope);
             }]
         };
     }]);
@@ -73034,7 +73057,7 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
     var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
     var ng = require('angular');
 
-    module.factory('campaignAccordionTableFactory', ['$http', '$interpolate', 'dataFactory', 'paginationFactory', '$state', function ($http, $interpolate, dataFactory, paginationFactory, $state) {
+    module.factory('campaignAccordionTableFactory', ['paginationFactory', '$state', function (paginationFactory, $state) {
         return function() {
             var header;
             var rows = paginationFactory(sortRows);
@@ -73184,8 +73207,6 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
                     headers.splice(index + 1, 0, {name: 'Type', id: 'type'});
                 }
 
-
-
                 return {
                     header: _getTableHeader(header.all()),
                     options: options,
@@ -73198,28 +73219,31 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
             }
 
             function _getTableHeader(data) {
-                var template;
-
                 if (!data) {
                     return '';
                 }
+
                 for (var i = 0; i < data.length; i++) {
                     var header = data[i];
                     if (header.status === status) {
-                        template = $interpolate(headerTemplate);
-                        return template({
-                            status: status,
-                            title: title,
-                            count: header.metrics.count,
-                            countPlacementsLive: header.metrics.countPlacementsLive
-                        });
+                        return {
+                            template: headerTemplate,
+                            locals: {
+                                status: status,
+                                title: title,
+                                count: header.metrics.count,
+                                countPlacementsLive: header.metrics.countPlacementsLive
+                            }
+                        };
                     }
                 }
 
-                template = $interpolate('<span class="icon-status"></span>{{title}} (0)');
-                return template({
-                    title: title
-                });
+                return {
+                    template: '<div><span class="icon-status"></span>{{title}} (0)</div>',
+                    locals: {
+                        title: title
+                    }
+                };
             }
 
             function observe(callback, $scope) {
@@ -73271,7 +73295,7 @@ define('campaignManagement/campaigns/filters/campaignStatus',['require','./../..
     }]);
 });
 
-define('campaignManagement/campaigns/index',['require','./placements/index','./creatives/index','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./services/campaignDetails','./controllers/newEditCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./factories/campaignsByStatusAccordionTable','./filters/campaignStatus'],function (require) {
+define('campaignManagement/campaigns/index',['require','./placements/index','./creatives/index','./services/adTags','./services/campaignCache','./services/campaignsByAccount','./services/campaignsByStatus','./services/campaignsFilter','./services/campaignsHeader','./services/campaignModal','./services/campaignDetails','./controllers/newEditCampaign','./controllers/campaigns','./controllers/campaign','./controllers/analyticsPreview','./directives/campaignDetails','./directives/campaignsByAccount','./directives/campaignsByStatus','./factories/campaignsByStatusAccordionTable','./filters/campaignStatus'],function (require) {
     'use strict';
 
     require('./placements/index');
@@ -73284,6 +73308,7 @@ define('campaignManagement/campaigns/index',['require','./placements/index','./c
     filters();
 
     function services() {
+        require('./services/adTags');
         require('./services/campaignCache');
         require('./services/campaignsByAccount');
         require('./services/campaignsByStatus');
@@ -73497,8 +73522,8 @@ define('campaignManagement/clients/controllers/newEditClient',['require','./../.
 
     var ng = require('angular');
 
-    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', 'notification',
-        function ($scope, $modalInstance, channels, modalState, clientRecords, notification) {
+    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', 'divisionRecordService', 'notification',
+        function ($scope, $modalInstance, channels, modalState, clientRecords, divisionRecords, notification) {
         $scope.action = modalState.action;
 
         var record;
@@ -73527,6 +73552,23 @@ define('campaignManagement/clients/controllers/newEditClient',['require','./../.
         $scope.ok = function (errors) {
             if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
+
+                    // Create a new division with the same name. This should be temporary
+                    var divisionRecord = divisionRecords.create();
+                    var division = divisionRecord.get();
+                    division.name = resp.data.name;
+                    division.clientId = resp.data.id;
+                    divisionRecord.save().then(function(division) {
+                        notification.success(
+                          'View your division <a ui-sref="cm.campaigns.division({ divisionId: id })">{{name}}</a>.',
+                          {
+                              locals: {
+                                  id: division.data.id,
+                                  name: division.data.name
+                              }
+                          });
+                    });
+
                     $modalInstance.dismiss('cancel');
                     $scope.client = {};
                     notification.success(
@@ -73538,6 +73580,7 @@ define('campaignManagement/clients/controllers/newEditClient',['require','./../.
                             }
                         });
                 };
+
                 record.save().then(onSuccess);
             }
             $scope.submitted = true;
@@ -73695,8 +73738,8 @@ define('campaignManagement/controllers/modalCtrl',['require','./../module'],func
 
     var app = require('./../module');
 
-    app.controller('modalCtrl', ['$scope', '$rootScope', '$state', '$filter', '$timeout', '$window', '$location', 'studioUrlBuilder',
-        function ($scope, $rootScope, $state, $filter, $timeout, $window, $location, studioUrlBuilder) {
+    app.controller('modalCtrl', ['$scope', '$rootScope', '$state', '$filter', '$timeout', '$window', '$location', 'openCreativeService',
+        function ($scope, $rootScope, $state, $filter, $timeout, $window, $location, openCreativeService) {
 
 
         var urlPrefix = function() {
@@ -73719,11 +73762,11 @@ define('campaignManagement/controllers/modalCtrl',['require','./../module'],func
         };
 
         $scope.openStudio = function(id, campaignId) {
-            var url = studioUrlBuilder
-                .open(id, campaignId)
-                .setHostname('//'+ urlPrefix())
-                .build();
-            $window.open(url, '_blank');
+            var creative = {
+                id: id,
+                campaignId: campaignId
+            };
+            openCreativeService(creative, '//'+ urlPrefix());
         };
     }]);
 });
@@ -74116,12 +74159,11 @@ define('analytics/index',['require','./routes'],function (require) {
     require('./routes');
 });
 
-define('app-core',['require','angular','ui-router','ng-perfect-scrollbar','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index','./analytics/index'],function (require) {
+define('app-core',['require','angular','ui-router','ng-datepicker','./core/index','./table/index','./chart/index','./campaignManagement/index','./analytics/index'],function (require) {
     'use strict';
 
     var ng = require('angular');
     require('ui-router');
-    require('ng-perfect-scrollbar');
     require('ng-datepicker');
     require('./core/index');
     require('./table/index');
@@ -74131,7 +74173,6 @@ define('app-core',['require','angular','ui-router','ng-perfect-scrollbar','ng-da
 
     return ng.module('app', [
         'ui.bootstrap.datepicker',
-        'perfect_scrollbar',
         'app.campaign-management',
         'app.analytics',
         'tpl',
@@ -74300,7 +74341,6 @@ require.config({
         'd3': 'components/d3/d3',
         'jquery': 'components/jquery/dist/jquery',
         'select2': 'components/select2/dist/js/select2.full',
-        'ng-perfect-scrollbar': 'components/angular-perfect-scrollbar/src/angular-perfect-scrollbar',
         'perfect-scrollbar': 'components/perfect-scrollbar/src/perfect-scrollbar',
         'ng-datepicker': 'vendor/ui-bootstrap-datepicker-0.13.0',
         'simpleUpload': 'components/Simple-Ajax-Uploader/SimpleAjaxUploader'
@@ -74315,9 +74355,6 @@ require.config({
         'select2': {
             deps: ['jquery']
         },
-        'ng-perfect-scrollbar': {
-            deps: ['angular', 'perfect-scrollbar']
-        },
         'simpleUpload': {
             deps: ['jquery'],
             exports: 'ss'
@@ -74329,7 +74366,7 @@ require.config({
             deps: ['jquery', 'angular']
         },
         'angular': {
-            deps: ['jquery'],
+            deps: ['jquery', 'perfect-scrollbar'],
             exports: 'angular'
         },
         'ui-router': {
