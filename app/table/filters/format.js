@@ -51,7 +51,7 @@ define(function (require) {
             case 'delivering':
                 return '<span table-delivering delivering="row.' + input + '"></div>';
             case 'tooltip':
-                return '<div class="tooltip tooltip-basic tooltip-light" tooltip="\'' + data + '\'">' + data + '</div>';
+                return '<div class="tooltip tooltip-basic tooltip-light" tooltip-overflow="true" tooltip="\'' + data + '\'">' + data + '</div>';
             default:
                 return data;
             }
