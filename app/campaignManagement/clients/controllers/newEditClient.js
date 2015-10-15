@@ -7,8 +7,8 @@ define(function (require) {
 
     var ng = require('angular');
 
-    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', 'notification',
-        function ($scope, $modalInstance, channels, modalState, clientRecords, notification) {
+    app.controller('newEditClientCtrl', ['$scope', '$modalInstance', 'channelService', 'modalState', 'clientRecordService', 'divisionRecordService', 'notification',
+        function ($scope, $modalInstance, channels, modalState, clientRecords, divisionRecords, notification) {
         $scope.action = modalState.action;
 
         var record;
@@ -37,6 +37,23 @@ define(function (require) {
         $scope.ok = function (errors) {
             if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
+
+                    // Create a new division with the same name. This should be temporary
+                    var divisionRecord = divisionRecords.create();
+                    var division = divisionRecord.get();
+                    division.name = resp.data.name;
+                    division.clientId = resp.data.id;
+                    divisionRecord.save().then(function(division) {
+                        notification.success(
+                          'View your division <a ui-sref="cm.campaigns.division({ divisionId: id })">{{name}}</a>.',
+                          {
+                              locals: {
+                                  id: division.data.id,
+                                  name: division.data.name
+                              }
+                          });
+                    });
+
                     $modalInstance.dismiss('cancel');
                     $scope.client = {};
                     notification.success(
@@ -48,6 +65,7 @@ define(function (require) {
                             }
                         });
                 };
+
                 record.save().then(onSuccess);
             }
             $scope.submitted = true;
