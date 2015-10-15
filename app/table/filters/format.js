@@ -45,7 +45,7 @@ define(function (require) {
             case 'bullet':
                 return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
-                return '<a ui-sref="' + data.route + '">' + sanitize(data.name) + '</a>';
+                return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
             case 'creatives':
                 return '<div table-creatives="row.' + input + '"></div>';
             case 'delivering':
