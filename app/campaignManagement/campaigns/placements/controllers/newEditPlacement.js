@@ -29,14 +29,19 @@ define(function(require) {
 				for(var i = 0; i < modalState.placementIds.length; i ++) {
 					id = modalState.placementIds[i];
 					r = placementRecordService.get(id);
-					placementPromises.push(placementRecordService.fetch(id));
+					placementPromises.push(r.fetch(id));
 					records.push(r);
 				}
 
-				$q.all(placementPromises).then(function() {
-					record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
-					record.observe(update, $scope);
-				});
+                if (placementPromises.length === 1) {
+                    record = records[0];
+                    record.observe(update, $scope);
+                } else {
+                    $q.all(placementPromises).then(function() {
+                        record = placementRecordService.create(ng.merge(getIntersection(records), modalState.originalPlacement));
+                        record.observe(update, $scope);
+                    });
+                }
 			}
 
 			// Creating a new placement under a campaign
@@ -91,6 +96,7 @@ define(function(require) {
 			}
 
 			function cancel() {
+                console.log(record.changes());
 				if(record.hasChanges()) {
 					if(confirm('You have unsaved changes. Really close?')) {
 						record.reset();

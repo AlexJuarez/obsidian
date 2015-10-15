@@ -155,8 +155,6 @@ define(function (require) {
                     headers.splice(index + 1, 0, {name: 'Type', id: 'type'});
                 }
 
-
-
                 return {
                     header: _getTableHeader(header.all()),
                     options: options,

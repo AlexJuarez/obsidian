@@ -243,6 +243,7 @@ table {
                     width: ~"calc(100vw - 4rem)";
                     padding: 1rem @mobile-gutter;
                     box-sizing: border-box;
+                    vertical-align: top;
 
                     &:last-child {
                         border-bottom: 0;
@@ -325,6 +326,13 @@ table {
         .font-size(1.6);
         padding: 1rem 2rem;
         position: relative;
+        > span:first-child, .title {
+            display: inline-block;
+            max-width: ~"calc(100% - 30px)";
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
         .right {
             display: none;
             @media(min-width: @screen-sm-min) {

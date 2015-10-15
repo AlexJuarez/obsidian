@@ -10,12 +10,12 @@ define(function (require) {
             scope: true,
             templateUrl: 'campaignManagement/campaigns/directives/campaignsByStatus.html',
             controller: ['$scope', 'campaignsByStatus', function ($scope, campaignsByStatus) {
-                
+
                 function updateByStatus() {
                     $scope.byStatus = campaignsByStatus.all();
                 }
 
-                campaignsByStatus.observe(updateByStatus, $scope, true);
+                campaignsByStatus.observe(updateByStatus, $scope);
             }]
         };
     }]);

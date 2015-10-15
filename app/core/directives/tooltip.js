@@ -77,7 +77,7 @@ define(function (require) {
                         var content = $compile(template)(scope);
                         elem.find('.content').html(content);
                     }
-                });
+                }, true);
 
                 function closeTooltip() {
                     scope.isOpen = false;
