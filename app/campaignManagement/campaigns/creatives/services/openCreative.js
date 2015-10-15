@@ -60,6 +60,36 @@ define(function(require) {
                 })();
             }
 
+            function studioConnector(window, tabWindow, callback) {
+                // poll for connection
+                var poller = createPoller(500, 3000, function onTick() {
+                    tabWindow.postMessage('connect', '*');
+                }, function onTimeout() {
+                    callback('timeout');
+                }).start();
+
+                function onMessage(event) {
+                    // security?
+                    //if (event.origin !== "http://example.org")
+                    //   return;
+
+                    if(event.data !== 'connected') {
+                        return;
+                    }
+
+                    poller.stop();
+                    window.removeEventListener('message', onMessage);
+                    callback(null, function(subscriber) {
+                        function onConvert(event) {
+                            var data = JSON.parse(event.data);
+                            subscriber(data.command, data.data);
+                        }
+                        window.addEventListener('message', onConvert, false);
+                    });
+                }
+                window.addEventListener('message', onMessage, false);
+            }
+
             /**
              * Opens studio and returns a promise.
              *
@@ -75,33 +105,23 @@ define(function(require) {
                     'mixpo_studio'
                 );
 
-
-                var poller = createPoller(500, 3000, function onTick() {
-                    tabWindow.postMessage('connect', '*');
-                }, function onTimeout() {
-                    createFallbackHandler(tabWindow, deferred);
-                }).start();
-
-                function receiveMessage(event) {
-                    //if (event.origin !== "http://example.org")
-                    //   return;
-
-                    if(event.data === 'connected') {
-                        return poller.stop();
+                studioConnector(window, tabWindow, function(err, notifier) {
+                    if(err) {
+                        // studio Connect error does not team open failed,
+                        // just that supporting postMessage() failed.
+                        createFallbackHandler(tabWindow, deferred);
+                        return deferred.promise;
                     }
 
-                    console.log(event.data);
-                    // expect data as JSON string
-                    var cmd = JSON.parse(event.data);
-                    if(cmd.command === 'closeStudio') {
-                        tabWindow.close();
-                        deferred.resolve();
-                    } else {
-                        // unhandled event type
-                    }
-                }
-                window.addEventListener('message', receiveMessage, false);
-
+                    notifier(function(command, data){
+                        if(command === 'closeStudio') {
+                            tabWindow.close();
+                            deferred.resolve(data);
+                        } else {
+                            // unhandled event type
+                        }
+                    });
+                });
                 return deferred.promise;
             };
         }]);
