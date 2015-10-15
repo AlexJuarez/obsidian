@@ -45,13 +45,13 @@ define(function (require) {
             case 'bullet':
                 return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
-                return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+                return '<a ui-sref="' + data.route + '">' + sanitize(data.name) + '</a>';
             case 'creatives':
                 return '<div table-creatives="row.' + input + '"></div>';
             case 'delivering':
                 return '<span table-delivering delivering="row.' + input + '"></div>';
             case 'tooltip':
-                return '<div class="tooltip tooltip-basic tooltip-light" tooltip-overflow="true" tooltip="\'' + data + '\'">' + data + '</div>';
+                return '<div class="tooltip tooltip-basic tooltip-light" tooltip-overflow="true" tooltip="row.' + input + '">{{row.' + input + '}}</div>';
             default:
                 return data;
             }
