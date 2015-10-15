@@ -46,6 +46,7 @@ define(function(require) {
         require('./filters/truncateNumber');
         require('./filters/percentage');
         require('./filters/adTypeOrder');
+        require('./filters/shortenAdType');
     }
 
     function services() {
