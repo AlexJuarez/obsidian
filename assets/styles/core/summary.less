@@ -22,15 +22,25 @@
         float: left;
     }
 
-    @media(min-width: @screen-xs-max) {
+    .dropdown-toggle {
+        display: none;
+    }
+    .dropdown-menu, .open .dropdown-menu {
+        display: block;
+    }
+    .list + .list {
+        margin-left: 3.5rem;
+    }
+
+    @media(max-width: @screen-xs-max) {
         .dropdown-toggle {
-            display: none;
-        }
-        .dropdown-menu {
             display: block;
         }
-        .list  + .list {
-            margin-left: 3.5rem;
+        .dropdown-menu {
+            display: none;
+        }
+        .list + .list {
+            margin-left: 0;
         }
     }
 
