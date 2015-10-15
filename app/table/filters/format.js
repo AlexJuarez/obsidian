@@ -21,6 +21,10 @@ define(function (require) {
             }
         }
 
+        function shortenAdTypeText(input) {
+            return $filter('shortenAdType')(input);
+        }
+
         return function (input, row, rules) {
             var rule = rules[input];
             var data = row[input];
@@ -40,6 +44,8 @@ define(function (require) {
                 return date(data);
             case 'checkbox':
                 return createCheckbox(data, input);
+            case 'type':
+                return shortenAdTypeText(data);
             case 'status':
                 return '<span class="glyph-dot status" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':

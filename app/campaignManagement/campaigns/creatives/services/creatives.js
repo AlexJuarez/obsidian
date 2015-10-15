@@ -21,7 +21,7 @@ define(function(require) {
         checked: 'checkbox',
         creativeName: 'tooltip',
         delivering: 'delivering',
-        type: '',
+        type: 'type',
         dimensions: '',
         expandedDimensions: '',
         numPlacements: 'link',
