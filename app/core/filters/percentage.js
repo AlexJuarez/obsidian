@@ -10,7 +10,7 @@ define(function (require) {
                 var roundedNum = input * 100;
                 return roundedNum.toFixed(2);   
             } else {
-                return input;
+                return input.toFixed(2);
             }
             
         };
