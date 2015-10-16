@@ -11,10 +11,10 @@ define(function (require) {
         beforeEach(function () {
             module('app.campaign-management');
             // Set up the mock http service responses
-            inject(function (newCreativeService, $rootScope, $window, $httpBackend) {
+            inject(function (newCreativeService, $rootScope, studioWindow, $httpBackend) {
                 newCreative = newCreativeService;
                 scope = $rootScope;
-                window = $window;
+                window = studioWindow;
                 httpBackend = $httpBackend;
             });
         });
@@ -131,7 +131,6 @@ define(function (require) {
             newCreative(creative, mediaItem).then(handler);
 
             scope.$digest();
-            expect(fakeWindow.StudioDirectHandler).toBeDefined();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
             expect(handler).toHaveBeenCalled();
         });
@@ -159,7 +158,6 @@ define(function (require) {
             newCreative(creative).then(handler);
 
             scope.$digest();
-            expect(fakeWindow.StudioDirectHandler).toBeDefined();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
             expect(handler).toHaveBeenCalled();
         });
@@ -186,7 +184,6 @@ define(function (require) {
             newCreative(creative).then(handler);
 
             scope.$digest();
-            expect(fakeWindow.StudioDirectHandler).toBeDefined();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
             expect(handler).toHaveBeenCalled();
         });
@@ -213,7 +210,6 @@ define(function (require) {
             newCreative(creative).then(handler);
 
             scope.$digest();
-            expect(fakeWindow.StudioDirectHandler).toBeDefined();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
             expect(handler).toHaveBeenCalled();
         });
@@ -240,7 +236,6 @@ define(function (require) {
             newCreative(creative).then(handler);
 
             scope.$digest();
-            expect(fakeWindow.StudioDirectHandler).toBeDefined();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
             expect(handler).toHaveBeenCalled();
         });

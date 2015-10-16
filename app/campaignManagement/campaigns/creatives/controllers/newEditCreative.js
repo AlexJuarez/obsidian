@@ -8,10 +8,10 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder',
+         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder', 'studioWindow',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, notification, studioLocation, studioUrlBuilder
+              creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow
     ) {
         var _mediaItem;
         function setMediaItem(mediaItem) {
@@ -20,36 +20,24 @@ define(function (require) {
         }
 
         $scope.selectMedia = function() {
-            // Create window that hosts Studio Direct, see StudioDirectHandler for callbacks
+            // Create window that hosts Studio Direct
             var hostname = studioLocation.host();
-            var tabWindow = $window.open(
-                studioUrlBuilder.mediaselect($scope.creative.campaignId)
-                    .setHostname(hostname)
-                    .build(),
-              'mixpo_studio'
-            );
-
-            // Create
-            tabWindow.StudioDirectHandler = (function(){
-                function onClose(code, detail) {
-                    if(code && detail) {
-                        // so jshint shuts up
-                    }
-                    tabWindow.close();
+            var url =  studioUrlBuilder.mediaselect($scope.creative.campaignId)
+                .setHostname(hostname)
+                .build();
+            var studioTab = studioWindow.open(url);
+            studioTab.onClose = function onClose(code, detail) {
+                if(code && detail) {
+                    // so jshint shuts up
                 }
-
-                function onMediaSelect(uuid, detail) {
-                    if(!!uuid) {
-                        var json = JSON.parse(detail);
-                        setMediaItem(json);
-                    }
+                studioTab.close();
+            };
+            studioTab.onMediaSelect = function onMediaSelect(uuid, detail) {
+                if(!!uuid) {
+                    var json = JSON.parse(detail);
+                    setMediaItem(json);
                 }
-
-                return {
-                    onClose: onClose,
-                    onMediaSelect: onMediaSelect
-                };
-            })();
+            };
         };
 
         var record;

@@ -13,29 +13,7 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('openCreativeService', ['$q', '$window', 'studioUrlBuilder', 'studioConnector', function($q, $window, studioUrlBuilder, studioConnector) {
-
-        /**
-         * construct the StudioDirectHandler window object
-         *
-         * @param tabWindow
-         * @param deferred
-         */
-        function createStudioDirectHandler(tabWindow, deferred) {
-            tabWindow.StudioDirectHandler = (function(){
-                function onClose(code, detail) {
-                    if(code && detail) {
-                        //return deferred.reject(err);
-                    }
-                    tabWindow.close();
-                    deferred.resolve();
-                }
-
-                return {
-                    onClose: onClose
-                };
-            })();
-        }
+    module.service('openCreativeService', ['$q', 'studioUrlBuilder', 'studioWindow', function($q, studioUrlBuilder, studioWindow) {
 
         /**
          * Opens studio and returns a promise.
@@ -50,29 +28,16 @@ define(function(require) {
                 .open(creative.id, creative.campaignId)
                 .setHostname(hostname)
                 .build();
-            var tabWindow = $window.open(
-                url,
-                'mixpo_studio'
-            );
 
-            var connector = studioConnector(window, tabWindow, function onConnection(err, notifier) {
-                if(err) {
-                    // studio Connect error does not team open failed,
-                    // just that supporting postMessage() failed.
-                    createStudioDirectHandler(tabWindow, deferred);
-                    return deferred.promise;
+            var tabWindow = studioWindow.open(url);
+            // map any Studio API callbacks
+            tabWindow.onClose = function(code, detail) {
+                if(code && detail) {
+                    //return deferred.reject(err);
                 }
-
-                notifier(function(command, data){
-                    if(command === 'closeStudio') {
-                        tabWindow.close();
-                        deferred.resolve(data);
-                        connector.shutdown();
-                    } else {
-                        // unhandled event type
-                    }
-                });
-            });
+                tabWindow.close();
+                deferred.resolve(detail);
+            };
             return deferred.promise;
         };
     }]);
