@@ -1,6 +1,3 @@
-var LoginPage = require('../pages/loginPage');
-var DivisionPage = require('../pages/divisionPage'); 
-var NavBar = require('../pages/navBar');
 
 // PAGE ELEMENTS
 // Selectors:
@@ -13,15 +10,28 @@ var NavBar = require('../pages/navBar');
 describe('New Ad Build by LMP Creative Producer', function () {
 
     it('will have client Cobalt', function(done) {
-      var loginPage = new LoginPage('automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
-      var navBar = new NavBar();
-      loginPage.loginToWebsite()
-        .click(navBar.clientDrop)
-        .setValue(navBar.clientSearch, 'Cobal')
-        .isExisting(navBar.clientResults).then(function (isExisting) {
-          expect(isExisting).toBe(true);
-        })
-        .call(done);
+      browser.login()
+      .searchClient('Cob','Cobalt')
+      .call(done);
+
+    });
+  
+    it('will have division WTVZ', function(done) {
+      browser
+      .searchDivision('WTV','WTVZ')
+      .call(done);
     });
 
+    it('will have account apollo', function(done) {
+      browser
+      .searchAccount('apol','apollo')
+      .call(done);
+    });
+
+    it('will have campaign celino', function(done) {
+      browser
+      .searchCampaign('celli','cellino')
+      .call(done);
+    });
+    
 });

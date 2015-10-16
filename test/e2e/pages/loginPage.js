@@ -25,18 +25,12 @@ loginPage.prototype.loginToWebsite = function () {
         .setValue(passwordField, this._password)
         .click(passwordField)
         .keys('Enter')
-  //.waitForExist('#container', 10000)
-  //      .getTitle(function (err, title) {
-  //          expect(err).toBeFalsy();
-  //          expect(title).not.toBe('Sign in to your Mixpo SmartVideo advertising account');
-  //      })
-  //.url('https://alpha-studio.mixpo.com/campaign-management')
-  .waitForExist('#navbar-campaign-management-tab',10000)
-  .getTitle(function (err, title) {
-    expect(err).toBeFalsy();
-    expect(title).toBe('Narwhal');
-    console.log('NARWHALS NARWHALS SWIMMING IN THE OCEAN!!!');
-  });
+        .waitForExist('#navbar-campaign-management-tab',10000)
+        .getTitle(function (err, title) {
+          expect(err).toBeFalsy();
+          expect(title).toBe('Narwhal');
+          console.log('NARWHALS NARWHALS SWIMMING IN THE OCEAN!!!');
+        });
 }
 
 module.exports = loginPage;

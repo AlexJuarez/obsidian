@@ -1,3 +1,7 @@
+var LoginPage = require('./pages/loginPage');
+var DivisionPage = require('./pages/divisionPage'); 
+var NavBar = require('./pages/navBar');
+
 exports.config = {
     
     //
@@ -127,7 +131,30 @@ exports.config = {
     // Gets executed before test execution begins. At this point you will have access to all global
     // variables like `browser`. It is the perfect place to define custom commands.
     before: function() {
-        // do something
+      var loginPage, 
+          navBar;
+
+      loginPage = new LoginPage('automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
+      navBar = new NavBar();
+      browser.addCommand("login", function (){
+        return loginPage.loginToWebsite();
+      });
+      browser.addCommand("searchClient", function(term,actual){
+        return navBar.clientSearch(term,actual);
+      });
+
+      browser.addCommand("searchDivision", function(term,actual){
+        return navBar.divisionSearch(term,actual);
+      });
+
+      browser.addCommand("searchAccount", function(term,actual){
+        return navBar.accountSearch(term,actual);
+      });
+
+      browser.addCommand("searchCampaign", function(term,actual){
+        return navBar.campaignSearch(term,actual);
+      });
+
     },
     //
     // Gets executed after all tests are done. You still have access to all global variables from
