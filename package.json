@@ -4,7 +4,7 @@
   "description": "Obsidian, a not so well know rock.",
   "private": true,
   "scripts": {
-	"start": "grunt --proxy https://thorwhal-stable-api.mixpo.com",
+    "start": "grunt --proxy https://thorwhal-stable-api.mixpo.com",
     "test": "karma start"
   },
   "repository": {
@@ -63,7 +63,8 @@
     "mocha": "^2.2.4",
     "phantomjs": "^1.9.17",
     "requirejs": "^2.1.17",
-    "time-grunt": "~0.1.1"
+    "time-grunt": "~0.1.1",
+    "webdriverio": "^3.2.4"
   },
   "engines": {
     "node": ">=0.8.0",
