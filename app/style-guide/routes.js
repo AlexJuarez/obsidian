@@ -35,7 +35,10 @@ define(function (require) {
     require('tpl!./creative-preview.html');
     require('tpl!./notification.html');
 
-    return app.config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
+    return app.config(['$stateProvider', '$urlRouterProvider', '$anchorScrollProvider', function ($stateProvider, $urlRouterProvider, $anchorScrollProvider) {
+        $urlRouterProvider.otherwise('/style-guide');
+        $anchorScrollProvider.disableAutoScrolling();
+
         $urlRouterProvider.when('/style-guide', '/style-guide/tab1' );
 
         $stateProvider

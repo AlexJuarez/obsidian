@@ -169,9 +169,9 @@ define(function (require) {
                     campaign = campaigns[i];
 
                     output.push({
+                        id: campaign.id,
                         campaign: {
-                            id: campaign.id,
-                            route: 'cm.campaigns.detail({ campaignId: row.campaign.id })',
+                            route: 'cm.campaigns.detail({ campaignId: row.id })',
                             name: campaign.name
                         },
                         impressions: {
@@ -191,7 +191,7 @@ define(function (require) {
                             name: campaign.metrics.countPlacements
                         },
                         creatives: {
-                            route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            route: 'cm.campaigns.detail.creatives({ campaignId: row.id })',
                             name: campaign.metrics.countCreatives
                         }
                     });

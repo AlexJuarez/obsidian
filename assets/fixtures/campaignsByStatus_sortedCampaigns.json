@@ -27,7 +27,7 @@
             "name": 22
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 22
         },
         "edit": [
@@ -63,7 +63,7 @@
             "name": 38
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 38
         },
         "edit": [
@@ -99,7 +99,7 @@
             "name": 31
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 31
         },
         "edit": [
@@ -135,7 +135,7 @@
             "name": 94
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 94
         },
         "edit": [
@@ -171,7 +171,7 @@
             "name": 104
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 104
         },
         "edit": [
@@ -207,7 +207,7 @@
             "name": 22
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 22
         },
         "edit": [
@@ -243,7 +243,7 @@
             "name": 1
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 1
         },
         "edit": [
@@ -279,7 +279,7 @@
             "name": 22
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 22
         },
         "edit": [
@@ -315,7 +315,7 @@
             "name": 6
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 6
         },
         "edit": [
@@ -351,7 +351,7 @@
             "name": 1
         },
         "creatives": {
-            "route": "cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })",
+            "route": "cm.campaigns.detail.creatives({ campaignId: row.id })",
             "name": 1
         },
         "edit": [

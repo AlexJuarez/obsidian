@@ -3,13 +3,13 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.controller('datepickerDemoCtrl', ['$scope', function ($scope) {
+    app.controller('datepickerDemoCtrl', ['$scope', 'DATE_FORMAT', function ($scope, DATE_FORMAT) {
 
         $scope.dt = new Date();
 
         $scope.openPicker = openPicker;
 
-        $scope.format = 'MM/dd/yyyy';
+        $scope.format = DATE_FORMAT;
 
         $scope.dateOptions = {
             formatYear: 'yy',

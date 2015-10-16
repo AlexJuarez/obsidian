@@ -13,10 +13,9 @@ define(function (require) {
             controller: ['$scope', 'clientSet', function ($scope, activeSummary) {
                 function updateSummary() {
                     $scope.active = activeSummary.all();
-                    
                 }
 
-                activeSummary.observe(updateSummary, $scope, true);
+                activeSummary.observe(updateSummary, $scope);
             }]
         };
     }]);

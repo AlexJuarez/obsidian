@@ -4,6 +4,10 @@ define(function (require) {
     var app = require('./../module');
     require('tpl!./tableIcons.html');
 
+    function capitalize(str) {
+        return String(str).charAt(0).toUpperCase() + String(str).slice(1);
+    }
+
     app.directive('tableIcons', [function () {
         return {
             restrict: 'A',
@@ -28,7 +32,8 @@ define(function (require) {
 
                         if (control === 'campaign') {
                             //capitalized the first letter of the action
-                            $scope['show' + action.charAt(0).toUpperCase() + action.slice(1)] = true;
+                            $scope['show' + capitalize(action)] = true;
+                            $scope['title' + capitalize(action)] = capitalize(control) + ' ' + capitalize(action);
                             $scope[action] = campaignModal[action];
                         }
                     } else {
