@@ -69,7 +69,7 @@ define(function (require) {
                 $scope.interval = 'day';
 
                 $scope.openPicker = openPicker;
-                $scope.startDate = '';
+                $scope.startDate = null;
 
                 $scope.format = 'yyyy-MM-dd';
                 $scope.downloadImage = downloadImage;
@@ -285,7 +285,6 @@ define(function (require) {
                     function mouseMoveTooltip() {
                         var e = d3.event;
                         e.stopPropagation();
-                        e.preventDefault();
                     }
 
                     function mouseLeaveTooltip() {
@@ -355,18 +354,15 @@ define(function (require) {
 
                 $scope.$watch('interval', function() {
                     setUpChart($scope.interval, $scope.startDate);
-                });
+                }, true);
 
                 $scope.$watch('startDate', function() {
                     setUpChart($scope.interval, $scope.startDate);
-                });
+                }, true);
 
-                $scope.$watch('show', function(newValue) {
-                    $element.find('.chart-area').empty();
-                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
-
-                    drawChart($element.find('.chart-area')[0], transformData(data, $scope.interval), $scope.interval, newValue);
-                });
+                $scope.$watch('show', function() {
+                    setUpChart($scope.interval, $scope.startDate);
+                }, true);
 
                 ng.element($window).on('resize', function() {
                     setUpChart($scope.interval, $scope.startDate);
