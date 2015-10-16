@@ -125,7 +125,7 @@ define(function(require) {
                         name: 22
                     },
                     creatives: {
-                        route: 'cm.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                        route: 'cm.campaigns.detail.creatives({ campaignId: row.id })',
                         name: 22
                     },
                     live: false,

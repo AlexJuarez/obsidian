@@ -92,7 +92,7 @@ define(function (require) {
                             name: row.metrics.countPlacements
                         },
                         creatives: {
-                            route: base + '.campaigns.detail.creatives.thumbnails({ campaignId: row.id })',
+                            route: base + '.campaigns.detail.creatives({ campaignId: row.id })',
                             name: row.metrics.countCreatives
                         },
                         edit: ['campaign.preview', 'campaign.settings']
