@@ -15,7 +15,7 @@ define(function (require) {
                     $scope.summary = campaignsHeader.all();
                 }
 
-                campaignsHeader.observe(updateSummary, $scope, true);
+                campaignsHeader.observe(updateSummary, $scope);
             }]
         };
     }]);
