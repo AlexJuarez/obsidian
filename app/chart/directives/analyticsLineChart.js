@@ -83,6 +83,7 @@ define(function (require) {
 
                 $scope.$on('$destroy', function() {
                     $($document.find('body')).off('mouseleave', '.interactive-chart .chart-container');
+                    ng.element($window).off('resize', windowResize);
                 });
 
                 function openPicker($event) {
@@ -364,10 +365,11 @@ define(function (require) {
                     setUpChart($scope.interval, $scope.startDate);
                 }, true);
 
-                ng.element($window).on('resize', function() {
+                function windowResize() {
                     setUpChart($scope.interval, $scope.startDate);
-                });
+                }
 
+                ng.element($window).on('resize', windowResize);
             }]
         };
     }]);
