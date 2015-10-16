@@ -30,6 +30,7 @@ table {
     .tooltip .main, .creative-preview-link {
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
         &:hover {
             color: @brand-color;
         }
@@ -74,6 +75,10 @@ table {
             > td {
                 vertical-align: middle;
                 padding: 1.2rem 2rem 1.2rem 2rem;
+                max-width: 180px;
+                &:nth-last-child(2) {
+                    text-align: right;
+                }
                 &.table-number {
                     display: none;
                 }
@@ -258,6 +263,8 @@ table {
                         display: block;
                         text-align: right;
                         clear: both;
+                        width: 100%;
+                        max-width: 100%;
 
                         a {
                             overflow: hidden;
@@ -327,7 +334,7 @@ table {
         border: 1px solid @table-collapse-border;
         font-weight: bold;
         .font-size(1.6);
-        padding: 1rem 2rem;
+        padding: 1rem 2rem 0.5rem 2rem;
         position: relative;
         > span:first-child, .title {
             display: inline-block;
