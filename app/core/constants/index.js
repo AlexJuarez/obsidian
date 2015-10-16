@@ -7,4 +7,5 @@ define(function(require) {
     require('./urlRegex');
     require('./moneyRegex');
     require('./isMobile');
+    require('./dateFormat');
 });

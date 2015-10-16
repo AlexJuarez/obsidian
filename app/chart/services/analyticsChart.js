@@ -55,9 +55,14 @@ define(function (require) {
             return cache.exists(_apiConfig(interval, startDate));
         }
 
+        function isLoaded(interval, startDate) {
+            return cache.isLoaded(_apiConfig(interval, startDate));
+        }
+
         return {
             _apiConfig: _apiConfig,
             get: get,
+            isLoaded: isLoaded,
             exists: exists
         };
 

@@ -28,7 +28,7 @@
         </div>
     </form>
     <div ng-show="noData" class="no-data"><div class="text">No Data</div></div>
-    <div style="height: 250px;" class="chart-area"></div>
+    <div style="height: 250px;" class="chart-area" ng-class="{ loading: !isLoaded }"></div>
     <div class="details-summary"></div>
 </div>
 

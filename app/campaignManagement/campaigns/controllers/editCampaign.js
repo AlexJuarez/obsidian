@@ -4,10 +4,10 @@ define(function (require) {
     var app = require('./../../module');
     var ng = require('angular');
 
-    app.controller('editCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', function ($scope, $modalInstance, accounts, modalState) {
+    app.controller('editCampaignCtrl', ['$scope', '$modalInstance', 'accountService', 'modalState', 'DATE_FORMAT', function ($scope, $modalInstance, accounts, modalState, DATE_FORMAT) {
 
         //Datepicker functions
-        $scope.format = 'MM/dd/yyyy';
+        $scope.format = DATE_FORMAT;
         $scope.openPicker = openPicker;
         $scope.datePickers = {};
         $scope.edit = true;
