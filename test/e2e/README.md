@@ -2,11 +2,14 @@
 
 # Requirements
 Globally install webdriverio and jasmine.
-npm install -g webdriverio
-npm install -g jasmine
+`npm install -g webdriverio`
+`npm install -g jasmine`
 
 ## To run tests:
-npm install
+You'll want three terminals. One to run a local selenium server, one to run a local webserver, and one to run your tests.
+`npm install`
+Local selenium server. `./startSelenium`
+Local webserver. `grunt --proxy https://thorwhal-dev-api.mixpo.com` 
 `wdio wdio.conf.js` from the obsidian/test/e2e folder.
 
 ##Test files 
