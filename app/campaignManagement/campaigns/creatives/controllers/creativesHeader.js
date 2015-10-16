@@ -50,7 +50,8 @@ define(function(require) {
                     all: 0,
                     inBannerVideo: 0,
                     richMedia: 0,
-                    inStream: 0
+                    inStream: 0,
+                    display: 0
                 };
 
                 for(var i = 0; i < allCreatives.length; i ++) {
