@@ -10,7 +10,7 @@
 			<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>
 		</div>
 		<div class="creative-info">
-			<span class="title">{{creative.creativeName}}</span>
+			<div tooltip="'{{creative.creativeName}}'" class="title tooltip hover tooltip-basic tooltip-light" tooltip-overflow="true">{{creative.creativeName}}</div>
 			<div class="data">
 				<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">Placements: </a>
 				<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">{{creative.numPlacements.name}}</a>

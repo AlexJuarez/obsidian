@@ -11,7 +11,7 @@ define(function (require) {
                 case 'In-Stream':
                     return 'ISV';
                 case 'Display':
-                    return 'D';
+                    return 'IMG/SWF';
                 case 'Rich Media':
                     return 'RM';
                 default:
