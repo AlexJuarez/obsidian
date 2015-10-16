@@ -34,6 +34,7 @@ define(function (require) {
                 controller: 'indexCtrl'
             })
             .state('cm', {
+                abstract: true,
                 url: '/campaign-management',
                 controller: 'campaignManagementCtrl',
                 templateUrl: 'campaignManagement/index.html',
