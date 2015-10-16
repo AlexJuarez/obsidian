@@ -7,7 +7,7 @@
 		</div>
 		<div class="thumbnail-info">
 			<i class="glyph-dot" ng-class="{'success': creative.delivering}"></i>
-			<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>
+			<span class="right">{{creative.type|shortenAdType}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>
 		</div>
 		<div class="creative-info">
 			<span class="title">{{creative.creativeName}}</span>
@@ -17,7 +17,7 @@
 			</div>
 			<div class="data">
 				<span>Ad Type:</span>
-				<span>{{creative.type}}</span>
+				<span>{{creative.type|shortenAdType}}</span>
 			</div>
 			<div class="data">
 				<span>Last Modified:</span>
@@ -25,7 +25,8 @@
 			</div>
 			<div class="data">
 				<span>
-					<a ng-click="openStudio(creative)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>
+					<a ng-if="creative.type !== 'Display'" ng-click="openStudio(creative)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>
+					<a ng-if="creative.type === 'Display'" ng-click="openMediaLibrary(creative)" title="Replace Creative from Media Library"><i class="glyph-icon glyph-edit"></i>Replace</a>
 					<a ng-click="openPreviewPage(creative)" title="Preview Creative in Page"><i class="glyph-icon glyph-view"></i>Preview</a>
 				</span>
 				<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>
