@@ -13,7 +13,7 @@ define(function (require) {
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
               creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow
     ) {
-        var _mediaItem;
+        var _mediaItem, _dimension, _expandedDimension;
         function setMediaItem(mediaItem) {
             _mediaItem = mediaItem;
             // update visuals
@@ -57,11 +57,11 @@ define(function (require) {
 
         $scope.types = creativeSettings.types;
 
-        function getType(data){
+        function getType(datum){
             var type;
 
             ng.forEach(creativeSettings.types, function(d) {
-                if (data.type === d.dbName && data.subtype === d.subtype) {
+                if (datum.type === d.dbName && datum.subtype === d.subtype) {
                     type = d;
                 }
             });
@@ -108,7 +108,19 @@ define(function (require) {
             }
         }
 
-        function getDimensionsValue(arry, width, height) {
+        function getDimensionsValue(arry, width, height, expanded) {
+            if(!expanded && _dimension) {
+                return _dimension;
+            }
+
+            if(expanded && _expandedDimension) {
+                return _expandedDimension;
+            }
+
+            if(!width || !height) {
+                return null;
+            }
+
             var index;
             var customIndex;
             var nonExpandingIndex;
@@ -125,10 +137,6 @@ define(function (require) {
                 }
             });
 
-            if (!width || !height) {
-                return arry[nonExpandingIndex];
-            }
-
             return arry[index == null ? customIndex : index];
         }
 
@@ -142,6 +150,7 @@ define(function (require) {
                         embedHeight: dimension.height
                     });
                 }
+                _dimension = dimension;
             }
 
             return getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
@@ -151,7 +160,7 @@ define(function (require) {
             if (dimension) {
                 $scope.expandedDimensionsAreCustom = dimension.isCustom;
 
-                if (!dimension.isCustom || !dimension.isNonExpanding) {
+                if (!dimension.isCustom && !dimension.isNonExpanding) {
                     record.set({
                         expandedWidth: dimension.width,
                         expandedHeight: dimension.height
@@ -165,9 +174,11 @@ define(function (require) {
                         expandMode: null
                     });
                 }
+
+                _expandedDimension = dimension;
             }
 
-            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight, true);
         }
 
         function getEnvironmentValue(environments, data) {
@@ -211,13 +222,13 @@ define(function (require) {
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
-            var dimension = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
-            if (dimension) {
-                $scope.dimensionsAreCustom = dimension.isCustom;
+            _dimension = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+            if (_dimension) {
+                $scope.dimensionsAreCustom = _dimension.isCustom;
             }
-            var dimensionExpanded = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
-            if (dimensionExpanded) {
-                $scope.expandedDimensionsAreCustom = dimensionExpanded.isCustom;
+            _expandedDimension = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight, true);
+            if (_expandedDimension) {
+                $scope.expandedDimensionsAreCustom = _expandedDimension.isCustom;
             }
         }
 
@@ -233,7 +244,7 @@ define(function (require) {
             if(record.hasChanges()) {
                 if(confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.campaign = record.get();
+                    $scope.creative = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {

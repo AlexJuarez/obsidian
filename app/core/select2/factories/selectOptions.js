@@ -53,7 +53,7 @@ define(function(require) {
     }
 
     module.factory('selectOptionsFactory', ['$log', '$parse', 'NG_OPTIONS_REGEXP', function($log, $parse, NG_OPTIONS_REGEXP) {
-        return function(ngOptions, element, scope, tracked) {
+        return function(ngOptions, scope, tracked) {
             var getOptions, valuesFn;
 
             if (ngOptions) {
@@ -167,7 +167,7 @@ define(function(require) {
                             text = option.innerText;
 
                             if (option.hasAttribute('value')) {
-                                id = option.getAttribute('value').value;
+                                id = option.getAttribute('value');
                             } else {
                                 id = text;
                             }
