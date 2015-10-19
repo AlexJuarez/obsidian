@@ -31,6 +31,7 @@ define(function (require) {
                 scope.tooltipScope = attr.tooltipScope && $parse(attr.tooltipScope)(scope) || scope;
 
                 var tooltip = attr.tooltip;
+                var isHover = elem.hasClass('hover');
                 var overflow = attr.tooltipOverflow;
                 var isBasicTooltip = true;
                 var baseTemplate = $templateCache.get('core/directives/tooltip.html');
@@ -46,7 +47,7 @@ define(function (require) {
                 });
 
                 //watch for an open event on the scope.
-                if (!overflow) {
+                if (!isHover) {
                     scope.$watch(function() { return scope.isOpen; }, function(val) {
                         if(val) {
                             elem.addClass('open');

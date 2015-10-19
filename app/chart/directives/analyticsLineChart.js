@@ -335,10 +335,8 @@ define(function (require) {
                     var data = analyticChartService.get(interval, startDate).all();
                     var noData = (data.length === 0) && isLoaded; //check for no data'
                     $scope.noData = noData;
-                    if (!noData) {
-                        chartArea.empty();
-                        drawChart(chartArea[0], transformData(data, interval), interval, $scope.show);
-                    }
+                    chartArea.empty();
+                    drawChart(chartArea[0], transformData(data, interval), interval, $scope.show);
                 }
 
                 function setUpChart(interval, startDate) {
