@@ -12,8 +12,8 @@ define(function (require) {
 			replace: true,
 			scope: false,
 			templateUrl: 'campaignManagement/campaigns/placements/directives/start-end-dates.html',
-			controller: ['$scope', function($scope) {
-				$scope.format = 'MM/dd/yyyy';
+			controller: ['$scope', 'DATE_FORMAT', function($scope, DATE_FORMAT) {
+				$scope.format = DATE_FORMAT;
 				$scope.openPicker = openPicker;
 				$scope.datePickers = {};
 				$scope.dateOptions = {

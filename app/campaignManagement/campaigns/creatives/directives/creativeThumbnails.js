@@ -155,7 +155,6 @@ define(function (require) {
                         if ( creatives.data().isLoaded() ) {
                             $scope.creativesAreLoaded = true;
                         }
-
                     }
             }]
         };

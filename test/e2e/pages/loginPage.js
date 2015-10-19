@@ -7,8 +7,8 @@ var userField = '#account',
     passwordField = '#password';
 
 loginPage.prototype.goToWebsite = function () {
-    return browser.url('https://alpha-studio.mixpo.com/campaign-management', function () {
-        console.log('went to http://studio.mixpo.com');
+    return browser.url('https://thorwhal-dev-api.mixpo.com/campaign-management', function () {
+        console.log('went to login page!');
     })
     .isExisting('#account').then(function(isExisting) {
         expect(isExisting).toBe(true);
@@ -17,6 +17,7 @@ loginPage.prototype.goToWebsite = function () {
 }
 
 loginPage.prototype.loginToWebsite = function () {
+
     return this.goToWebsite()
         .isExisting('#account').then(function (isExisting) {
             expect(isExisting).toBe(true);

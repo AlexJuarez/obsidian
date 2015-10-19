@@ -7,12 +7,12 @@ define(function (require) {
 
     app.controller('newEditCampaignCtrl', [
         '$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService',
-        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification', 'URL_REGEX', 'MONEY_REGEX', '$interpolate', '$filter',
+        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification',
+        'URL_REGEX', 'MONEY_REGEX', '$interpolate', '$filter', 'DATE_FORMAT',
         function ($scope, $q, $modalInstance, accounts, accountRecords, divisionRecords,
-                  clientRecords, campaignRecords, modalState, notification, URL_REGEX, MONEY_REGEX, $interpolate, $filter) {
+                  clientRecords, campaignRecords, modalState, notification, URL_REGEX, MONEY_REGEX, $interpolate, $filter, DATE_FORMAT) {
 
-            //Datepicker functions
-            $scope.format = 'MM/dd/yyyy';
+            $scope.format = DATE_FORMAT;
             $scope.openPicker = openPicker;
             $scope.datePickers = {};
             $scope.dateOptions = {
@@ -96,7 +96,7 @@ define(function (require) {
                     // Date doesn't parse!
                     date = new Date('Jan 1 2000');
                 }
-                $event.target.value = $filter('date')(date, 'M/d/yyyy');
+                $event.target.value = $filter('date')(date, DATE_FORMAT);
             }
 
             function cancel() {

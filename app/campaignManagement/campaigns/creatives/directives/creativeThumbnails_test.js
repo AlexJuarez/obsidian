@@ -8,7 +8,7 @@ define(function (require) {
     var template = require('tpl!./creativeThumbnails.html');
 
     describe('creativeThumbnails', function () {
-        var compile, state, rootScope, mockCreatives, modal, window, records, enums;
+        var compile, state, rootScope, mockCreatives, modal, window, records, enums, mockOpenCreativeService;
 
         mockCreatives = {
             all: function() {
@@ -45,6 +45,11 @@ define(function (require) {
                 // Ignore the loadingIndicator directive...
                 $provide.factory('loadingIndicatorDirective', function(){
                     return {};
+                });
+                $provide.service('openCreativeService', function() {
+                    // Mocking openCreativeService as service real service will cause timeout issues.
+                    mockOpenCreativeService = jasmine.createSpy('openCreativeService');
+                    return mockOpenCreativeService;
                 });
             });
 
@@ -121,24 +126,39 @@ define(function (require) {
                 expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/container?id=1', '_blank');
             });
 
-            it('should open a studio page', function () {
-                var fakeWindow = {};
-                spyOn(window, 'open').and.returnValue(fakeWindow);
+            it('should open creative service page', function () {
                 var scope = setUpScope();
 
                 scope.openStudio({id: 1});
 
-                expect(window.open).toHaveBeenCalled();
+                expect(mockOpenCreativeService).toHaveBeenCalled();
             });
 
-            it('should open a studio page with creative.id', function () {
-                var fakeWindow = {};
-                spyOn(window, 'open').and.returnValue(fakeWindow);
+            it('should open creative service with expected number of arguments', function () {
                 var scope = setUpScope();
 
                 scope.openStudio({id: 1, campaignId:'_id_'});
 
-                expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/studio?filter=%7B%22campaignId%22:%22_id_%22%7D&guid=1&sdf=open', 'mixpo_studio');
+                expect(mockOpenCreativeService.calls.mostRecent().args.length).toEqual(2);
+            });
+
+            it('should open creative service with creative that includes ID and CampaignId', function () {
+                var scope = setUpScope();
+
+                scope.openStudio({id: 1, campaignId:'_id_'});
+
+                expect(mockOpenCreativeService.calls.mostRecent().args[0].id).toBeDefined();
+                expect(mockOpenCreativeService.calls.mostRecent().args[0].id).toEqual(1);
+                expect(mockOpenCreativeService.calls.mostRecent().args[0].campaignId).toBeDefined();
+                expect(mockOpenCreativeService.calls.mostRecent().args[0].campaignId).toEqual('_id_');
+            });
+
+            it('should open creative service with expected hostname', function () {
+                var scope = setUpScope();
+
+                scope.openStudio({id: 1, campaignId:'_id_'});
+
+                expect(mockOpenCreativeService.calls.mostRecent().args[1]).toEqual('//alpha-studio.mixpo.com');
             });
 
             it('should update the filter on stateChange', function () {
