@@ -47,7 +47,7 @@ define(function (require) {
                     var selectCtrl = ctrls[0];
                     var optionsExpression = attr.ngOptions || attr.s2Options;
                     var trackValues = trackValuesFactory();
-                    var selectOptions = selectOptionsFactory(optionsExpression, element, scope, trackValues);
+                    var selectOptions = selectOptionsFactory(optionsExpression, scope, trackValues);
                     var modelSync;
                     var theme, data, select2;
                     var initialized = false;
