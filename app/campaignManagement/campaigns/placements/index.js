@@ -15,4 +15,8 @@ define(function(require) {
 	require('./services/placementsByPublisher');
 	require('./services/placementsByCreative');
 	require('./services/placementsByAdType');
+
+	require('./directives/creativeTypeOptions/audioOff');
+	require('./directives/creativeTypeOptions/playMode');
+	require('./directives/creativeTypeOptions/skipCountdown');
 });

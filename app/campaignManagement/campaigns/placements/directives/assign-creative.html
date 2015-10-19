@@ -36,40 +36,13 @@
 	<!-- IN BANNER VIDEO NON-EXPANDING -->
 
 	<div ng-if="creativeType === 'inBannerVideo' && !isExpanding">
-		<div class="form-group row">
-			<label class="col-sm-3 form-label"><span>Play Mode</span></label>
-			<div class="col-sm-9">
-				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="'rollover'" type="radio" name="playMode" class="radio radio-light" />
-							<span>
-									Roll Over to Play
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="'click'" type="radio" name="playMode" class="radio radio-light" />
-							<span>
-									Click to Play
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="'auto'" type="radio" name="playMode" class="radio radio-light" />
-							<span>
-									Autoplay
-							</span>
-				</label>
-			</div>
-		</div>
+		<div class="playMode"></div>
+
 		<div class="form-group row">
 			<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>
 			<div class="col-sm-9">
-				<label>
-					<input ng-model="skip321" type="checkbox" class="checkbox checkbox-light" />
-					<span>Skip Countdown</span>
-				</label>
-				<label>
-					<input ng-model="audioOff" type="checkbox" class="checkbox checkbox-light" />
-					<span>Audio Off</span>
-				</label>
+				<div class="skipCountdown"></div>
+				<div class="audioOff"></div>
 				<label>
 					<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />
 					<span>Mute Audio on Roll Out</span>
@@ -169,5 +142,16 @@
 				</label>
 			</div>
 		</div>
+
+		<!--<div ng-if="nonExpandingCreatives.length > 0" class="form-group row">-->
+			<!--<label for="creative" class="col-sm-3 form-label"><span>Non-Expanding Default</span></label>-->
+			<!--<div class="col-sm-9">-->
+				<!--<select id="creative" select2-->
+								<!--name="creative"-->
+								<!--ng-options="item as item.name for item in nonExpandingCreatives track by item.id"-->
+								<!--ng-model="placement.nonExpandingDefault">-->
+				<!--</select>-->
+			<!--</div>-->
+		<!--</div>-->
 	</div>
 </div>

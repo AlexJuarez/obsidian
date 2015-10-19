@@ -35,11 +35,24 @@ define(function (require) {
 					$scope.creativesByAdType = adTypes;
 				}
 
+				creativeService.observe(updateNonExpandingDefaultCreatives, $scope);
+				function updateNonExpandingDefaultCreatives() {
+					var nonExpandingCreatives = [];
+					var creatives = creativeService.data().all();
+
+					creatives.forEach(function(creative) {
+						if (!isExpandingCreative(creative)) {
+							nonExpandingCreatives.push(creative);
+						}
+					});
+					$scope.nonExpandingCreatives = nonExpandingCreatives;
+				}
+
 				$scope.$watch('creative', function() {
 					$scope.isExpanding = false;
 					if ($scope.creative) {
 						$scope.creativeType = creativeTypes[$scope.creative.type];
-						if ($scope.creative.expandedWidth) {
+						if (isExpandingCreative($scope.creative)) {
 							$scope.isExpanding = true;
 						}
 
@@ -51,6 +64,10 @@ define(function (require) {
 						$scope.placement.clickthroughUrl = $scope.creative.clickthroughUrl || 'http://www.mixpo.com';
 					}
 				});
+
+				function isExpandingCreative(creative) {
+					return !!creative.expandedWidth;
+				}
 			}]
 		};
 	}]);

@@ -1,0 +1,27 @@
+<div class="form-group row">
+	<label class="col-sm-3 form-label"><span>Play Mode</span></label>
+
+	<div class="col-sm-9">
+		<label class="radio-inline">
+			<input ng-model="placement.playMode" ng-value="'rollover'" type="radio"
+						 name="playMode" class="radio radio-light"/>
+							<span>
+									Roll Over to Play
+							</span>
+		</label>
+		<label class="radio-inline">
+			<input ng-model="placement.playMode" ng-value="'click'" type="radio"
+						 name="playMode" class="radio radio-light"/>
+							<span>
+									Click to Play
+							</span>
+		</label>
+		<label class="radio-inline">
+			<input ng-model="placement.playMode" ng-value="'auto'" type="radio"
+						 name="playMode" class="radio radio-light"/>
+							<span>
+									Autoplay
+							</span>
+		</label>
+	</div>
+</div>
