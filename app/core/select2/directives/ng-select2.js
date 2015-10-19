@@ -144,12 +144,6 @@ define(function (require) {
                         return results;
                     }
 
-                    //Added for when a keyboard triggers a focusout event
-                    /*var isMobile = (function() {
-                        try{ document.createEvent("TouchEvent"); return true; }
-                        catch(e){ return false; }
-                    })();*/
-
                     function setUpSelect2() {
                         return $timeout(function () {
                             if (!opts.tags && optionsExpression) {
@@ -186,19 +180,6 @@ define(function (require) {
                             }
 
                             element.select2(opts);
-                            //var select2 = element.select2(opts).data('select2');
-                            //Set up these event listeners for mobile;
-                            /*if (isMobile) {
-                                select2.$dropdown.on('mousedown', function(e) {
-                                    e.stopPropagation();
-                                });
-                                select2.$container.on('mousedown', function(e) {
-                                    e.stopPropagation();
-                                });
-                                select2.$container.on('focusout', '.select2-search__field', function(e) {
-                                    element.select2('close');
-                                });
-                            }*/
                         });
                     }
 
