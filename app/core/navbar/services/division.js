@@ -4,8 +4,16 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
+    var apiConfig = {
+        endpoint: 'divisions',
+        queryParams: {
+            dimensions: ['id', 'name', 'pinned', 'client.id'],
+            order: 'name:asc'
+        }
+    };
+
     module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification) {
-        var divisions = dataFactory(utils.sortByName);
+        var divisions = dataFactory();
         var client = {};
 
         divisionRecordService.observe(divisionUpdate, undefined, true);
@@ -37,7 +45,7 @@ define(function (require) {
             }
         }
 
-        function init(apiConfig) {
+        function init() {
             return divisions.init(apiConfig, function (data) {
                 return data.divisions;
             });

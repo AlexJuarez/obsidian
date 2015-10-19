@@ -4,17 +4,27 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
+    var apiConfig = {
+        endpoint: 'campaigns',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'pinned', 'account.id', 'startDate', 'endDate'
+            ],
+            order: 'startDate:desc'
+        }
+    };
+
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', function ($http, dataFactory, accounts, $state, campaignRecordService, notification) {
-        
-        var campaigns = dataFactory(sortByStartDateDescending);
-        
+
+        var campaigns = dataFactory();
+
         campaignRecordService.observe(campaignUpdate, undefined, true);
 
         function isLoaded() {
             return campaigns.isLoaded();
         }
 
-        function init(apiConfig) {
+        function init() {
             return campaigns.init(apiConfig, function (data) {
                 return data.campaigns;
             });
@@ -22,14 +32,6 @@ define(function (require) {
 
         function search(query) {
             return utils.search(filtered(), query);
-        }
-
-        function sortByStartDateDescending(data) {
-            data.sort(function (a, b) {
-                return new Date(b.startDate) - new Date(a.startDate);
-            });
-
-            return data;
         }
 
         // Observe for new/updated campaigns

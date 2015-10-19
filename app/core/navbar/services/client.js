@@ -4,12 +4,20 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
+    var apiConfig = {
+        endpoint: 'clients',
+        queryParams: {
+            dimensions: ['id', 'name', 'pinned'],
+            order: 'name:asc'
+        }
+    };
+
     module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification) {
-        var clients = dataFactory(utils.sortByName);
+        var clients = dataFactory();
 
         clientRecordService.observe(clientUpdate, undefined, true);
 
-        function init(apiConfig) {
+        function init() {
             return clients.init(apiConfig, function (data) {
                 return data.clients;
             });

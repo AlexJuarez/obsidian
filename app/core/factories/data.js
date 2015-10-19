@@ -40,29 +40,42 @@ define(function (require) {
             }
 
             function setData(d) {
-                data = sortFn(d);
-                observers.notifyObservers();
+                if (ng.isArray(d)) {
+                    addData(d);
+                } else {
+                    data = sortFn(d);
+                    observers.notifyObservers();
+                }
+            }
+
+            function findIndex() {
+
             }
 
             function addData(d, event) {
-                var uniqueSet = {};
-                var item, i;
+                if (ng.isArray(d)) {
+                    var uniqueSet = {};
+                    var item, i;
 
-                for (i = 0; i < d.length; i++) {
-                    item = d[i];
-                    uniqueSet[item.id] = true;
-                }
-
-                var temp = [];
-
-                for (i = 0; i < data.length; i++) {
-                    item = data[i];
-                    if (!uniqueSet[item.id]) {
-                        temp.push(item);
+                    for (i = 0; i < d.length; i++) {
+                        item = d[i];
+                        uniqueSet[item.id] = true;
                     }
+
+                    var temp = [];
+
+                    for (i = 0; i < data.length; i++) {
+                        item = data[i];
+                        if (!uniqueSet[item.id]) {
+                            temp.push(item);
+                        }
+                    }
+
+                    data = sortFn(temp.concat(d));
+                } else {
+
                 }
 
-                data = sortFn(temp.concat(d));
                 filterDeleted();
                 observers.notifyObservers(event);
             }

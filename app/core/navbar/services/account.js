@@ -4,12 +4,20 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
+    var apiConfig = {
+        endpoint: 'accounts',
+        queryParams: {
+            dimensions: ['id', 'name', 'pinned', 'division.id'],
+            order: 'name:asc'
+        }
+    };
+
     module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', 'notification', function ($http, dataFactory, divisions, $state, accountRecordService, notification) {
-        var accounts = dataFactory(utils.sortByName);
+        var accounts = dataFactory();
 
         accountRecordService.observe(accountUpdate, undefined, true);
 
-        function init(apiConfig) {
+        function init() {
             return accounts.init(apiConfig, function (data) {
                 return data.accounts;
             });
