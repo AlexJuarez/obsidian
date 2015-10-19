@@ -6,7 +6,7 @@ define(function(require){
 
     var ng = require('angular');
 
-    fdescribe('modelSync', function() {
+    describe('modelSync', function() {
         var sync, ngModel, scope, value;
 
         describe('ngModel', function() {
