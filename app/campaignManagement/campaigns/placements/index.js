@@ -19,4 +19,8 @@ define(function(require) {
 	require('./directives/creativeTypeOptions/audioOff');
 	require('./directives/creativeTypeOptions/playMode');
 	require('./directives/creativeTypeOptions/skipCountdown');
+	require('./directives/creativeTypeOptions/collapseOnRollOut');
+	require('./directives/creativeTypeOptions/expandBeforeCountdown');
+	require('./directives/creativeTypeOptions/expandMode');
+	require('./directives/creativeTypeOptions/muteOnRollOut');
 });

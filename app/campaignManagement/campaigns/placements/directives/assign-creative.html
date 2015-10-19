@@ -1,157 +1,60 @@
 <div>
-	<div class="form-group row"
-			 ng-class="{'has-error': newPlacement.type.$invalid && submitted}">
-		<label for="adtype" class="col-sm-3 form-label required"><span>Ad Type</span></label>
-		<div class="col-sm-9">
-			<select id="adtype" select2
-							name="type"
-							ng-options="key as key for (key, value) in creativesByAdType track by key"
-							ng-model="placement.type" required>
-			</select>
 
-			<p ng-show="newPlacement.type.$invalid && submitted"
-				 class="help-block">
-				ad type is required
-			</p>
-		</div>
+	<div modal-form-row name="Ad Type" contentId="adtype">
+		<select id="adtype" select2
+						name="type"
+						ng-options="key as key for (key, value) in creativesByAdType track by key"
+						ng-model="placement.type" required>
+		</select>
 	</div>
 
-	<div class="form-group row"
-			 ng-class="{'has-error': newPlacement.creative.$invalid && submitted}">
-		<label for="creative" class="col-sm-3 form-label required"><span>Creative</span></label>
-		<div class="col-sm-9">
+	<div modal-form-row name="Creative" contentId="creative">
 			<select id="creative" select2
 							name="creative"
 							ng-options="item as item.name for item in creativesByAdType[placement.type] track by item.id"
 							ng-model="creative" required>
 			</select>
-
-			<p ng-show="newPlacement.creative.$invalid && submitted"
-				 class="help-block">
-				creative is required
-			</p>
-		</div>
 	</div>
 
 	<!-- IN BANNER VIDEO NON-EXPANDING -->
 
 	<div ng-if="creativeType === 'inBannerVideo' && !isExpanding">
-		<div class="playMode"></div>
+		<div modal-form-row name="Play Mode" contentId="playMode">
+			<div class="playMode"></div>
+		</div>
 
-		<div class="form-group row">
-			<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>
-			<div class="col-sm-9">
-				<div class="skipCountdown"></div>
-				<div class="audioOff"></div>
-				<label>
-					<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />
-					<span>Mute Audio on Roll Out</span>
-				</label>
-			</div>
+		<div modal-form-row name="Play Mode Options" contentId="playModeOptions">
+			<div class="skipCountdown"></div>
+			<div class="audioOff"></div>
+			<div class="muteOnRollOut"></div>
 		</div>
 	</div>
 
 	<!-- IN BANNER VIDEO EXPANDING -->
 
 	<div ng-if="creativeType === 'inBannerVideo' && isExpanding">
-		<div class="form-group row">
-			<label for="creative" class="col-sm-3 form-label required"><span>Expand Initiation</span></label>
-			<div class="col-sm-9">
-				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="'rollover'" type="radio" name="playMode" class="radio radio-light" />
-							<span>
-									Roll Over to Expand
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="'click'" type="radio" name="playMode" class="radio radio-light" />
-							<span>
-									Click to Expand
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.playMode" ng-value="'auto'" type="radio" name="playMode" class="radio radio-light" />
-							<span>
-									Auto Expand
-							</span>
-				</label>
-			</div>
+		<div modal-form-row name="Expand Initiation" contentId="expandMode">
+			<div class="expandMode"></div>
 		</div>
-		<div class="form-group row">
-			<label class="col-sm-3 form-label required"><span>Expand Type</span></label>
-			<div class="col-sm-9">
-				<label class="radio-inline">
-					<input ng-model="placement.expandType" ng-value="'directional'" type="radio" name="expandType" class="radio radio-light" />
-							<span>
-									Directional
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.expandType" ng-value="'pushdown'" type="radio" name="expandType" class="radio radio-light" />
-							<span>
-									Pushdown
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.expandType" ng-value="'takeover'" type="radio" name="expandType" class="radio radio-light" />
-							<span>
-									Full Page Takeover
-							</span>
-				</label>
-			</div>
+
+		<div modal-form-row name="Expand Type" contentId="expandType">
+			<div class="expandType"></div>
 		</div>
 
 		<div expand-anchors-directions></div>
 
-		<div class="form-group row">
-			<label class="col-sm-3 form-label"><span>Play Mode Options</span></label>
-			<div class="col-sm-9">
-				<label>
-					<input ng-model="skip321" type="checkbox" class="checkbox checkbox-light" />
-					<span>Skip Countdown</span>
-				</label>
-				<label>
-					<input ng-model="audioOff" type="checkbox" class="checkbox checkbox-light" />
-					<span>Audio Off</span>
-				</label>
-				<label>
-					<input ng-model="muteOnRollOut" type="checkbox" class="checkbox checkbox-light" />
-					<span>Mute on Roll Out</span>
-				</label>
-				<label>
-					<input ng-model="collapseOnRollOut" type="checkbox" class="checkbox checkbox-light" />
-					<span>Collapse on Roll Out</span>
-				</label>
-			</div>
+		<div modal-form-row name="Play Mode Options" contentId="playModeOptions">
+			<div class="skipCountdown"></div>
+			<div class="audioOff"></div>
+			<div class="muteOnRollOut"></div>
+			<div class="collapseOnRollOut"></div>
 		</div>
 
-		<div class="form-group row">
-			<label class="col-sm-3 form-label required"><span>Expand Type</span></label>
-			<div class="col-sm-9">
-				<label class="radio-inline">
-					<input ng-model="placement.expandBeforeCountdown" ng-value="true" type="radio" name="expandBeforeCountdown" class="radio radio-light" />
-							<span>
-									Before Countdown / Loading
-							</span>
-				</label>
-				<label class="radio-inline">
-					<input ng-model="placement.expandBeforeCountdown" ng-value="false" type="radio" name="expandBeforeCountdown" class="radio radio-light" />
-							<span>
-									After Countdown / Loading
-							</span>
-				</label>
-			</div>
+		<div modal-form-row name="Expand Type" contentId="expandType" required="true">
+			<div class="expandBeforeCountdown"></div>
 		</div>
-
-		<!--<div ng-if="nonExpandingCreatives.length > 0" class="form-group row">-->
-			<!--<label for="creative" class="col-sm-3 form-label"><span>Non-Expanding Default</span></label>-->
-			<!--<div class="col-sm-9">-->
-				<!--<select id="creative" select2-->
-								<!--name="creative"-->
-								<!--ng-options="item as item.name for item in nonExpandingCreatives track by item.id"-->
-								<!--ng-model="placement.nonExpandingDefault">-->
-				<!--</select>-->
-			<!--</div>-->
-		<!--</div>-->
 	</div>
+
+	<!-- RICH MEDIA NON-EXPANDING -->
+	
 </div>

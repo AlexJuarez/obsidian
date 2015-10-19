@@ -17,7 +17,6 @@ define(function (require) {
 				adTagService.init();
 				adTagService.observe(function() {
 					$scope.tagTemplates = adTagService.all();
-					console.log($scope.tagTemplates);
 				});
 
 				$scope.$watch('placement.adTagId', function() {

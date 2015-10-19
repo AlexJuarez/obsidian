@@ -49,9 +49,11 @@ define(function (require) {
 				}
 
 				$scope.$watch('creative', function() {
+					console.log($scope.creative);
 					$scope.isExpanding = false;
 					if ($scope.creative) {
 						$scope.creativeType = creativeTypes[$scope.creative.type];
+						console.log($scope.creativeType);
 						if (isExpandingCreative($scope.creative)) {
 							$scope.isExpanding = true;
 						}
