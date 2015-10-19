@@ -7,7 +7,7 @@ define(function(require){
 
     var ng = require('angular');
 
-    describe('trackValues', function() {
+    describe('selectOptions', function() {
         var selectOptions, options, scope, tracked;
 
         beforeEach(function() {
