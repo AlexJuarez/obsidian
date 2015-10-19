@@ -18,7 +18,7 @@ define(function (require) {
 					{id: 3, name: '3x'},
 					{id: 4, name: '4x'},
 					{id: 5, name: '5x'}
-				]
+				];
 			}]
 		};
 	}]);

@@ -1,5 +1,8 @@
-<select id="autoplayRetries" select2
-				name="autoplayRetries"
-				s2-options="item.id as item.name for item in autoplayRetries track by id"
-				ng-model="placement.autoplayRetries" placeholder="'Autoplay Retries'" required>
-</select>
+<div>
+	<select id="autoplayRetries" select2
+					name="autoplayRetries"
+					s2-options="item.id as item.name for item in autoplayRetries track by item.id"
+					ng-model="placement.autoplayRetries" placeholder="'Autoplay Retries'"
+					required>
+	</select>
+</div>

@@ -20,7 +20,9 @@ define(function (require) {
 
 			templateUrl: 'core/directives/modalFormRow.html',
 			link: function (scope, element, attrs, ctrl, transclude) {
-				scope.lowerCaseName = scope.name.toLowerCase();
+				if (scope.name) {
+					scope.lowerCaseName = scope.name.toLowerCase();
+				}
 
 				// Give the transcluded content access to the parent scope
 				transclude(scope.$parent, function(clone) {

@@ -13,7 +13,7 @@
     <div ng-show="placement.expandDirection" class="form-group row">
         <label class="col-sm-3 form-label required"><span>Expand Anchor</span></label>
         <div class="row col-sm-9">
-          <div class="col-sm-2" ng-repeat="anchor in expandAnchors">
+          <div class="col-sm-2 col-xs-4" ng-repeat="anchor in expandAnchors">
             <div class="expand-anchor" ng-class="{selected:placement.expandAnchor === anchor.value}">
               <img ng-click="setExpandAnchor(anchor.value)" ng-src="{{anchor.image}}" />
             </div>

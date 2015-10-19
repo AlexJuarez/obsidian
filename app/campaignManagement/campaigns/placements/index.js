@@ -25,5 +25,8 @@ define(function(require) {
 	require('./directives/creativeTypeOptions/expandType');
 	require('./directives/creativeTypeOptions/lightboxOpacity');
 	require('./directives/creativeTypeOptions/muteOnRollOut');
+	require('./directives/creativeTypeOptions/audioOnRollover');
 	require('./directives/creativeTypeOptions/autoplayRetries');
+	require('./directives/creativeTypeOptions/autoExpandEveryHours');
+	require('./directives/creativeTypeOptions/autoCollapseAfterSeconds');
 });

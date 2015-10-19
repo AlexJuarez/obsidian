@@ -3,7 +3,7 @@
 	<div modal-form-row name="Ad Type" contentId="adtype">
 		<select id="adtype" select2
 						name="type"
-						s2-options="key as key for (key, value) in creativesByAdType track by key"
+						ng-options="key as key for (key, value) in creativesByAdType track by key"
 						ng-model="placement.type" required>
 		</select>
 	</div>
@@ -11,7 +11,7 @@
 	<div modal-form-row name="Creative" contentId="creative">
 		<select id="creative" select2
 						name="creative"
-						s2-options="item as item.name for item in creativesByAdType[placement.type] track by item.id"
+						ng-options="item as item.name for item in creativesByAdType[placement.type] track by item.id"
 						ng-model="creative" required>
 		</select>
 	</div>
@@ -30,9 +30,9 @@
 		</div>
 	</div>
 
-	<!-- IN BANNER VIDEO EXPANDING -->
+	<!-- IN BANNER VIDEO / RICH MEDIA EXPANDING -->
 
-	<div ng-if="creativeType === 'inBannerVideo' && isExpanding">
+	<div ng-if="(creativeType === 'inBannerVideo' || creativeType === 'richMedia') && isExpanding">
 		<div modal-form-row name="Expand Initiation" contentId="expandMode">
 			<div class="expandMode"></div>
 		</div>
@@ -53,43 +53,39 @@
 			<span ng-if="placement.playMode === playModes.rollover || placement.playMode === playModes.auto">
 				<div class="skipCountdown"></div>
 			</span>
-				<div class="collapseOnRollOut"></div>
+			<div class="collapseOnRollOut"></div>
 		</div>
 
-		<div modal-form-row ng-if="placement.playMode === playModes.auto || placement.playMode === playModes.rollover"
-				 name="Audio Options" contentId="audioOptions">
-			<span ng-if="placement.playMode === playModes.rollover">
-				<div class="audioOff"></div>
-				<div class="muteOnRollOut"></div>
-			</span>
+		<div modal-form-row ng-if="placement.playMode === playModes.auto" contentId="autoExpandEveryHours">
+			<div class="autoExpandEveryHours"></div>
+		</div>
 
-			<div ng-if="placement.playMode === playModes.auto">
+		<div modal-form-row ng-if="placement.playMode === playModes.auto" contentId="autoCollapseAfterSeconds">
+			<div class="autoCollapseAfterSeconds"></div>
+		</div>
+
+		<div ng-if="placement.playMode === playModes.auto && creativeType === 'inBannerVideo'">
+			<div modal-form-row name="Audio Options" contentId="audioOptions">
 				<div class="row">
-					<div class="col-lg-3">
+					<div class="col-sm-3">
 						<div class="audioOff"></div>
 					</div>
-					<div class="col-lg-4">
+					<div class="col-sm-4">
 						<div class="autoplayRetries"></div>
 					</div>
 				</div>
-				<div class="row">
-					<div class="col-lg-3">
-						test
-					</div>
-					<div class="col-lg-4">
-						test
-					</div>
-				</div>
 			</div>
-
+			<div modal-form-row contentId="audioOnRollover">
+				<div class="audioOnRollover"></div>
+			</div>
 		</div>
 
-		<div ng-if="placement.playMode === playModes.rollover" modal-form-row
+		<div modal-form-row ng-if="placement.playMode === playModes.rollover"
 				 name="Expand Timing" contentId="expandTiming" required="true">
 			<div class="expandBeforeCountdown"></div>
 		</div>
 	</div>
 
-	<!-- RICH MEDIA NON-EXPANDING -->
+	<!-- RICH MEDIA EXPANDING -->
 
 </div>
