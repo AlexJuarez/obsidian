@@ -19,6 +19,16 @@ define(function (require) {
 			desktop: 'desktop',
 			mobile: 'tablet',
 			mraid: 'mobile'
+		},
+		expandTypes: {
+			directional: 'directional',
+			pushdown: 'pushdown',
+			takeover: 'takeover'
+		},
+		playModes: {
+			rollover: 'rollover',
+			click: 'click',
+			auto: 'auto'
 		}
 	};
 

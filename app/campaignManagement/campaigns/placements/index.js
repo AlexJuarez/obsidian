@@ -22,5 +22,8 @@ define(function(require) {
 	require('./directives/creativeTypeOptions/collapseOnRollOut');
 	require('./directives/creativeTypeOptions/expandBeforeCountdown');
 	require('./directives/creativeTypeOptions/expandMode');
+	require('./directives/creativeTypeOptions/expandType');
+	require('./directives/creativeTypeOptions/lightboxOpacity');
 	require('./directives/creativeTypeOptions/muteOnRollOut');
+	require('./directives/creativeTypeOptions/autoplayRetries');
 });

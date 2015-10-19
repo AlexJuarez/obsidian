@@ -13,10 +13,13 @@ define(function (require) {
 			templateUrl: 'campaignManagement/campaigns/placements/directives/assign-creative.html',
 			controller: ['$scope', 'creatives', 'ENUMS', function ($scope, creativeService, ENUMS) {
 
+				$scope.expandTypes = ENUMS.up.expandTypes;
+				$scope.playModes = ENUMS.up.playModes;
+
 				// setup defaults
 				$scope.placement.expandBeforeCountdown = $scope.placement.expandBeforeCountdown || true;
-				$scope.placement.playMode = $scope.placement.playMode || 'rollover';
-				$scope.placement.expandType = $scope.placement.expandType || 'directional';
+				$scope.placement.playMode = $scope.placement.playMode || $scope.playModes.rollover;
+				$scope.placement.expandType = $scope.placement.expandType || $scope.expandTypes.directional;
 
 				var creativeTypes = ENUMS.down.creativeTypes;
 
@@ -49,11 +52,9 @@ define(function (require) {
 				}
 
 				$scope.$watch('creative', function() {
-					console.log($scope.creative);
 					$scope.isExpanding = false;
 					if ($scope.creative) {
 						$scope.creativeType = creativeTypes[$scope.creative.type];
-						console.log($scope.creativeType);
 						if (isExpandingCreative($scope.creative)) {
 							$scope.isExpanding = true;
 						}
