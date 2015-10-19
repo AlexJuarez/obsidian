@@ -79,12 +79,7 @@ define(function (require) {
                             $injector.invoke(ngModelOptions.controller, ngModel, {$scope: scope, $attrs: attr});
                         }
 
-                        modelSync = modelSyncFactory(ngModel, trackValues, {
-                            formatModel: formatModelInsert,
-                            valuesFn: getValues(),
-                            scope: scope,
-                            isMultiple: multiple
-                        });
+                        modelSync = modelSyncFactory(ngModel);
 
                         var originalRender = ngModel.$render;
                         ngModel.$render = function () {
