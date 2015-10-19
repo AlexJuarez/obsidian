@@ -44,9 +44,8 @@ define(function (require) {
                         $scope.openNewAccountModal = $scope.clickAction;
                     
                     } else if ($state.params.clientId) {
-                        
+
                         clientSet.observe(updateClientMsg, $scope);
-                        $scope.openNewDivisionModal = $scope.clickAction;
                     
                     }
                 }
@@ -76,8 +75,16 @@ define(function (require) {
                 }
 
                 function updateClientMsg() {
+                    
                     if ( clientSet.data().isLoaded() ) {
                         $scope.showDivisionMsg = !clientSet.all().countDivisions;
+                        $scope.openNewDivisionModal = $scope.clickAction;
+
+                        // If has divisions, check for no accounts
+                        if (!$scope.showDivisionMsg) {
+                            $scope.showAccountMsg = !clientSet.all().countAccounts;
+                            $scope.openNewAccountModal = $scope.clickAction;
+                        }
                     }
                     
                 }
