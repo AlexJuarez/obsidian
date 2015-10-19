@@ -6,26 +6,38 @@ define(function (require) {
     require('angularMocks');
 
     describe('openCreativeService spec', function () {
-        var openCreative, scope, window;
+        var openCreative, aStudioUrlBuilder, aStudioWindow, fakeWindow, fakeOpenBuilder, fakeOpenUrl;
 
         beforeEach(function () {
             module('app.campaign-management');
-            // Set up the mock http service responses
-            inject(function (openCreativeService, $rootScope, $window) {
+
+            inject(function (openCreativeService, studioUrlBuilder, studioWindow) {
                 openCreative = openCreativeService;
-                scope = $rootScope;
-                window = $window;
+
+                aStudioUrlBuilder = studioUrlBuilder;
+
+                fakeOpenUrl = '';
+                fakeOpenBuilder = {
+                    setHostname: function(){},
+                    build: function(){}
+                };
+                spyOn(fakeOpenBuilder, 'setHostname').and.returnValue(fakeOpenBuilder);
+                spyOn(fakeOpenBuilder, 'build').and.returnValue(fakeOpenUrl);
+                spyOn(aStudioUrlBuilder, 'open').and.returnValue(fakeOpenBuilder);
+
+                aStudioWindow = studioWindow;
+                fakeWindow = {};
+                spyOn(aStudioWindow, 'open').and.returnValue(fakeWindow);
+
             });
         });
 
-        it('should be an instance of sdAdapter', function () {
+        it('should be injectable via openCreativeService', function () {
             expect(openCreative).toBeDefined();
         });
 
-        it('should return promise', function() {
-            var fakeWindow = {};
-            spyOn(window, 'open').and.returnValue(fakeWindow);
 
+        it('should return promise', function() {
             var creative = {
                 id: '_guid_',
                 campaignId: '_campaignId_'
@@ -35,10 +47,7 @@ define(function (require) {
             expect(promise).toBeDefined();
         });
 
-        it('should decorate window with expected handler object', function() {
-            var fakeWindow = {};
-            spyOn(window, 'open').and.returnValue(fakeWindow);
-
+        it('should build a url using provided creative\'s id', function() {
             var creative = {
                 id: '_guid_',
                 campaignId: '_campaignId_'
@@ -46,13 +55,10 @@ define(function (require) {
 
             openCreative(creative);
 
-            expect(fakeWindow.StudioDirectHandler).toBeDefined();
+            expect(aStudioUrlBuilder.open.calls.mostRecent().args[0]).toEqual('_guid_');
         });
 
-        it('should call expected studio url', function() {
-            var fakeWindow = {};
-            spyOn(window, 'open').and.returnValue(fakeWindow);
-
+        it('should build a url using provided creative\'s campaignId', function() {
             var creative = {
                 id: '_guid_',
                 campaignId: '_campaignId_'
@@ -60,21 +66,41 @@ define(function (require) {
 
             openCreative(creative);
 
-            expect(window.open).toHaveBeenCalledWith('/studio?filter=%7B%22campaignId%22:%22_campaignId_%22%7D&guid=_guid_&sdf=open', 'mixpo_studio');
+            expect(aStudioUrlBuilder.open.calls.mostRecent().args[1]).toEqual('_campaignId_');
         });
 
-        it('should call use hostname in studio url', function() {
-            var fakeWindow = {};
-            spyOn(window, 'open').and.returnValue(fakeWindow);
-
+        it('should build a url providing the set hostname', function() {
             var creative = {
                 id: '_guid_',
                 campaignId: '_campaignId_'
             };
             var hostname = '//alpha-studio.mixpo.com';
+
             openCreative(creative, hostname);
 
-            expect(window.open).toHaveBeenCalledWith('//alpha-studio.mixpo.com/studio?filter=%7B%22campaignId%22:%22_campaignId_%22%7D&guid=_guid_&sdf=open', 'mixpo_studio');
+            expect(fakeOpenBuilder.setHostname).toHaveBeenCalledWith(hostname);
+        });
+
+        it('should build a url that open studio', function() {
+            var creative = {
+                id: '_guid_',
+                campaignId: '_campaignId_'
+            };
+
+            openCreative(creative);
+
+            expect(fakeOpenBuilder.build).toHaveBeenCalled();
+        });
+
+        it('should open a studioWindow', function() {
+            var creative = {
+                id: '_guid_',
+                campaignId: '_campaignId_'
+            };
+
+            openCreative(creative);
+
+            expect(aStudioWindow.open).toHaveBeenCalled();
         });
     });
 });

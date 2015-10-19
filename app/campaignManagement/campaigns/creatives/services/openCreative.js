@@ -13,39 +13,32 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('openCreativeService', ['$q', '$window', 'studioUrlBuilder',
-        function($q, $window, studioUrlBuilder) {
-            /**
-             * Opens studio and returns a promise.
-             *
-             * @param creative
-             * @returns {Object} promise
-             */
-            return function(creative, hostname) {
-                var deferred = $q.defer();
-                var url = studioUrlBuilder.open(creative.id, creative.campaignId)
-                    .setHostname(hostname)
-                    .build();
-                var tabWindow = $window.open(
-                    url,
-                    'mixpo_studio'
-                );
+    module.service('openCreativeService', ['$q', 'studioUrlBuilder', 'studioWindow', function($q, studioUrlBuilder, studioWindow) {
 
-                tabWindow.StudioDirectHandler = (function(){
-                    function onClose(code, detail) {
-                        if(code && detail) {
-                            //return deferred.reject(err);
-                        }
-                        tabWindow.close();
-                        deferred.resolve();
-                    }
+        /**
+         * Opens studio and returns a promise.
+         *
+         * @param creative
+         * @returns {Object} promise
+         */
+        return function(creative, hostname) {
+            var deferred = $q.defer();
 
-                    return {
-                        onClose: onClose
-                    };
-                })();
+            var url = studioUrlBuilder
+                .open(creative.id, creative.campaignId)
+                .setHostname(hostname)
+                .build();
 
-                return deferred.promise;
+            var tabWindow = studioWindow.open(url);
+            // map any Studio API callbacks
+            tabWindow.onClose = function(code, detail) {
+                if(code && detail) {
+                    //return deferred.reject(err);
+                }
+                tabWindow.close();
+                deferred.resolve(detail);
             };
-        }]);
+            return deferred.promise;
+        };
+    }]);
 });
