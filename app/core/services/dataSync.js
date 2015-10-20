@@ -17,8 +17,10 @@ define(function (require) {
         function update(endpoint, d) {
             var factories = data[endpoint];
 
-            for (var i = 0; i < factories.length; i++) {
-                factories.addData(d);
+            if (typeof factories !== 'undefined') {
+                for (var i = 0; i < factories.length; i++) {
+                    factories.addData(d);
+                }
             }
         }
 

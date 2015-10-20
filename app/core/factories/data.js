@@ -11,20 +11,25 @@ define(function (require) {
                 options = {};
             }
 
+            if (typeof sortFn === 'undefined') {
+                sortFn = function (d) { return d; };
+            }
+
+            var observers = observerFactory();
+
             var DataFactory = function(options) {
                 this._initialized = false;
                 this._loaded = false;
                 this._data = [];
-                this._observers = observerFactory();
                 this._sortBy = options.sort; // {key: string, sorted: boolean}
+                this._sorted = false;
 
-                if (options.sortFn) {
-                    this._sortFn = options.sortFn;
+                if (options.sort && options.sort.sorted) {
+                    this._sorted = options.sort.sorted;
                 }
             };
 
             DataFactory.prototype = {
-                _sortFn: function (d) { return d; },
                 init: function(config, transform) {
                     var that = this;
                     var url = apiUriGenerator(config);
@@ -43,7 +48,7 @@ define(function (require) {
 
                         $http.get(url).success(function (d) {
                             that._loaded = true;
-                            that.setData(transform.call(that, d), that._sortBy.sorted);
+                            that.setData(transform.call(that, d), that._sorted);
                             deferred.resolve(that._data);
                         });
                     } else {
@@ -57,7 +62,7 @@ define(function (require) {
                         this.addData(d, 'setData', sorted);
                     } else {
                         this._data = sortFn(d);
-                        this._observers.notifyObservers();
+                        observers.notifyObservers();
                     }
                 },
                 findIndex: function(data, val, key) {
@@ -99,10 +104,12 @@ define(function (require) {
 
                         var temp = [];
 
-                        for (i = 0; i < this._data.length; i++) {
-                            item = this._data[i];
-                            if (!uniqueSet[item.id]) {
-                                temp.push(item);
+                        if (ng.isArray(this._data)) {
+                            for (i = 0; i < this._data.length; i++) {
+                                item = this._data[i];
+                                if (!uniqueSet[item.id]) {
+                                    temp.push(item);
+                                }
                             }
                         }
 
@@ -122,7 +129,7 @@ define(function (require) {
                     }
 
                     this.filterDeleted();
-                    this._observers.notifyObservers(event);
+                    observers.notifyObservers(event);
                 },
                 all: function() {
                     return this._data;
@@ -143,10 +150,12 @@ define(function (require) {
                     var output = [];
                     var item;
 
-                    for (var i = 0; i < this._data.length; i++) {
-                        item = this._data[i];
-                        if(filterfn(item)) {
-                            output.push(item);
+                    if (ng.isArray(this._data)) {
+                        for (var i = 0; i < this._data.length; i++) {
+                            item = this._data[i];
+                            if(filterfn(item)) {
+                                output.push(item);
+                            }
                         }
                     }
 
@@ -161,10 +170,13 @@ define(function (require) {
                             return this._data[i];
                         }
                     }
-                }
+                },
+                _observers: observers,
+                observe: observers.observe,
+                notifyObservers: observers.notifyObservers
             };
 
-            return new DataFactory(ng.extend(options, { sortFn: sortFn}));
+            return new DataFactory(options);
         };
     }]);
 });
