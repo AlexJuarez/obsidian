@@ -7,6 +7,8 @@ set +x
 
 results=$(node ./node_modules/karma/bin/karma start --browsers Firefox --single-run)
 
+echo $results
+
 fail=$(echo $results | tail -1 | grep FAIL)
 
 if [ -z "${fail// }" ]
