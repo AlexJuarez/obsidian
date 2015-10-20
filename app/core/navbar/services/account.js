@@ -122,6 +122,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             setData: accounts.setData,
             addData: accounts.addData,

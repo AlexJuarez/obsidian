@@ -226,6 +226,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             isLoaded: isLoaded,
             setData: campaigns.setData,

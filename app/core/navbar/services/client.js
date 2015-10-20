@@ -76,6 +76,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             setData: clients.setData,
             addData: clients.addData,

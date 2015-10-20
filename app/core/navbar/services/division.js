@@ -117,6 +117,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             setData: divisions.setData,
             addData: divisions.addData,

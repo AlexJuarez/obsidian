@@ -5,12 +5,7 @@ define(function(require) {
     require('angularMocks');
 
     describe('clientService', function() {
-        var client, httpBackend, apiGenerator, interpolate, records;
-
-        var apiConfig = {
-            endpoint: 'test',
-            dimensions: ['one']
-        };
+        var client, httpBackend, apiGenerator, interpolate, records, apiConfig;
 
         var clients = [
             {
@@ -28,6 +23,7 @@ define(function(require) {
             module('app.core');
             inject(function(clientService, $httpBackend, apiUriGenerator, $interpolate, clientRecordService) {
                 client = clientService;
+                apiConfig = client._apiConfig;
                 httpBackend = $httpBackend;
                 apiGenerator = apiUriGenerator;
                 interpolate = $interpolate;
