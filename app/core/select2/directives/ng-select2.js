@@ -65,8 +65,10 @@ define(function (require) {
 
                     if (optionsExpression) {
                         scope.$watchCollection(getValues(), function (values) {
+                            if (!data || !data.length) {
+                                initialized = false;
+                            }
                             data = selectOptions.getOptions(values);
-                            initialized = false;
                             initOrUpdate();
                         });
                     } else {
