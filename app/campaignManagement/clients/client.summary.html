@@ -11,3 +11,6 @@
     <!-- <button class="btn btn-default solid" ng-click="openNewDivisionModal()">New Division</button> -->
     <button class="btn btn-default solid" ng-click="openEditClientModal()">Edit Client</button>
 </div>
+
+<div ng-if="noDivisions" no-content click-action="openNewDivisionModal"></div>
+<div ng-if="!noDivisions" no-content click-action="openNewAccountModal"></div>
