@@ -74,13 +74,13 @@ define(function (require) {
             }
 
             function _transformRows(data) {
-                var rows = data.campaigns;
+                var campaigns = data.campaigns;
                 var newRows = [];
                 var row;
                 var base = $state.includes('analytics') ? 'analytics' : 'cm';
 
-                for(var i=0; i<rows.length; i++) {
-                    row = rows[i];
+                for(var i=0; i<campaigns.length; i++) {
+                    row = campaigns[i];
                     newRows.push({
                         id: row.id,
                         account: {
