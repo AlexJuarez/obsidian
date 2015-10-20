@@ -1,6 +1,6 @@
 <div>
 
-	<div modal-form-row name="Ad Type" contentId="adtype">
+	<div modal-form-row name="Ad Type" contentId="adtype" required="true">
 		<select id="adtype" select2
 						name="type"
 						ng-options="key as key for (key, value) in creativesByAdType track by key"
@@ -12,7 +12,7 @@
 		<select id="creative" select2
 						name="creative"
 						ng-options="item as item.name for item in creativesByAdType[placement.type] track by item.id"
-						ng-model="creative" required>
+						ng-model="creative">
 		</select>
 	</div>
 
@@ -85,7 +85,5 @@
 			<div class="expandBeforeCountdown"></div>
 		</div>
 	</div>
-
-	<!-- RICH MEDIA EXPANDING -->
 
 </div>

@@ -15,6 +15,8 @@ define(function (require) {
 
 				$scope.expandTypes = ENUMS.up.expandTypes;
 				$scope.playModes = ENUMS.up.playModes;
+				$scope.vastMediaFileTypes = ENUMS.up.vastMediaFileTypes;
+				$scope.vastMimeTypes = ENUMS.up.vastMimeTypes;
 
 				// setup defaults
 				$scope.placement.expandBeforeCountdown = $scope.placement.expandBeforeCountdown || true;
@@ -25,7 +27,13 @@ define(function (require) {
 
 				creativeService.observe(updateCreativesByAdType, $scope);
 				function updateCreativesByAdType() {
+
 					var adTypes = {};
+					adTypes[ENUMS.up.creativeTypes.inStream] = [];
+					adTypes[ENUMS.up.creativeTypes.inBannerVideo] = [];
+					adTypes[ENUMS.up.creativeTypes.richMedia] = [];
+					adTypes[ENUMS.up.creativeTypes.display] = [];
+
 					var creatives = creativeService.data().all();
 
 					creatives.forEach(function(creative) {

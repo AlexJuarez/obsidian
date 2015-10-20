@@ -2,12 +2,12 @@ define(function (require) {
 	'use strict';
 
 	var app = require('./../module');
+	var $ = require('jquery');
 	//Check https://github.com/LPology/Simple-Ajax-Uploader for docs
-	var ss = require('simpleUpload');
 
 	require('tpl!./modalFormRow.html');
 
-	app.directive('modalFormRow', ['$timeout', function ($timeout) {
+	app.directive('modalFormRow', [function () {
 		return {
 			restrict: 'A',
 			scope: {

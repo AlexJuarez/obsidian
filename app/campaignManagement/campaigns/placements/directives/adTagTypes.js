@@ -25,14 +25,26 @@ define(function (require) {
 						if($scope.creativeType === 'inStream') {
 							$scope.tagTemplates = adTagService.inStream();
 						} else {
-							$scope.tagTemplates = adTagService.all();
+							$scope.tagTemplates = adTagService.regular();
 						}
 					}
 				});
 
 				$scope.$watch('placement.adTagId', function() {
-					$scope.adTagText = adTags.pullTag($scope.placement);
+					var adTagInfo = adTags.getInfo($scope.placement.adTagId);
+
+					updateAdTagText();
+					$scope.needsVastMediaFileType = adTagInfo.needsVastMediaFileType;
+					$scope.needsVastMimeType = adTagInfo.needsVastMimeType;
 				});
+
+				$scope.$watch('placement.vastMimeType', function () {
+					updateAdTagText();
+				});
+
+				function updateAdTagText() {
+					$scope.adTagText = adTags.pullTag($scope.placement);
+				}
 			}]
 		};
 	}]);

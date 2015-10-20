@@ -31,7 +31,7 @@ define(function (require) {
             return inStreamTags;
         }
 
-        function all() {
+        function regular() {
             var allTags = data.all();
             var normalTags = [];
             allTags.forEach(function(tag) {
@@ -49,7 +49,8 @@ define(function (require) {
 
         return {
             init: init,
-            all: all,
+            all: data.all,
+            regular: regular,
             inStream: inStream,
             observe: data.observe,
             notifyObservers: data.notifyObservers,

@@ -28,5 +28,7 @@ define(function(require) {
 	require('./directives/creativeTypeOptions/audioOnRollover');
 	require('./directives/creativeTypeOptions/autoplayRetries');
 	require('./directives/creativeTypeOptions/autoExpandEveryHours');
+	require('./directives/creativeTypeOptions/vastMediaFileType');
+	require('./directives/creativeTypeOptions/vastMimeType');
 	require('./directives/creativeTypeOptions/autoCollapseAfterSeconds');
 });

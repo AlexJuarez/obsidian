@@ -8,9 +8,9 @@ define(function(require) {
 
 	app.controller('newEditPlacementCtrl', [
 		'$scope', '$q', '$modalInstance', '$timeout', 'placements',
-		'placementRecordService', 'modalState',
+		'placementRecordService', 'modalState', 'notification',
 		function($scope, $q, $modalInstance, $timeout, placements,
-						 placementRecordService, modalState) {
+						 placementRecordService, modalState, notification) {
 
 			$scope.numberRegex = /^[0-9]*$/;
 			$scope.ok = ok;
@@ -81,8 +81,14 @@ define(function(require) {
 				$scope.placement.impressionTrackers = '';
 				$scope.placement.viewTrackers = '';
 				if(ng.equals({}, errors) || ! errors) {
-					var onSuccess = function() {
+					var onSuccess = function(resp) {
 						$scope.placement = {};
+						notification.success('Placement: {{name}}, has been saved.',
+							{
+								locals: {
+									name: resp.data.name
+								}
+							});
 						$modalInstance.dismiss('cancel');
 					};
 
