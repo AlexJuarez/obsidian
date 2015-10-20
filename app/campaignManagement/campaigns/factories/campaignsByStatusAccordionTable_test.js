@@ -80,29 +80,27 @@ define(function(require) {
 
         it('should transform rows correctly', function () {
             setUpTests();
-            var given = {
-                'campaigns': [
-                    {
-                        'endDate': '2015-07-14',
-                        'name': 'name',
-                        'id': 'campaignId',
-                        'metrics': {
-                            'countCreatives': 22,
-                            'impressions': 5444326,
-                            'bookedImpressions': 0,
-                            'countPlacements': 22
-                        },
-                        'account': {
-                            'name': 'accountName',
-                            'id': 'accountId'
-                        },
-                        'live': false,
-                        'spend': 0,
-                        'startDate': '2015-04-27',
-                        'budget': 0
-                    }
-                ]
-            };
+            var given = [
+                {
+                    'endDate': '2015-07-14',
+                    'name': 'name',
+                    'id': 'campaignId',
+                    'metrics': {
+                        'countCreatives': 22,
+                        'impressions': 5444326,
+                        'bookedImpressions': 0,
+                        'countPlacements': 22
+                    },
+                    'account': {
+                        'name': 'accountName',
+                        'id': 'accountId'
+                    },
+                    'live': false,
+                    'spend': 0,
+                    'startDate': '2015-04-27',
+                    'budget': 0
+                }
+            ];
 
             var expected = [
                 {

@@ -5,12 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('accountService', function () {
-        var account, httpBackend, divisions, state, apiGenerator, records;
-
-        var apiConfig = {
-            endpoint: 'test',
-            dimensions: ['one']
-        };
+        var account, httpBackend, divisions, state, apiGenerator, records, apiConfig;
 
         var accounts = [
             {
@@ -49,6 +44,7 @@ define(function (require) {
             module('app.core');
             inject(function (accountService, $httpBackend, divisionService, $state, apiUriGenerator, accountRecordService) {
                 account = accountService;
+                apiConfig = account._apiConfig;
                 httpBackend = $httpBackend;
                 state = $state;
                 divisions = divisionService;

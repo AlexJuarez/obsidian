@@ -8,55 +8,23 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder',
+         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder', 'studioWindow',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, notification, studioLocation, studioUrlBuilder
+              creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow
     ) {
-        var _mediaItem;
+        var _mediaItem, _dimension, _expandedDimension;
         function setMediaItem(mediaItem) {
             _mediaItem = mediaItem;
             // update visuals
         }
-
-        $scope.selectMedia = function() {
-            // Create window that hosts Studio Direct, see StudioDirectHandler for callbacks
-            var hostname = studioLocation.host();
-            var tabWindow = $window.open(
-                studioUrlBuilder.mediaselect($scope.creative.campaignId)
-                    .setHostname(hostname)
-                    .build(),
-              'mixpo_studio'
-            );
-
-            // Create
-            tabWindow.StudioDirectHandler = (function(){
-                function onClose(code, detail) {
-                    if(code && detail) {
-                        // so jshint shuts up
-                    }
-                    tabWindow.close();
-                }
-
-                function onMediaSelect(uuid, detail) {
-                    if(!!uuid) {
-                        var json = JSON.parse(detail);
-                        setMediaItem(json);
-                    }
-                }
-
-                return {
-                    onClose: onClose,
-                    onMediaSelect: onMediaSelect
-                };
-            })();
-        };
 
         var record;
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
+        $scope.selectMedia = selectMedia;
         $scope.dimensionsTransform = dimensionsTransform;
         $scope.dimensionsExpandTransform = dimensionsExpandTransform;
         $scope.environmentTransform = environmentTransform;
@@ -69,11 +37,11 @@ define(function (require) {
 
         $scope.types = creativeSettings.types;
 
-        function getType(data){
+        function getType(datum){
             var type;
 
             ng.forEach(creativeSettings.types, function(d) {
-                if (data.type === d.dbName && data.subtype === d.subtype) {
+                if (datum.type === d.dbName && datum.subtype === d.subtype) {
                     type = d;
                 }
             });
@@ -120,7 +88,19 @@ define(function (require) {
             }
         }
 
-        function getDimensionsValue(arry, width, height) {
+        function getDimensionsValue(arry, width, height, expanded) {
+            if(!expanded && _dimension) {
+                return _dimension;
+            }
+
+            if(expanded && _expandedDimension) {
+                return _expandedDimension;
+            }
+
+            if(!width || !height) {
+                return null;
+            }
+
             var index;
             var customIndex;
             var nonExpandingIndex;
@@ -137,10 +117,6 @@ define(function (require) {
                 }
             });
 
-            if (!width || !height) {
-                return arry[nonExpandingIndex];
-            }
-
             return arry[index == null ? customIndex : index];
         }
 
@@ -154,6 +130,7 @@ define(function (require) {
                         embedHeight: dimension.height
                     });
                 }
+                _dimension = dimension;
             }
 
             return getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
@@ -163,7 +140,7 @@ define(function (require) {
             if (dimension) {
                 $scope.expandedDimensionsAreCustom = dimension.isCustom;
 
-                if (!dimension.isCustom || !dimension.isNonExpanding) {
+                if (!dimension.isCustom && !dimension.isNonExpanding) {
                     record.set({
                         expandedWidth: dimension.width,
                         expandedHeight: dimension.height
@@ -177,9 +154,11 @@ define(function (require) {
                         expandMode: null
                     });
                 }
+
+                _expandedDimension = dimension;
             }
 
-            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
+            return getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight, true);
         }
 
         function getEnvironmentValue(environments, data) {
@@ -223,13 +202,13 @@ define(function (require) {
                 updateDimensions(settings.dimensions);
                 updateExpandedDimensions(settings.expandedDimensions);
             }
-            var dimension = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
-            if (dimension) {
-                $scope.dimensionsAreCustom = dimension.isCustom;
+            _dimension = getDimensionsValue(creativeSettings.dimensions, record.get().embedWidth, record.get().embedHeight);
+            if (_dimension) {
+                $scope.dimensionsAreCustom = _dimension.isCustom;
             }
-            var dimensionExpanded = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight);
-            if (dimensionExpanded) {
-                $scope.expandedDimensionsAreCustom = dimensionExpanded.isCustom;
+            _expandedDimension = getDimensionsValue(creativeSettings.expandedDimensions, record.get().expandedWidth, record.get().expandedHeight, true);
+            if (_expandedDimension) {
+                $scope.expandedDimensionsAreCustom = _expandedDimension.isCustom;
             }
         }
 
@@ -245,7 +224,7 @@ define(function (require) {
             if(record.hasChanges()) {
                 if(confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.campaign = record.get();
+                    $scope.creative = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -278,6 +257,42 @@ define(function (require) {
                 }
             }
             $scope.submitted = true;
+        }
+
+        function selectMedia() {
+            // Create window that hosts Studio Direct
+            var hostname = studioLocation.host();
+            var type = getType(record.get());
+            var adType = getDisplayAdType(type.type,  type.subtype);
+            var url =  studioUrlBuilder.mediaselect($scope.creative.campaignId, adType)
+                .setHostname(hostname)
+                .build();
+            var studioTab = studioWindow.open(url);
+            studioTab.onClose = function onClose(code, detail) {
+                if(code && detail) {
+                    // so jshint shuts up
+                }
+                studioTab.close();
+            };
+            studioTab.onMediaSelect = function onMediaSelect(uuid, detail) {
+                if(!!uuid) {
+                    var json = JSON.parse(detail);
+                    setMediaItem(json);
+                }
+            };
+        }
+
+        function getDisplayAdType(type, subtype) {
+            if(type === creativeSettings.types.display && subtype === 'IMG') {
+                // Image
+                return 'IMG';
+            } else if(type === creativeSettings.types.display && subtype === 'SWF') {
+                // SWF
+                return 'SWF';
+            } else {
+                // unknown
+                return null;
+            }
         }
 
         //Before closing the modal save the state;

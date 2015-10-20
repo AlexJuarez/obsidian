@@ -43,10 +43,15 @@ define(function (require) {
                 get(uriConfig).addData(newData);
             }
 
+            function isLoaded(uriConfig) {
+                return get(uriConfig).isLoaded();
+            }
+
             return {
                 get: get,
                 all: all,
                 addData: addData,
+                isLoaded: isLoaded,
                 exists: exists,
                 observe: observe
             };

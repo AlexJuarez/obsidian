@@ -13,8 +13,8 @@ define(function(require) {
      * @name newCreativeService
      * @ngInject
      */
-    module.service('newCreativeService', ['ENUMS', '$httpParamSerializer', '$q', '$http', '$window' ,'studioLocation', 'studioUrlBuilder',
-        function(ENUMS, $httpParamSerializer, $q, $http, $window, studioLocation, studioUrlBuilder) {
+    module.service('newCreativeService', ['ENUMS', '$httpParamSerializer', '$q', '$http', 'studioLocation', 'studioUrlBuilder', 'studioWindow',
+        function(ENUMS, $httpParamSerializer, $q, $http, studioLocation, studioUrlBuilder, studioWindow) {
         var types = ENUMS.up.creativeTypes;
         var environments = ENUMS.up.creativeEnvironments;
 
@@ -77,22 +77,17 @@ define(function(require) {
                 .setHostname(hostname);
             setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
 
-            var tabWindow = $window.open(
+            var tabWindow = studioWindow.open(
                 builder.build(),
                 'mixpo_studio'
             );
-            tabWindow.StudioDirectHandler = (function(){
-                function onClose(code, detail) {
-                    if(code && detail) {
-                        // so jshint shuts up
-                    }
-                    tabWindow.close();
+            tabWindow.onClose = function onClose(code, detail) {
+                if(code && detail) {
+                    // so jshint shuts up
                 }
+                tabWindow.close();
+            };
 
-                return {
-                    onClose: onClose
-                };
-            })();
             callback(null, tabWindow);
         }
 

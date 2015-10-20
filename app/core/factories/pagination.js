@@ -22,11 +22,16 @@ define(function (require) {
          * @returns {{init: init, observe: (function), nextPage: nextPage, buildUrl: buildConfig, limit: (number), all: (Object[])}}
          */
 
-        function create(sortFn, limit, offset) {
+        function create(sortFn, limit, offset, options) {
+            if (typeof options === 'undefined') {
+                options = {};
+            }
+            ng.extend(options, { sync: 'update' });
+
             limit = limit || 10;
             offset = offset || 0;
 
-            var data = dataFactory(sortFn);
+            var data = dataFactory(sortFn, options);
             var transform;
             var initialApiConfig;
 

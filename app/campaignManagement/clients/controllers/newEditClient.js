@@ -37,25 +37,25 @@ define(function (require) {
         $scope.ok = function (errors) {
             if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
-
-                    // Create a new division with the same name. This should be temporary
-                    var divisionRecord = divisionRecords.create();
-                    var division = divisionRecord.get();
-                    division.name = resp.data.name;
-                    division.clientId = resp.data.id;
-                    divisionRecord.save().then(function(division) {
-                        notification.success(
-                          'View your division <a ui-sref="cm.campaigns.division({ divisionId: id })">{{name}}</a>.',
-                          {
-                              locals: {
-                                  id: division.data.id,
-                                  name: division.data.name
-                              }
-                          });
-                    });
+                    if (modalState.action === 'New') {
+                        // Create a new division with the same name. This should be temporary
+                        var divisionRecord = divisionRecords.create();
+                        var division = divisionRecord.get();
+                        division.name = resp.data.name;
+                        division.clientId = resp.data.id;
+                        divisionRecord.save().then(function(division) {
+                            notification.success(
+                                'View your division <a ui-sref="cm.campaigns.division({ divisionId: id })">{{name}}</a>.',
+                                {
+                                    locals: {
+                                        id: division.data.id,
+                                        name: division.data.name
+                                    }
+                                });
+                        });
+                    }
 
                     $modalInstance.dismiss('cancel');
-                    $scope.client = {};
                     notification.success(
                         'View your client <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
                         {
@@ -75,7 +75,6 @@ define(function (require) {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.client = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -84,7 +83,7 @@ define(function (require) {
         };
 
         $scope.$on('$destroy', function() {
-            modalState.client = $scope.client;
+            modalState.client = record.changes();
         });
     }]);
 });

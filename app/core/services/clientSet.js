@@ -7,7 +7,7 @@ define(function (require) {
         endpoint: 'clientSet',
         queryParams: {
             metrics: [
-                'countAccounts', 'countCampaignsPreFlight',
+                'countAccounts', 'countDivisions', 'countCampaignsPreFlight',
                 'countCampaignsInFlight', 'countCampaignsCompleted',
                 'countCampaignsArchived', 'count'
             ]
@@ -42,6 +42,7 @@ define(function (require) {
                 'countCampaignsInFlight': 0,
                 'countCampaigns': 0,
                 'countAccounts': 0,
+                'countDivisions': 0,
                 'countCampaignsArchived': 0,
                 'countCampaignsCompleted': 0
             };

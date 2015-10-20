@@ -5,6 +5,8 @@ define(function (require) {
     var ng = require('angular');
     var app = require('./../module');
     var d3 = require('d3');
+    var $ = require('jquery');
+
     require('tpl!./analyticsLineChart.html');
 
     var css = require('text!./analyticsLineChart.css');
@@ -49,7 +51,7 @@ define(function (require) {
             transclude: true,
             scope: {},
             templateUrl: 'chart/directives/analyticsLineChart.html',
-            controller: ['$scope', '$element', '$filter', '$window', '$interpolate', 'analyticsChartService', function ($scope, $element, $filter, $window, $interpolate, analyticChartService) {
+            controller: ['$scope', '$element', '$filter', '$window', '$interpolate', 'analyticsChartService', '$document', function ($scope, $element, $filter, $window, $interpolate, analyticChartService, $document) {
                 $scope.showOptions = [
                     {name: 'Impressions', value: 'impression'}
                     //{name: 'Views', value: 'view'},
@@ -67,16 +69,22 @@ define(function (require) {
                 $scope.interval = 'day';
 
                 $scope.openPicker = openPicker;
-                $scope.startDate = '';
+                $scope.startDate = null;
 
                 $scope.format = 'yyyy-MM-dd';
                 $scope.downloadImage = downloadImage;
+                $scope.isLoaded = false;
 
                 $scope.dateOptions = {
                     formatYear: 'yy',
                     startingDay: 0,
                     maxMode: 'day'
                 };
+
+                $scope.$on('$destroy', function() {
+                    $($document.find('body')).off('mouseleave', '.interactive-chart .chart-container');
+                    ng.element($window).off('resize', windowResize);
+                });
 
                 function openPicker($event) {
                     $event.preventDefault();
@@ -97,14 +105,20 @@ define(function (require) {
 
                 function transformData(data, interval) {
                     var parseDate = d3.time.format('%Y-%m-%d').parse;
+                    var output = [];
+                    var item;
 
-                    data.forEach(function(d) {
-                        d[interval] = parseDate(d[interval]);
-                    });
+                    for (var i = 0; i < data.length; i++) {
+                        item = ng.copy(data[i]);
+                        item[interval] = parseDate(item[interval]);
+                        output.push(item);
+                    }
+
+                    return output;
                 }
 
                 //Chart Creation
-                function createChart(chartArea, data, interval, show) {
+                function drawChart(chartArea, data, interval, show) {
                     var width = chartArea.clientWidth - margin.left - margin.right;
                     var mobile = false;
                     if (width < 600) { //if width is less than 600 than overflow
@@ -257,18 +271,26 @@ define(function (require) {
                             .attr('class', 'overlay')
                             .attr('style', 'left:' +  margin.left +
                             'px;top:' + margin.top + 'px; bottom:' + (margin.bottom - 10) + 'px')
-                            .on('mousemove', mousemove)
-                            .on('mouseout', mouseout);
+                            .on('mousemove', mousemove);
 
                         //Create the tooltips for hover
                         var tooltip = overlay
                             .append('div')
-                            .attr('class', 'tooltip-wrapper');
+                            .attr('class', 'tooltip-wrapper')
+                            .on('mousemove', mouseMoveTooltip);
+
+                        $($document.find('body')).off('mouseleave', '.interactive-chart .chart-container', mouseLeaveTooltip);
+                        $($document.find('body')).on('mouseleave', '.interactive-chart .chart-container', mouseLeaveTooltip);
                     }
 
-                    function mouseout() {
-                        var event = this;
+                    function mouseMoveTooltip() {
+                        var e = d3.event;
+                        e.stopPropagation();
+                    }
+
+                    function mouseLeaveTooltip() {
                         tooltip.style('opacity', 0);
+                        tooltip.style('display', 'none');
                     }
 
                     function mousemove() {
@@ -282,6 +304,8 @@ define(function (require) {
                             if(d0 && d1) {
                                 var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
                                 tooltip.style('opacity', 1);
+                                tooltip.style('display', 'block');
+
                                 tooltip.style('top', (y(d.datum) - 15) + 'px')
                                     .style('left', x(d.date) + 'px');
 
@@ -303,60 +327,47 @@ define(function (require) {
                     link.download = 'chart.svg';
                 }
 
-                function setUpChart() {
+                function createChart(interval, startDate) {
                     var chartArea = $element.find('.chart-area');
-                        chartArea.addClass('loading');
-                        chartArea.empty();
 
-                    if(!analyticChartService.exists($scope.interval, $scope.startDate)) {
-                        analyticChartService.get($scope.interval, $scope.startDate).observe(function() {
-                            var data = analyticChartService.get($scope.interval, $scope.startDate).all();
-                            transformData(data, $scope.interval);
-                            createChart(chartArea[0], data, $scope.interval, $scope.show);
-                            chartArea.removeClass('loading');
-                            $scope.noData = data.length === 0; //check for no data
-                        }, $scope, true);
+                    var isLoaded = analyticChartService.isLoaded(interval, startDate);
+                    $scope.isLoaded = isLoaded;
+                    var data = analyticChartService.get(interval, startDate).all();
+                    var noData = (data.length === 0) && isLoaded; //check for no data'
+                    $scope.noData = noData;
+                    chartArea.empty();
+                    drawChart(chartArea[0], transformData(data, interval), interval, $scope.show);
+                }
+
+                function setUpChart(interval, startDate) {
+                    if (!analyticChartService.exists(interval, startDate)) {
+                        analyticChartService.get(interval, startDate).observe(function() {
+                            createChart(interval, startDate)
+                        }, $scope);
                     } else {
-                        var data = analyticChartService.get($scope.interval, $scope.startDate).all();
-
-                        createChart(chartArea[0], data, $scope.interval, $scope.show);
-                        chartArea.removeClass('loading');
+                        createChart(interval, startDate)
                     }
                 }
 
-                $element.find('.chart-area').addClass('loading');
-
-                analyticChartService.get($scope.interval, $scope.startDate).observe(function() {
-                    $element.find('.chart-area').empty();
-                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
-                    transformData(data, $scope.interval);
-                    createChart($element.find('.chart-area')[0], data, $scope.interval, $scope.show);
-                    $element.find('.chart-area').removeClass('loading');
-                    $scope.noData = data.length === 0; //check for no data
-                }, $scope, true);
+                setUpChart($scope.interval, $scope.startDate);
 
                 $scope.$watch('interval', function() {
-                    setUpChart();
-                });
+                    setUpChart($scope.interval, $scope.startDate);
+                }, true);
 
                 $scope.$watch('startDate', function() {
-                    setUpChart();
-                });
+                    setUpChart($scope.interval, $scope.startDate);
+                }, true);
 
-                $scope.$watch('show', function(newValue) {
-                    $element.find('.chart-area').empty();
-                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
+                $scope.$watch('show', function() {
+                    setUpChart($scope.interval, $scope.startDate);
+                }, true);
 
-                    createChart($element.find('.chart-area')[0], data, $scope.interval, newValue);
-                });
+                function windowResize() {
+                    setUpChart($scope.interval, $scope.startDate);
+                }
 
-                ng.element($window).on('resize', function() {
-                    $element.find('.chart-area').empty();
-                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
-
-                    createChart($element.find('.chart-area')[0], data, $scope.interval, $scope.show);
-                });
-
+                ng.element($window).on('resize', windowResize);
             }]
         };
     }]);

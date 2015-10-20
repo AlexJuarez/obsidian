@@ -7,12 +7,12 @@ define(function (require) {
 
     app.controller('newEditCampaignCtrl', [
         '$scope', '$q', '$modalInstance', 'accountService', 'accountRecordService',
-        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification', 'URL_REGEX', 'MONEY_REGEX', '$interpolate', '$filter',
+        'divisionRecordService', 'clientRecordService', 'campaignRecordService', 'modalState', 'notification',
+        'URL_REGEX', 'MONEY_REGEX', '$interpolate', '$filter', 'DATE_FORMAT',
         function ($scope, $q, $modalInstance, accounts, accountRecords, divisionRecords,
-                  clientRecords, campaignRecords, modalState, notification, URL_REGEX, MONEY_REGEX, $interpolate, $filter) {
+                  clientRecords, campaignRecords, modalState, notification, URL_REGEX, MONEY_REGEX, $interpolate, $filter, DATE_FORMAT) {
 
-            //Datepicker functions
-            $scope.format = 'MM/dd/yyyy';
+            $scope.format = DATE_FORMAT;
             $scope.openPicker = openPicker;
             $scope.datePickers = {};
             $scope.dateOptions = {
@@ -96,7 +96,7 @@ define(function (require) {
                     // Date doesn't parse!
                     date = new Date('Jan 1 2000');
                 }
-                $event.target.value = $filter('date')(date, 'M/d/yyyy');
+                $event.target.value = $filter('date')(date, DATE_FORMAT);
             }
 
             function cancel() {
@@ -114,7 +114,6 @@ define(function (require) {
             function ok(errors) {
                 if (ng.equals({}, errors) || !errors) {
                     var onSuccess = function(resp) {
-                        $scope.campaign = {};
                         notification.success('View your campaign <a ui-sref="cm.campaigns.detail({ campaignId: id })">{{name}}</a>.',
                             {
                                 locals: {
@@ -131,7 +130,7 @@ define(function (require) {
 
             //Before closing the modal save the state;
             $scope.$on('$destroy', function() {
-                modalState.campaign = $scope.campaign;
+                modalState.campaign = record.changes();
             });
     }]);
 });
