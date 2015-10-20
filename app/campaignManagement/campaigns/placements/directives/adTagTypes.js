@@ -14,9 +14,20 @@ define(function (require) {
 			controller: ['$scope', 'adTagService', 'adTags', function ($scope, adTagService, adTags) {
 				$scope.tagTemplates = [];
 
+				var adTagServiceReady = false;
 				adTagService.init();
 				adTagService.observe(function() {
-					$scope.tagTemplates = adTagService.all();
+					adTagServiceReady = true;
+				});
+
+				$scope.$watch('creativeType', function() {
+					if (adTagServiceReady) {
+						if($scope.creativeType === 'inStream') {
+							$scope.tagTemplates = adTagService.inStream();
+						} else {
+							$scope.tagTemplates = adTagService.all();
+						}
+					}
 				});
 
 				$scope.$watch('placement.adTagId', function() {
