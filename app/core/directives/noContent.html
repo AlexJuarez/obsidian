@@ -1,5 +1,14 @@
 <div class="no-content-wrapper">
     
+    <div ng-if="showDivisionMsg">
+        <div class="no-content">
+            <div class="glyph-info"></div>
+            <h3>It appears you don't have any divisions.</h3>
+            <p>Let's fix that! Click to add a division.</p>
+            <button class="btn btn-primary solid" ng-click="openNewDivisionModal()">Add New Division</button>
+        </div>
+    </div>
+
     <div ng-if="showAccountMsg">
         <div class="no-content">
             <div class="glyph-info"></div>

@@ -5,7 +5,7 @@ define(function (require) {
 
     require('tpl!./../new-edit-client.html');
 
-    app.controller('clientCtrl', ['$scope', '$modal', '$state', 'divisionService', 'navbarService', function ($scope, $modal, $state, divisionService, navbar) {
+    app.controller('clientCtrl', ['$scope', '$modal', '$state', 'divisionService', 'navbarService', 'notification', function ($scope, $modal, $state, divisionService, navbar, notification) {
 
         $scope.openEditClientModal = openEditClientModal;
         $scope.openNewDivisionModal = openNewDivisionModal;
@@ -17,6 +17,7 @@ define(function (require) {
         navbar.observe(updateClientName, $scope);
 
         if ($state.params.clientId) {
+
             var updateDivisions = function() {
                 $scope.noDivisions = divisionService.filtered().length === 0;
             };
@@ -47,24 +48,28 @@ define(function (require) {
 
         var newAccountModal;
         function openNewAccountModal() {
-            if (!newAccountModal) {
-                newAccountModal = {
-                    clientId: $scope.client.id || $state.params.clientId,
-                    action: 'New'
-                };
-            }
+            if ($scope.noDivisions) {
+                notification.warn('You need a division before you can create an account!');
+            } else {
+                if (!newAccountModal) {
+                    newAccountModal = {
+                        clientId: $scope.client.id || $state.params.clientId,
+                        action: 'New'
+                    };
+                }
 
-            $modal.open({
-                animation: 'true',
-                templateUrl: 'campaignManagement/accounts/new-edit-account.html',
-                controller: 'newEditAccountCtrl',
-                resolve: {
-                    modalState: function() {
-                        return newAccountModal;
-                    }
-                },
-                size: 'lg'
-            });
+                $modal.open({
+                    animation: 'true',
+                    templateUrl: 'campaignManagement/accounts/new-edit-account.html',
+                    controller: 'newEditAccountCtrl',
+                    resolve: {
+                        modalState: function() {
+                            return newAccountModal;
+                        }
+                    },
+                    size: 'lg'
+                });
+            }
         }
 
         var newDivisionModal;

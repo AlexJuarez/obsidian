@@ -7,7 +7,10 @@
     </div>
 </div>
 <div class="btn-group right">
-    <button tooltip="'You need a division before you can create an account!'" ng-class="{hover:noDivisions}" class="tooltip tooltip-basic tooltip-light btn btn-primary solid" ng-disabled="noDivisions" ng-click="openNewAccountModal()">New Account</button>
+    <button ng-class="{hover:noDivisions}" class="btn btn-primary solid" ng-disabled="noDivisions" ng-click="openNewAccountModal()">New Account</button ng-class="{hover:noDivisions}" class="btn btn-primary solid">
     <!-- <button class="btn btn-default solid" ng-click="openNewDivisionModal()">New Division</button> -->
     <button class="btn btn-default solid" ng-click="openEditClientModal()">Edit Client</button>
 </div>
+
+<div ng-if="noDivisions" no-content click-action="openNewDivisionModal"></div>
+<div ng-if="!noDivisions" no-content click-action="openNewAccountModal"></div>

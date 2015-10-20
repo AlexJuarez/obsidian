@@ -114,7 +114,6 @@ define(function (require) {
             function ok(errors) {
                 if (ng.equals({}, errors) || !errors) {
                     var onSuccess = function(resp) {
-                        $scope.campaign = {};
                         notification.success('View your campaign <a ui-sref="cm.campaigns.detail({ campaignId: id })">{{name}}</a>.',
                             {
                                 locals: {
@@ -131,7 +130,7 @@ define(function (require) {
 
             //Before closing the modal save the state;
             $scope.$on('$destroy', function() {
-                modalState.campaign = $scope.campaign;
+                modalState.campaign = record.changes();
             });
     }]);
 });

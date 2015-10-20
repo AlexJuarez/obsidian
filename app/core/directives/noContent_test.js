@@ -34,7 +34,7 @@ define(function (require) {
 
     function generateEl(){
         
-        httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond(noContentJSON);
+        // httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond(noContentJSON);
         
         httpBackend.when('GET', apiGenerator(divisionSetData._getApiConfig())).respond(noContentJSON);
         
@@ -74,17 +74,45 @@ define(function (require) {
             expect(clientSetData).toBeDefined();
         });
 
-        it('should contain the variable "showAccountMsg" set to true', function(){
+        it('should contain the variable "showDivisionMsg" set to true', function(){
             state.params = { clientId: 'testClient'};
+
+            httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({clientSet: [{metrics:{countDivisions:0}}]});
 
             var el = generateEl();
             var isoScope = el.isolateScope();
             
+            expect(isoScope.showDivisionMsg).toEqual(true);
+        });
+
+        it('should create the notification element with the appropriate message', function(){
+            state.params = { clientId: 'testClient'};
+
+            httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({clientSet: [{metrics:{countDivisions:0}}]});
+
+            var el = generateEl();
+            
+            expect( el.find('.no-content').length ).toEqual(1);
+
+            expect( el.find('h3').html() )
+                .toEqual('It appears you don\'t have any divisions.');
+        });
+        
+        it('should contain the variable "showAccountMsg" set to true', function(){
+            state.params = { clientId: 'testClient'};
+
+            httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({clientSet: [{metrics:{countDivisions:1,countAccounts:0}}]});
+
+            var el = generateEl();
+            var isoScope = el.isolateScope();
+
             expect(isoScope.showAccountMsg).toEqual(true);
         });
 
         it('should create the notification element with the appropriate message', function(){
             state.params = { clientId: 'testClient'};
+
+            httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({clientSet: [{metrics:{countDivisions:1,countAccounts:0}}]});
 
             var el = generateEl();
             

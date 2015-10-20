@@ -4,11 +4,17 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification) {
-        var divisions = dataFactory(utils.sortByName);
-        var client = {};
+    var apiConfig = {
+        endpoint: 'divisions',
+        queryParams: {
+            dimensions: ['id', 'name', 'pinned', 'client.id'],
+            order: 'name:asc'
+        }
+    };
 
-        divisionRecordService.observe(divisionUpdate, undefined, true);
+    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', '$q', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification, $q) {
+        var divisions = dataFactory(utils.sortByName, { prepFn: prepFn, sync: 'create' });
+        var client = {};
 
         $rootScope.$on('navStateChange', function (event, state) {
             if (state.client && state.client.id !== client.id) {
@@ -22,22 +28,22 @@ define(function (require) {
 
         // Observe for new/updated divisions
 
-        function divisionUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-                divisions.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned,
-                    client: {
-                        id: data.clientId
-                    }
-                }]);
-            }
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned,
+                client: {
+                    id: data.clientId
+                }
+            });
+
+            return deferred.promise;
         }
 
-        function init(apiConfig) {
+        function init() {
             return divisions.init(apiConfig, function (data) {
                 return data.divisions;
             });
@@ -109,6 +115,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             setData: divisions.setData,
             addData: divisions.addData,

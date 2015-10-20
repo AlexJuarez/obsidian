@@ -12,7 +12,7 @@ define(function(require) {
             if (!newCreativeModal) {
                 newCreativeModal = {
                     action: 'New',
-                    creative: {
+                    originalCreative: {
                         expandedHeight: null,
                         expandedWidth: null
                     }
@@ -42,7 +42,7 @@ define(function(require) {
 
             var allCreatives = creatives.all().data;
             $scope.noContent = creatives.noContent();
-            
+
             if (allCreatives && creatives.data().isLoaded()) {
                 var creative = 0;
 

@@ -123,6 +123,9 @@ define(function (require) {
 
                     function updatePosition(height, width) {
                         if (element) {
+                            if (element.hasClass('hide')) {
+                                element.removeClass('hide');
+                            }
                             var position = calculatePosition(height, width);
                             element.css('top', position.top);
                             element.css('left', position.left);
@@ -139,7 +142,6 @@ define(function (require) {
                         var height = element.find('.wrapper').height();
                         var width = element.find('.wrapper').width();
                         updatePos = $interval(function() { updatePosition(height, width); }, 100);
-                        element.removeClass('hide');
                     }
 
                     function removeCreativePreview() {
