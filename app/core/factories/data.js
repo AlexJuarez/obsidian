@@ -132,16 +132,17 @@ define(function (require) {
                     if (item) {
                         prepFn(d).then(function(d) {
                             ng.extend(item, d);
+                            filterDeleted();
+                            observers.notifyObservers();
                         });
                     } else if (options.sync === 'create') {
                         index = findIndex(data, d, sortKey);
                         prepFn(d).then(function(d) {
                             data.splice(index, 0, d);
+                            filterDeleted();
+                            observers.notifyObservers();
                         });
                     }
-
-                    filterDeleted();
-                    observers.notifyObservers();
                 }
             }
 
