@@ -41,11 +41,19 @@ define(function (require) {
             };
 
             function getSortKey(config) {
-                var key;
+                var order, key, params;
                 if (config && config.queryParams) {
-                    key = config.queryParams.order;
+                    order = config.queryParams.order;
                     if (key) {
-                        key = key.split(':')[0];
+                        params = order.split(':');
+                        key = params[0];
+                        if (params[1] && !options.compareFn) {
+                            if (params[1] === 'desc') {
+                                options.compareFn = function(a, b) {
+                                    return b.localeCompare(a);
+                                };
+                            }
+                        }
                     }
                 }
 
