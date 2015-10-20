@@ -8,9 +8,10 @@ define(function (require) {
             
             if (input < 1) {
                 var roundedNum = input * 100;
-                return roundedNum.toFixed(2);   
+                return parseFloat(roundedNum.toFixed(2)); 
+                  
             } else {
-                return input.toFixed(2);
+                return parseFloat(input.toFixed(2));
             }
             
         };

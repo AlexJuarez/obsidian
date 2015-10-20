@@ -22,8 +22,8 @@ define(function (require) {
             expect(filter('In-Stream')).toEqual('ISV');
         });
 
-        it('should convert "Display" to "D"', function () {
-            expect(filter('Display')).toEqual('D');
+        it('should convert "Display" to "IMG/SWF"', function () {
+            expect(filter('Display')).toEqual('IMG/SWF');
         });
 
         it('should convert "Rich Media" to "RM"', function () {

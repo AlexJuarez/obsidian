@@ -14,6 +14,7 @@ define(function (require) {
 
         function update(){
             $scope.creativeData = modalState.data.all();
+            console.log( $scope.creativeData );
         }
 
         // Adjust bootstrap classes based on # of ad types returned
