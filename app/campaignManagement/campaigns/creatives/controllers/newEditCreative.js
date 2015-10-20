@@ -186,7 +186,7 @@ define(function (require) {
             record = creativeRecordService.get(modalState.creativeId);
             creativeRecordService.fetch(modalState.creativeId);
         } else {
-            record = creativeRecordService.create();
+            record = creativeRecordService.create(modalState.originalCreative);
             record.set(modalState.creative);
         }
 
@@ -224,7 +224,6 @@ define(function (require) {
             if(record.hasChanges()) {
                 if(confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.creative = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -235,7 +234,6 @@ define(function (require) {
         function ok(errors) {
             if(ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
-                    $scope.creative = {};
                     notification.success('Creative: {{name}}, has been updated.',
                         {
                             locals: {
@@ -297,7 +295,7 @@ define(function (require) {
 
         //Before closing the modal save the state;
         $scope.$on('$destroy', function() {
-            modalState.creative = $scope.creative;
+            modalState.creative = record.changes();
         });
     }]);
 });
