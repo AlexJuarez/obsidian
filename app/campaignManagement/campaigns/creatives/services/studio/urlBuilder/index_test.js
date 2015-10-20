@@ -62,10 +62,10 @@ define(function (require) {
 
         describe('mediaselect spec', function () {
             it('should return expected uri', function () {
-                var result = instance.mediaselect('aCampaignId')
+                var result = instance.mediaselect('aCampaignId', 'aAdType')
                     .build();
 
-                expect(result).toEqual('/studio?filter=%7B%22campaignId%22:%22aCampaignId%22%7D&sdf=mediaselect');
+                expect(result).toEqual('/studio?filter=%7B%22campaignId%22:%22aCampaignId%22,%22sd_adtype%22:%22aAdType%22%7D&sdf=mediaselect');
             });
         });
     });
