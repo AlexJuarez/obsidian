@@ -5,12 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('divisionService', function () {
-        var division, httpBackend, state, apiGenerator, records;
-
-        var apiConfig = {
-            endpoint: 'test',
-            dimensions: ['one']
-        };
+        var division, httpBackend, state, apiGenerator, records, apiConfig;
 
         var divisions = [
             {
@@ -36,6 +31,7 @@ define(function (require) {
 
             inject(function (divisionService, $httpBackend, $state, apiUriGenerator, divisionRecordService) {
                 division = divisionService;
+                apiConfig = division._apiConfig;
                 httpBackend = $httpBackend;
                 state = $state;
                 apiGenerator = apiUriGenerator;

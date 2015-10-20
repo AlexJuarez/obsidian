@@ -4,12 +4,18 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification) {
-        var clients = dataFactory(utils.sortByName);
+    var apiConfig = {
+        endpoint: 'clients',
+        queryParams: {
+            dimensions: ['id', 'name', 'pinned'],
+            order: 'name:asc'
+        }
+    };
 
-        clientRecordService.observe(clientUpdate, undefined, true);
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', '$q', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification, $q) {
+        var clients = dataFactory(utils.sortByName, { prepFn: prepFn, sync: 'create' });
 
-        function init(apiConfig) {
+        function init() {
             return clients.init(apiConfig, function (data) {
                 return data.clients;
             });
@@ -21,16 +27,16 @@ define(function (require) {
 
         // Observe for new/updated clients
 
-        function clientUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-                clients.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned
-                }]);
-            }
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned
+            });
+
+            return deferred.promise;
         }
 
         function search(query) {
@@ -68,6 +74,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             setData: clients.setData,
             addData: clients.addData,

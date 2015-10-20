@@ -65,5 +65,6 @@ define(function(require) {
         require('./services/apiURIGenerator');
         require('./services/studioLocation');
         require('./services/cdnLocation');
+        require('./services/dataSync');
     }
 });
