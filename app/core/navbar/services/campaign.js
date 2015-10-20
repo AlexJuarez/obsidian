@@ -16,7 +16,7 @@ define(function (require) {
 
     module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', function ($http, dataFactory, accounts, $state, campaignRecordService, notification) {
 
-        var campaigns = dataFactory();
+        var campaigns = dataFactory(sortByStartDateDescending, { sort: { key: 'startDate', comparseFn: compareFn, sorted: true }});
 
         campaignRecordService.observe(campaignUpdate, undefined, true);
 
@@ -32,6 +32,18 @@ define(function (require) {
 
         function search(query) {
             return utils.search(filtered(), query);
+        }
+
+        function compareFn(a, b) {
+            return new Date(b) - new Date(a);
+        }
+
+        function sortByStartDateDescending(data) {
+            data.sort(function (a, b) {
+                return new Date(b.startDate) - new Date(a.startDate);
+            });
+
+            return data;
         }
 
         // Observe for new/updated campaigns

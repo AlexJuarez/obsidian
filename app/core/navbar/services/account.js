@@ -13,7 +13,7 @@ define(function (require) {
     };
 
     module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', 'notification', function ($http, dataFactory, divisions, $state, accountRecordService, notification) {
-        var accounts = dataFactory();
+        var accounts = dataFactory(utils.sortByName, { sort: { key: 'name', sorted: true }});
 
         accountRecordService.observe(accountUpdate, undefined, true);
 

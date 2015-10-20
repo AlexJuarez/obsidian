@@ -14,16 +14,16 @@ define(function (require) {
             data[endpoint].push(dataFactory);
         }
 
-        function update(endpoint, resp) {
+        function update(endpoint, d) {
             var factories = data[endpoint];
 
             for (var i = 0; i < factories.length; i++) {
-                factories.addData()
+                factories.addData(d);
             }
         }
 
         return {
-            broadcast: broadcast,
+            update: update,
             register: register
         };
     }]);

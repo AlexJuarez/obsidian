@@ -13,7 +13,7 @@ define(function (require) {
     };
 
     module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification) {
-        var divisions = dataFactory();
+        var divisions = dataFactory(utils.sortByName, { sort: { key: 'name', sorted: true }});
         var client = {};
 
         divisionRecordService.observe(divisionUpdate, undefined, true);

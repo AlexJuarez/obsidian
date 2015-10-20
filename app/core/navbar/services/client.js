@@ -13,7 +13,7 @@ define(function (require) {
     };
 
     module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification) {
-        var clients = dataFactory();
+        var clients = dataFactory(utils.sortByName, { sort: { key: 'name', sorted: true }});
 
         clientRecordService.observe(clientUpdate, undefined, true);
 

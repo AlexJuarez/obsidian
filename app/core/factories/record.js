@@ -5,7 +5,7 @@ define(function (require) {
 
     var ng = require('angular');
 
-    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification) {
+    module.factory('recordFactory', ['$interpolate', 'apiUriGenerator', '$http', 'observerFactory', '$log', '$q', 'notification', 'dataSyncService', function($interpolate, apiUriGenerator, $http, observerFactory, $log, $q, notification, dataSyncService) {
         //destroy, update, create, error, change
         /**
          * @param {{attributes: Object, idAttribute: String, rules: {key: {ignore: Boolean, noCompare: Boolean}}, apiConfig: Object, transform: function }} - options
@@ -38,6 +38,8 @@ define(function (require) {
             function successHandler(resp, record) {
                 record.saving = false;
                 if (resp.status === 200) {
+                    var endpoint = record.apiConfig.read || record.apiConfig.update;
+                    dataSyncService.update(endpoint, resp.data);
                     record._isNew = false;
                     successFn.call(record, resp);
                     record._set(resp.data);
@@ -49,7 +51,7 @@ define(function (require) {
                 this.attributes = {};
                 this.saving = false;
                 this.idAttribute = options.idAttribute || 'id';
-                this.rules = ng.merge({}, options.rules);
+                this.rules = ng.copy(options.rules);
 
                 this._isNew = true;
                 this.rules[this.idAttribute] = { ignore: true };
