@@ -69,7 +69,7 @@ define(function (require) {
                 $scope.interval = 'day';
 
                 $scope.openPicker = openPicker;
-                $scope.startDate = '';
+                $scope.startDate = null;
 
                 $scope.format = 'yyyy-MM-dd';
                 $scope.downloadImage = downloadImage;
@@ -83,6 +83,7 @@ define(function (require) {
 
                 $scope.$on('$destroy', function() {
                     $($document.find('body')).off('mouseleave', '.interactive-chart .chart-container');
+                    ng.element($window).off('resize', windowResize);
                 });
 
                 function openPicker($event) {
@@ -285,7 +286,6 @@ define(function (require) {
                     function mouseMoveTooltip() {
                         var e = d3.event;
                         e.stopPropagation();
-                        e.preventDefault();
                     }
 
                     function mouseLeaveTooltip() {
@@ -335,10 +335,8 @@ define(function (require) {
                     var data = analyticChartService.get(interval, startDate).all();
                     var noData = (data.length === 0) && isLoaded; //check for no data'
                     $scope.noData = noData;
-                    if (!noData) {
-                        chartArea.empty();
-                        drawChart(chartArea[0], transformData(data, interval), interval, $scope.show);
-                    }
+                    chartArea.empty();
+                    drawChart(chartArea[0], transformData(data, interval), interval, $scope.show);
                 }
 
                 function setUpChart(interval, startDate) {
@@ -355,23 +353,21 @@ define(function (require) {
 
                 $scope.$watch('interval', function() {
                     setUpChart($scope.interval, $scope.startDate);
-                });
+                }, true);
 
                 $scope.$watch('startDate', function() {
                     setUpChart($scope.interval, $scope.startDate);
-                });
+                }, true);
 
-                $scope.$watch('show', function(newValue) {
-                    $element.find('.chart-area').empty();
-                    var data = analyticChartService.get($scope.interval, $scope.startDate).all();
-
-                    drawChart($element.find('.chart-area')[0], transformData(data, $scope.interval), $scope.interval, newValue);
-                });
-
-                ng.element($window).on('resize', function() {
+                $scope.$watch('show', function() {
                     setUpChart($scope.interval, $scope.startDate);
-                });
+                }, true);
 
+                function windowResize() {
+                    setUpChart($scope.interval, $scope.startDate);
+                }
+
+                ng.element($window).on('resize', windowResize);
             }]
         };
     }]);

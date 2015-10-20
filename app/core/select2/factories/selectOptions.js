@@ -2,6 +2,7 @@ define(function(require) {
     'use strict';
 
     var module = require('./../../module');
+    var ng = require('angular');
 
     module.constant('NG_OPTIONS_REGEXP', /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?(?:\s+group\s+by\s+([\s\S]+?))?(?:\s+disable\s+when\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?$/);
     // 1: value expression (valueFn)
@@ -53,7 +54,7 @@ define(function(require) {
     }
 
     module.factory('selectOptionsFactory', ['$log', '$parse', 'NG_OPTIONS_REGEXP', function($log, $parse, NG_OPTIONS_REGEXP) {
-        return function(ngOptions, element, scope, tracked) {
+        return function(ngOptions, scope, tracked) {
             var getOptions, valuesFn;
 
             if (ngOptions) {
@@ -162,12 +163,12 @@ define(function(require) {
                     if (values) {
                         var text, id, option;
                         for (var i = 0; i < values.length; i++) {
-                            option = values[i];
+                            option = ng.element(values[i]);
 
-                            text = option.innerText;
+                            text = option.text();
 
-                            if (option.hasAttribute('value')) {
-                                id = option.getAttribute('value').value;
+                            if (option.val()) {
+                                id = option.val();
                             } else {
                                 id = text;
                             }

@@ -4,17 +4,25 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', function ($http, dataFactory, accounts, $state, campaignRecordService, notification) {
-        
-        var campaigns = dataFactory(sortByStartDateDescending);
-        
-        campaignRecordService.observe(campaignUpdate, undefined, true);
+    var apiConfig = {
+        endpoint: 'campaigns',
+        queryParams: {
+            dimensions: [
+                'id', 'name', 'pinned', 'account.id', 'startDate', 'endDate'
+            ],
+            order: 'startDate:desc'
+        }
+    };
+
+    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', '$q', function ($http, dataFactory, accounts, $state, campaignRecordService, notification, $q) {
+
+        var campaigns = dataFactory(sortByStartDateDescending, { compareFn: compareFn, prepFn: prepFn, sync: 'create' });
 
         function isLoaded() {
             return campaigns.isLoaded();
         }
 
-        function init(apiConfig) {
+        function init() {
             return campaigns.init(apiConfig, function (data) {
                 return data.campaigns;
             });
@@ -22,6 +30,10 @@ define(function (require) {
 
         function search(query) {
             return utils.search(filtered(), query);
+        }
+
+        function compareFn(a, b) {
+            return new Date(b) - new Date(a);
         }
 
         function sortByStartDateDescending(data) {
@@ -34,28 +46,21 @@ define(function (require) {
 
         // Observe for new/updated campaigns
 
-        function campaignUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
-                var account = accounts.get(data.accountId);
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-                campaigns.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned,
-                    startDate: data.startDate,
-                    endDate: data.endDate,
-                    account: {
-                        id: data.accountId
-                    },
-                    division: {
-                        id: account.division.id
-                    },
-                    client: {
-                        id: account.client.id
-                    }
-                }]);
-            }
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned,
+                startDate: data.startDate,
+                endDate: data.endDate,
+                account: {
+                    id: data.accountId
+                }
+            });
+
+            return deferred.promise;
         }
 
         function quarterMap() {
@@ -212,6 +217,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             isLoaded: isLoaded,
             setData: campaigns.setData,

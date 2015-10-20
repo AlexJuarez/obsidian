@@ -7,10 +7,8 @@ define(function (require) {
     var module = require('./../module');
     var ng = require('angular');
 
-    var DEFAULT_VERSION = 'v3';
-
     // TODO: add the API_URI constant, replace domainInterceptor.js
-    module.service('apiUriGenerator', [function () {
+    module.service('apiUriGenerator', ['DEFAULT_API_VERSION', function (DEFAULT_API_VERSION) {
         function getApiUri(apiConfig) {
 
             // NOTE: this is for use with fixtures and scaffolding the application.
@@ -28,8 +26,12 @@ define(function (require) {
             return endpoint + expandParams(apiConfig.queryParams || {});
         }
 
+        function getVersion(config) {
+            return config.version || DEFAULT_API_VERSION;
+        }
+
         function getEndpoint(config) {
-            var version = config.version || DEFAULT_VERSION;
+            var version = getVersion(config);
             return '/api/' + version + '/' + config.endpoint;
         }
 

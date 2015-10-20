@@ -4,12 +4,18 @@ define(function (require) {
     var module = require('./../../module');
     var utils = require('./util');
 
-    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', 'notification', function ($http, dataFactory, divisions, $state, accountRecordService, notification) {
-        var accounts = dataFactory(utils.sortByName);
+    var apiConfig = {
+        endpoint: 'accounts',
+        queryParams: {
+            dimensions: ['id', 'name', 'pinned', 'division.id'],
+            order: 'name:asc'
+        }
+    };
 
-        accountRecordService.observe(accountUpdate, undefined, true);
+    module.service('accountService', ['$http', 'dataFactory', 'divisionService', '$state', 'accountRecordService', 'notification', '$q', function ($http, dataFactory, divisions, $state, accountRecordService, notification, $q) {
+        var accounts = dataFactory(utils.sortByName, { prepFn: prepFn, sync: 'create' });
 
-        function init(apiConfig) {
+        function init() {
             return accounts.init(apiConfig, function (data) {
                 return data.accounts;
             });
@@ -27,25 +33,19 @@ define(function (require) {
             return utils.alphabetMap(filtered());
         }
 
-        // Observe for new/updated accounts
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-        function accountUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
-                var division = divisions.get(data.divisionId);
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned,
+                division: {
+                    id: data.divisionId
+                }
+            });
 
-                accounts.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned,
-                    division: {
-                        id: data.divisionId
-                    },
-                    client: {
-                        id: division.client.id
-                    }
-                }]);
-            }
+            return deferred.promise;
         }
 
         //TODO: grab the current divisionId from campaign
@@ -114,6 +114,7 @@ define(function (require) {
         }
 
         return {
+            _apiConfig: apiConfig,
             init: init,
             setData: accounts.setData,
             addData: accounts.addData,

@@ -1,9 +1,8 @@
 
 {"clientSet":[
 	{
-		"name":"Brand Muscle",
-		"id":"0472651c-0928-4150-8d8f-a7f960ef26ec",
 		"metrics":{
+			"countDivisions":0,
 			"countCreatives":0,
 			"countAccounts":0,
 			"countCampaigns":0,
