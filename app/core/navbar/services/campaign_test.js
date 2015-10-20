@@ -5,12 +5,7 @@ define(function (require) {
     require('angularMocks');
 
     describe('campaignService', function () {
-        var campaign, httpBackend, state, accountServ, apiGenerator, records;
-
-        var apiConfig = {
-            endpoint: 'test',
-            dimensions: 'one'
-        };
+        var campaign, httpBackend, state, accountServ, apiGenerator, records, apiConfig;
 
         var firstCampaignArchivedQ4 = {
             'id': 'campaignId0',
@@ -133,6 +128,7 @@ define(function (require) {
             module('app.core');
             inject(function (campaignService, $httpBackend, $state, accountService, apiUriGenerator, campaignRecordService) {
                 campaign = campaignService;
+                apiConfig = campaign._apiConfig;
                 accountServ = accountService;
                 httpBackend = $httpBackend;
                 state = $state;
