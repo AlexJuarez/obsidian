@@ -11,7 +11,7 @@ define(function (require) {
                 data[endpoint] = [];
             }
 
-            data[endpoint].push(dataFactory);
+            //data[endpoint].push(dataFactory);
         }
 
         function update(endpoint, d) {

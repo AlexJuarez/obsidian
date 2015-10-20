@@ -39,7 +39,7 @@ define(function (require) {
                 record.saving = false;
                 if (resp.status === 200) {
                     var endpoint = record.apiConfig.read || record.apiConfig.update;
-                    dataSyncService.update(endpoint, resp.data);
+                    //dataSyncService.update(endpoint, resp.data);
                     record._isNew = false;
                     successFn.call(record, resp);
                     record._set(resp.data);
@@ -51,7 +51,7 @@ define(function (require) {
                 this.attributes = {};
                 this.saving = false;
                 this.idAttribute = options.idAttribute || 'id';
-                this.rules = ng.copy(options.rules);
+                this.rules = ng.merge({}, options.rules);
 
                 this._isNew = true;
                 this.rules[this.idAttribute] = { ignore: true };
