@@ -12,11 +12,9 @@ define(function (require) {
         }
     };
 
-    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification) {
-        var divisions = dataFactory(utils.sortByName, { sort: { key: 'name', sorted: true }});
+    module.service('divisionService', ['$http', 'dataFactory', '$state', '$rootScope', 'divisionRecordService', 'notification', '$q', function ($http, dataFactory, $state, $rootScope, divisionRecordService, notification, $q) {
+        var divisions = dataFactory(utils.sortByName, { prepFn: prepFn, sync: 'create' });
         var client = {};
-
-        divisionRecordService.observe(divisionUpdate, undefined, true);
 
         $rootScope.$on('navStateChange', function (event, state) {
             if (state.client && state.client.id !== client.id) {
@@ -30,19 +28,19 @@ define(function (require) {
 
         // Observe for new/updated divisions
 
-        function divisionUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-                divisions.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned,
-                    client: {
-                        id: data.clientId
-                    }
-                }]);
-            }
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned,
+                client: {
+                    id: data.clientId
+                }
+            });
+
+            return deferred.promise;
         }
 
         function init() {

@@ -11,7 +11,7 @@ define(function (require) {
                 data[endpoint] = [];
             }
 
-            //data[endpoint].push(dataFactory);
+            data[endpoint].push(dataFactory);
         }
 
         function update(endpoint, d) {
@@ -19,7 +19,7 @@ define(function (require) {
 
             if (typeof factories !== 'undefined') {
                 for (var i = 0; i < factories.length; i++) {
-                    factories.addData(d);
+                    factories[i].addRecord(d);
                 }
             }
         }

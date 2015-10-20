@@ -5,10 +5,10 @@ define(function (require) {
     var headerTemplate = require('tpl!./../campaignsByStatusHeader.html');
     var ng = require('angular');
 
-    module.factory('campaignAccordionTableFactory', ['paginationFactory', '$state', function (paginationFactory, $state) {
+    module.factory('campaignAccordionTableFactory', ['paginationFactory', '$state', '$q', function (paginationFactory, $state, $q) {
         return function() {
             var header;
-            var rows = paginationFactory(sortRows);
+            var rows = paginationFactory(sortRows, undefined, undefined, { prepFn: prepFn });
             var status;
             var title;
             var options = {
@@ -54,6 +54,23 @@ define(function (require) {
                 });
 
                 return output;
+            }
+
+            function prepFn(data) {
+                var deferred = $q.defer();
+
+                deferred.resolve({
+                    campaign: {
+                        name: data.name
+                    },
+                    account: {
+                        name: data['account.name']
+                    },
+                    start: data.startDate,
+                    end: data.endDate
+                });
+
+                return deferred.promise;
             }
 
             function _transformRows(data) {

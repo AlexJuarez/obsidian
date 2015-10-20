@@ -12,10 +12,8 @@ define(function (require) {
         }
     };
 
-    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification) {
-        var clients = dataFactory(utils.sortByName, { sort: { key: 'name', sorted: true }});
-
-        clientRecordService.observe(clientUpdate, undefined, true);
+    module.service('clientService', ['$http', '$window', 'dataFactory', 'apiUriGenerator', 'clientRecordService', 'notification', '$q', function ($http, $window, dataFactory, apiUriGenerator, clientRecordService, notification, $q) {
+        var clients = dataFactory(utils.sortByName, { prepFn: prepFn, sync: 'create' });
 
         function init() {
             return clients.init(apiConfig, function (data) {
@@ -29,16 +27,16 @@ define(function (require) {
 
         // Observe for new/updated clients
 
-        function clientUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-                clients.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned
-                }]);
-            }
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned
+            });
+
+            return deferred.promise;
         }
 
         function search(query) {

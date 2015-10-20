@@ -14,11 +14,9 @@ define(function (require) {
         }
     };
 
-    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', function ($http, dataFactory, accounts, $state, campaignRecordService, notification) {
+    module.service('campaignService', ['$http', 'dataFactory', 'accountService', '$state', 'campaignRecordService', 'notification', '$q', function ($http, dataFactory, accounts, $state, campaignRecordService, notification, $q) {
 
-        var campaigns = dataFactory(sortByStartDateDescending, { sort: { key: 'startDate', comparseFn: compareFn, sorted: true }});
-
-        campaignRecordService.observe(campaignUpdate, undefined, true);
+        var campaigns = dataFactory(sortByStartDateDescending, { compareFn: compareFn, prepFn: prepFn, sync: 'create' });
 
         function isLoaded() {
             return campaigns.isLoaded();
@@ -48,28 +46,21 @@ define(function (require) {
 
         // Observe for new/updated campaigns
 
-        function campaignUpdate(event, record) {
-            if (event === 'create' || event === 'update') {
-                var data = record.get();
-                var account = accounts.get(data.accountId);
+        function prepFn(data) {
+            var deferred = $q.defer();
 
-                campaigns.addData([{
-                    id: data.id,
-                    name: data.name,
-                    pinned: data.pinned,
-                    startDate: data.startDate,
-                    endDate: data.endDate,
-                    account: {
-                        id: data.accountId
-                    },
-                    division: {
-                        id: account.division.id
-                    },
-                    client: {
-                        id: account.client.id
-                    }
-                }]);
-            }
+            deferred.resolve({
+                id: data.id,
+                name: data.name,
+                pinned: data.pinned,
+                startDate: data.startDate,
+                endDate: data.endDate,
+                account: {
+                    id: data.accountId
+                }
+            });
+
+            return deferred.promise;
         }
 
         function quarterMap() {

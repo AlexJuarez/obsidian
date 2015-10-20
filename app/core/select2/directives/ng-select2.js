@@ -66,6 +66,7 @@ define(function (require) {
                     if (optionsExpression) {
                         scope.$watchCollection(getValues(), function (values) {
                             data = selectOptions.getOptions(values);
+                            initialized = false;
                             initOrUpdate();
                         });
                     } else {
@@ -161,7 +162,8 @@ define(function (require) {
                             } else {
                                 //add a element to assume the placeholder value
                                 opts.placeholder = opts.placeholder || placeholderSelect;
-                                if (attr.s2Options) {
+                                var placeholderElement = element.find('option[value=""]');
+                                if (attr.s2Options && !placeholderElement.length) {
                                     element.prepend('<option value="" selected="selected" />');
                                 } else if (attr.ngOptions) {
                                     var text = element.children().eq(0).text();

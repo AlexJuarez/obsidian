@@ -39,7 +39,10 @@ define(function (require) {
                 record.saving = false;
                 if (resp.status === 200) {
                     var endpoint = record.apiConfig.read || record.apiConfig.update;
-                    //dataSyncService.update(endpoint, resp.data);
+                    if (endpoint) {
+                        endpoint = endpoint.endpoint.split('/')[0];
+                        dataSyncService.update(endpoint, resp.data);
+                    }
                     record._isNew = false;
                     successFn.call(record, resp);
                     record._set(resp.data);
