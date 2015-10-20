@@ -24,8 +24,8 @@ define(function (require) {
 
             function sortRows(transformedRows) {
                 var sortFn = function (a, b) {
-                    if (a.campaign.name && b.campaign.name) {
-                        return a.campaign.name.localeCompare(b.campaign.name);
+                    if (a.name && b.name) {
+                        return a.name.localeCompare(b.name);
                     } else {
                         return 0;
                     }
@@ -40,8 +40,12 @@ define(function (require) {
                 header = data.header;
                 title = data.title;
                 if (data.rowsConfig) {
-                    rows.init(data.rowsConfig, _transformRows);
+                    rows.init(data.rowsConfig, _campaignTransform);
                 }
+            }
+
+            function _campaignTransform(data) {
+                return data.campaigns;
             }
 
             function getTypes(row) {
@@ -60,9 +64,8 @@ define(function (require) {
                 var deferred = $q.defer();
 
                 deferred.resolve({
-                    campaign: {
-                        name: data.name
-                    },
+                    id: data.id,
+                    name: data.name,
                     account: {
                         name: data['account.name']
                     },
@@ -73,50 +76,52 @@ define(function (require) {
                 return deferred.promise;
             }
 
-            function _transformRows(data) {
-                var campaigns = data.campaigns;
-                var newRows = [];
-                var row;
-                var base = $state.includes('analytics') ? 'analytics' : 'cm';
+            function _transformRows(campaigns) {
+                var output = [];
 
-                for(var i=0; i<campaigns.length; i++) {
-                    row = campaigns[i];
-                    newRows.push({
-                        id: row.id,
-                        account: {
-                            id: row.account.id,
-                            route: base + '.campaigns.account({ accountId: row.account.id })',
-                            name: row.account.name
-                        },
-                        campaign: {
-                            route: base + '.campaigns.detail({ campaignId: row.id })',
-                            name: row.name
-                        },
-                        impressions: {
-                            max: row.metrics.bookedImpressions,
-                            current: row.metrics.impressions
-                        },
-                        live: row.live,
-                        budget: {
-                            budget: row.budget,
-                            spend: row.spend
-                        },
-                        type: getTypes(row).join(', '),
-                        start: row.startDate,
-                        end: row.endDate,
-                        placements: {
-                            route: base + '.campaigns.detail.placements({ campaignId: row.id })',
-                            name: row.metrics.countPlacements
-                        },
-                        creatives: {
-                            route: base + '.campaigns.detail.creatives({ campaignId: row.id })',
-                            name: row.metrics.countCreatives
-                        },
-                        edit: ['campaign.preview', 'campaign.settings']
-                    });
+                if (campaigns) {
+                    var row;
+                    var base = $state.includes('analytics') ? 'analytics' : 'cm';
+
+                    for(var i=0; i<campaigns.length; i++) {
+                        row = campaigns[i];
+                        output.push({
+                            id: row.id,
+                            account: {
+                                id: row.account.id,
+                                route: base + '.campaigns.account({ accountId: row.account.id })',
+                                name: row.account.name
+                            },
+                            campaign: {
+                                route: base + '.campaigns.detail({ campaignId: row.id })',
+                                name: row.name
+                            },
+                            impressions: {
+                                max: row.metrics.bookedImpressions,
+                                current: row.metrics.impressions
+                            },
+                            live: row.live,
+                            budget: {
+                                budget: row.budget,
+                                spend: row.spend
+                            },
+                            type: getTypes(row).join(', '),
+                            start: row.startDate,
+                            end: row.endDate,
+                            placements: {
+                                route: base + '.campaigns.detail.placements({ campaignId: row.id })',
+                                name: row.metrics.countPlacements
+                            },
+                            creatives: {
+                                route: base + '.campaigns.detail.creatives({ campaignId: row.id })',
+                                name: row.metrics.countCreatives
+                            },
+                            edit: ['campaign.preview', 'campaign.settings']
+                        });
+                    }
                 }
 
-                return newRows;
+                return output;
             }
 
             function findIndex(data, name) {
@@ -178,7 +183,7 @@ define(function (require) {
                     content: {
                         rules: rules,
                         headers: headers,
-                        data: rows.filtered(filter)
+                        data: _transformRows(rows.filtered(filter))
                     }
                 };
             }

@@ -3,25 +3,31 @@ define(function (require) {
 
     var module = require('./../module');
 
-    module.service('dataSyncService', [function () {
+    var ng = require('angular');
+
+    module.service('dataSyncService', ['$q', function ($q) {
         var data = {};
 
-        function register(dataFactory, endpoint) {
+        function register(dataFactory, endpoint, prepFn) {
+            if (!ng.isFunction(prepFn)) {
+                prepFn = function (d) { var deferred = $q.defer(); deferred.resolve(d); return deferred.promise; };
+            }
+
             if (!data[endpoint]) {
                 data[endpoint] = [];
             }
 
-            data[endpoint].push(dataFactory);
+            data[endpoint].push({ factory: dataFactory, transform: prepFn });
         }
 
         function update(endpoint, d) {
             var factories = data[endpoint];
 
-            if (typeof factories !== 'undefined') {
-                for (var i = 0; i < factories.length; i++) {
-                    factories[i].addRecord(d);
-                }
-            }
+            ng.forEach(factories, function(item) {
+                item.transform(d).then(function(d){
+                    item.factory.addRecord(d);
+                });
+            });
         }
 
         return {
