@@ -41,6 +41,7 @@ define(function(require) {
         function updateMeta() {
 
             var allCreatives = creatives.all().data;
+            console.log( allCreatives );
             $scope.noContent = creatives.noContent();
             
             if (allCreatives && creatives.data().isLoaded()) {

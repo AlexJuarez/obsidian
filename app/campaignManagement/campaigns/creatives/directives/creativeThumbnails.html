@@ -7,7 +7,10 @@
 		</div>
 		<div class="thumbnail-info">
 			<i class="glyph-dot" ng-class="{'success': creative.delivering}"></i>
-			<span class="right">{{creative.type|shortenAdType}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>
+			<span class="right">
+				<span ng-if="creative.type !== 'Display'">{{creative.type|shortenAdType}}</span><span ng-if="creative.type === 'Display'">{{creative.containerType}}</span> | {{creative.dimensions}}
+				<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span>
+			</span>
 		</div>
 		<div class="creative-info">
 			<span class="title">{{creative.creativeName}}</span>
@@ -17,7 +20,8 @@
 			</div>
 			<div class="data">
 				<span>Ad Type:</span>
-				<span>{{creative.type|shortenAdType}}</span>
+				<span ng-if="creative.type === 'Display'">{{creative.containerType}}</span>
+				<span ng-if="creative.type !== 'Display'">{{creative.type|shortenAdType}}</span>
 			</div>
 			<div class="data">
 				<span>Last Modified:</span>

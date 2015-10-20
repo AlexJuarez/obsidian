@@ -9,7 +9,7 @@ define(function(require) {
         endpoint: 'creatives',
         queryParams: {
             dimensions: [
-                'id', 'name', 'live', 'type', 'device', 'embedWidth',
+                'id', 'name', 'live', 'type', 'containertype.code', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight', //'clickthroughUrl',
                 'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
@@ -112,6 +112,7 @@ define(function(require) {
                         creativeName: creative.name,
                         delivering: creative.live,
                         type: creative.type,
+                        containerType: creative.containertype.code,
                         dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                         expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
                         campaignId: creative.campaign.id,
@@ -178,7 +179,6 @@ define(function(require) {
                     return d;
                 });
             }
-
 
             return {
                 _transformCreatives: _transformCreatives,

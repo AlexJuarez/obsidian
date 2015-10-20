@@ -150,7 +150,7 @@ define(function (require) {
                         }
 
                         $scope.creatives = duplicateCreatives;
-
+                        console.log( '$scope.creatives',$scope.creatives );
                         // Stop the loading spinner if data loaded
                         if ( creatives.data().isLoaded() ) {
                             $scope.creativesAreLoaded = true;

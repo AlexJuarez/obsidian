@@ -5,6 +5,7 @@ define(function (require) {
 
     app.filter('shortenAdType', [function () {
         return function (input) {
+            console.log( 'shortenAdType',input );
             switch (input) {
                 case 'In-Banner':
                     return 'IBV';
