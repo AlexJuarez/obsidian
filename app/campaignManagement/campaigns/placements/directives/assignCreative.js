@@ -43,6 +43,11 @@ define(function (require) {
 
 						adTypes[creative.type].push(creative);
 					});
+
+					// Rename 'Display' to 'Image/SWF' for Alpha
+					adTypes['Image/SWF'] = adTypes[ENUMS.up.creativeTypes.display];
+					delete adTypes[ENUMS.up.creativeTypes.display];
+
 					$scope.creativesByAdType = adTypes;
 				}
 

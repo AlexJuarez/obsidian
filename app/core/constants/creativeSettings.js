@@ -15,8 +15,8 @@ define(function(require) {
 			{id: 'IBV', name: 'In-Banner Video', dbName: creativeTypes.inBannerVideo},
 			{id: 'ISV', name: 'In-Stream Video', dbName: creativeTypes.inStream},
 			{id: 'RM', name: 'Rich Media', dbName: creativeTypes.richMedia},
-			{id: 'SWF', name: 'Display: SWF', subtype: 'SWF', dbName: creativeTypes.display},
-			{id: 'IMG', name: 'Display: Image', subtype: 'IMG', dbName: creativeTypes.display}
+			{id: 'SWF', name: 'SWF', subtype: 'SWF', dbName: creativeTypes.display},
+			{id: 'IMG', name: 'Image', subtype: 'IMG', dbName: creativeTypes.display}
 		],
 
 		typeSettings: {
