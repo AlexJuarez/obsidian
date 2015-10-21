@@ -22,7 +22,6 @@ define(function (require) {
             var data = [];
             var observers = observerFactory();
             var sortKey;
-            var prepFn = options.prepFn || function (d) { var deferred = $q.defer(); deferred.resolve(d); return deferred.promise; };
 
             sortFn = sortFn || function (d) { return d; };
 
@@ -42,11 +41,19 @@ define(function (require) {
             };
 
             function getSortKey(config) {
-                var key;
+                var order, key, params;
                 if (config && config.queryParams) {
-                    key = config.queryParams.order;
-                    if (key) {
-                        key = key.split(':')[0];
+                    order = config.queryParams.order;
+                    if (order) {
+                        params = order.split(':');
+                        key = params[0];
+                        if (params[1] && !options.compareFn) {
+                            if (params[1] === 'desc') {
+                                options.compareFn = function(a, b) {
+                                    return b.localeCompare(a);
+                                };
+                            }
+                        }
                     }
                 }
 
@@ -65,9 +72,9 @@ define(function (require) {
                     transform = transform || function (d) { return d; };
 
                     sortKey = getSortKey(config);
-                    if (sortKey && options.sync) {
+                    if (options.sync) {
                         var endpoint = config.endpoint;
-                        dataSyncService.register(dataFactory, endpoint);
+                        dataSyncService.register(dataFactory, endpoint, options.prepFn);
                     }
 
                     initialized = true;
@@ -130,19 +137,14 @@ define(function (require) {
                 if (sortKey && typeof d !== 'undefined' && typeof d.id !== 'undefined') {
                     item = getById(d.id);
                     if (item) {
-                        prepFn(d).then(function(d) {
-                            ng.extend(item, d);
-                            filterDeleted();
-                            observers.notifyObservers();
-                        });
-                    } else if (options.sync === 'create') {
+                        ng.extend(item, d);
+                    } else if (options.sync === 'create' && sortKey) {
                         index = findIndex(data, d, sortKey);
-                        prepFn(d).then(function(d) {
-                            data.splice(index, 0, d);
-                            filterDeleted();
-                            observers.notifyObservers();
-                        });
+                        data.splice(index, 0, d);
                     }
+
+                    filterDeleted();
+                    observers.notifyObservers();
                 }
             }
 

@@ -13,7 +13,9 @@ define(function(require) {
 				scope: false,
 				templateUrl: 'campaignManagement/campaigns/placements/directives/expand-anchors-directions.html',
 				controller: [
-					'$scope', function($scope) {
+					'$scope', 'ENUMS', function($scope, ENUMS) {
+						var expandTypes = ENUMS.up.expandTypes;
+
 						var imageDirectory = '/images/anchorsExpandDirections/';
 						$scope.expandAnchors = [];
 						$scope.expandDirections = [
@@ -23,6 +25,15 @@ define(function(require) {
 							{id: 'down', name: 'Expand Downwards'}
 						];
 						$scope.placement.expandDirection = 'left';
+
+						$scope.$watch('placement.expandType', function(type) {
+							if (type === expandTypes.pushdown) {
+								$scope.disableExpandDirection = true;
+								$scope.placement.expandDirection = 'down';
+							} else {
+								$scope.disableExpandDirection = false;
+							}
+						});
 
 						var commonAnchors = [
 							'bottomright',

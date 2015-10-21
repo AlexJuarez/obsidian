@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             templateUrl: 'core/navbar/directives/account.html',
-            controller: ['$scope', function ($scope) {
+            controller: ['$scope', '$rootScope', function ($scope, $rootScope) {
                 $scope.pin = accounts.pin;
                 $scope.unpin = accounts.unpin;
                 $scope.section = 'Accounts';
@@ -22,6 +22,14 @@ define(function (require) {
 
                 $scope.$watch('query', function (newValue) {
                     refreshSearch(newValue);
+                });
+
+                var cleanup = $rootScope.$on('$stateChangeSuccess', function() {
+                    $scope.query = '';
+                });
+
+                $scope.$on('$destroy', function() {
+                    cleanup();
                 });
 
                 accountRecordService.observe(function() {

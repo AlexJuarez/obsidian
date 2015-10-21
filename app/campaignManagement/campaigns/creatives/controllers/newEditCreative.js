@@ -19,32 +19,12 @@ define(function (require) {
             // update visuals
         }
 
-        $scope.selectMedia = function() {
-            // Create window that hosts Studio Direct
-            var hostname = studioLocation.host();
-            var url =  studioUrlBuilder.mediaselect($scope.creative.campaignId)
-                .setHostname(hostname)
-                .build();
-            var studioTab = studioWindow.open(url);
-            studioTab.onClose = function onClose(code, detail) {
-                if(code && detail) {
-                    // so jshint shuts up
-                }
-                studioTab.close();
-            };
-            studioTab.onMediaSelect = function onMediaSelect(uuid, detail) {
-                if(!!uuid) {
-                    var json = JSON.parse(detail);
-                    setMediaItem(json);
-                }
-            };
-        };
-
         var record;
 
         //Modal functions
         $scope.ok = ok;
         $scope.cancel = cancel;
+        $scope.selectMedia = selectMedia;
         $scope.dimensionsTransform = dimensionsTransform;
         $scope.dimensionsExpandTransform = dimensionsExpandTransform;
         $scope.environmentTransform = environmentTransform;
@@ -206,7 +186,7 @@ define(function (require) {
             record = creativeRecordService.get(modalState.creativeId);
             creativeRecordService.fetch(modalState.creativeId);
         } else {
-            record = creativeRecordService.create();
+            record = creativeRecordService.create(modalState.originalCreative);
             record.set(modalState.creative);
         }
 
@@ -244,7 +224,6 @@ define(function (require) {
             if(record.hasChanges()) {
                 if(confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.creative = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -255,8 +234,8 @@ define(function (require) {
         function ok(errors) {
             if(ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
-                    $scope.creative = {};
-                    notification.success('Creative: {{name}}, has been updated.',
+
+                    notification.success('Creative: {{name}}, has been saved.',
                         {
                             locals: {
                                 name: resp.data.name
@@ -279,9 +258,45 @@ define(function (require) {
             $scope.submitted = true;
         }
 
+        function selectMedia() {
+            // Create window that hosts Studio Direct
+            var hostname = studioLocation.host();
+            var type = getType(record.get());
+            var adType = getDisplayAdType(type.type,  type.subtype);
+            var url =  studioUrlBuilder.mediaselect($scope.creative.campaignId, adType)
+                .setHostname(hostname)
+                .build();
+            var studioTab = studioWindow.open(url);
+            studioTab.onClose = function onClose(code, detail) {
+                if(code && detail) {
+                    // so jshint shuts up
+                }
+                studioTab.close();
+            };
+            studioTab.onMediaSelect = function onMediaSelect(uuid, detail) {
+                if(!!uuid) {
+                    var json = JSON.parse(detail);
+                    setMediaItem(json);
+                }
+            };
+        }
+
+        function getDisplayAdType(type, subtype) {
+            if(type === creativeSettings.types.display && subtype === 'IMG') {
+                // Image
+                return 'IMG';
+            } else if(type === creativeSettings.types.display && subtype === 'SWF') {
+                // SWF
+                return 'SWF';
+            } else {
+                // unknown
+                return null;
+            }
+        }
+
         //Before closing the modal save the state;
         $scope.$on('$destroy', function() {
-            modalState.creative = $scope.creative;
+            modalState.creative = record.changes();
         });
     }]);
 });

@@ -35,6 +35,7 @@ define(function(require) {
         require('./directives/filePicker');
         require('./directives/youWorkOn');
         require('./directives/loadingIndicator');
+        require('./directives/modalFormRow');
         require('./directives/noContent');
     }
 

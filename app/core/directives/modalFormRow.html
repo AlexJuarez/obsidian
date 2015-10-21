@@ -1,0 +1,12 @@
+<div class="form-group row"
+		 ng-class="{'has-error': newPlacement[id].$invalid && submitted}">
+	<label for="{{contentId}}" ng-class="{'required':required}" class="col-sm-3 form-label"><span>{{name}}</span></label>
+	<div class="col-sm-9">
+		<div ng-transclude></div>
+
+		<p ng-show="newPlacement[name].$invalid && submitted"
+			 class="help-block">
+			{{lowerCaseName}} <span ng-if="required">is required</span><span ng-if="!required">isn't valid</span>
+		</p>
+	</div>
+</div>

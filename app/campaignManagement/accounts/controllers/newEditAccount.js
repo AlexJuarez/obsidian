@@ -33,7 +33,7 @@ define(function (require) {
             var updateDivisions = function() {
                 var divisions = divisionService.filtered();
                 if (divisions.length === 1) {
-                    $scope.account.divisionId = divisions[0].id;
+                    record._set({divisionId: divisions[0].id});
                 } else {
                     $scope.divisions = divisions;
                 }
@@ -52,7 +52,6 @@ define(function (require) {
             if (ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
                     $modalInstance.dismiss('cancel');
-                    $scope.account = {};
                     notification.success('View your account <a ui-sref="cm.campaigns.account({ accountId: id })">{{name}}</a>.',
                         {
                             locals: {
@@ -70,7 +69,6 @@ define(function (require) {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.account = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -79,7 +77,7 @@ define(function (require) {
         };
 
         $scope.$on('$destroy', function() {
-            modalState.account = $scope.account;
+            modalState.account = record.changes();
         });
 
     }]);

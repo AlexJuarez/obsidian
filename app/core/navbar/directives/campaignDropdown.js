@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             templateUrl: 'core/navbar/directives/campaign.html',
-            controller: ['$scope', function ($scope) {
+            controller: ['$scope', '$rootScope', function ($scope, $rootScope) {
                 $scope.pin = campaigns.pin;
                 $scope.unpin = campaigns.unpin;
                 $scope.section = 'Campaigns';
@@ -23,6 +23,14 @@ define(function (require) {
                 campaigns.observe(update, $scope);
                 navbar.observe(updateCurrent, $scope);
                 navbar.observe(update, $scope);
+
+                var cleanup = $rootScope.$on('$stateChangeSuccess', function() {
+                    $scope.query = '';
+                });
+
+                $scope.$on('$destroy', function() {
+                    cleanup();
+                });
 
                 $scope.$watch('query', function (newValue) {
                     $scope.results = campaigns.search(newValue);

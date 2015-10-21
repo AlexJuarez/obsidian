@@ -9,7 +9,7 @@ define(function (require) {
             restrict: 'A',
             scope: true,
             templateUrl: 'core/navbar/directives/client.html',
-            controller: ['$scope', function ($scope) {
+            controller: ['$scope', '$rootScope', function ($scope, $rootScope) {
                 $scope.pin = clients.pin;
                 $scope.unpin = clients.unpin;
                 $scope.section = 'Clients';
@@ -19,6 +19,14 @@ define(function (require) {
 
                 $scope.$watch('query', function (newValue) {
                     refreshSearch(newValue);
+                });
+
+                var cleanup = $rootScope.$on('$stateChangeSuccess', function() {
+                    $scope.query = '';
+                });
+
+                $scope.$on('$destroy', function() {
+                    cleanup();
                 });
 
                 clientRecordService.observe(function() {

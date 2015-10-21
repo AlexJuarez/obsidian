@@ -56,7 +56,6 @@ define(function (require) {
                     }
 
                     $modalInstance.dismiss('cancel');
-                    $scope.client = {};
                     notification.success(
                         'View your client <a ui-sref="cm.campaigns.client({ clientId: id })">{{name}}</a>.',
                         {
@@ -76,7 +75,6 @@ define(function (require) {
             if (record.hasChanges()) {
                 if (confirm('You have unsaved changes. Really close?')) {
                     record.reset();
-                    $scope.client = record.get();
                     $modalInstance.dismiss('cancel');
                 }
             } else {
@@ -85,7 +83,7 @@ define(function (require) {
         };
 
         $scope.$on('$destroy', function() {
-            modalState.client = $scope.client;
+            modalState.client = record.changes();
         });
     }]);
 });

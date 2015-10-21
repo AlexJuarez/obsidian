@@ -65,14 +65,11 @@ define(function(require) {
             /**
              * Select a media item from the media library Fluent url builder
              *
-             * @param {string} adType The ad type SWF, IMG
-             * @param {string} environment The ad environment multiscreen | desktop | tabletphone | inappmraid
-             * @param {string} title The title of the ad
-             * @param {string} clickthroughUrl The clickthrough url
              * @param {string} campaignId The campaignId of the new ad
-             * @returns {Object} builder
+             * @param {string} adType The ad type SWF, IMG
+             * @returns {*}
              */
-            mediaselect: function(campaignId) {
+            mediaselect: function(campaignId, adType) {
                 return require('./mediaselect')
                     ($httpParamSerializer)
                     // Studio uses Mixin's to parse the options from the servlet,
@@ -81,7 +78,8 @@ define(function(require) {
                     // values, or in this case fill values which would otherwise
                     // be null.
                     .setFilter({
-                        campaignId: campaignId
+                        campaignId: campaignId,
+                        'sd_adtype': adType
                     });
             }
         };
