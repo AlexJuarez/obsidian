@@ -4,7 +4,6 @@ define(function (require) {
     var app = require('./../module');
 
     app.filter('shortenAdType', [function () {
-        
         return function (data, containerType) {
             switch (data) {
                 case 'In-Banner':

@@ -105,30 +105,30 @@ define(function(require) {
                 };
 
                 if (creatives && creatives.length) {
-                for(var i = 0; i < creatives.length; i ++) {
-                    creative = creatives[i];
-                    transformedTable.data.push({
-                        checked: false,
-                        creativeName: creative.name,
-                        delivering: creative.live,
-                        type: creative.type,
-                        containerType: creative.containertype.code,
-                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaign.id,
-                        numPlacements: {
-                            name: creative.countPlacements || 0,
-                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
-                        },
-                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
+                    for(var i = 0; i < creatives.length; i ++) {
+                        creative = creatives[i];
+                        transformedTable.data.push({
+                            checked: false,
+                            creativeName: creative.name,
+                            delivering: creative.live,
+                            type: creative.type,
+                            containerType: creative.containertypecode,
+                            dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                            expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                            campaignId: creative.campaign.id,
+                            numPlacements: {
+                                name: creative.countPlacements || 0,
+                                route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                            },
+                            options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
-                        // These properties are needed by thumbnails but aren't
-                        // in the table
-                        id: creative.id,
-                        lastModified: creative.modifiedDate,
-                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
-                    });
-                }
+                            // These properties are needed by thumbnails but aren't
+                            // in the table
+                            id: creative.id,
+                            lastModified: creative.modifiedDate,
+                            thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
+                        });
+                    }
                 }
                 return transformedTable;
             }
