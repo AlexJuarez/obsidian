@@ -13,16 +13,27 @@ define(function (require) {
 			templateUrl: 'campaignManagement/campaigns/placements/directives/assign-creative.html',
 			controller: ['$scope', 'creatives', 'ENUMS', function ($scope, creativeService, ENUMS) {
 
+				$scope.expandTypes = ENUMS.up.expandTypes;
+				$scope.playModes = ENUMS.up.playModes;
+				$scope.vastMediaFileTypes = ENUMS.up.vastMediaFileTypes;
+				$scope.vastMimeTypes = ENUMS.up.vastMimeTypes;
+
 				// setup defaults
 				$scope.placement.expandBeforeCountdown = $scope.placement.expandBeforeCountdown || true;
-				$scope.placement.playMode = $scope.placement.playMode || 'rollover';
-				$scope.placement.expandType = $scope.placement.expandType || 'directional';
+				$scope.placement.playMode = $scope.placement.playMode || $scope.playModes.rollover;
+				$scope.placement.expandType = $scope.placement.expandType || $scope.expandTypes.directional;
 
 				var creativeTypes = ENUMS.down.creativeTypes;
 
 				creativeService.observe(updateCreativesByAdType, $scope);
 				function updateCreativesByAdType() {
+
 					var adTypes = {};
+					adTypes[ENUMS.up.creativeTypes.inStream] = [];
+					adTypes[ENUMS.up.creativeTypes.inBannerVideo] = [];
+					adTypes[ENUMS.up.creativeTypes.richMedia] = [];
+					adTypes[ENUMS.up.creativeTypes.display] = [];
+
 					var creatives = creativeService.data().all();
 
 					creatives.forEach(function(creative) {
@@ -35,11 +46,24 @@ define(function (require) {
 					$scope.creativesByAdType = adTypes;
 				}
 
+				creativeService.observe(updateNonExpandingDefaultCreatives, $scope);
+				function updateNonExpandingDefaultCreatives() {
+					var nonExpandingCreatives = [];
+					var creatives = creativeService.data().all();
+
+					creatives.forEach(function(creative) {
+						if (!isExpandingCreative(creative)) {
+							nonExpandingCreatives.push(creative);
+						}
+					});
+					$scope.nonExpandingCreatives = nonExpandingCreatives;
+				}
+
 				$scope.$watch('creative', function() {
 					$scope.isExpanding = false;
 					if ($scope.creative) {
 						$scope.creativeType = creativeTypes[$scope.creative.type];
-						if ($scope.creative.expandedWidth) {
+						if (isExpandingCreative($scope.creative)) {
 							$scope.isExpanding = true;
 						}
 
@@ -51,6 +75,10 @@ define(function (require) {
 						$scope.placement.clickthroughUrl = $scope.creative.clickthroughUrl || 'http://www.mixpo.com';
 					}
 				});
+
+				function isExpandingCreative(creative) {
+					return !!creative.expandedWidth;
+				}
 			}]
 		};
 	}]);

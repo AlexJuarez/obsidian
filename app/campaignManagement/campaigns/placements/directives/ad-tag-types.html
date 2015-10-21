@@ -21,11 +21,15 @@
 		</div>
 	</div>
 
-	<div class="form-group row" ng-show="placement.adTagId">
+	<div modal-form-row ng-if="needsVastMediaFileType" name="VAST Media File Type" contentId="vastMediaFileType" required="true">
+		<div class="vastMediaFileType"></div>
+	</div>
 
-		<label for="ad-tag" class="col-sm-3 form-label"><span>Ad Tag</span></label>
-		<div class="col-sm-9">
-			<textarea rows="8" style="resize:none;" class="form-control" disabled>{{adTagText}}</textarea>
-		</div>
+	<div modal-form-row ng-if="needsVastMimeType" name="VAST Mime Type" contentId="vastMimeType" required="true">
+		<div class="vastMimeType"></div>
+	</div>
+
+	<div modal-form-row ng-show="placement.adTagId" name="Ad Tag" contentId="ad-tag">
+		<textarea rows="8" style="resize:none;" class="form-control" disabled>{{adTagText}}</textarea>
 	</div>
 </div>

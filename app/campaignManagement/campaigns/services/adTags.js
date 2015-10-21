@@ -3,7 +3,7 @@ define(function (require) {
 
 	var module = require('./../../module');
 
-	module.service('adTags', ['placements', 'placementRecordService', 'adTagService', '$interpolate', '$q', 'cdnLocation', function (placements, placementRecordService, adTagService, $interpolate, $q, cdnLocation) {
+	module.service('adTags', ['placements', 'placementRecordService', 'adTagService', '$interpolate', '$q', 'cdnLocation', 'ENUMS', function (placements, placementRecordService, adTagService, $interpolate, $q, cdnLocation, ENUMS) {
 		var tagTemplates = [];
 		adTagService.init();
 		adTagService.observe(function() {
@@ -47,6 +47,18 @@ define(function (require) {
 			}
 		}
 
+		function getInfo(adTagId) {
+			var info = {};
+			tagTemplates.forEach(function(tagTemplate) {
+				if (tagTemplate.id === adTagId) {
+					info.needsVastMimeType = tagTemplate.playerCode === 'vast';
+					info.needsVastMediaFileType = tagTemplate.playerCode === 'vastVpaid';
+				}
+			});
+
+			return info;
+		}
+
 		function getPlacementTagTemplate(placement) {
 			var placementTagTemplate = false;
 			tagTemplates.forEach(function(tagTemplate) {
@@ -76,6 +88,12 @@ define(function (require) {
 
 			if (adTagType.attributes && adTagType.attributes.clicktag) {
 				object.clicktag = adTagType.attributes.clicktag;
+			}
+			console.log(placement.vastMimeType, ENUMS.up.vastMimeTypes.videoxmp4);
+			if (placement.vastMimeType && placement.vastMimeType === ENUMS.up.vastMimeTypes.videoxmp4) {
+				object.videoxmp4 = '&videoxmp4=true';
+			} else {
+				object.videoxmp4 = '';
 			}
 
 			return object;
@@ -118,6 +136,7 @@ define(function (require) {
 		}
 
 		return {
+			getInfo: getInfo,
 			pullTags: pullTags,
 			pullTag: pullTag
 		};
