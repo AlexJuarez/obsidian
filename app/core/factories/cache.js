@@ -16,7 +16,7 @@ define(function (require) {
             function get(uriConfig, initialize) {
                 var url = apiUriGenerator(uriConfig);
                 if (!cache[url]) {
-                    cache[url] = dataFactory(options.sortFn);
+                    cache[url] = dataFactory(options.sortFn, { sync: options.sync, prepFn: options.prepFn });
                 }
 
                 if (initialize) {

@@ -133,6 +133,7 @@ define(function (require) {
             }
 
             function addRecord(d) {
+                console.log('addRecord', d);
                 var item, index;
                 if (sortKey && typeof d !== 'undefined' && typeof d.id !== 'undefined') {
                     item = getById(d.id);

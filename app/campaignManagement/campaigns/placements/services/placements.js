@@ -14,7 +14,8 @@ define(function (require) {
                 'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'publisher.id',
                 'publisher.name', 'type', 'budget', 'spend'
             ],
-            metrics: ['impressions']
+            metrics: ['impressions'],
+            order: 'name'
         }
     };
 
@@ -46,15 +47,30 @@ define(function (require) {
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory',
         'apiUriGenerator', 'placementsByAdType', 'placementsByCreative',
-        'placementsByPublisher', 
-        function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
-        placementsByCreative, placementsByPublisher
+        'placementsByPublisher', '$q',
+    function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
+        placementsByCreative, placementsByPublisher, $q
     ) {
         var placementCache = cache({
             transform: function(data) {
                 return data.placements;
-            }
+            },
+            sync: 'create',
+            prepFn: prepFn
         });
+
+        function prepFn(data) {
+            console.log('prep', data);
+            var deferred = $q.defer();
+
+            var newData = ng.copy(data);
+            ng.extend(newData, { metrics: {} });
+            deferred.resolve(
+                newData
+            );
+
+            return deferred.promise;
+        }
 
         function sortPlacements(a, b) {
             return a.name.localeCompare(b.name);
@@ -160,7 +176,7 @@ define(function (require) {
         function all(skipTransform) {
 
             // We can do this because someone using this service will be
-			// observing it before they call all()
+            // observing it before they call all()
             var data = placementCache.all(getApiConfig());
 
             if (skipTransform) {
@@ -171,7 +187,6 @@ define(function (require) {
         }
 
         function observe(callback, $scope, preventImmediate) {
-
             return placementCache.observe(getApiConfig(), callback, $scope, preventImmediate);
 
         }
