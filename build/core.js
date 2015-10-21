@@ -57469,7 +57469,7 @@ define('core/directives/noContent',['require','./../module','tpl!./noContent.htm
             },
             templateUrl: 'core/directives/noContent.html',
             controller: ['$rootScope', '$scope', '$state', '$timeout', 'clientSet', 'divisionSet', 'campaignsHeader', 'creatives', 'placements', function ($rootScope, $scope, $state, $timeout, clientSet, divisionSet, campaignsHeader, creatives, placements) {
-                
+
                 $scope.showAccountMsg = false;
                 $scope.showDivisionMsg = false;
                 $scope.showCampaignMsg = false;
@@ -57480,6 +57480,7 @@ define('core/directives/noContent',['require','./../module','tpl!./noContent.htm
 
                 function assignObserver() {
                     if ($state.params.campaignId) {
+
                         if ($state.current.name === 'cm.campaigns.detail.placements') {
                             placements.observe(updatePlacementMsg, $scope);
                             $scope.openNewPlacementModal = $scope.clickAction;
@@ -57488,21 +57489,21 @@ define('core/directives/noContent',['require','./../module','tpl!./noContent.htm
                             creatives.observe(updateCreativeMsg, $scope);
                             $scope.openNewCreativeModal = $scope.clickAction;
                         }
-                    
+
                     } else if ($state.params.accountId) {
 
                         campaignsHeader.observe(updateAccountMsg, $scope);
                         $scope.openNewCampaignModal = $scope.clickAction;
-                    
+
                     } else if ($state.params.divisionId) {
 
                         divisionSet.observe(updateDivisionMsg, $scope);
                         $scope.openNewAccountModal = $scope.clickAction;
-                    
+
                     } else if ($state.params.clientId) {
 
                         clientSet.observe(updateClientMsg, $scope);
-                    
+
                     }
                 }
 
@@ -57531,7 +57532,7 @@ define('core/directives/noContent',['require','./../module','tpl!./noContent.htm
                 }
 
                 function updateClientMsg() {
-                    
+
                     if ( clientSet.data().isLoaded() ) {
                         $scope.showDivisionMsg = !clientSet.all().countDivisions;
                         $scope.openNewDivisionModal = $scope.clickAction;
@@ -57542,7 +57543,7 @@ define('core/directives/noContent',['require','./../module','tpl!./noContent.htm
                             $scope.openNewAccountModal = $scope.clickAction;
                         }
                     }
-                    
+
                 }
 
             }]
@@ -57721,14 +57722,14 @@ define('core/filters/shortenAdType',['require','./../module'],function (require)
     var app = require('./../module');
 
     app.filter('shortenAdType', [function () {
-        return function (input) {
-            switch (input) {
+        return function (data, containerType) {
+            switch (data) {
                 case 'In-Banner':
                     return 'IBV';
                 case 'In-Stream':
                     return 'ISV';
                 case 'Display':
-                    return 'IMG/SWF';
+                    return containerType;
                 case 'Rich Media':
                     return 'RM';
                 default:
@@ -58522,8 +58523,14 @@ define('table/filters/format',['require','./../module','angular'],function (requ
             }
         }
 
-        function shortenAdTypeText(input) {
-            return $filter('shortenAdType')(input);
+        function shortenAdType(data, row) {
+            var containerType;
+            if (row.creatives) { // Placements
+                containerType = row.creatives[0].containertypecode;
+            } else { // Creatives
+                containerType = row.containerType;
+            }
+            return $filter('shortenAdType')(data, containerType);
         }
 
         return function (input, row, rules) {
@@ -58546,7 +58553,7 @@ define('table/filters/format',['require','./../module','angular'],function (requ
             case 'checkbox':
                 return createCheckbox(data, input);
             case 'type':
-                return shortenAdTypeText(data);
+                return shortenAdType(data, row);
             case 'status':
                 return '<span class="glyph-dot status" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':
@@ -69138,10 +69145,10 @@ define('campaignManagement/campaigns/placements/routes',['require','./../../modu
 define('tpl!campaignManagement/campaigns/creatives/creatives.content.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creatives.content.html', '<div ng-if="!viewAs">\n    <div creative-thumbnails></div>\n</div>\n<div ng-if="viewAs == \'list\'" ng-controller="creativesListCtrl">\n    <div loading-indicator="creativesAreLoaded" show-loader="showLoader" class="table-wrapper table-xs-scroll">\n        <div basic-table="creatives" class="table table-hover"></div>\n    </div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row tab-header" role="form">\n    <div ng-if="!noContent">\n        <div class="col-sm-8 col-xs-12">\n            <ul class="icons left">\n                <li><a id="creatives-header-view-thumnails" ui-sref-active="active" ui-sref=".({viewAs: \'\'})"><i class="glyph-grid"></i></a></li>\n                <li><a id="creatives-header-view-list" ui-sref-active="active" ui-sref=".({ viewAs: \'list\' })"><i class="glyph-list"></i></a></li>\n            </ul>\n            <ul class="filters left">\n                <li><b>Filter:</b></li>\n                <li><a id="creatives-header-filter-all" ui-sref-active="active" ui-sref=".({filter: \'\'})">All ({{creativesMeta.all}})</a></li>\n                <li><a id="creatives-header-filter-ibv" ui-sref-active="active" ui-sref=".({filter: \'inBannerVideo\'})">In-Banner ({{creativesMeta.inBannerVideo}})</a></li>\n                <li><a id="creatives-header-filter-is" ui-sref-active="active" ui-sref=".({filter: \'inStream\'})">In-Stream ({{creativesMeta.inStream}})</a></li>\n                <li><a id="creatives-header-filter-rm" ui-sref-active="active" ui-sref=".({filter: \'richMedia\'})">Rich Media ({{creativesMeta.richMedia}})</a></li>\n            </ul>\n            <label class="form-label search left">\n                <input id="creatives-header-search-field" class="input" placeholder="Search" type="search" />\n            </label>\n        </div>\n        <div class="col-sm-4 col-xs-12">\n            <div class="btn-group right">\n                <button id="creatives-header-newcreative-btn" class="btn btn-primary solid" ng-click="openNewCreativeModal()">New Creative</button>\n                <button id="creatives-header-settrackers-btn" class="btn btn-default">Set Trackers</button>\n            </div>\n        </div>\n    </div>\n</nav>\n\n<div no-content click-action="openNewCreativeModal"></div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/creativesHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/creativesHeader.html', '<nav class="row tab-header" role="form">\n    <div ng-if="!noContent">\n        <div class="col-sm-8 col-xs-12">\n            <ul class="icons left">\n                <li><a id="creatives-header-view-thumnails" ui-sref-active="active" ui-sref=".({viewAs: \'\'})"><i class="glyph-grid"></i></a></li>\n                <li><a id="creatives-header-view-list" ui-sref-active="active" ui-sref=".({ viewAs: \'list\' })"><i class="glyph-list"></i></a></li>\n            </ul>\n            <ul class="filters left">\n                <li><b>Filter:</b></li>\n                <li><a id="creatives-header-filter-all" ui-sref-active="active" ui-sref=".({filter: \'\'})">All ({{creativesMeta.all}})</a></li>\n                <li><a id="creatives-header-filter-ibv" ui-sref-active="active" ui-sref=".({filter: \'inBannerVideo\'})">In-Banner ({{creativesMeta.inBannerVideo}})</a></li>\n                <li><a id="creatives-header-filter-is" ui-sref-active="active" ui-sref=".({filter: \'inStream\'})">In-Stream ({{creativesMeta.inStream}})</a></li>\n                <li><a id="creatives-header-filter-rm" ui-sref-active="active" ui-sref=".({filter: \'richMedia\'})">Rich Media ({{creativesMeta.richMedia}})</a></li>\n                <li><a id="creatives-header-filter-d" ui-sref-active="active" ui-sref=".({filter: \'display\'})">IMG/SWF ({{creativesMeta.display}})</a></li>\n            </ul>\n            <label class="form-label search left">\n                <input id="creatives-header-search-field" class="input" placeholder="Search" type="search" />\n            </label>\n        </div>\n        <div class="col-sm-4 col-xs-12">\n            <div class="btn-group right">\n                <button id="creatives-header-newcreative-btn" class="btn btn-primary solid" ng-click="openNewCreativeModal()">New Creative</button>\n                <button id="creatives-header-settrackers-btn" class="btn btn-default">Set Trackers</button>\n            </div>\n        </div>\n    </div>\n</nav>\n\n<div no-content click-action="openNewCreativeModal"></div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div loading-indicator="creativesAreLoaded" show-loader="showLoader" class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">{{creative.type}} | {{creative.dimensions}}<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span></span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<div tooltip="\'{{creative.creativeName}}\'" class="title tooltip hover tooltip-basic tooltip-light" tooltip-overflow="true">{{creative.creativeName}}</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">{{creative.numPlacements.name}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>\n\t\t\t\t\t<a ng-click="openStudio(creative)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>\n\t\t\t\t\t<a ng-click="openPreviewPage(creative)" title="Preview Creative in Page"><i class="glyph-icon glyph-view"></i>Preview</a>\n\t\t\t\t</span>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
+define('tpl!campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/directives/creativeThumbnails.html', '<div loading-indicator="creativesAreLoaded" show-loader="showLoader" class="thumbnail-view row ng-scope">\n\t<div class="creative-wrapper col-xs-12 col-sm-4 col-md-3 col-md-5 col-lg-7" ng-repeat="creative in creatives track by $index">\n\t\t<div ng-click="previewCreative(creative.id)" class="thumbnail-wrapper">\n\t\t\t<div class="ratio-box">\n\t\t\t\t<img ng-src="{{creative.thumbnail}}" fallback-src="images/placeholders/preview-not-available.jpg" class="thumbnail" />\n\t\t\t</div>\n\t\t</div>\n\t\t<div class="thumbnail-info">\n\t\t\t<i class="glyph-dot" ng-class="{\'success\': creative.delivering}"></i>\n\t\t\t<span class="right">\n\t\t\t\t{{creative.type|shortenAdType:creative.containerType}} | {{creative.dimensions}}\n\t\t\t\t<span class="right" ng-if="creative.expandedSize">&nbsp;&gt; {{creative.expandedDimensions}}</span>\n\t\t\t</span>\n\t\t</div>\n\t\t<div class="creative-info">\n\t\t\t<div tooltip=\'"{{creative.creativeName}}"\' class="title tooltip hover tooltip-basic tooltip-light" tooltip-overflow="true">{{creative.creativeName}}</div>\n\t\t\t<div class="data">\n\t\t\t\t<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">Placements: </a>\n\t\t\t\t<a ui-sref="cm.campaigns.detail.placements({campaignId: creative.campaignId})" title="View Creative Placements">{{creative.numPlacements.name}}</a>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Ad Type:</span>\n\t\t\t\t<span>{{creative.type|shortenAdType:creative.containerType}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>Last Modified:</span>\n\t\t\t\t<span>{{creative.lastModified|date:\'M/d/yyyy\'}}</span>\n\t\t\t</div>\n\t\t\t<div class="data">\n\t\t\t\t<span>\n\t\t\t\t\t<a ng-if="creative.type !== \'Display\'" ng-click="openStudio(creative)" title="Edit Creative in Studio"><i class="glyph-icon glyph-edit"></i>Edit</a>\n\t\t\t\t\t<a ng-if="creative.type === \'Display\'" ng-click="openMediaLibrary(creative)" title="Replace Creative from Media Library"><i class="glyph-icon glyph-edit"></i>Replace</a>\n\t\t\t\t\t<a ng-click="openPreviewPage(creative)" title="Preview Creative in Page"><i class="glyph-icon glyph-view"></i>Preview</a>\n\t\t\t\t</span>\n\t\t\t\t<a ng-click="openSettings(creative.id)" title="Creative Settings" class="glyph-icon glyph-settings"></a>\n\t\t\t\t<a ng-click="copyCreative(creative.id)" title="Copy Creative" class="glyph-icon glyph-copy"></a>\n\t\t\t\t<a ng-click="deleteCreative(creative)" title="Delete Creative" class="glyph-icon glyph-close"></a>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n\n</div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/creatives/new-edit-creative.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/creatives/new-edit-creative.html', '<div class="modal-header">\n    <i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n    <h2 class="modal-title">\n        <span>{{action}} Creative</span></h2>\n</div>\n<div class="modal-body">\n    <form class="form form-horizontal" role="form" novalidate\n          name="newCreative">\n        <div ng-pluralize ng-show="newCreative.$invalid && submitted"\n             class="alert alert-danger"\n             count="(newCreative.$error | errorCount)"\n             when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n        </div>\n        <div ng-show="campaigns" class="form-group row"\n             ng-class="{\'has-error\': newCreative.campaignId.$invalid && submitted}">\n            <label\n                class="col-sm-3 form-label required"><span>Campaign</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-creative-select-campaign" name="campaignId" select2\n                        s2-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"\n                        ng-model="creative.campaignId" required>\n                </select>\n\n                <p ng-show="newCreative.campaignId.$invalid && submitted"\n                   class="help-block">\n                    campaign is required\n                </p>\n                <p ng-show="errors.campaignId && submitted" class="help-block">\n                    {{errors.campaignId}}\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.name.$invalid && submitted}">\n            <label for="new-edit-creative-name-field" class="col-sm-3 form-label required"><span>Name</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-creative-name-field" ng-model="creative.name" type="text" name="name"\n                       class="form-control" placeholder="Name"\n                       required/>\n\n                <p ng-show="newCreative.name.$invalid && submitted"\n                   class="help-block">\n                    name is required\n                </p>\n                <p ng-show="errors.name && submitted" class="help-block">\n                    {{errors.name}}\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.clickthroughUrl.$invalid && submitted}">\n            <label for="new-edit-creative-clickthrough-url-field" class="col-sm-3 form-label required"><span>Clickthrough URL</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-creative-clickthrough-url-field" ng-model="creative.clickthroughUrl" type="text" ng-pattern="URL_REGEX"\n                       name="clickthroughUrl" class="form-control" placeholder="Clickthrough Url" required/>\n\n                <p ng-show="newCreative.clickthroughUrl.$invalid && submitted"\n                   class="help-block">\n                    clickthrough url must be a valid URL\n                </p>\n\n                <p ng-show="errors.clickthroughUrl && submitted" class="help-block">\n                    {{errors.clickthroughUrl}}\n                </p>\n            </div>\n        </div>\n\n        <div class="form-group row"\n             ng-class="{\'has-error\': newCreative.type.$invalid && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Creative Type</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-creative-select-creative-type" ng-disabled="editing" name="type" select2\n                        s2-options="type as type.name for type in types track by type.id"\n                        ng-model="typeTransform" ng-model-options="{ getterSetter: true }" required>\n                </select>\n                <p ng-show="newCreative.type.$invalid && submitted"\n                   class="help-block">\n                    creative type is required\n                </p>\n                <p ng-show="errors.type && submitted" class="help-block">\n                    {{errors.type}}\n                </p>\n            </div>\n        </div>\n\n        <div ng-if="environments" class="form-group row"\n             ng-class="{\'has-error\': newCreative.environment.$invalid && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Environment</span></label>\n            <div class="col-sm-9">\n                <select id="new-edit-creative-select-environment" ng-disabled="editing" name="environment" select2\n                        s2-options="environment as environment.name for environment in environments track by environment.id"\n                        ng-model="environmentTransform" ng-model-options="{ getterSetter: true }" ng-required="!editing">\n                </select>\n\n                <p ng-show="newCreative.environment.$invalid && submitted"\n                   class="help-block">\n                    environment is required\n                </p>\n                <p ng-show="errors.environment && submitted" class="help-block">\n                    {{errors.environment}}\n                </p>\n            </div>\n        </div>\n\n        <div ng-if="dimensions" class="form-group row"\n             ng-class="{\'has-error\': (newCreative.dimensions.$invalid || newCreative.customDimensionsWidth.$invalid || newCreative.customDimensionsHeight.$invalid) && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Dimensions</span></label>\n            <div class="col-sm-3">\n                <select id="new-edit-creative-select-dimensions" ng-disabled="editing" name="dimensions" select2\n                        s2-options="dimension as dimension.name for dimension in dimensions track by dimension.id"\n                        ng-model="dimensionsTransform" ng-model-options="{ getterSetter: true }" required>\n                </select>\n\n                <p ng-show="newCreative.dimensions.$invalid && submitted"\n                   class="help-block">\n                    dimensions are required\n                </p>\n                <p ng-show="newCreative.customDimensionsWidth.$invalid && submitted"\n                   class="help-block">\n                    width is required\n                </p>\n                <p ng-show="newCreative.customDimensionsHeight.$invalid && submitted"\n                   class="help-block">\n                    height is required\n                </p>\n                <p ng-show="errors.embedWidth && submitted" class="help-block">\n                    {{errors.embedWidth}}\n                </p>\n                <p ng-show="errors.embedHeight && submitted" class="help-block">\n                    {{errors.embedHeight}}\n                </p>\n            </div>\n            <div class="col-sm-6" ng-show="dimensionsAreCustom">\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-width-field" ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.embedWidth" type="number"\n                           class="form-control" id="customDimensionsWidth"\n                           placeholder="Width" required/>\n                </div>\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-height-field" ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.embedHeight" type="number"\n                           class="form-control" id="customDimensionsHeight"\n                           placeholder="Height" required/>\n                </div>\n            </div>\n        </div>\n        <div ng-if="expandedDimensions" class="form-group row"\n             ng-class="{\'has-error\': (newCreative.expandedDimensions.$invalid || newCreative.customExpandedDimensionsWidth.$invalid || newCreative.customExpandedDimensionsHeight.$invalid) && submitted}">\n            <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Expanded Dimensions</span></label>\n            <div class="col-sm-3">\n                <select id="new-edit-creative-select-exp-dimension" ng-disabled="editing" name="expandedDimensions" select2\n                        s2-options="expandedDimension as expandedDimension.name for expandedDimension in expandedDimensions track by expandedDimension.id"\n                        ng-model="dimensionsExpandTransform" ng-model-options="{ getterSetter: true }" required>\n                </select>\n\n                <p ng-show="newCreative.expandedDimensions.$invalid && submitted"\n                   class="help-block">\n                    expanded dimensions are required\n                </p>\n                <p ng-show="newCreative.customExpandedDimensionsWidth.$invalid && submitted"\n                   class="help-block">\n                    expanded width is required\n                </p>\n                <p ng-show="newCreative.customExpandedDimensionsHeight.$invalid && submitted"\n                   class="help-block">\n                    expanded height is required\n                </p>\n                <p ng-show="errors.expandedWidth && submitted" class="help-block">\n                    {{errors.expandedWidth}}\n                </p>\n                <p ng-show="errors.expandedHeight && submitted" class="help-block">\n                    {{errors.expandedHeight}}\n                </p>\n            </div>\n            <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-exp-width-field" ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"\n                           class="form-control"\n                           placeholder="Width" required />\n                </div>\n                <div class="col-sm-6">\n                    <input id="new-edit-creative-custom-exp-height-field" ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"\n                           class="form-control"\n                           placeholder="Height" required />\n                </div>\n            </div>\n        </div>\n\n        <div ng-show="creative.campaignId && creative.type === \'Display\'" class="form-group row">\n          <label class="col-sm-3 form-label">Media</label>\n          <div class="col-sm-9 file-selection-wrapper form-inline">\n            <button class="btn btn-default" ng-click="selectMedia()">\n              Select\n              <span ng-show="creative.subtype===\'SWF\'">SWF</span>\n              <span ng-show="creative.subtype===\'IMG\'">Image</span>\n            </button>\n          </div>\n        </div>\n        <!--<div ng-if="creative.subtype == \'SWF\' && !editing">-->\n            <!--<div class="form-group row">-->\n                <!--<label class="col-sm-3 form-label">Upload SWF</label>-->\n                <!--<div class="col-sm-9 file-selection-wrapper form-inline">-->\n                    <!--<div file-picker accept="\'application/x-shockwave-flash\'" extensions="swfAllowedExtensions" ng-model="creative.file"></div>-->\n                <!--</div>-->\n            <!--</div>-->\n        <!--</div>-->\n\n        <!--<div ng-if="creative.subtype == \'IMG\' && !editing">-->\n            <!--<div class="form-group row">-->\n                <!--<label class="col-sm-3 form-label">Upload Image</label>-->\n                <!--<div class="col-sm-9 file-selection-wrapper form-inline">-->\n                    <!--<div file-picker ng-model="creative.file"></div>-->\n                <!--</div>-->\n            <!--</div>-->\n        <!--</div>-->\n\n        <div ng-show="creative.type===\'inBanner\' && creative.expandedDimensions === nonExpandingIndex" class="form-group row">\n            <label ng-class="{disabled:editing}" for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>\n            <div class="col-sm-9">\n                <label>\n                    <input ng-disabled="editing" id="customStartFrame" ng-model="creative.customStartFrame" type="checkbox" class="checkbox checkbox-light" />\n                    <span></span>\n                </label>\n            </div>\n        </div>\n\n        <div class="form-group row">\n            <label for="new-edit-creative-keywords-field" class="col-sm-3 form-label"><span>Keywords</span></label>\n\n            <div class="col-sm-9">\n                <input id="new-edit-creative-keywords-field" ng-model="creative.keywords" type="text"\n                       class="form-control"\n                       placeholder="Keywords"/>\n            </div>\n\n            <p ng-show="errors.keywords && submitted" class="help-block">\n                {{errors.keywords}}\n            </p>\n        </div>\n    </form>\n</div>\n<div class="modal-footer">\n    <button id="new-edit-creative-save-creative-btn" class="btn btn-primary solid" ng-click="ok(newCreative.$error)">Save\n        Creative\n    </button>\n    <button id="new-edit-creative-cancel-btn" class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
@@ -69868,8 +69875,8 @@ define('campaignManagement/campaigns/placements/directives/assignPublisher',['re
 				scope: false,
 				templateUrl: 'campaignManagement/campaigns/placements/directives/assign-publisher.html',
 				controller: [
-					'$scope', 'navbarService', 'clientPublisherRecordService',
-					function($scope, navbar, clientPublisherRecordService) {
+					'$scope', 'navbarService', 'clientPublisherRecordService', '$http',
+					function($scope, navbar, clientPublisherRecordService, $http) {
 						updatePublishers();
 						navbar.observe(function() {
 							updatePublishers();
@@ -69880,7 +69887,17 @@ define('campaignManagement/campaigns/placements/directives/assignPublisher',['re
 							if(navbarData && navbarData.client && navbarData.client.id) {
 								clientPublisherRecordService.fetch(navbarData.client.id)
 									.then(function(resp) {
-										$scope.publishers = resp.data;
+										if (resp.data.length > 0) {
+											$scope.publishers = resp.data;
+										} else {
+
+											// TEMPORARILY JUST GRAB A RANDOM PUBLISHER ID. REMOVE FOR RELEASE
+											$http.get('/api/crud/publishers?limit=1').success(function(data) {
+												var publisher = data[0];
+												publisher.name = 'Default Publisher';
+												$scope.publishers = [publisher];
+											});
+										}
 									});
 							}
 						}
@@ -70127,7 +70144,7 @@ define('campaignManagement/campaigns/placements/services/placements',['require',
         queryParams: {
             dimensions: [
                 'id', 'name', 'live', 'flightStart', 'flightEnd',
-                'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'publisher.id',
+                'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'creatives.containertypecode', 'publisher.id',
                 'publisher.name', 'type', 'budget', 'spend'
             ],
             metrics: ['impressions'],
@@ -70176,7 +70193,6 @@ define('campaignManagement/campaigns/placements/services/placements',['require',
         });
 
         function prepFn(data) {
-            console.log('prep', data);
             var deferred = $q.defer();
 
             var newData = ng.copy(data);
@@ -71029,7 +71045,8 @@ define('campaignManagement/campaigns/creatives/controllers/creativesHeader',['re
                     all: 0,
                     inBannerVideo: 0,
                     richMedia: 0,
-                    inStream: 0
+                    inStream: 0,
+                    display: 0
                 };
 
                 for(var i = 0; i < allCreatives.length; i ++) {
@@ -71570,7 +71587,7 @@ define('campaignManagement/campaigns/creatives/directives/creativeThumbnails',['
                         }
 
                         $scope.creatives = duplicateCreatives;
-
+                        
                         // Stop the loading spinner if data loaded
                         if ( creatives.data().isLoaded() ) {
                             $scope.creativesAreLoaded = true;
@@ -71639,9 +71656,9 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
         endpoint: 'creatives',
         queryParams: {
             dimensions: [
-                'id', 'name', 'live', 'type', 'device', 'embedWidth',
-                'embedHeight', 'expandedWidth', 'expandedHeight', //'clickthroughUrl',
-                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
+                'id', 'name', 'live', 'type', 'containertypecode', 'device', 'embedWidth',
+                'embedHeight', 'expandedWidth', 'expandedHeight', 'countPlacements',
+                'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
             limit: 500
         }
@@ -71735,29 +71752,30 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
                 };
 
                 if (creatives && creatives.length) {
-                for(var i = 0; i < creatives.length; i ++) {
-                    creative = creatives[i];
-                    transformedTable.data.push({
-                        checked: false,
-                        creativeName: creative.name,
-                        delivering: creative.live,
-                        type: creative.type,
-                        dimensions: creative.embedWidth + 'x' + creative.embedHeight,
-                        expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                        campaignId: creative.campaign.id,
-                        numPlacements: {
-                            name: creative.countPlacements || 0,
-                            route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
-                        },
-                        options: '<div creative-options id="\'' + creative.id + '\'"></div>',
+                    for(var i = 0; i < creatives.length; i ++) {
+                        creative = creatives[i];
+                        transformedTable.data.push({
+                            checked: false,
+                            creativeName: creative.name,
+                            delivering: creative.live,
+                            type: creative.type,
+                            containerType: creative.containertypecode,
+                            dimensions: creative.embedWidth + 'x' + creative.embedHeight,
+                            expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
+                            campaignId: creative.campaign.id,
+                            numPlacements: {
+                                name: creative.countPlacements || 0,
+                                route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'
+                            },
+                            options: '<div creative-options id="\'' + creative.id + '\'"></div>',
 
-                        // These properties are needed by thumbnails but aren't
-                        // in the table
-                        id: creative.id,
-                        lastModified: creative.modifiedDate,
-                        thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
-                    });
-                }
+                            // These properties are needed by thumbnails but aren't
+                            // in the table
+                            id: creative.id,
+                            lastModified: creative.modifiedDate,
+                            thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
+                        });
+                    }
                 }
                 return transformedTable;
             }
@@ -71808,7 +71826,6 @@ define('campaignManagement/campaigns/creatives/services/creatives',['require','.
                     return d;
                 });
             }
-
 
             return {
                 _transformCreatives: _transformCreatives,
