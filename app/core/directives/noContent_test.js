@@ -9,7 +9,7 @@ define(function (require) {
     var template = require('tpl!./noContent.html');
     var ng = require('angular');
 
-    
+
     var compile, rootScope, document, httpBackend, apiGenerator, state, clientSetData, divisionSetData, campaignsHeaderData, creativesData, placementsData;
 
     function setUp() {
@@ -33,11 +33,11 @@ define(function (require) {
     }
 
     function generateEl(){
-        
+
         // httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond(noContentJSON);
-        
+
         httpBackend.when('GET', apiGenerator(divisionSetData._getApiConfig())).respond(noContentJSON);
-        
+
         httpBackend.when('GET', apiGenerator(campaignsHeaderData._getApiUriConfig())).respond(noContentJSON);
 
         httpBackend.when('GET', apiGenerator(placementsData._getApiConfig())).respond(noContentJSON);
@@ -55,7 +55,7 @@ define(function (require) {
     }
 
     describe('No Content Directive (Client Page)', function () {
-        
+
         beforeEach( function() {
             setUp();
         } );
@@ -68,7 +68,7 @@ define(function (require) {
 
         // Client Level Tests
         it('should have an instance of clientSetData', function () {
-            
+
             state.params = { clientId: 'testClient' };
 
             expect(clientSetData).toBeDefined();
@@ -81,7 +81,7 @@ define(function (require) {
 
             var el = generateEl();
             var isoScope = el.isolateScope();
-            
+
             expect(isoScope.showDivisionMsg).toEqual(true);
         });
 
@@ -91,13 +91,13 @@ define(function (require) {
             httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({clientSet: [{metrics:{countDivisions:0}}]});
 
             var el = generateEl();
-            
+
             expect( el.find('.no-content').length ).toEqual(1);
 
             expect( el.find('h3').html() )
                 .toEqual('It appears you don\'t have any divisions.');
         });
-        
+
         it('should contain the variable "showAccountMsg" set to true', function(){
             state.params = { clientId: 'testClient'};
 
@@ -115,7 +115,7 @@ define(function (require) {
             httpBackend.when('GET', apiGenerator(clientSetData._getApiConfig())).respond({clientSet: [{metrics:{countDivisions:1,countAccounts:0}}]});
 
             var el = generateEl();
-            
+
             expect( el.find('.no-content').length ).toEqual(1);
 
             expect( el.find('h3').html() )
@@ -133,18 +133,18 @@ define(function (require) {
             httpBackend.verifyNoOutstandingExpectation();
             httpBackend.verifyNoOutstandingRequest();
         });
-        
+
         it('should have an instance of divisionSetData', function () {
             state.params = { divisionId: 'testClient' };
             expect(divisionSetData).toBeDefined();
         });
-        
+
         it('should contain the variable "showAccountMsg" set to true', function(){
             state.params = { divisionId: 'testClient'};
 
             var el = generateEl();
             var isoScope = el.isolateScope();
-            
+
             expect(isoScope.showAccountMsg).toEqual(true);
         });
 
@@ -152,7 +152,7 @@ define(function (require) {
             state.params = { divisionId: 'testClient'};
 
             var el = generateEl();
-            
+
             expect( el.find('.no-content').length ).toEqual(1);
 
             expect( el.find('h3').html() )
@@ -171,27 +171,27 @@ define(function (require) {
             httpBackend.verifyNoOutstandingExpectation();
             httpBackend.verifyNoOutstandingRequest();
         });
-        
+
         it('should have an instance of campaignsHeaderData', function () {
             state.params = { accountId: 'testClient' };
-            
+
             expect(campaignsHeaderData).toBeDefined();
         });
-        
+
         it('should set the variable "showCampaignMsg" to true', function(){
             state.params = { accountId: 'testClient'};
 
             var el = generateEl();
             var isoScope = el.isolateScope();
-            
+
             expect(isoScope.showCampaignMsg).toEqual(true);
         });
-        
+
         it('should create the notification element with the appropriate message', function(){
             state.params = { accountId: 'testClient'};
 
             var el = generateEl();
-            
+
             expect( el.find('.no-content').length ).toEqual(1);
 
             expect( el.find('h3').html() )
@@ -210,29 +210,29 @@ define(function (require) {
             httpBackend.verifyNoOutstandingExpectation();
             httpBackend.verifyNoOutstandingRequest();
         });
-        
+
         it('should have an instance of placementsData', function () {
             state.params = { campaignId: 'testClient' };
-            
+
             expect(placementsData).toBeDefined();
         });
-        
+
         it('should set the variable "showCampaignMsg" to true', function(){
             state.params = { campaignId: 'testClient'};
             state.current.name = 'cm.campaigns.detail.placements';
 
             var el = generateEl();
             var isoScope = el.isolateScope();
-            
+
             expect(isoScope.showPlacementMsg).toEqual(true);
         });
-        
+
         it('should create the notification element with the appropriate message', function(){
             state.params = { campaignId: 'testClient'};
             state.current.name = 'cm.campaigns.detail.placements';
 
             var el = generateEl();
-            
+
             expect( el.find('.no-content').length ).toEqual(1);
 
             expect( el.find('h3').html() )
@@ -251,29 +251,29 @@ define(function (require) {
             httpBackend.verifyNoOutstandingExpectation();
             httpBackend.verifyNoOutstandingRequest();
         });
-        
+
         it('should have an instance of campaignsHeaderData', function () {
             state.params = { campaignId: 'testClient' };
-            
+
             expect(creativesData).toBeDefined();
         });
-        
+
         it('should set the variable "showCreativeMsg" to true', function(){
             state.params = { campaignId: 'testClient'};
             state.current.name = 'cm.campaigns.detail.creatives';
 
             var el = generateEl();
             var isoScope = el.isolateScope();
-            
+
             expect(isoScope.showCreativeMsg).toEqual(true);
         });
-        
+
         it('should create the notification element with the appropriate message', function(){
             state.params = { campaignId: 'testClient'};
             state.current.name = 'cm.campaigns.detail.creatives';
 
             var el = generateEl();
-            
+
             expect( el.find('.no-content').length ).toEqual(1);
 
             expect( el.find('h3').html() )

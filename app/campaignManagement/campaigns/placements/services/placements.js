@@ -60,7 +60,6 @@ define(function (require) {
         });
 
         function prepFn(data) {
-            console.log('prep', data);
             var deferred = $q.defer();
 
             var newData = ng.copy(data);
