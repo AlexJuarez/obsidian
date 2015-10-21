@@ -106,7 +106,6 @@ define(function(require) {
 				if(record.hasChanges()) {
 					if(confirm('You have unsaved changes. Really close?')) {
 						record.reset();
-						$scope.placement = record.get();
 						$modalInstance.dismiss('cancel');
 					}
 				} else {
@@ -115,7 +114,7 @@ define(function(require) {
 			}
 
 			$scope.$on('$destroy', function() {
-				modalState.placement = $scope.placement;
+				modalState.placement = record.changes();
 			});
 		}
 	]);
