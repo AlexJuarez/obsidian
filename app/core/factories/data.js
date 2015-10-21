@@ -44,7 +44,7 @@ define(function (require) {
                 var order, key, params;
                 if (config && config.queryParams) {
                     order = config.queryParams.order;
-                    if (key) {
+                    if (order) {
                         params = order.split(':');
                         key = params[0];
                         if (params[1] && !options.compareFn) {
