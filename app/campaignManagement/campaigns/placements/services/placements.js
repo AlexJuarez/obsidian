@@ -24,7 +24,7 @@ define(function (require) {
         delivering: 'delivering',
         startDate: 'date',
         endDate: 'date',
-        type: '',
+        type: 'type',
         pacing: 'bullet',
         spend: 'bullet',
         creatives: 'creatives',
@@ -46,7 +46,7 @@ define(function (require) {
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory',
         'apiUriGenerator', 'placementsByAdType', 'placementsByCreative',
-        'placementsByPublisher',
+        'placementsByPublisher', 
         function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
         placementsByCreative, placementsByPublisher
     ) {

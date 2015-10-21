@@ -21,6 +21,10 @@ define(function (require) {
             }
         }
 
+        function shortenAdTypeText(input) {
+            return $filter('shortenAdType')(input);
+        }
+
         return function (input, row, rules) {
             var rule = rules[input];
             var data = row[input];
@@ -40,6 +44,8 @@ define(function (require) {
                 return date(data);
             case 'checkbox':
                 return createCheckbox(data, input);
+            case 'type':
+                return shortenAdTypeText(data);
             case 'status':
                 return '<span class="glyph-dot status" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':
@@ -51,7 +57,7 @@ define(function (require) {
             case 'delivering':
                 return '<span table-delivering delivering="row.' + input + '"></div>';
             case 'tooltip':
-                return '<div class="tooltip tooltip-basic tooltip-light" tooltip-overflow="true" tooltip="row.' + input + '">{{row.' + input + '}}</div>';
+                return '<div class="tooltip tooltip-basic tooltip-light hover" tooltip-overflow="true" tooltip="row.' + input + '">{{row.' + input + '}}</div>';
             default:
                 return data;
             }

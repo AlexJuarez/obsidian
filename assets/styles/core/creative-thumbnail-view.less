@@ -21,7 +21,7 @@
             position: absolute;
             top: 49.25%;
             left: 49.25%;
-            z-index: 800;
+            z-index: 10;
             -webkit-transform: translate(-49.25%, -49.25%);
             transform: translate(-49.25%, -49.25%);
         }
@@ -67,13 +67,8 @@
         }
         .creative-info {
             position: relative;
-            overflow: auto;
             .title {
                 font-weight: bold;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: block;
             }
             .data {
                 &:extend(.clearfix all);
