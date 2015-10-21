@@ -15,19 +15,20 @@ define(function (require) {
         });
 
         it('should convert "In-Banner" to "IBV"', function () {
-            expect(filter('In-Banner')).toEqual('IBV');
+            expect(filter('In-Banner','MLQ')).toEqual('IBV');
         });
 
         it('should convert "In-Stream" to "ISV"', function () {
-            expect(filter('In-Stream')).toEqual('ISV');
+            expect(filter('In-Stream','MLQ')).toEqual('ISV');
         });
 
-        it('should convert "Display" to "IMG/SWF"', function () {
-            expect(filter('Display')).toEqual('IMG/SWF');
+        it('should convert "Display" to either "IMG" or "SWF"', function () {
+            expect(filter('Display','IMG')).toEqual('IMG');
+            expect(filter('Display','SWF')).toEqual('SWF');
         });
 
         it('should convert "Rich Media" to "RM"', function () {
-            expect(filter('Rich Media')).toEqual('RM');
+            expect(filter('Rich Media','MLQ')).toEqual('RM');
         });
 
     });

@@ -15,7 +15,8 @@ define(function (require) {
                         {type: 'In-Banner'},
                         {type: 'Rich Media'},
                         {type: 'In-Stream'},
-                        {type: 'In-Banner'}
+                        {type: 'In-Banner'},
+                        {type: 'Display'}
                     ]
                 };
             },
@@ -69,10 +70,11 @@ define(function (require) {
 
         it('should set $scope.creativesMeta appropriately', function() {
             var expected = {
-                all: 4,
+                all: 5,
                 inBannerVideo: 2,
                 richMedia: 1,
-                inStream: 1
+                inStream: 1,
+                display: 1
             };
 
             expect(scope.creativesMeta).toEqual(expected);

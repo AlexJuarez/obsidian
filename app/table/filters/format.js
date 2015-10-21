@@ -21,8 +21,14 @@ define(function (require) {
             }
         }
 
-        function shortenAdTypeText(input) {
-            return $filter('shortenAdType')(input);
+        function shortenAdType(data, row) {
+            var containerType;
+            if (row.creatives) { // Placements
+                containerType = row.creatives[0].containertypecode;
+            } else { // Creatives
+                containerType = row.containerType
+            }
+            return $filter('shortenAdType')(data, containerType);
         }
 
         return function (input, row, rules) {
@@ -45,7 +51,7 @@ define(function (require) {
             case 'checkbox':
                 return createCheckbox(data, input);
             case 'type':
-                return shortenAdTypeText(data);
+                return shortenAdType(data, row);
             case 'status':
                 return '<span class="glyph-dot status" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':
