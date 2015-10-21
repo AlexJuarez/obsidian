@@ -75,15 +75,13 @@ define(function(require) {
 			}
 
 			function ok(errors) {
-				$scope.placement.expandBeforeCountdown = true;
-				$scope.placement.spanish = true;
-				$scope.placement.clickTrackers = '';
-				$scope.placement.impressionTrackers = '';
-				$scope.placement.viewTrackers = '';
+				if ($scope.placement.takeoverLightboxOpacity) {
+					$scope.placement.takeoverLightboxOpacity = parseInt($scope.placement.takeoverLightboxOpacity, 10);
+				}
 				if(ng.equals({}, errors) || ! errors) {
 					var onSuccess = function(resp) {
 						$scope.placement = {};
-						notification.success('Placement: {{name}}, has been saved.',
+						notification.success('Placement {{name}} has been saved.',
 							{
 								locals: {
 									name: resp.data.name

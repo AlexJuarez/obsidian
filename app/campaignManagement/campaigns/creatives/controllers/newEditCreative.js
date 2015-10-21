@@ -235,7 +235,7 @@ define(function (require) {
             if(ng.equals({}, errors) || !errors) {
                 var onSuccess = function(resp) {
 
-                    notification.success('Creative: {{name}}, has been saved.',
+                    notification.success('Creative {{name}} has been saved.',
                         {
                             locals: {
                                 name: resp.data.name
