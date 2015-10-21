@@ -93,10 +93,6 @@ define(function (require) {
                 }
 
                 function calculateClass(dims) {
-                    ng.forEach(directionClasses, function (c) {
-                        elem.removeClass(c);
-                    });
-
                     //follow the height and width by about 20px;
 
                     var content = elem.find('.content')[0];
@@ -104,23 +100,23 @@ define(function (require) {
                     var topBuffer = ((content && content.offsetHeight) || 30) + 20,
                         leftRightBuffer = ((content && content.offsetWidth) || 180) + 20;
 
+                    var output = 'tooltip';
+
                     if (dims.top > topBuffer) {
-                        if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
-                            return 'tooltip-top-center';
-                        } else if (dims.left > dims.right) {
-                            return 'tooltip-top-left';
-                        } else {
-                            return 'tooltip-top-right';
-                        }
+                        output += '-top';
                     } else {
-                        if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
-                            return 'tooltip-bottom-center';
-                        } else if (dims.left > dims.right) {
-                            return 'tooltip-bottom-left';
-                        } else {
-                            return 'tooltip-bottom-right';
-                        }
+                        output += '-bottom';
                     }
+
+                    if (dims.left > leftRightBuffer && dims.right > leftRightBuffer) {
+                        output += '-center';
+                    } else if (dims.left > dims.right) {
+                        output += '-left';
+                    } else {
+                        output += '-right';
+                    }
+
+                    return output;
                 }
 
                 function calculateDims() {
@@ -139,7 +135,14 @@ define(function (require) {
                     hideIfNotOverflowed();
 
                     var dims = calculateDims();
-                    elem.addClass(calculateClass(dims));
+                    var c = calculateClass(dims);
+
+                    if (!elem.hasClass(c)) {
+                        ng.forEach(directionClasses, function (c) {
+                            elem.removeClass(c);
+                        });
+                        elem.addClass(c);
+                    }
                 }
 
                 function hideIfNotOverflowed() {

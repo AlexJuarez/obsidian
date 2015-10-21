@@ -15,15 +15,15 @@ define(function (require) {
         });
 
         it('should not convert to percentage', function () {
-            expect(filter(3)).toEqual(3);
+            expect(filter(3)).toEqual(3.00);
             expect(filter(1.45)).toEqual(1.45);
-            expect(filter(3.002364)).toEqual(3.002364);
+            expect(filter(3.009364)).toEqual(3.01);
         });
 
         it('should convert to percentage', function () {
-            expect(filter(0.23458)).toEqual('23.46');
-            expect(filter(0)).toEqual('0.00');
-            expect(filter(0.15)).toEqual('15.00');
+            expect(filter(0.23458)).toEqual(23.46);
+            expect(filter(0)).toEqual(0.00);
+            expect(filter(0.15)).toEqual(15.00);
         });
 
     });

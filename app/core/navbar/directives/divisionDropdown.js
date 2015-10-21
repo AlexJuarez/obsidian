@@ -4,7 +4,7 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./division.html');
 
-    app.directive('divisionDropdown', ['divisionService', '$timeout', 'navbarService', function (divisions, $timeout, navbar) {
+    app.directive('divisionDropdown', ['divisionService', '$timeout', 'navbarService', '$rootScope', function (divisions, $timeout, navbar, $rootScope) {
         return {
             restrict: 'A',
             scope: true,
@@ -22,6 +22,14 @@ define(function (require) {
 
                 $scope.$watch('query', function (newValue) {
                     $scope.results = divisions.search(newValue);
+                });
+
+                var cleanup = $rootScope.$on('$stateChangeSuccess', function() {
+                    $scope.query = '';
+                });
+
+                $scope.$on('$destroy', function() {
+                    cleanup();
                 });
 
                 function updateCurrent() {

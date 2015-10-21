@@ -1,6 +1,10 @@
 @tool-tip-light-bg: #fff;
 @tool-tip-dark-bg: #3F403F;
-
+.tooltip .main {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-x: hidden;
+}
 .tooltip-advanced {
     display: inline-block;
 }
@@ -94,7 +98,7 @@
         cursor: help;
     }
 
-    &.hover:hover {
+    &.hover:hover .wrapper {
         cursor: default;
     }
 

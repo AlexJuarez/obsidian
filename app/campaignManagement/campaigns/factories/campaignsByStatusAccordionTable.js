@@ -209,7 +209,7 @@ define(function (require) {
                 }
 
                 return {
-                    template: '<div><span class="icon-status"></span>{{title}} (0)</div>',
+                    template: '<span><span class="icon-status"></span>{{title}} (0)</span>',
                     locals: {
                         title: title
                     }
