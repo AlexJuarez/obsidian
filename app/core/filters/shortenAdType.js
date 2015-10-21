@@ -4,15 +4,15 @@ define(function (require) {
     var app = require('./../module');
 
     app.filter('shortenAdType', [function () {
-        return function (input) {
-            console.log( 'shortenAdType',input );
-            switch (input) {
+        
+        return function (data, containerType) {
+            switch (data) {
                 case 'In-Banner':
                     return 'IBV';
                 case 'In-Stream':
                     return 'ISV';
                 case 'Display':
-                    return 'IMG/SWF';
+                    return containerType;
                 case 'Rich Media':
                     return 'RM';
                 default:

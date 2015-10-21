@@ -9,9 +9,9 @@ define(function(require) {
         endpoint: 'creatives',
         queryParams: {
             dimensions: [
-                'id', 'name', 'live', 'type', 'containertype.code', 'device', 'embedWidth',
-                'embedHeight', 'expandedWidth', 'expandedHeight', //'clickthroughUrl',
-                'countPlacements', 'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
+                'id', 'name', 'live', 'type', 'containertypecode', 'device', 'embedWidth',
+                'embedHeight', 'expandedWidth', 'expandedHeight', 'countPlacements',
+                'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
             ],
             limit: 500
         }

@@ -24,9 +24,7 @@ define(function (require) {
         return function (input, row, rules) {
             var rule = rules[input];
             var data = row[input];
-
-            //console.log( 'data',data );
-            //console.log( 'input',input );
+            var containerType = row.containerType;
 
             switch (rule) {
             case 'number':
@@ -44,7 +42,7 @@ define(function (require) {
             case 'checkbox':
                 return createCheckbox(data, input);
             case 'type':
-                return $filter('shortenAdType')(data);
+                return $filter('shortenAdType')(data, containerType);
             case 'status':
                 return '<span class="glyph-dot status" ng-class="{\'success\': row.' + input + '}"></span>';
             case 'bullet':

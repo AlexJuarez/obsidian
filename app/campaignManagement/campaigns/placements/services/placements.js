@@ -12,7 +12,7 @@ define(function (require) {
             dimensions: [
                 'id', 'name', 'live', 'flightStart', 'flightEnd',
                 'bookedImpressions', 'creatives.id', 'creatives.name', 'creatives.embedWidth', 'creatives.embedHeight', 'creatives.expandedWidth', 'creatives.expandedHeight', 'creatives.expandable', 'creatives.type', 'creatives.thumbnailUrlPrefix', 'publisher.id',
-                'publisher.name', 'type', 'budget', 'spend'
+                'publisher.name', 'type', 'creatives.containertypecode', 'budget', 'spend'
             ],
             metrics: ['impressions']
         }
