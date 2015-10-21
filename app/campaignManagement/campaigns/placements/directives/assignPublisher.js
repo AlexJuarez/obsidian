@@ -13,8 +13,8 @@ define(function(require) {
 				scope: false,
 				templateUrl: 'campaignManagement/campaigns/placements/directives/assign-publisher.html',
 				controller: [
-					'$scope', 'navbarService', 'clientPublisherRecordService',
-					function($scope, navbar, clientPublisherRecordService) {
+					'$scope', 'navbarService', 'clientPublisherRecordService', '$http',
+					function($scope, navbar, clientPublisherRecordService, $http) {
 						updatePublishers();
 						navbar.observe(function() {
 							updatePublishers();
@@ -25,7 +25,17 @@ define(function(require) {
 							if(navbarData && navbarData.client && navbarData.client.id) {
 								clientPublisherRecordService.fetch(navbarData.client.id)
 									.then(function(resp) {
-										$scope.publishers = resp.data;
+										if (resp.data.length > 0) {
+											$scope.publishers = resp.data;
+										} else {
+
+											// TEMPORARILY JUST GRAB A RANDOM PUBLISHER ID. REMOVE FOR RELEASE
+											$http.get('/api/crud/publishers?limit=1').success(function(data) {
+												var publisher = data[0];
+												publisher.name = 'Default Publisher';
+												$scope.publishers = [publisher];
+											});
+										}
 									});
 							}
 						}
