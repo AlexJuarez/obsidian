@@ -7,12 +7,15 @@
 
 	<div class="thumbnail-wrapper">
 		<div ng-class="{'loading': !creative}" class="ratio-box">
-			<!-- <div ng-click="previewInPage()" class="preview-overlay"><span><i class="glyph-view"></i>Preview in Page</span></div> -->
 			<img ng-src="https://swf.mixpo.com{{creative.thumbnailUrlPrefix}}JPG320.jpg" class="preview-thumbnail"/>
 		</div>
 	</div>
 	<table class="preview-info">
 		<tbody>
+			<tr>
+				<td>Name</td>
+				<td>{{creative.name}}</td>
+			</tr>
 			<tr>
 				<td>Ad Type</td>
 				<td>{{creative.type}}</td>
