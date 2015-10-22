@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #Build the bower package
-git pull --rebase
+git fetch
+git rebase
 grunt build:bower
 # We need to deploy the font icons manually 
 cp -R build/fonts/* ../thorwhal/public/fonts
