@@ -1,6 +1,6 @@
 {
   "name": "obsidian",
-  "version": "1.0.67",
+  "version": "1.0.68",
   "main": [
     "build/core.js",
     "build/core.css",
