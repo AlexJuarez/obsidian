@@ -46803,8 +46803,8 @@ define('core/constants/creativeSettings',['require','./../module','./enums'],fun
 			{id: 'IBV', name: 'In-Banner Video', dbName: creativeTypes.inBannerVideo},
 			{id: 'ISV', name: 'In-Stream Video', dbName: creativeTypes.inStream},
 			{id: 'RM', name: 'Rich Media', dbName: creativeTypes.richMedia},
-			{id: 'SWF', name: 'Display: SWF', subtype: 'SWF', dbName: creativeTypes.display},
-			{id: 'IMG', name: 'Display: Image', subtype: 'IMG', dbName: creativeTypes.display}
+			{id: 'SWF', name: 'SWF', subtype: 'SWF', dbName: creativeTypes.display},
+			{id: 'IMG', name: 'Image', subtype: 'IMG', dbName: creativeTypes.display}
 		],
 
 		typeSettings: {
@@ -69956,6 +69956,11 @@ define('campaignManagement/campaigns/placements/directives/assignCreative',['req
 
 						adTypes[creative.type].push(creative);
 					});
+
+					// Rename 'Display' to 'Image/SWF' for Alpha
+					adTypes['Image/SWF'] = adTypes[ENUMS.up.creativeTypes.display];
+					delete adTypes[ENUMS.up.creativeTypes.display];
+
 					$scope.creativesByAdType = adTypes;
 				}
 
