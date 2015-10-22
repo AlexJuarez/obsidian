@@ -3,16 +3,17 @@ define(function (require) {
 
     var app = require('./../module');
 
-    app.filter('shortenAdType', [function () {
+    app.filter('shortenAdType', ['ENUMS', function (ENUMS) {
+        var creativeTypes = ENUMS.up.creativeTypes;
         return function (data, containerType) {
             switch (data) {
-                case 'In-Banner':
+                case creativeTypes.inBannerVideo:
                     return 'IBV';
-                case 'In-Stream':
+                case creativeTypes.inStream:
                     return 'ISV';
-                case 'Display':
+                case creativeTypes.display:
                     return containerType;
-                case 'Rich Media':
+                case creativeTypes.richMedia:
                     return 'RM';
                 default:
                     return 'Unknown';
