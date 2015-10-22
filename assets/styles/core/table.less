@@ -19,8 +19,6 @@ table {
     overflow-x: auto;
     overflow-y: hidden;
 
-    //box-sizing: border-box;
-
     &::-webkit-scrollbar {
         -webkit-appearance: none;
     }
@@ -80,7 +78,7 @@ table {
         color: @dark-gray;
 
         a {
-            display: block;
+            display: inline-block;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow-x: hidden;
@@ -104,9 +102,12 @@ table {
                 padding: 1.2rem 2rem 1.2rem 2rem;
                 max-width: 180px;
                 &:nth-last-child(2) {
-                    a {
+                    .creative-options {
                         text-align: right;
-                        display: inline-block;
+                        display: block;
+                        a {
+                            display: inline-block;
+                        }
                     }
                 }
                 &.table-number {
