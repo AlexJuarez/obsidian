@@ -19,18 +19,27 @@ table {
     overflow-x: auto;
     overflow-y: hidden;
 
+    //box-sizing: border-box;
+
     &::-webkit-scrollbar {
         -webkit-appearance: none;
-        height: 7px;
-        background-color: @light-gray;
+    }
+    
+    &::-webkit-scrollbar:horizontal {
+        height: 10px;
         @media(max-width: @screen-sm-min) {
-            height: 2px;
+            height: 6px;
         }
     }
-    &::-webkit-scrollbar-thumb {
-        border-radius: 4px;
+    &::-webkit-scrollbar-thumb:horizontal {
         background-color: @brand-color;
-
+        border: 3px solid @light-gray;
+        @media(max-width: @screen-sm-min) {
+            border-width: 2px;
+        }
+    }
+    &::-webkit-scrollbar-track:horizontal {
+        background-color: @light-gray;
     }
 
     width: 100%;

@@ -15,7 +15,7 @@
     <div class="row">
         <ul perfect-scrollbar suppress-scroll-x="true" refresh-on-change="pinned" wheel-propagation="true" class="list col-sm-12 col-md-6">
             <li ng-if="!state.divisionId"><a>All {{section}}</a></li>
-        <li ng-if="state.divisionId"><a ui-sref=".campaigns.division(state)">All {{section}}</a></li>
+            <li ng-if="state.divisionId"><a ui-sref=".campaigns.division(state)">All {{section}}</a></li>
             <li ng-if="pinned.length">Pinned
                 <ul class="pinned">
                     <li ng-repeat="account in pinned track by account.id">
