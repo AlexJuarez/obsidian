@@ -29,10 +29,10 @@ define(function (require) {
 				function updateCreativesByAdType() {
 
 					var adTypes = {};
-					adTypes[ENUMS.up.creativeTypes.inStream] = [];
-					adTypes[ENUMS.up.creativeTypes.inBannerVideo] = [];
-					adTypes[ENUMS.up.creativeTypes.richMedia] = [];
-					adTypes[ENUMS.up.creativeTypes.display] = [];
+					adTypes[ENUMS.up.creativeTypes.inStream] = {name: 'In-Stream', creatives: []};
+					adTypes[ENUMS.up.creativeTypes.inBannerVideo] = {name: 'In-Banner', creatives: []};
+					adTypes[ENUMS.up.creativeTypes.richMedia] = {name: 'Rich Media', creatives: []};
+					adTypes[ENUMS.up.creativeTypes.display] = {name: 'Image/SWF', creatives: []};
 
 					var creatives = creativeService.data().all();
 
@@ -41,12 +41,8 @@ define(function (require) {
 							adTypes[creative.type] = [];
 						}
 
-						adTypes[creative.type].push(creative);
+						adTypes[creative.type].creatives.push(creative);
 					});
-
-					// Rename 'Display' to 'Image/SWF' for Alpha
-					adTypes['Image/SWF'] = adTypes[ENUMS.up.creativeTypes.display];
-					delete adTypes[ENUMS.up.creativeTypes.display];
 
 					$scope.creativesByAdType = adTypes;
 				}

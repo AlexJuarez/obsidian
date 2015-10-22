@@ -25,7 +25,7 @@ define(function(require) {
 							if(navbarData && navbarData.client && navbarData.client.id) {
 								clientPublisherRecordService.fetch(navbarData.client.id)
 									.then(function(resp) {
-										if (resp.data.length > 0) {
+										if (resp.data[0]) {
 											$scope.publishers = resp.data;
 										} else {
 
