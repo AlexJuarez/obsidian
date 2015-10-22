@@ -81,11 +81,33 @@ define(function(require) {
                 builder.build(),
                 'mixpo_studio'
             );
+
+            function isErrorCode (code) {
+                var errorCodes = [
+                    'INVALID-OPTIONS'
+                ];
+                return (errorCodes.indexOf(code) >= 0);
+            }
+
+            function createErrorMessage(code, detail) {
+                return {
+                    code: code,
+                    detail: detail
+                };
+            }
+
             tabWindow.onClose = function onClose(code, detail) {
                 if(code && detail) {
-                    // so jshint shuts up
+                    if(isErrorCode(code)) {
+                        callback(createErrorMessage(code, detail));
+                    }
                 }
-                tabWindow.close();
+                return tabWindow.close();
+            };
+
+            tabWindow.onError = function onError(code, detail) {
+                callback(createErrorMessage(code, detail));
+                return tabWindow.close();
             };
 
             callback(null, tabWindow);
@@ -120,7 +142,7 @@ define(function(require) {
             });
         }
 
-        /**
+         /**
          * Validates the Creative
          *
          * @param creative
@@ -145,6 +167,10 @@ define(function(require) {
             }
             if(creative.name===null||creative.name===undefined) {
                 callback('name is required');
+                return;
+            }
+            if(!validateDimensions(creative.type, creative.subtype, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight)) {
+                callback('dimensions are invalid.');
                 return;
             }
             callback(null);
@@ -193,6 +219,30 @@ define(function(require) {
                 default:
                     // unknown
                     return null;
+            }
+        }
+
+        function validateDimensions(type, subtype, embedWidth, embedHeight, expandedWidth, expandedHeight) {
+            if(type === types.display && subtype === 'IMG') {
+                // Image
+                return !isNaN(embedWidth) && !isNaN(embedHeight);
+            } else if(type === types.display && subtype === 'SWF') {
+                // SWF
+                return !isNaN(embedWidth) && !isNaN(embedHeight);
+            }  else if(type === types.inStream) {
+                // In-Stream Video
+                return 'IS';
+            } else if(type === types.richMedia) {
+                // 'Rich Media' AKA 'Interactive-Display'
+                return !isNaN(embedWidth) && !isNaN(embedHeight) || //ID
+                    !isNaN(embedWidth) && !isNaN(embedHeight) && !isNaN(expandedWidth) && !isNaN(expandedHeight); //MLQ
+            } else if(type === types.inBannerVideo) {
+                // 'In-Banner Video' AKA 'MLQ'
+                return !isNaN(embedWidth) && !isNaN(embedHeight) || //ID
+                    !isNaN(embedWidth) && !isNaN(embedHeight) && !isNaN(expandedWidth) && !isNaN(expandedHeight); //IDMLQ
+            } else {
+                // unknown
+                return false;
             }
         }
 

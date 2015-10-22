@@ -24,6 +24,30 @@ define(function (require) {
             httpBackend.verifyNoOutstandingRequest();
         });
 
+        // Ignore two methods used in parameterized tests
+        /* jshint ignore:start */
+        function getAdTypes() {
+            return [
+                'IMG',
+                'SWF',
+                'IS',
+                'MLQ',
+                'ID',
+                'IDRM',
+                'IDMLQ'
+            ];
+        }
+
+        function getAdEnvironment() {
+            return [
+                'multiscreen',
+                'tabletphone',
+                'inappmraid',
+                'desktop'
+            ];
+        }
+        /* jshint ignore:end */
+
         it('should be an instance of sdAdapter', function () {
             expect(newCreative).not.toEqual(null);
         });
@@ -46,7 +70,7 @@ define(function (require) {
             };
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative, mediaItem).then(handler);
+            newCreative(creative, mediaItem).then(handler, jasmine.fail);
 
             httpBackend.expectPOST('//alpha-studio.mixpo.com/manager/dafrommedia',
                 '{"mediaguid":"_uuid_","title":"_title_","clickThrough":"_clickthrough_","deviceTargets":"multiscreen","adServer":""}')
@@ -73,7 +97,7 @@ define(function (require) {
             };
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative, mediaItem).then(handler);
+            newCreative(creative, mediaItem).then(handler, jasmine.fail);
 
             httpBackend.expectPOST('//alpha-studio.mixpo.com/manager/dafrommedia',
                 '{"mediaguid":"_uuid_","title":"El Title","clickThrough":"lego.com","deviceTargets":"multiscreen","adServer":""}')
@@ -100,7 +124,7 @@ define(function (require) {
             };
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative, mediaItem).then(handler);
+            newCreative(creative, mediaItem).then(handler, jasmine.fail);
 
             httpBackend.expectPOST('//alpha-studio.mixpo.com/manager/dafrommedia',
                 '{"mediaguid":"_swf_uuid_","title":"El Title","clickThrough":"lego.com","deviceTargets":"multiscreen","adServer":""}')
@@ -128,7 +152,7 @@ define(function (require) {
             var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IS&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&sdf=new&tch=600&tcw=160&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative, mediaItem).then(handler);
+            newCreative(creative, mediaItem).then(handler, jasmine.fail);
 
             scope.$digest();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
@@ -155,7 +179,7 @@ define(function (require) {
             var calledUrl = '//alpha-studio.mixpo.com/studio?ad=ID&env=desktop&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative).then(handler);
+            newCreative(creative).then(handler, jasmine.fail);
 
             scope.$digest();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
@@ -181,7 +205,7 @@ define(function (require) {
             var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IDRM&env=inappmraid&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&tch=600&tcw=360&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative).then(handler);
+            newCreative(creative).then(handler, jasmine.fail);
 
             scope.$digest();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
@@ -207,7 +231,7 @@ define(function (require) {
             var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IDMLQ&env=tabletphone&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&tch=600&tcw=360&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative).then(handler);
+            newCreative(creative).then(handler, jasmine.fail);
 
             scope.$digest();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
@@ -233,7 +257,7 @@ define(function (require) {
             var calledUrl = '//alpha-studio.mixpo.com/studio?ad=MLQ&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&sdf=new&tch=600&tcw=160&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
-            newCreative(creative).then(handler);
+            newCreative(creative).then(handler, jasmine.fail);
 
             scope.$digest();
             expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
@@ -306,47 +330,72 @@ define(function (require) {
             expect(handler).toHaveBeenCalledWith(message);
         });
 
+        /* jshint ignore:start */
         it ('should return \'clickthough url is required\' error if unknown \'clickthroughUrl\'', function() {
-            var invalidCreative = {
-                type: 'In-Banner',
-                environment: 'multidevice',
-                name: 'El Title',
-                embedWidth: 160,
-                embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
-                campaignId: '_campaignId_'
-            };
+            function getInvalidCreative() {
+                return {
+                    type: 'parameterized',
+                    environment: 'multidevice',
+                    name: 'El Title',
+                    embedWidth: 160,
+                    embedHeight: 600,
+                    expandedWidth: NaN,
+                    expandedHeight: NaN,
+                    campaignId: '_campaignId_'
+                };
+            }
 
-            var message = 'clickthough url is required';
-            var handler = jasmine.createSpy('error');
+            // Iterates over all Ad Types
+            for (var index in getAdTypes()) {
+                (function(type) {
+                    it('for type: \'' + type + '\'', function() {
+                        var handler = jasmine.createSpy('error');
+                        var invalidCreative = getInvalidCreative();
+                        invalidCreative.type = type;
 
-            newCreative(invalidCreative).then(null, handler);
+                        newCreative(invalidCreative).then(null, handler);
 
-            scope.$digest();
-            expect(handler).toHaveBeenCalledWith(message);
+                        scope.$digest();
+                        expect(handler).toHaveBeenCalledWith('clickthough url is required');
+                    });
+                })(getAdTypes()[index]);
+            }
         });
+        /* jshint ignore:end */
 
+        /* jshint ignore:start */
         it ('should return \'name is required\' error if unknown \'name\'', function() {
-            var invalidCreative = {
-                type: 'In-Banner',
-                environment: 'multidevice',
-                clickthroughUrl: 'lego.com',
-                embedWidth: 160,
-                embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
-                campaignId: '_campaignId_'
-            };
 
-            var message = 'name is required';
-            var handler = jasmine.createSpy('error');
+            function getInvalidCreative() {
+                return {
+                    type: 'parameterized',
+                    environment: 'multidevice',
+                    clickthroughUrl: 'lego.com',
+                    embedWidth: 160,
+                    embedHeight: 600,
+                    expandedWidth: NaN,
+                    expandedHeight: NaN,
+                    campaignId: '_campaignId_'
+                };
+            }
 
-            newCreative(invalidCreative).then(null, handler);
+            // Iterates over all Ad Types
+            for (var index in getAdTypes()) {
+                (function(type) {
+                    it('for type: \'' + type + '\'', function() {
+                        var handler = jasmine.createSpy('error');
+                        var invalidCreative = getInvalidCreative();
+                        invalidCreative.type = type;
 
-            scope.$digest();
-            expect(handler).toHaveBeenCalledWith(message);
+                        newCreative(invalidCreative).then(null, handler);
+
+                        scope.$digest();
+                        expect(handler).toHaveBeenCalledWith('name is required');
+                    });
+                })(getAdTypes()[index]);
+            }
         });
+        /* jshint ignore:end */
     });
 });
 
