@@ -4,17 +4,17 @@ define(function (require) {
     var app = require('./../../module');
     require('tpl!./../analytics-preview.html');
 
-    app.controller('analyticsPreviewCtrl', ['$scope', '$modalInstance', '$timeout', 'modalState', function ($scope, $modalInstance, $timeout, modalState) {
+    app.controller('analyticsPreviewCtrl', ['$scope', '$modalInstance', '$timeout', 'modalState', 'ENUMS', function ($scope, $modalInstance, $timeout, modalState, ENUMS) {
 
         $scope.name =               modalState.name;
         $scope.impressions =        modalState.impressions;
         $scope.cancel =             cancel;
+        $scope.creativeTypes =      ENUMS.up.creativeTypes;
 
         modalState.data.observe(update, $scope);
 
         function update(){
             $scope.creativeData = modalState.data.all();
-            console.log( $scope.creativeData );
         }
 
         // Adjust bootstrap classes based on # of ad types returned
