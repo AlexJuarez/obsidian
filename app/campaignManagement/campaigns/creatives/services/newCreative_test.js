@@ -61,8 +61,8 @@ define(function (require) {
                 name: '_title_',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
             var mediaItem = {
@@ -88,8 +88,8 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
             var mediaItem = {
@@ -115,8 +115,8 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
             var mediaItem = {
@@ -144,8 +144,8 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
             var mediaItem = null;
@@ -171,8 +171,8 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
 
@@ -249,12 +249,13 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandMode: null,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
 
-            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=MLQ&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&sdf=new&tch=600&tcw=160&title=El+Title&url=lego.com';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=MLQ&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22%7D&idh=600&idw=160&sdf=new&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler, jasmine.fail);
@@ -294,8 +295,8 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
 
@@ -316,8 +317,8 @@ define(function (require) {
                 name: 'El Title',
                 embedWidth: 160,
                 embedHeight: 600,
-                expandedWidth: NaN,
-                expandedHeight: NaN,
+                expandedWidth: null,
+                expandedHeight: null,
                 campaignId: '_campaignId_'
             };
 
@@ -339,8 +340,8 @@ define(function (require) {
                     name: 'El Title',
                     embedWidth: 160,
                     embedHeight: 600,
-                    expandedWidth: NaN,
-                    expandedHeight: NaN,
+                    expandedWidth: null,
+                    expandedHeight: null,
                     campaignId: '_campaignId_'
                 };
             }
@@ -373,8 +374,8 @@ define(function (require) {
                     clickthroughUrl: 'lego.com',
                     embedWidth: 160,
                     embedHeight: 600,
-                    expandedWidth: NaN,
-                    expandedHeight: NaN,
+                    expandedWidth: null,
+                    expandedHeight: null,
                     campaignId: '_campaignId_'
                 };
             }

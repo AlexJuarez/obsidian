@@ -188,14 +188,14 @@ define(function(require) {
                 return 'IS';
             } else if(type === types.richMedia) {
                 // 'Rich Media' AKA 'Interactive-Display'
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                if((expandedWidth != null) && (expandedHeight != null)) {
                     return 'IDRM';
                 } else {
                     return 'ID';
                 }
             } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                if((expandedWidth != null) && (expandedHeight != null)) {
                     return 'IDMLQ';
                 } else {
                     return 'MLQ';
@@ -225,21 +225,21 @@ define(function(require) {
         function validateDimensions(type, subtype, embedWidth, embedHeight, expandedWidth, expandedHeight) {
             if(type === types.display && subtype === 'IMG') {
                 // Image
-                return !isNaN(embedWidth) && !isNaN(embedHeight);
+                return (embedWidth != null) && (embedHeight != null);
             } else if(type === types.display && subtype === 'SWF') {
                 // SWF
-                return !isNaN(embedWidth) && !isNaN(embedHeight);
+                return (embedWidth != null) && (embedHeight != null);
             }  else if(type === types.inStream) {
                 // In-Stream Video
                 return 'IS';
             } else if(type === types.richMedia) {
                 // 'Rich Media' AKA 'Interactive-Display'
-                return !isNaN(embedWidth) && !isNaN(embedHeight) || //ID
-                    !isNaN(embedWidth) && !isNaN(embedHeight) && !isNaN(expandedWidth) && !isNaN(expandedHeight); //MLQ
+                return (embedWidth != null) && (embedHeight != null) || //ID
+                    (embedWidth != null) && (embedHeight != null) && (expandedWidth != null) && (expandedHeight != null); //MLQ
             } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
-                return !isNaN(embedWidth) && !isNaN(embedHeight) || //ID
-                    !isNaN(embedWidth) && !isNaN(embedHeight) && !isNaN(expandedWidth) && !isNaN(expandedHeight); //IDMLQ
+                return (embedWidth != null) && (embedHeight != null) || //ID
+                    (embedWidth != null) && (embedHeight != null) && (expandedWidth != null) && (expandedHeight != null); //IDMLQ
             } else {
                 // unknown
                 return false;
