@@ -27,8 +27,6 @@ define(function (require) {
                 containerType = row.creatives[0].containertypecode;
             } else if (row.containerType) { // Creatives
                 containerType = row.containerType;
-            } else if (row.type) {
-                containerType = row.type;
             }
 
             return $filter('shortenAdType')(data, containerType);
