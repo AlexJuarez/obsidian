@@ -32,6 +32,7 @@ table {
     &::-webkit-scrollbar-thumb:horizontal {
         background-color: @brand-color;
         border: 3px solid @light-gray;
+        border-radius: 10px;
         @media(max-width: @screen-sm-min) {
             border-width: 2px;
         }
@@ -69,6 +70,7 @@ table {
             color: @table-header-color;
             > th {
                 padding: 1.0rem 2rem;
+                white-space: nowrap;
             }
         }
     }

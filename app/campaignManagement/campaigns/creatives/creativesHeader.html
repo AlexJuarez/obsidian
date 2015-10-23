@@ -5,6 +5,9 @@
                 <li><a id="creatives-header-view-thumnails" ui-sref-active="active" ui-sref=".({viewAs: ''})"><i class="glyph-grid"></i></a></li>
                 <li><a id="creatives-header-view-list" ui-sref-active="active" ui-sref=".({ viewAs: 'list' })"><i class="glyph-list"></i></a></li>
             </ul>
+            <label class="form-label search left">
+                <input id="creatives-header-search-field" class="input" placeholder="Search" type="search" />
+            </label>
             <ul class="filters left">
                 <li><b>Filter:</b></li>
                 <li><a id="creatives-header-filter-all" ui-sref-active="active" ui-sref=".({filter: ''})">All ({{creativesMeta.all}})</a></li>
@@ -13,9 +16,6 @@
                 <li><a id="creatives-header-filter-rm" ui-sref-active="active" ui-sref=".({filter: 'richMedia'})">Rich Media ({{creativesMeta.richMedia}})</a></li>
                 <li><a id="creatives-header-filter-d" ui-sref-active="active" ui-sref=".({filter: 'display'})">IMG/SWF ({{creativesMeta.display}})</a></li>
             </ul>
-            <label class="form-label search left">
-                <input id="creatives-header-search-field" class="input" placeholder="Search" type="search" />
-            </label>
         </div>
         <div class="col-sm-4 col-xs-12">
             <div class="btn-group right">

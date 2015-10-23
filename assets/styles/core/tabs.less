@@ -101,6 +101,7 @@
         padding: 3px 0 0 0;
         margin: 0 2rem 0 0;
         list-style: none;
+        clear: both;
         li {
             &:last-child {
                 margin: 0;
@@ -117,6 +118,7 @@
     }
     .search {
         padding-top: 3px;
+        margin-bottom: 1rem;
     }
     @media (max-width: @screen-xs-max) {
         .icons {
@@ -126,20 +128,7 @@
             clear: both;
             float: none;
             display: block;
-            li:not(:first-child) {
-                display: block;
-                margin-left: 1rem;
-                a.active {
-                    border: none;
-                    &:before {
-                        .glyph-dot();
-                        .font-size(0.5);
-                        position: relative;
-                        left: -10px;
-                        bottom: 0.4rem;
-                    }
-                }
-            }
+            margin: 0 0 2rem 0;
         }
         .search {
             display: inline-block;

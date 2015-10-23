@@ -20,7 +20,8 @@ define(function (require) {
                     var editCreativeModals = {};
                     var mixpoURL = studioLocation.host();
 
-                    $scope.filter = ENUMS.up.creativeTypes[$state.params.filter];
+                    $scope.creativeTypes = ENUMS.up.creativeTypes;
+                    $scope.filter = $scope.creativeTypes[$state.params.filter];
                     $scope.openPreviewPage = openPreviewPage;
                     $scope.openStudio = openStudio;
                     $scope.openSettings = openSettings;
@@ -42,7 +43,7 @@ define(function (require) {
                     creatives.observe(updateCreatives, $scope);
 
                     var cleanup = $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams) {
-                        $scope.filter = ENUMS.up.creativeTypes[toParams.filter];
+                        $scope.filter = $scope.creativeTypes[toParams.filter];
                     });
 
                     $scope.$on('$destroy', function() {
