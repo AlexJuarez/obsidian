@@ -16,15 +16,17 @@ define(function (require) {
                 placement = placements[i];
                 creatives = placement.creatives;
 
-                for(var k= 0; k<creatives.length; k++) {
-                    creativeId = creatives[k].id;
-                    if (!groups[creativeId]) {
-                        groups[creativeId] = {
-                            name: creatives[k].name,
-                            placements: [placement]
-                        };
-                    } else {
-                        groups[creativeId].placements.push(placement);
+                if (creatives && creatives.length) {
+                    for(var k = 0; k < creatives.length; k ++) {
+                        creativeId = creatives[k].id;
+                        if(! groups[creativeId]) {
+                            groups[creativeId] = {
+                                name: creatives[k].name,
+                                placements: [placement]
+                            };
+                        } else {
+                            groups[creativeId].placements.push(placement);
+                        }
                     }
                 }
             }
