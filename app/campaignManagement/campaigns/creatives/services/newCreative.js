@@ -235,7 +235,7 @@ define(function(require) {
             } else if(type === types.richMedia) {
                 // 'Rich Media' AKA 'Interactive-Display'
                 return (embedWidth != null) && (embedHeight != null) || //ID
-                    (embedWidth != null) && (embedHeight != null) && (expandedWidth != null) && (expandedHeight != null); //MLQ
+                    (embedWidth != null) && (embedHeight != null) && (expandedWidth != null) && (expandedHeight != null); //IDRM
             } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
                 return (embedWidth != null) && (embedHeight != null) || //ID
@@ -248,7 +248,7 @@ define(function(require) {
 
         function setDimensions(studioUrlBuilder, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
             if(type === types.inBannerVideo) {
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                if((expandedWidth != null) && (expandedHeight != null)) {
                     // IDMLQ
                     studioUrlBuilder.setIdWidth(embedWidth);
                     studioUrlBuilder.setIdHeight(embedHeight);
@@ -266,7 +266,7 @@ define(function(require) {
             } else {
                 studioUrlBuilder.setIdWidth(embedWidth);
                 studioUrlBuilder.setIdHeight(embedHeight);
-                if(!isNaN(expandedWidth) && !isNaN(expandedHeight)) {
+                if((expandedWidth != null) && (expandedHeight != null)) {
                     studioUrlBuilder.setTcWidth(expandedWidth);
                     studioUrlBuilder.setTcHeight(expandedHeight);
                 }
