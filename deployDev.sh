@@ -15,6 +15,8 @@ git push origin $BOWER_TAG
 
 #Update obsidian on Thorwhal
 cd ../thorwhal
+git fetch
+git rebase
 bower install git@github.com:Mixpo/obsidian.git#$BOWER_TAG --save -F
 git commit -a -m "Updated obsidian to $BOWER_TAG"
 git push

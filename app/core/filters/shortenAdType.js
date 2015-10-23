@@ -12,7 +12,7 @@ define(function (require) {
                 case creativeTypes.inStream:
                     return 'ISV';
                 case creativeTypes.display:
-                    return containerType;
+                    return containerType || 'IMG/SWF';
                 case creativeTypes.richMedia:
                     return 'RM';
                 default:
