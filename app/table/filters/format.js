@@ -23,11 +23,14 @@ define(function (require) {
 
         function shortenAdType(data, row) {
             var containerType;
-            if (row.creatives) { // Placements
+            if (row.creatives && row.creatives.length) { // Placements
                 containerType = row.creatives[0].containertypecode;
-            } else { // Creatives
+            } else if (row.containerType) { // Creatives
                 containerType = row.containerType;
+            } else if (row.type) {
+                containerType = row.type;
             }
+
             return $filter('shortenAdType')(data, containerType);
         }
 

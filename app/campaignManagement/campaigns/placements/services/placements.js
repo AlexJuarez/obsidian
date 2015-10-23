@@ -47,9 +47,9 @@ define(function (require) {
 
     module.service('placements', ['$state', '$interpolate', '$compile', '$rootScope', 'cacheFactory',
         'apiUriGenerator', 'placementsByAdType', 'placementsByCreative',
-        'placementsByPublisher', '$q', 'ENUMS',
+        'placementsByPublisher', '$q',
     function ($state, $interpolate, $compile, $rootScope, cache, apiUriGenerator, placementsByAdType,
-        placementsByCreative, placementsByPublisher, $q, ENUMS
+        placementsByCreative, placementsByPublisher, $q
     ) {
         var placementCache = cache({
             transform: function(data) {
