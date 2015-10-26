@@ -49,8 +49,13 @@ define(function (require) {
                     if (placement.live) {
                         numDelivering++;
                     }
-                    bookedImpressions += placement.bookedImpressions;
-                    impressions += placement.metrics.impressions;
+                    if (placement.bookedImpressions) {
+                        bookedImpressions += placement.bookedImpressions;    
+                    }
+                    if (placement.metrics.impressions) {
+                        impressions += placement.metrics.impressions;    
+                    }
+                    
                 }
 
                 return {
