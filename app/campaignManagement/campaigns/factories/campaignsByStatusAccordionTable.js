@@ -139,8 +139,8 @@ define(function (require) {
             function getTable(filter) {
                 var index;
                 var rules = {
-                    account: 'link',
-                    campaign: 'link',
+                    account: 'tooltip-link',
+                    campaign: 'tooltip-link',
                     impressions: 'bullet',
                     live: 'status',
                     start: 'date',

@@ -59,6 +59,8 @@ define(function (require) {
                 return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+            case 'tooltip-link':
+                return '<a class="tooltip tooltip-basic tooltip-light hover" tooltip-overflow="true" tooltip="row.' + input + '.name" ui-sref="' + data.route + '">' + data.name + '</a>';
             case 'creatives':
                 return '<div table-creatives="row.' + input + '"></div>';
             case 'delivering':
