@@ -21,6 +21,11 @@ define(function (require) {
 
                     var element, updatePos;
 
+                    $scope.close = function() {
+                        console.log( 'close this' );
+                        $scope.isOpen = false;
+                    };
+
                     $scope.$watch(function() { return $scope.isOpen; }, function (val) {
                         if (val) {
                             placeCreativePreview();
@@ -35,8 +40,10 @@ define(function (require) {
                         creativeService.get($scope.id);
                     });
 
-                    function documentClickHandler() {
-                        if (!$scope.clicked) {
+                    function documentClickHandler(e) {
+                        var target = e.target;
+
+                        if (!$scope.clicked && !target.closest('.wrapper')) {
                             $scope.$apply(function () {
                                 $scope.isOpen = false;
                             });
@@ -135,7 +142,7 @@ define(function (require) {
 
                     function placeCreativePreview() {
                         var wrapper = ng.element(wrapperTemplate);
-                        wrapper.find('.wrapper').append(template);
+                        wrapper.find('.wrapper').attr('id', $scope.id).append(template);
                         element = $compile(wrapper)($scope);
                         element.addClass('hide');
                         $document.find('body').append(element);

@@ -20,6 +20,11 @@
         border-radius: 0.5rem;
         padding: 0.8rem 1.5rem 1rem 1.5rem;
 
+        width: auto;
+        @media (max-width: @screen-sm-min) {
+            width: 280px;
+        }
+
         &:before, &:after {
             content: '';
             position: absolute;
@@ -110,7 +115,11 @@
     font-size: 1.2rem;
     text-align: left;
     padding: 0 0.5rem;
-    width: 320px;
+    //width: 320px;
+    // width: auto;
+    // @media (max-width: @screen-sm-min) {
+    //     width: 280px;
+    // }
 
     .preview-modal-header {
         .clearfix();
@@ -170,6 +179,14 @@
     }
 
     .preview-info {
+        word-break: normal;
+        white-space: nowrap;
+        
+        @media (max-width: @screen-sm-min) {
+            word-break: break-word;
+            white-space: normal; 
+        }
+
         tr > td:first-child {
             padding-right: 1.5rem;
         }
