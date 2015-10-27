@@ -220,7 +220,7 @@
             <!--</div>-->
         <!--</div>-->
 
-        <div ng-show="creative.type==='inBanner' && creative.expandedDimensions === nonExpandingIndex" class="form-group row">
+        <div ng-show="creative.type===ENUMS.up.creativeTypes.inBannerVideo && isNonExpanding" class="form-group row">
             <label ng-class="{disabled:editing}" for="customStartFrame" class="col-sm-3 form-label"><span>Custom Start Frame</span></label>
             <div class="col-sm-9">
                 <label>
