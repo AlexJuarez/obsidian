@@ -23,12 +23,16 @@ define(function(require) {
              * @param {string} The campaignId of the ad
              * @returns {Object} builder
              */
-            create: function create(adType, environment, title, clickthroughUrl, campaignId) {
+            create: function create(adType, environment, title, clickthroughUrl, campaignId, customStartFrame) {
+                var filter = {
+                    campaignId: campaignId
+                };
+                if(!!customStartFrame) {
+                    filter.customStartFrame = true;
+                }
                 return require('./create')
                     ($httpParamSerializer, adType, environment, title, clickthroughUrl)
-                    .setFilter({
-                        campaignId: campaignId
-                    });
+                    .setFilter(filter);
             },
 
             /**

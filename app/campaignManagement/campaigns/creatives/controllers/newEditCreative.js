@@ -8,10 +8,10 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder', 'studioWindow',
+         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder', 'studioWindow', 'ENUMS',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow
+              creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow, ENUMS
     ) {
         var _mediaItem, _dimension, _expandedDimension;
         function setMediaItem(mediaItem) {
@@ -33,7 +33,7 @@ define(function (require) {
         $scope.swfAllowedExtensions = ['swf'];
         $scope.URL_REGEX = URL_REGEX;
         $scope.MONEY_REGEX = MONEY_REGEX;
-        $scope.nonExpandingIndex = '0'; // Needed for hiding custom start frame checkbox
+        $scope.ENUMS = ENUMS;
 
         $scope.types = creativeSettings.types;
 
@@ -148,11 +148,14 @@ define(function (require) {
                 }
 
                 if(dimension.isNonExpanding) {
+                    $scope.isNonExpanding = true;
                     record.set({
                         expandedWidth: null,
                         expandedHeight: null,
                         expandMode: null
                     });
+                } else {
+                    $scope.isNonExpanding = false;
                 }
 
                 _expandedDimension = dimension;

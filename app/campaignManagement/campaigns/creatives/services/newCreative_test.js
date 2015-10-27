@@ -269,6 +269,36 @@ define(function (require) {
             expect(handler).toHaveBeenCalled();
         });
 
+        it ('should return fullfiled promise for a customStartFrame MLQ creative', function() {
+            var fakeWindow = {};
+            spyOn(window, 'open').and.returnValue(fakeWindow);
+
+            var creative = {
+                campaignId: '_campaignId_',
+                clickthroughUrl: 'lego.com',
+                customStartFrame: true,
+                embedHeight: 600,
+                embedWidth: 160,
+                environment: 'multidevice',
+                expandMode: null,
+                expandedHeight: null,
+                expandedWidth: null,
+                name: 'El Title',
+                subtype: undefined,
+                type: 'In-Banner'
+            };
+
+            // add customStartFrame output
+            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=MLQ&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22,%22customStartFrame%22:true%7D&idh=600&idw=160&sdf=new&tch=600&tcw=160&title=El+Title&url=lego.com';
+            var handler = jasmine.createSpy('success');
+
+            newCreative(creative).then(handler, fail);
+
+            scope.$digest();
+            expect(window.open).toHaveBeenCalledWith(calledUrl, 'mixpo_studio');
+            expect(handler).toHaveBeenCalled();
+        });
+
         it('should return rejected promise for valid creative', function() {
             var invalidCreative = {};
             var handler = jasmine.createSpy('error');

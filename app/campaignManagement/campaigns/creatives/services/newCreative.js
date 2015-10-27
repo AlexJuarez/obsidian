@@ -73,9 +73,9 @@ define(function(require) {
                 hostname = studioLocation.host();
 
             var builder = studioUrlBuilder
-                .create(adType, environment, title, clickthroughUrl, campaignId)
+                .create(adType, environment, title, clickthroughUrl, campaignId, creative.customStartFrame)
                 .setHostname(hostname);
-            setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight);
+            setDimensions(builder, creative.type, creative.embedWidth, creative.embedHeight, creative.expandedWidth, creative.expandedHeight, creative.customStartFrame);
 
             var tabWindow = studioWindow.open(
                 builder.build(),
@@ -246,7 +246,7 @@ define(function(require) {
             }
         }
 
-        function setDimensions(studioUrlBuilder, type, embedWidth, embedHeight, expandedWidth, expandedHeight) {
+        function setDimensions(studioUrlBuilder, type, embedWidth, embedHeight, expandedWidth, expandedHeight, customStartFrame) {
             if(type === types.inBannerVideo) {
                 if((expandedWidth != null) && (expandedHeight != null)) {
                     // IDMLQ
@@ -254,6 +254,12 @@ define(function(require) {
                     studioUrlBuilder.setIdHeight(embedHeight);
                     studioUrlBuilder.setTcWidth(expandedWidth);
                     studioUrlBuilder.setTcHeight(expandedHeight);
+                } else if(customStartFrame) {
+                    // Self Expanding IDMLQ
+                    studioUrlBuilder.setIdWidth(embedWidth);
+                    studioUrlBuilder.setIdHeight(embedHeight);
+                    studioUrlBuilder.setTcWidth(embedWidth);
+                    studioUrlBuilder.setTcHeight(embedHeight);
                 } else {
                     // MLQ
                     studioUrlBuilder.setTcWidth(embedWidth);
