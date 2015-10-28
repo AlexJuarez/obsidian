@@ -63,5 +63,19 @@ define(function (require) {
             expect(filter('test', {'test': input}, {'test': 'link'})).toEqual('<a ui-sref="route">name</a>');
         });
 
+        it('should be formatted as a tooltip link', function () {
+            var input = {name:'' , route: ''};
+            expect(filter('test', {'test': input}, {'test': 'tooltip-link'})).toEqual('<a class="tooltip tooltip-basic tooltip-light hover" tooltip-overflow="true" tooltip="row.test.name" ui-sref=""></a>');
+
+            input = {name:'name' , route: 'route'};
+            expect(filter('test', {'test': input}, {'test': 'tooltip-link'})).toEqual('<a class="tooltip tooltip-basic tooltip-light hover" tooltip-overflow="true" tooltip="row.test.name" ui-sref="route">name</a>');
+        });
+
+        it('should be formatted as a tooltip', function () {
+            var input = {name:''};
+            expect(filter('test', {'test': input}, {'test': 'tooltip'})).toEqual('<div class="tooltip tooltip-basic tooltip-light hover" tooltip-overflow="true" tooltip="row.test">{{row.test}}</div>');
+
+        });
+
     });
 });

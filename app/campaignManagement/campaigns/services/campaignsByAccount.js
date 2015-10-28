@@ -36,7 +36,7 @@ define(function (require) {
     var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
-        'campaign': 'link',
+        'campaign': 'tooltip-link',
         'status': '',
         'live': 'status',
         'budget': 'budget',

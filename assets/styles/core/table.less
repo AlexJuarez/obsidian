@@ -53,6 +53,13 @@ table {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+    .tooltip .main {
+        &:hover {
+            cursor: default;
+        }
+    }
+    .creative-preview-link {
         &:hover {
             color: @brand-color;
         }
@@ -81,14 +88,17 @@ table {
 
         a {
             display: inline-block;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow-x: hidden;
             max-width: 180px;
             line-height: initial;
 
             &:hover {
                 color: @dark-blue;
+            }
+
+            &.tooltip.hover {
+                .main:hover {
+                    cursor: pointer;
+                }
             }
         }
         > tr:last-child {

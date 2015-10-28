@@ -63,6 +63,7 @@ define(function (require) {
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         elem.find('.content').html(newValue);
+
                     } else {
                         isBasicTooltip = false;
 
@@ -74,6 +75,7 @@ define(function (require) {
                             var customController = attr.tooltipController;
                             $controller(customController, { $scope: scope });
                         }
+
 
                         var content = $compile(template)(scope);
                         elem.find('.content').html(content);
