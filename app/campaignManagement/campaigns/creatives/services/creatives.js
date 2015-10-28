@@ -66,8 +66,8 @@ define(function(require) {
             }, undefined, true);
 
             function transformCrudRecord(updatedRecord, existingRecord) {
-                return {
-                    campaign: existingRecord.campaign,
+                var newRecord = {
+                    campaign: existingRecord.campaign || {},
                     deleted: updatedRecord.deleted,
                     embedHeight: updatedRecord.embedHeight,
                     expandedWidth: updatedRecord.expandedWidth,
@@ -82,6 +82,12 @@ define(function(require) {
                     live: existingRecord.delivering,
                     countPlacements: existingRecord.countPlacements
                 };
+
+                if (updatedRecord.campaignId) {
+                    newRecord.campaign.id = updatedRecord.campaignId;
+                }
+
+                return newRecord;
             }
 
             function getCreative(id) {
@@ -115,7 +121,7 @@ define(function(require) {
                             containerType: creative.containertypecode,
                             dimensions: creative.embedWidth + 'x' + creative.embedHeight,
                             expandedDimensions: creative.expandedWidth + 'x' + creative.expandedHeight,
-                            campaignId: creative.campaign.id,
+                            campaignId: creative.campaignId || creative.campaign.id,
                             numPlacements: {
                                 name: creative.countPlacements || 0,
                                 route: 'cm.campaigns.detail.placements({ campaignId: row.campaignId })'

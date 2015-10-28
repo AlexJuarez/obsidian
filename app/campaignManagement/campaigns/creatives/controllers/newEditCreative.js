@@ -219,6 +219,10 @@ define(function (require) {
             if (_expandedDimension) {
                 $scope.expandedDimensionsAreCustom = _expandedDimension.isCustom;
             }
+
+            if (modalState.campaignId) {
+                $scope.creative.campaignId = modalState.campaignId;
+            }
         }
 
         campaigns.observe(updateCampaigns, $scope);

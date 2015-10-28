@@ -15,7 +15,8 @@ define(function(require) {
                     originalCreative: {
                         expandedHeight: null,
                         expandedWidth: null
-                    }
+                    },
+                    campaignId: $state.params.campaignId
                 };
             }
 
