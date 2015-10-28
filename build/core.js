@@ -55699,6 +55699,7 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                     var template = $templateCache.get(newValue);
                     if (!template) {
                         elem.find('.content').html(newValue);
+
                     } else {
                         isBasicTooltip = false;
 
@@ -55710,6 +55711,7 @@ define('core/directives/tooltip',['require','./../module','angular','tpl!./toolt
                             var customController = attr.tooltipController;
                             $controller(customController, { $scope: scope });
                         }
+
 
                         var content = $compile(template)(scope);
                         elem.find('.content').html(content);
@@ -59149,6 +59151,8 @@ define('table/filters/format',['require','./../module','angular'],function (requ
                 return '<div pacing-chart="row.' + input + '"></div>';
             case 'link':
                 return '<a ui-sref="' + data.route + '">' + data.name + '</a>';
+            case 'tooltip-link':
+                return '<a class="tooltip tooltip-basic tooltip-light hover" tooltip-overflow="true" tooltip="row.' + input + '.name" ui-sref="' + data.route + '">' + data.name + '</a>';
             case 'creatives':
                 return '<div table-creatives="row.' + input + '"></div>';
             case 'delivering':
@@ -69694,7 +69698,7 @@ define('campaignManagement/accounts/routes',['require','./../module','tpl!./new-
 define('tpl!campaignManagement/campaigns/placements/placementsList.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsList.html', '<div ui-view="tab-content">\n    <div loading-indicator="placementsAreLoaded" show-loader="showLoader" accordion-table="placements" class="table table-hover"></div>\n</div>\n'); });
 
 
-define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav ng-if="!noContent" class="row tab-header" role="form">\n    <div class="col-sm-5 col-xs-12">\n        <label class="form-label search left">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n        <ul class="filters left">\n            <li><b>View By:</b></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers || 0}})</a></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives || 0}})</a></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types || 0}})</a></li>\n        </ul>\n    </div>\n    <div class="col-sm-7 col-xs-12">\n        <!-- <div class="row"> -->\n            <div class="text-right-sm">\n                <div class="btn-group">\n                    <button ng-click="openNewPlacementModal()" class="btn btn-primary solid">New Placement</button>\n                    <button ng-show="selectedPlacements.length > 0" ng-click="editPlacements()" class="btn btn-default">Edit Placement<span ng-show="selectedPlacements.length > 1">s</span></button>\n                    <button class="btn btn-default">Set Trackers</button>\n                    <button ng-click="pullTags()" class="btn btn-default">Pull Tags</button>\n                </div>\n            </div>\n        <!-- </div> -->\n    </div>\n</nav>\n\n<div no-content click-action="openNewPlacementModal"></div>\n'); });
+define('tpl!campaignManagement/campaigns/placements/placementsHeader.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/placementsHeader.html', '<nav ng-if="!noContent" class="row tab-header" role="form">\n    <div class="col-sm-5 col-xs-12">\n        <label class="form-label search left">\n            <input class="input" placeholder="Search" type="search"/>\n        </label>\n        <ul class="filters left">\n            <li><b>View By:</b></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'\'})">Publisher ({{placementsMeta.publishers || 0}})</a></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'creative\'})">Creative ({{placementsMeta.creatives || 0}})</a></li>\n            <li><a ui-sref-active="active" ui-sref=".({viewBy: \'ad-type\'})">Ad type ({{placementsMeta.types || 0}})</a></li>\n        </ul>\n    </div>\n    <div class="col-sm-7 col-xs-12">\n        <div class="text-right-sm">\n            <div class="btn-group">\n                <button ng-click="openNewPlacementModal()" class="btn btn-primary solid">New Placement</button>\n                <button ng-show="selectedPlacements.length > 0" ng-click="editPlacements()" class="btn btn-default">Edit Placement<span ng-show="selectedPlacements.length > 1">s</span></button>\n                <button class="btn btn-default">Set Trackers</button>\n                <button ng-click="pullTags()" class="btn btn-default">Pull Tags</button>\n            </div>\n        </div>\n    </div>\n</nav>\n\n<div no-content click-action="openNewPlacementModal"></div>\n'); });
 
 
 define('tpl!campaignManagement/campaigns/placements/new-edit-placement.html', ['angular', 'tpl'], function (angular, tpl) { return tpl._cacheTemplate(angular, 'campaignManagement/campaigns/placements/new-edit-placement.html', '<div class="modal-header">\n\t<i class="glyph-icon glyph-close right" ng-click="cancel()"></i>\n\n\t<h2 class="modal-title">\n\t\t<span>{{action}} Placement<span ng-if="multiplePlacements">s</span></span>\n\t</h2>\n</div>\n<div class="modal-body">\n\t<form class="form form-horizontal" role="form" novalidate name="newPlacement">\n\t\t<div ng-pluralize ng-show="newPlacement.$invalid && submitted"\n\t\t\t\t class="alert alert-danger"\n\t\t\t\t count="(newPlacement.$error | errorCount)"\n\t\t\t\t when="{\'0\': \'There are no errors on this form\',\n                    \'1\': \'There is 1 error on this form.\',\n                    \'other\': \'There are {} errors on this form.\'}">\n\t\t</div>\n\t\t<div ng-if="!multiplePlacements" class="form-group row"\n\t\t\t\t ng-class="{\'has-error\': newPlacement.name.$invalid && submitted}">\n\t\t\t<label for="inputName" ng-class="{required:!multiplePlacements}"\n\t\t\t\t\t\t class="col-sm-3 form-label"><span>Name</span></label>\n\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<input ng-model="placement.name" type="text" name="name"\n\t\t\t\t\t\t\t class="form-control" id="inputName" placeholder="Name"\n\t\t\t\t\t\t\t ng-required="!multiplePlacements"/>\n\n\t\t\t\t<p ng-show="newPlacement.name.$invalid && submitted"\n\t\t\t\t\t class="help-block">\n\t\t\t\t\tname is required\n\t\t\t\t</p>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<div assign-publisher></div>\n\n\t\t<div start-end-dates></div>\n\n\t\t<div class="form-group row"\n\t\t\t\t ng-class="{\'has-error\': newPlacement.bookedImpressions.$invalid && submitted}">\n\t\t\t<label for="bookedImpressions" class="col-sm-3 form-label"><span>Planned Impressions</span></label>\n\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<input ng-model="placement.bookedImpressions" type="number"\n\t\t\t\t\t\t\t ng-pattern="\'[0-9]*\'"\n\t\t\t\t\t\t\t class="form-control" id="bookedImpressions"\n\t\t\t\t\t\t\t name="bookedImpressions"\n\t\t\t\t\t\t\t placeholder="Planned Impressions"/>\n\n\t\t\t\t<p ng-show="newPlacement.bookedImpressions.$invalid && submitted"\n\t\t\t\t\t class="help-block">\n\t\t\t\t\tbooked impressions must be valid\n\t\t\t\t</p>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<div rate-types placement="placement"></div>\n\n\t\t<div class="form-group row">\n\t\t\t<label for="keywords"\n\t\t\t\t\t\t class="col-sm-3 form-label"><span>Keywords</span></label>\n\n\t\t\t<div class="col-sm-9">\n\t\t\t\t<input ng-model="campaign.keywordString" type="text"\n\t\t\t\t\t\t\t class="form-control" id="keywords"\n\t\t\t\t\t\t\t placeholder="Keywords"/>\n\t\t\t</div>\n\t\t</div>\n\n\t\t<h3>\n\t\t\t<span>Assign Creative</span>\n\t\t</h3>\n\t\t<hr>\n\n\t\t<div assign-creative></div>\n\n\t\t<div ad-tag-types></div>\n\t</form>\n</div>\n<div class="modal-footer">\n\t<button class="btn btn-primary solid" ng-click="ok(newPlacement.$error)">Save\n\t\tPlacement\n\t</button>\n\t<button class="btn btn-default solid" ng-click="cancel()">Cancel</button>\n</div>\n'); });
@@ -73161,7 +73165,7 @@ define('campaignManagement/campaigns/creatives/services/newCreative',['require',
          * @param callback
          */
         function createDefaultAdStrategy(creative, mediaItem, callback) {
-            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
+            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight, creative.customStartFrame),
                 environment = getAdEnvironment(creative.environment),
                 title = creative.name,
                 clickthroughUrl = creative.clickthroughUrl,
@@ -73272,7 +73276,7 @@ define('campaignManagement/campaigns/creatives/services/newCreative',['require',
             callback(null);
         }
 
-        function getAdType(type, subtype, expandedWidth, expandedHeight) {
+        function getAdType(type, subtype, expandedWidth, expandedHeight, customStartFrame) {
             if(type === types.display && subtype === 'IMG') {
                 // Image
                 return 'IMG';
@@ -73291,7 +73295,7 @@ define('campaignManagement/campaigns/creatives/services/newCreative',['require',
                 }
             } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
-                if((expandedWidth != null) && (expandedHeight != null)) {
+                if(((expandedWidth != null) && (expandedHeight != null)) || customStartFrame) {
                     return 'IDMLQ';
                 } else {
                     return 'MLQ';
@@ -73717,7 +73721,7 @@ define('campaignManagement/campaigns/services/campaignsByAccount',['require','./
     var headerTemplate = require('tpl!./campaignsByAccountHeader.html');
 
     var rules = {
-        'campaign': 'link',
+        'campaign': 'tooltip-link',
         'status': '',
         'live': 'status',
         'budget': 'budget',
@@ -74899,8 +74903,8 @@ define('campaignManagement/campaigns/factories/campaignsByStatusAccordionTable',
             function getTable(filter) {
                 var index;
                 var rules = {
-                    account: 'link',
-                    campaign: 'link',
+                    account: 'tooltip-link',
+                    campaign: 'tooltip-link',
                     impressions: 'bullet',
                     live: 'status',
                     start: 'date',
