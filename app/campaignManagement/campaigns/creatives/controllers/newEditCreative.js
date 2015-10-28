@@ -8,15 +8,21 @@ define(function (require) {
     app.controller('newEditCreativeCtrl',
         ['$scope', '$modalInstance', 'newCreativeService', 'creatives', 'campaignService',
          'creativeRecordService', 'modalState', '$window', 'URL_REGEX', 'MONEY_REGEX',
-         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder', 'studioWindow', 'ENUMS',
+         'CREATIVE_SETTINGS', 'notification', 'studioLocation', 'studioUrlBuilder', 'studioWindow', 'ENUMS', '$timeout',
     function ($scope, $modalInstance, newCreativeService, creatives, campaigns,
               creativeRecordService, modalState, $window, URL_REGEX, MONEY_REGEX,
-              creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow, ENUMS
+              creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow, ENUMS, $timeout
     ) {
         var _mediaItem, _dimension, _expandedDimension;
         function setMediaItem(mediaItem) {
             _mediaItem = mediaItem;
-            // update visuals
+            $scope.mediaUrlPrefix = mediaItem.url_prefix;
+            $scope.creativeSelected = true;
+            $scope.creative.mediaId = mediaItem.guid;
+            $scope.creativeName = mediaItem.title;
+            $timeout(function() {
+                $scope.$apply();
+            });
         }
 
         var record;
@@ -30,14 +36,13 @@ define(function (require) {
         $scope.environmentTransform = environmentTransform;
         $scope.typeTransform = typeTransform;
         $scope.action = modalState.action;
-        $scope.swfAllowedExtensions = ['swf'];
         $scope.URL_REGEX = URL_REGEX;
         $scope.MONEY_REGEX = MONEY_REGEX;
         $scope.ENUMS = ENUMS;
 
         $scope.types = creativeSettings.types;
 
-        function getType(datum){
+        function getType(datum) {
             var type;
 
             ng.forEach(creativeSettings.types, function(d) {
@@ -167,7 +172,7 @@ define(function (require) {
         function getEnvironmentValue(environments, data) {
             var index;
             ng.forEach(environments, function(environment) {
-                if (environment.dbName === data.environment) {
+                if (environment.dbName === data.device) {
                     index = environment.id;
                 }
             });
@@ -178,7 +183,7 @@ define(function (require) {
         function environmentTransform(environment) {
             if (environment) {
                 record.set({
-                    environment: environment.dbName
+                    device: environment.dbName
                 });
             }
             return getEnvironmentValue(creativeSettings.environments, record.get());
@@ -248,11 +253,16 @@ define(function (require) {
                 };
 
                 if (record.isNew()) {
-                    newCreativeService($scope.creative, _mediaItem)
-                        .then(function() {
-                            $scope.creative = {};
-                            $modalInstance.dismiss('cancel');
-                        });
+                    if ($scope.creative.type === ENUMS.up.creativeTypes.display) {
+                        record.save()
+                          .then(onSuccess);
+                    } else {
+                        newCreativeService($scope.creative, _mediaItem)
+                          .then(function() {
+                              $scope.creative = {};
+                              $modalInstance.dismiss('cancel');
+                          });
+                    }
                 } else {
                     record.save()
                         .then(onSuccess);

@@ -91,10 +91,10 @@
         </div>
 
         <div ng-if="environments" class="form-group row"
-             ng-class="{'has-error': newCreative.environment.$invalid && submitted}">
+             ng-class="{'has-error': newCreative.device.$invalid && submitted}">
             <label ng-class="{disabled:editing}" class="col-sm-3 form-label required"><span>Environment</span></label>
             <div class="col-sm-9">
-                <select id="new-edit-creative-select-environment" ng-disabled="editing" name="environment" select2
+                <select id="new-edit-creative-select-environment" ng-disabled="editing" name="device" select2
                         s2-options="environment as environment.name for environment in environments track by environment.id"
                         ng-model="environmentTransform" ng-model-options="{ getterSetter: true }" ng-required="!editing">
                 </select>
@@ -103,8 +103,8 @@
                    class="help-block">
                     environment is required
                 </p>
-                <p ng-show="errors.environment && submitted" class="help-block">
-                    {{errors.environment}}
+                <p ng-show="errors.device && submitted" class="help-block">
+                    {{errors.device}}
                 </p>
             </div>
         </div>
@@ -192,9 +192,13 @@
             </div>
         </div>
 
-        <div ng-show="creative.campaignId && creative.type === 'Display'" class="form-group row">
+        <div ng-show="creative.campaignId && creative.type === ENUMS.up.creativeTypes.display" class="form-group row">
           <label class="col-sm-3 form-label">Media</label>
           <div class="col-sm-9 file-selection-wrapper form-inline">
+            <div ng-show="creativeSelected">
+              <img height="100" ng-src="{{mediaUrlPrefix}}JPG128.jpg" />
+              <div>{{creativeName}}</div>
+            </div>
             <button class="btn btn-default" ng-click="selectMedia()">
               Select
               <span ng-show="creative.subtype==='SWF'">SWF</span>
