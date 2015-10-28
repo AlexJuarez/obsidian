@@ -1,9 +1,12 @@
 var LoginPage = require('./pages/loginPage');
-var DivisionPage = require('./pages/divisionPage'); 
+var DivisionPage = require('./pages/divisionPage');
 var NavBar = require('./pages/navBar');
+var ClientPage = require('./pages/clientPage');
+global.loggedIn = false;
+global.UUID = '';
 
 exports.config = {
-    
+
     //
     // ==================
     // Specify Test Files
@@ -91,7 +94,7 @@ exports.config = {
     // The following are supported: dot (default), spec and xunit
     // see also: http://webdriver.io/guide/testrunner/reporters.html
     reporter: 'dot',
-    
+
     //
     // Some reporter require additional information which should get defined here
     reporterOptions: {
@@ -100,7 +103,7 @@ exports.config = {
         // WebdriverIO should save all unit reports.
         outputDir: './'
     },
-    
+
         // Options to be passed to Jasmine.
     jasmineNodeOpts: {
         //
@@ -111,10 +114,15 @@ exports.config = {
         // or website depending on the result. For example it is pretty handy to take a screenshot everytime
         // an assertion fails.
         expectationResultHandler: function(passed, assertion) {
+            if(passed){
+                return;
+            }
+
+            console.log(assertion);
             // do something
         }
-    },   
- 
+    },
+
     //
     // =====
     // Hooks
@@ -127,18 +135,37 @@ exports.config = {
     onPrepare: function() {
         // do something
     },
+
     //
     // Gets executed before test execution begins. At this point you will have access to all global
     // variables like `browser`. It is the perfect place to define custom commands.
     before: function() {
-      var loginPage, 
-          navBar;
+      var loginPage,
+          navBar,
+          clientPage;
 
+        function guid() {
+            function s4() {
+                return Math.floor((1 + Math.random()) * 0x10000)
+                    .toString(16)
+                    .substring(1);
+            }
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                s4() + '-' + s4() + s4() + s4();
+        };
+
+
+      global.UUID = guid();
       loginPage = new LoginPage('automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
       navBar = new NavBar();
+      clientPage = new ClientPage();
+
+      console.log('Test UUID: ' + global.UUID);
+
       browser.addCommand("login", function (){
         return loginPage.loginToWebsite();
       });
+
       browser.addCommand("searchClient", function(term,actual){
         return navBar.clientSearch(term,actual);
       });
@@ -155,11 +182,21 @@ exports.config = {
         return navBar.campaignSearch(term,actual);
       });
 
+      browser.addCommand("createInternalClient", function(name){
+        return clientPage.createInternalClient(name);
+      });
+
+        browser.addCommand("createNewAccount", function(name){
+           return clientPage.createNewAccount(name);
+        });
+
+        //browser.login();
     },
     //
     // Gets executed after all tests are done. You still have access to all global variables from
     // the test.
     after: function(failures, pid) {
+        browser.close();
         // do something
     },
     //

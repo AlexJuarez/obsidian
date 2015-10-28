@@ -6,6 +6,17 @@ function loginPage (email, password){
 var userField = '#account',
     passwordField = '#password';
 
+loginPage.prototype.validatePage = function(){
+    console.log('validating login page');
+    return browser
+        .isExisting(this._email).then(function (exists){
+            console.log('email field exists');
+        })
+        .isExisting(this._password).then(function (exists){
+            console.log('password field exists');
+        });
+}
+
 loginPage.prototype.goToWebsite = function () {
     return browser.url('https://thorwhal-dev-api.mixpo.com/campaign-management', function () {
         console.log('went to login page!');
@@ -17,8 +28,9 @@ loginPage.prototype.goToWebsite = function () {
 }
 
 loginPage.prototype.loginToWebsite = function () {
-
-    return this.goToWebsite()
+    if(!global.loggedIn){
+      global.loggedIn = true;
+      return this.goToWebsite()
         .isExisting('#account').then(function (isExisting) {
             expect(isExisting).toBe(true);
         })
@@ -32,6 +44,10 @@ loginPage.prototype.loginToWebsite = function () {
           expect(title).toBe('Narwhal');
           console.log('NARWHALS NARWHALS SWIMMING IN THE OCEAN!!!');
         });
+    }else{
+      console.log('already logged in');
+      return browser.url('https://thorwhal-dev-api.mixpo.com/campaign-management').pause(500);
+    }
 }
 
 module.exports = loginPage;
