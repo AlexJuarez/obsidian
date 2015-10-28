@@ -196,8 +196,13 @@
           <label class="col-sm-3 form-label">Media</label>
           <div class="col-sm-9 file-selection-wrapper form-inline">
             <div ng-show="creativeSelected">
-              <img height="100" ng-src="{{mediaUrlPrefix}}JPG128.jpg" />
-              <div>{{creativeName}}</div>
+              <div ng-if="creative.subtype==='SWF'">
+                <img ng-src="{{creativeData.mediaUrlPrefix}}JPG128.jpg" fallback-src="images/file-swf.svg" class="thumbnail" height="100" />
+              </div>
+              <div ng-if="creative.subtype==='IMG'">
+                <img ng-src="{{creativeData.mediaUrlPrefix}}JPG128.jpg" fallback-src="images/file-image.svg" class="thumbnail" height="100" />
+              </div>
+              <div>{{mediaItem.name}}</div>
             </div>
             <button class="btn btn-default" ng-click="selectMedia()">
               Select

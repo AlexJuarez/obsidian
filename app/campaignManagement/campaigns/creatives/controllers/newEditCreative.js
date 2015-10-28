@@ -14,18 +14,6 @@ define(function (require) {
               creativeSettings, notification, studioLocation, studioUrlBuilder, studioWindow, ENUMS, $timeout
     ) {
         var _mediaItem, _dimension, _expandedDimension;
-        function setMediaItem(mediaItem) {
-            _mediaItem = mediaItem;
-
-            $scope.mediaUrlPrefix = mediaItem.url_prefix;
-            $scope.creativeSelected = true;
-            $scope.creative.mediaId = mediaItem.guid;
-            $scope.creativeName = mediaItem.title;
-            $timeout(function() {
-                $scope.$apply();
-            });
-        }
-
         var record;
 
         //Modal functions
@@ -42,6 +30,12 @@ define(function (require) {
         $scope.ENUMS = ENUMS;
 
         $scope.types = creativeSettings.types;
+
+        $scope.$watch('creative.subtype', function() {
+            if($scope.creativeSelected && $scope.creative.type === ENUMS.up.creativeTypes.display) {
+                clearCreativeData();
+            }
+        });
 
         function getType(datum) {
             var type;
@@ -297,6 +291,25 @@ define(function (require) {
                     setMediaItem(json);
                 }
             };
+        }
+
+        function setMediaItem(mediaItem) {
+            _mediaItem = mediaItem;
+            $scope.creativeSelected = true;
+            $scope.creative.mediaId = mediaItem.guid;
+            $scope.creativeData = {
+                mediaUrlPrefix: mediaItem.url_prefix,
+                name: mediaItem.title
+            };
+            $timeout(function() {
+                $scope.$apply();
+            });
+        }
+
+        function clearCreativeData() {
+            $scope.creativeSelected = false;
+            $scope.creative.mediaId = undefined;
+            $scope.creativeData = undefined;
         }
 
         function getDisplayAdType(type, subtype) {
