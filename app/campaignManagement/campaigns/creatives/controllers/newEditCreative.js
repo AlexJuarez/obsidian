@@ -1,5 +1,5 @@
 /* globals confirm */
-/* jshint maxstatements:false */
+/* jshint maxstatements:false, camelcase:false */
 define(function (require) {
     'use strict';
     var app = require('./../../../module');
@@ -16,6 +16,7 @@ define(function (require) {
         var _mediaItem, _dimension, _expandedDimension;
         function setMediaItem(mediaItem) {
             _mediaItem = mediaItem;
+
             $scope.mediaUrlPrefix = mediaItem.url_prefix;
             $scope.creativeSelected = true;
             $scope.creative.mediaId = mediaItem.guid;
