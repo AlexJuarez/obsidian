@@ -289,7 +289,7 @@ define(function (require) {
             };
 
             // add customStartFrame output
-            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=MLQ&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22,%22customStartFrame%22:true%7D&idh=600&idw=160&sdf=new&tch=600&tcw=160&title=El+Title&url=lego.com';
+            var calledUrl = '//alpha-studio.mixpo.com/studio?ad=IDMLQ&env=multiscreen&filter=%7B%22campaignId%22:%22_campaignId_%22,%22customStartFrame%22:true%7D&idh=600&idw=160&sdf=new&tch=600&tcw=160&title=El+Title&url=lego.com';
             var handler = jasmine.createSpy('success');
 
             newCreative(creative).then(handler, fail);

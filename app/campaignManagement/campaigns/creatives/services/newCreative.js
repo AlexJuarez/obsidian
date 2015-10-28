@@ -65,7 +65,7 @@ define(function(require) {
          * @param callback
          */
         function createDefaultAdStrategy(creative, mediaItem, callback) {
-            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight),
+            var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight, creative.customStartFrame),
                 environment = getAdEnvironment(creative.environment),
                 title = creative.name,
                 clickthroughUrl = creative.clickthroughUrl,
@@ -176,7 +176,7 @@ define(function(require) {
             callback(null);
         }
 
-        function getAdType(type, subtype, expandedWidth, expandedHeight) {
+        function getAdType(type, subtype, expandedWidth, expandedHeight, customStartFrame) {
             if(type === types.display && subtype === 'IMG') {
                 // Image
                 return 'IMG';
@@ -195,7 +195,7 @@ define(function(require) {
                 }
             } else if(type === types.inBannerVideo) {
                 // 'In-Banner Video' AKA 'MLQ'
-                if((expandedWidth != null) && (expandedHeight != null)) {
+                if(((expandedWidth != null) && (expandedHeight != null)) || customStartFrame) {
                     return 'IDMLQ';
                 } else {
                     return 'MLQ';
