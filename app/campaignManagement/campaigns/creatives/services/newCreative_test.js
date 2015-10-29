@@ -56,7 +56,7 @@ define(function (require) {
             var creative = {
                 type: 'Display',
                 subtype: 'IMG',
-                environment: 'multidevice',
+                device: 'multidevice',
                 clickthroughUrl: '_clickthrough_',
                 name: '_title_',
                 embedWidth: 160,
@@ -83,7 +83,7 @@ define(function (require) {
             var creative = {
                 type: 'Display',
                 subtype: 'IMG',
-                environment: 'multidevice',
+                device: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -110,7 +110,7 @@ define(function (require) {
             var creative = {
                 type: 'Display',
                 subtype: 'SWF',
-                environment: 'multidevice',
+                device: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -142,7 +142,7 @@ define(function (require) {
                 clickthroughUrl: 'lego.com',
                 embedHeight: 600,
                 embedWidth: 160,
-                environment: 'multidevice',
+                device: 'multidevice',
                 expandedHeight: null,
                 expandedWidth: null,
                 name: 'El Title',
@@ -170,7 +170,7 @@ define(function (require) {
                 clickthroughUrl: 'lego.com',
                 embedHeight: 600,
                 embedWidth: 160,
-                environment: 'desktop',
+                device: 'desktop',
                 expandMode: null,
                 expandedHeight: null,
                 expandedWidth: null,
@@ -195,7 +195,7 @@ define(function (require) {
 
             var creative = {
                 type: 'Rich Media',
-                environment: 'mobile',
+                device: 'mobile',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -224,7 +224,7 @@ define(function (require) {
                 clickthroughUrl: 'lego.com',
                 embedHeight: 600,
                 embedWidth: 160,
-                environment: 'tablet',
+                device: 'tablet',
                 expandMode: null,
                 expandedHeight: 600,
                 expandedWidth: 360,
@@ -251,7 +251,7 @@ define(function (require) {
                 clickthroughUrl: 'lego.com',
                 embedHeight: 600,
                 embedWidth: 160,
-                environment: 'multidevice',
+                device: 'multidevice',
                 expandMode: null,
                 expandedHeight: null,
                 expandedWidth: null,
@@ -279,7 +279,7 @@ define(function (require) {
                 customStartFrame: true,
                 embedHeight: 600,
                 embedWidth: 160,
-                environment: 'multidevice',
+                device: 'multidevice',
                 expandMode: null,
                 expandedHeight: null,
                 expandedWidth: null,
@@ -324,7 +324,7 @@ define(function (require) {
         it ('should return \'invalid adType\' error if unknown \'type\'', function() {
             var invalidCreative = {
                 type: 'foo',
-                environment: 'multidevice',
+                device: 'multidevice',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -346,7 +346,7 @@ define(function (require) {
         it ('should return \'invalid environment\' error if unknown \'environment\'', function() {
             var invalidCreative = {
                 type: 'In-Banner',
-                environment: 'foo',
+                device: 'foo',
                 clickthroughUrl: 'lego.com',
                 name: 'El Title',
                 embedWidth: 160,
@@ -370,7 +370,7 @@ define(function (require) {
             function getInvalidCreative() {
                 return {
                     type: 'parameterized',
-                    environment: 'multidevice',
+                    device: 'multidevice',
                     name: 'El Title',
                     embedWidth: 160,
                     embedHeight: 600,
@@ -404,7 +404,7 @@ define(function (require) {
             function getInvalidCreative() {
                 return {
                     type: 'parameterized',
-                    environment: 'multidevice',
+                    device: 'multidevice',
                     clickthroughUrl: 'lego.com',
                     embedWidth: 160,
                     embedHeight: 600,

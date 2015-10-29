@@ -66,7 +66,7 @@ define(function(require) {
          */
         function createDefaultAdStrategy(creative, mediaItem, callback) {
             var adType = getAdType(creative.type, creative.subtype, creative.expandedWidth, creative.expandedHeight, creative.customStartFrame),
-                environment = getAdEnvironment(creative.environment),
+                environment = getAdEnvironment(creative.device),
                 title = creative.name,
                 clickthroughUrl = creative.clickthroughUrl,
                 campaignId = creative.campaignId,
@@ -130,7 +130,7 @@ define(function(require) {
                     mediaguid: mediaItem.id,
                     title: creative.name,
                     clickThrough: creative.clickthroughUrl,
-                    deviceTargets: getAdEnvironment(creative.environment),
+                    deviceTargets: getAdEnvironment(creative.device),
                     adServer: '' // (if mraid) ? 'mraid' : ''
                 },
                 method: 'POST',
@@ -157,7 +157,7 @@ define(function(require) {
                 callback('invalid adType');
                 return;
             }
-            if(getAdEnvironment(creative.environment)===null||creative.environment===undefined) {
+            if(getAdEnvironment(creative.device)===null||creative.device===undefined) {
                 callback('invalid environment');
                 return;
             }
