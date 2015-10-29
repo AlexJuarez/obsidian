@@ -30,6 +30,8 @@ Browser.prototype.setBrowser = function(browser) {
  */
 Browser.prototype.addCommand = function(func, method) {
 	console.log('Adding command ' + method + ' to browser...');
+
+	// Return a function that wraps the apply call
 	this._browser[method] = function() {
 		return func[method].apply(func, [].slice.call(arguments))
 	};
@@ -40,13 +42,19 @@ Browser.prototype.addCommand = function(func, method) {
  * using setBrowser
  *
  * @param func
+ * @param varArgs 1-to-many arguments
  */
-Browser.prototype.addCommands = function(func) {
+Browser.prototype.addCommands = function(func, varArgs) {
 	var prototypes = Object.getOwnPropertyNames(func.prototype);
 	var that = this;
+
+	// Bind additional arguments of this function to the provided function,
+	// and instantiate a new instance of that function
 	var closure = new (func.bind.apply(func, [].slice.call(arguments)));
 
 	prototypes.forEach(function(method) {
+
+		// Skip the constructor that lives in each prototype
 		if (method !== 'constructor') {
 			that.addCommand(closure, method);
 		}
