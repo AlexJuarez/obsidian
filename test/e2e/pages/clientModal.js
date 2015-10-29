@@ -11,7 +11,6 @@ ClientModal.prototype.channelSelect = function(section) {
   return String('option='+section);
 };
 
-var clientModal = new ClientModal();
-browserSingleton.addCommand(clientModal, 'channelSelect');
+browserSingleton.addCommands(ClientModal);
 
 module.exports = ClientModal;

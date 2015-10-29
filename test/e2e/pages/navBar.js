@@ -96,16 +96,6 @@ NavBar.prototype.campaignNavigate = function (campaign) {
         .click(this.searchResult('campaign',campaign));
 };
 
-var navBar = new NavBar();
-browserSingleton.addCommand(navBar, 'validateNavBar');
-browserSingleton.addCommand(navBar, 'searchResult');
-browserSingleton.addCommand(navBar, 'clientSearch');
-browserSingleton.addCommand(navBar, 'clientNavigate');
-browserSingleton.addCommand(navBar, 'divisionSeach');
-browserSingleton.addCommand(navBar, 'divisionNavigate');
-browserSingleton.addCommand(navBar, 'accountSearch');
-browserSingleton.addCommand(navBar, 'accountNavigate');
-browserSingleton.addCommand(navBar, 'campaignSearch');
-browserSingleton.addCommand(navBar, 'campaignNavigate');
+browserSingleton.addCommands(NavBar);
 
 module.exports = NavBar;

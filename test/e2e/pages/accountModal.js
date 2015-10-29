@@ -15,6 +15,6 @@ AccountModal.prototype.industrySelect = function(section) {
     return String('option='+section);
 };
 
-var accountModal = new AccountModal();
-browserSingleton.addCommand(accountModal, 'industrySelect');
+browserSingleton.addCommands(AccountModal);
+
 module.exports = AccountModal;

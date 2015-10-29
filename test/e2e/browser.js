@@ -29,9 +29,28 @@ Browser.prototype.setBrowser = function(browser) {
  * @param method
  */
 Browser.prototype.addCommand = function(func, method) {
+	console.log('Adding command ' + method + ' to browser...');
 	this._browser[method] = function() {
 		return func[method].apply(func, [].slice.call(arguments))
 	};
+};
+
+/**
+ * Register all methods on a function's prototype to be placed on the browser
+ * using setBrowser
+ *
+ * @param func
+ */
+Browser.prototype.addCommands = function(func) {
+	var prototypes = Object.getOwnPropertyNames(func.prototype);
+	var that = this;
+	var closure = new (func.bind.apply(func, [].slice.call(arguments)));
+
+	prototypes.forEach(function(method) {
+		if (method !== 'constructor') {
+			that.addCommand(closure, method);
+		}
+	});
 };
 
 function getBrowser() {

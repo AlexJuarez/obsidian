@@ -54,9 +54,6 @@ ClientPage.prototype.createNewAccount = function(name) {
         .click(accountModal._saveAccountBtn);
 };
 
-var clientPage = new ClientPage();
-browserSingleton.addCommand(clientPage, 'validateClientPage');
-browserSingleton.addCommand(clientPage, 'createInternalClient');
-browserSingleton.addCommand(clientPage, 'createNewAccount');
+browserSingleton.addCommands(ClientPage);
 
 module.exports = ClientPage;
