@@ -22,7 +22,10 @@
 			</tr>
 			<tr>
 				<td>Size</td>
-				<td ng-hide="!creative">{{creative.embedWidth}}px <i>x</i> {{creative.embedHeight}}px > {{creative.expandedWidth}}px <i>x</i> {{creative.expandedHeight}}px</td>
+				<td ng-hide="!creative">
+					{{creative.embedWidth}}px <i>x</i> {{creative.embedHeight}}px
+					<span ng-show="creative.expandable">> {{creative.expandedWidth}}px <i>x</i> {{creative.expandedHeight}}px</span>
+				</td>
 			</tr>
 			<tr>
 				<td>Creative ID</td>

@@ -10,7 +10,7 @@ define(function(require) {
             dimensions: [
                 'id', 'name', 'live', 'type', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight',
-                'countPlacements',
+                'countPlacements', 'expandable',
                 'live', 'modifiedDate', 'thumbnailUrlPrefix'
             ]
         }

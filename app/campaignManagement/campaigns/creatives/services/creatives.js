@@ -11,7 +11,7 @@ define(function(require) {
             dimensions: [
                 'id', 'name', 'live', 'type', 'containertypecode', 'device', 'embedWidth',
                 'embedHeight', 'expandedWidth', 'expandedHeight', 'countPlacements',
-                'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id'
+                'modifiedDate', 'thumbnailUrlPrefix', 'campaign.id', 'expandable'
             ],
             limit: 500
         }
@@ -73,6 +73,7 @@ define(function(require) {
                     expandedWidth: updatedRecord.expandedWidth,
                     embedWidth: updatedRecord.embedWidth,
                     expandedHeight: updatedRecord.expandedHeight,
+                    expandable: Boolean(updatedRecord.expandedHeight),
                     modifiedDate: existingRecord.lastModified,
                     name: updatedRecord.name,
                     id: updatedRecord.id,
@@ -130,6 +131,7 @@ define(function(require) {
 
                             // These properties are needed by thumbnails but aren't
                             // in the table
+                            expandable: creative.expandable,
                             id: creative.id,
                             lastModified: creative.modifiedDate,
                             thumbnail: creative.thumbnailUrlPrefix ? 'https://swf.mixpo.com' + creative.thumbnailUrlPrefix + 'JPG320.jpg' : ''
