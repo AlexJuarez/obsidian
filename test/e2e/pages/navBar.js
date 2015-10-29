@@ -1,4 +1,4 @@
-var browser = require('../browser');
+var browserSingleton = require('../browser');
 
 function NavBar (){
    this._clientDrop = '#navbar-client-dropdown [ng-click=\"toggleOpen()\"]';
@@ -97,15 +97,15 @@ NavBar.prototype.campaignNavigate = function (campaign) {
 };
 
 var navBar = new NavBar();
-browser.addCommand('validateNavBar', navBar.validatePage);
-browser.addCommand('searchResult', navBar.searchResult);
-browser.addCommand('clientSearch', navBar.clientSearch);
-browser.addCommand('clientNavigate', navBar.clientNavigate);
-browser.addCommand('divisionSeach', navBar.divisionSearch);
-browser.addCommand('divisionNavigate', navBar.divisionNavigate);
-browser.addCommand('accountSearch', navBar.accountSearch);
-browser.addCommand('accountNavigate', navBar.accountNavigate);
-browser.addCommand('campaignSearch', navBar.campaignSearch);
-browser.addCommand('campaignNavigate', navBar.campaignNavigate);
+browserSingleton.addCommand('validateNavBar', navBar.validatePage);
+browserSingleton.addCommand('searchResult', navBar.searchResult);
+browserSingleton.addCommand('clientSearch', navBar.clientSearch);
+browserSingleton.addCommand('clientNavigate', navBar.clientNavigate);
+browserSingleton.addCommand('divisionSeach', navBar.divisionSearch);
+browserSingleton.addCommand('divisionNavigate', navBar.divisionNavigate);
+browserSingleton.addCommand('accountSearch', navBar.accountSearch);
+browserSingleton.addCommand('accountNavigate', navBar.accountNavigate);
+browserSingleton.addCommand('campaignSearch', navBar.campaignSearch);
+browserSingleton.addCommand('campaignNavigate', navBar.campaignNavigate);
 
 module.exports = NavBar;

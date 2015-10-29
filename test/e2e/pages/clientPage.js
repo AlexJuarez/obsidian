@@ -1,6 +1,6 @@
 var ClientModal = require('./clientModal');
 var AccountModal = require('./accountModal');
-var browser = require('../browser');
+var browserSingleton = require('../browser');
 var clientModal,
     accountModal;
 
@@ -55,8 +55,8 @@ ClientPage.prototype.createNewAccount = function(name) {
 };
 
 var clientPage = new ClientPage();
-browser.addCommand('validateClientPage', clientPage.validatePage);
-browser.addCommand('createInternalClient', clientPage.createInternalClient);
-browser.addCommand('createNewAccount', clientPage.createNewAccount);
+browserSingleton.addCommand('validateClientPage', clientPage.validatePage);
+browserSingleton.addCommand('createInternalClient', clientPage.createInternalClient);
+browserSingleton.addCommand('createNewAccount', clientPage.createNewAccount);
 
 module.exports = ClientPage;

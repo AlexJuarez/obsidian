@@ -1,13 +1,4 @@
 var browserSingleton = require('../browser');
-browserSingleton.addCommand('asdf', function() {browser.url('http://www.google.com')
-  .getTitle(function (err, title) {
-    expect(err).toBeFalsy();
-    expect(title).toBe('asdfasfadfads');
-    console.log('NARWHALS NARWHALS SWIMMING IN THE OCEAN!!!');
-  })
-;});
-browserSingleton = require('../browser');
-
 
 function LoginPage (email, password){
   this._email = email;
@@ -38,7 +29,7 @@ LoginPage.prototype.goToWebsite = function () {
     });
 };
 
-LoginPage.prototype.loginToWebsite = function () {
+LoginPage.prototype.login = function () {
     if(!global.loggedIn){
       global.loggedIn = true;
       console.log(this);
@@ -62,6 +53,8 @@ LoginPage.prototype.loginToWebsite = function () {
     }
 };
 
-browserSingleton.addCommands(LoginPage, 'automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
+var loginPage = new LoginPage('automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
+browserSingleton.addCommand(loginPage, 'login');
+
 
 module.exports = LoginPage;

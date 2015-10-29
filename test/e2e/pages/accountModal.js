@@ -1,4 +1,4 @@
-var browser = require('../browser');
+var browserSingleton = require('../browser');
 
 function AccountModal (){
     this._nameField = '#new-edit-account-name-field';
@@ -16,5 +16,5 @@ AccountModal.prototype.industrySelect = function(section) {
 };
 
 var accountModal = new AccountModal();
-browser.addCommand('industrySelect', accountModal.industrySelect);
+browserSingleton.addCommand('industrySelect', accountModal.industrySelect);
 module.exports = AccountModal;

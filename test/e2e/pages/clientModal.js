@@ -1,4 +1,4 @@
-var browser = require('../browser');
+var browserSingleton = require('../browser');
 
 function ClientModal (){
   this._selectChannel = '#select2-new-edit-client-channels-select-container';
@@ -12,6 +12,6 @@ ClientModal.prototype.channelSelect = function(section) {
 };
 
 var clientModal = new ClientModal();
-browser.addCommand('channelSelect', clientModal.channelSelect);
+browserSingleton.addCommand('channelSelect', clientModal.channelSelect);
 
 module.exports = ClientModal;
