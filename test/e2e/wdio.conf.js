@@ -1,7 +1,10 @@
+var browserSingleton = require('./browser');
 var LoginPage = require('./pages/loginPage');
 var DivisionPage = require('./pages/divisionPage');
 var NavBar = require('./pages/navBar');
 var ClientPage = require('./pages/clientPage');
+var guid = require('./guid');
+
 global.loggedIn = false;
 global.UUID = '';
 
@@ -140,57 +143,9 @@ exports.config = {
     // Gets executed before test execution begins. At this point you will have access to all global
     // variables like `browser`. It is the perfect place to define custom commands.
     before: function() {
-      var loginPage,
-          navBar,
-          clientPage;
-
-        function guid() {
-            function s4() {
-                return Math.floor((1 + Math.random()) * 0x10000)
-                    .toString(16)
-                    .substring(1);
-            }
-            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-                s4() + '-' + s4() + s4() + s4();
-        };
-
-
       global.UUID = guid();
-      loginPage = new LoginPage('automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
-      navBar = new NavBar();
-      clientPage = new ClientPage();
-
       console.log('Test UUID: ' + global.UUID);
-
-      browser.addCommand("login", function (){
-        return loginPage.loginToWebsite();
-      });
-
-      browser.addCommand("searchClient", function(term,actual){
-        return navBar.clientSearch(term,actual);
-      });
-
-      browser.addCommand("searchDivision", function(term,actual){
-        return navBar.divisionSearch(term,actual);
-      });
-
-      browser.addCommand("searchAccount", function(term,actual){
-        return navBar.accountSearch(term,actual);
-      });
-
-      browser.addCommand("searchCampaign", function(term,actual){
-        return navBar.campaignSearch(term,actual);
-      });
-
-      browser.addCommand("createInternalClient", function(name){
-        return clientPage.createInternalClient(name);
-      });
-
-        browser.addCommand("createNewAccount", function(name){
-           return clientPage.createNewAccount(name);
-        });
-
-        //browser.login();
+      browserSingleton.setBrowser(browser);
     },
     //
     // Gets executed after all tests are done. You still have access to all global variables from
