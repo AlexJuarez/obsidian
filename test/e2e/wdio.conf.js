@@ -1,9 +1,9 @@
+var browserSingleton = require('./browser');
 var LoginPage = require('./pages/loginPage');
 var DivisionPage = require('./pages/divisionPage');
 var NavBar = require('./pages/navBar');
 var ClientPage = require('./pages/clientPage');
 var guid = require('./guid');
-var browserCommands = require('./browser').getBrowser();
 
 global.loggedIn = false;
 global.UUID = '';
@@ -145,12 +145,7 @@ exports.config = {
     before: function() {
       global.UUID = guid();
       console.log('Test UUID: ' + global.UUID);
-
-      for(var key in browserCommands) {
-        if (browserCommands.hasOwnProperty(key)) {
-          browser.addCommand(key, browserCommands[key]);
-        }
-      }
+      browserSingleton.setBrowser(browser);
     },
     //
     // Gets executed after all tests are done. You still have access to all global variables from

@@ -56,5 +56,4 @@ LoginPage.prototype.login = function () {
 var loginPage = new LoginPage('automated-tester-employee','b1xR5*h-D$#h@2(8aCm!V&');
 browserSingleton.addCommand(loginPage, 'login');
 
-
 module.exports = LoginPage;
