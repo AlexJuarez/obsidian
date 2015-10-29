@@ -14,25 +14,25 @@
                     '1': 'There is 1 error on this form.',
                     'other': 'There are {} errors on this form.'}">
         </div>
-        <div ng-show="campaigns" class="form-group row"
-             ng-class="{'has-error': newCreative.campaignId.$invalid && submitted}">
-            <label
-                class="col-sm-3 form-label required"><span>Campaign</span></label>
-            <div class="col-sm-9">
-                <select id="new-edit-creative-select-campaign" name="campaignId" select2
-                        s2-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"
-                        ng-model="creative.campaignId" required>
-                </select>
+        <!--<div ng-show="campaigns" class="form-group row"-->
+             <!--ng-class="{'has-error': newCreative.campaignId.$invalid && submitted}">-->
+            <!--<label-->
+                <!--class="col-sm-3 form-label required"><span>Campaign</span></label>-->
+            <!--<div class="col-sm-9">-->
+                <!--<select id="new-edit-creative-select-campaign" name="campaignId" select2-->
+                        <!--s2-options="campaign.id as campaign.name for campaign in campaigns track by campaign.id"-->
+                        <!--ng-model="creative.campaignId" required>-->
+                <!--</select>-->
 
-                <p ng-show="newCreative.campaignId.$invalid && submitted"
-                   class="help-block">
-                    campaign is required
-                </p>
-                <p ng-show="errors.campaignId && submitted" class="help-block">
-                    {{errors.campaignId}}
-                </p>
-            </div>
-        </div>
+                <!--<p ng-show="newCreative.campaignId.$invalid && submitted"-->
+                   <!--class="help-block">-->
+                    <!--campaign is required-->
+                <!--</p>-->
+                <!--<p ng-show="errors.campaignId && submitted" class="help-block">-->
+                    <!--{{errors.campaignId}}-->
+                <!--</p>-->
+            <!--</div>-->
+        <!--</div>-->
 
         <div class="form-group row"
              ng-class="{'has-error': newCreative.name.$invalid && submitted}">
