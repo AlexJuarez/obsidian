@@ -11,8 +11,10 @@ fi
 git fetch
 git rebase
 grunt build:bower
-# We need to deploy the font icons manually 
+# We need to deploy the font icons manually
 cp -R build/fonts/* ../thorwhal/public/fonts
+cp -R assets/images/* ../thorwhal/public/images
+git add .
 git commit -a -m "built bower package"
 
 #Tag the release
