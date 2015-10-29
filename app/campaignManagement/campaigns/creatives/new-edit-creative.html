@@ -139,12 +139,12 @@
             </div>
             <div class="col-sm-6" ng-show="dimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input id="new-edit-creative-custom-width-field" ng-disabled="editing" name="customDimensionsWidth" ng-model="creative.embedWidth" type="number"
+                    <input id="new-edit-creative-custom-width-field" ng-disabled="editing" min="0" name="customDimensionsWidth" ng-model="creative.embedWidth" type="number"
                            class="form-control" id="customDimensionsWidth"
                            placeholder="Width" required/>
                 </div>
                 <div class="col-sm-6">
-                    <input id="new-edit-creative-custom-height-field" ng-disabled="editing" name="customDimensionsHeight" ng-model="creative.embedHeight" type="number"
+                    <input id="new-edit-creative-custom-height-field" ng-disabled="editing" min="0" name="customDimensionsHeight" ng-model="creative.embedHeight" type="number"
                            class="form-control" id="customDimensionsHeight"
                            placeholder="Height" required/>
                 </div>
@@ -180,12 +180,12 @@
             </div>
             <div class="col-sm-6" ng-if="expandedDimensionsAreCustom">
                 <div class="col-sm-6">
-                    <input id="new-edit-creative-custom-exp-width-field" ng-disabled="editing" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
+                    <input id="new-edit-creative-custom-exp-width-field" ng-disabled="editing" min="0" name="customExpandedDimensionsWidth" ng-model="creative.expandedWidth" type="number"
                            class="form-control"
                            placeholder="Width" required />
                 </div>
                 <div class="col-sm-6">
-                    <input id="new-edit-creative-custom-exp-height-field" ng-disabled="editing" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
+                    <input id="new-edit-creative-custom-exp-height-field" ng-disabled="editing" min="0" name="customExpandedDimensionsHeight" ng-model="creative.expandedHeight" type="number"
                            class="form-control"
                            placeholder="Height" required />
                 </div>
