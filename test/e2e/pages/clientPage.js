@@ -1,9 +1,10 @@
 var ClientModal = require('./clientModal');
 var AccountModal = require('./accountModal');
+var browser = require('../browser');
 var clientModal,
     accountModal;
 
-function clientPage (){
+function ClientPage (){
   clientModal = new ClientModal();
     accountModal = new AccountModal();
   this._newClientBtn = '[ng-click=\"openNewClientModal()\"]';
@@ -11,8 +12,8 @@ function clientPage (){
     this._editAccountBtn = '[ng-click=\"openEditClientModal()\"]';
 }
 
-clientPage.prototype.validatePage = function(){
-    console.log('validating clientPage');
+ClientPage.prototype.validatePage = function(){
+    console.log('validating ClientPage');
     return browser
         .isExisting(this._newClientBtn).then(function (exists){
             console.log('new client button exists');
@@ -23,9 +24,9 @@ clientPage.prototype.validatePage = function(){
         .isExisting(this._editAccountBtn).then(function (exists){
             console.log('edit account button exists');
         });
-}
+};
 
-clientPage.prototype.createInternalClient = function(name) {
+ClientPage.prototype.createInternalClient = function(name) {
     console.log('creating client: '+name);
     return browser
       .pause(2000)
@@ -34,9 +35,9 @@ clientPage.prototype.createInternalClient = function(name) {
     .click(clientModal.channelSelect('Mixpo Internal'))
     .setValue(clientModal._nameField, name)
     .click(clientModal._saveBtn);
-}
+};
 
-clientPage.prototype.createNewAccount = function(name) {
+ClientPage.prototype.createNewAccount = function(name) {
     console.log('creating account: '+name);
     return browser
         .pause(2000)
@@ -51,6 +52,11 @@ clientPage.prototype.createNewAccount = function(name) {
         .setValue(accountModal._clickthroughField, 'www.mixpo.com')
         .setValue(accountModal._leadCaptureEmailField, 'test@mixpo.com')
         .click(accountModal._saveAccountBtn);
-}
+};
 
-module.exports = clientPage;
+var clientPage = new ClientPage();
+browser.addCommand('validateClientPage', clientPage.validatePage);
+browser.addCommand('createInternalClient', clientPage.createInternalClient);
+browser.addCommand('createNewAccount', clientPage.createNewAccount);
+
+module.exports = ClientPage;

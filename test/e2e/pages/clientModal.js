@@ -1,12 +1,17 @@
-function clientModal (){
+var browser = require('../browser');
+
+function ClientModal (){
   this._selectChannel = '#select2-new-edit-client-channels-select-container';
   this._selections = '#new-edit-client-channels-select';
   this._nameField = '#new-edit-client-name-field';
   this._saveBtn = '#new-edit-client-save-client-btn';
 }
 
-clientModal.prototype.channelSelect = function(section) {
+ClientModal.prototype.channelSelect = function(section) {
   return String('option='+section);
-}
+};
 
-module.exports = clientModal;
+var clientModal = new ClientModal();
+browser.addCommand('channelSelect', clientModal.channelSelect);
+
+module.exports = ClientModal;

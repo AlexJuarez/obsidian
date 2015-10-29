@@ -25,7 +25,7 @@
      browser
      .createInternalClient(name)
      .pause(2000)
-     .searchClient(name,name)
+     .clientSearch(name,name)
      .call(done);
    });
 

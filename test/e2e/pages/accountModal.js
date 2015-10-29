@@ -1,4 +1,6 @@
-function accountModal (){
+var browser = require('../browser');
+
+function AccountModal (){
     this._nameField = '#new-edit-account-name-field';
     this._keywordsField = '#new-edit-account-keywords-field';
     this._industrySelect = '#new-edit-account-industry-select';
@@ -9,8 +11,10 @@ function accountModal (){
     this._cancelBtn = '#new-edit-account-cancel-btn';
 }
 
-accountModal.prototype.industrySelect = function(section) {
+AccountModal.prototype.industrySelect = function(section) {
     return String('option='+section);
-}
+};
 
-module.exports = accountModal;
+var accountModal = new AccountModal();
+browser.addCommand('industrySelect', accountModal.industrySelect);
+module.exports = AccountModal;

@@ -6,11 +6,15 @@
 // *= = contains partial text match
 // xpath, css3 selectors also work.
 //
-//describe('Logging in', function () {
+fdescribe('Logging in', function () {
+    it('will log in as employee', function(done) {
+			//var isDone = function() {
+			//	console.log('done');
+			//	done();
+			//};
+      browser
+				.asdf()
+				.call(done);
+    });
 
-    //it('will log in as employee', function(done) {
-    //  browser.login()
-    //  .call(done);
-    //});
-//
-//});
+});
