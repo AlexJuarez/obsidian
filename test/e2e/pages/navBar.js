@@ -14,7 +14,7 @@ function NavBar (){
    this._navbarAnalyticsTab = '#navbar-analytics-tab';
 }
 
-NavBar.prototype.validatePage = function(){
+NavBar.prototype.validateNavBar = function(){
     return browser
         .isExisting(this._clientDrop).then(function (exists){
             console.log('client dropdown exists');
@@ -51,7 +51,7 @@ NavBar.prototype.clientSearch = function(term, actual) {
 NavBar.prototype.clientNavigate = function (client) {
     return this.clientSearch(client,client)
         .click(this.searchResult('client',client))
-        .waitUntil(document.URL.contains('mixpo.com/campaign-management/account'));
+        .waitUntil(window.document.URL.contains('mixpo.com/campaign-management/account'));
 };
 
 NavBar.prototype.divisionSearch = function(term, actual) {
@@ -97,15 +97,15 @@ NavBar.prototype.campaignNavigate = function (campaign) {
 };
 
 var navBar = new NavBar();
-browserSingleton.addCommand('validateNavBar', navBar.validatePage);
-browserSingleton.addCommand('searchResult', navBar.searchResult);
-browserSingleton.addCommand('clientSearch', navBar.clientSearch);
-browserSingleton.addCommand('clientNavigate', navBar.clientNavigate);
-browserSingleton.addCommand('divisionSeach', navBar.divisionSearch);
-browserSingleton.addCommand('divisionNavigate', navBar.divisionNavigate);
-browserSingleton.addCommand('accountSearch', navBar.accountSearch);
-browserSingleton.addCommand('accountNavigate', navBar.accountNavigate);
-browserSingleton.addCommand('campaignSearch', navBar.campaignSearch);
-browserSingleton.addCommand('campaignNavigate', navBar.campaignNavigate);
+browserSingleton.addCommand(navBar, 'validateNavBar');
+browserSingleton.addCommand(navBar, 'searchResult');
+browserSingleton.addCommand(navBar, 'clientSearch');
+browserSingleton.addCommand(navBar, 'clientNavigate');
+browserSingleton.addCommand(navBar, 'divisionSeach');
+browserSingleton.addCommand(navBar, 'divisionNavigate');
+browserSingleton.addCommand(navBar, 'accountSearch');
+browserSingleton.addCommand(navBar, 'accountNavigate');
+browserSingleton.addCommand(navBar, 'campaignSearch');
+browserSingleton.addCommand(navBar, 'campaignNavigate');
 
 module.exports = NavBar;

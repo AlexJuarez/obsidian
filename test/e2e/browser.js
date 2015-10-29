@@ -9,7 +9,9 @@ Browser.prototype.getBrowser = function() {
 };
 
 Browser.prototype.addCommand = function(func, method) {
-	this._browser[method] = function() { return func[method]() };
+	this._browser[method] = function() {
+		return func[method].apply(func, [].slice.call(arguments))
+	};
 };
 
 function getBrowser() {

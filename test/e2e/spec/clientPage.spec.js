@@ -8,20 +8,21 @@
 //
  describe('New Ad Build by LMP Creative Producer', function () {
 
-     var name = 'client_'+global.UUID;
+   var name = 'client_'+global.UUID;
+   console.log(name);
 
    it('will log in as employee', function (done) {
      browser.login()
      .call(done);
    });
 
-     it('will verify page load.', function (done) {
-         browser.url('https://thorwhal-dev-api.mixpo.com/campaign-management')
-            .validateClientPage();
-     });
+     //it('will verify page load.', function (done) {
+     //    browser.url('https://thorwhal-dev-api.mixpo.com/campaign-management')
+     //       .validateClientPage();
+     //});
 
    it('will have new client via exact search', function(done) {
-
+     console.log('RACE GOGOGOGO', name);
      browser
      .createInternalClient(name)
      .pause(2000)
@@ -29,8 +30,8 @@
      .call(done);
    });
 
-     it('will navigate to new client\'s page', function(done) {
-        browser.clientNavigate(name)
-            .call(done);
-     });
+   it('will navigate to new client\'s page', function(done) {
+      browser.clientNavigate(name)
+          .call(done);
+   });
  });

@@ -16,5 +16,5 @@ AccountModal.prototype.industrySelect = function(section) {
 };
 
 var accountModal = new AccountModal();
-browserSingleton.addCommand('industrySelect', accountModal.industrySelect);
+browserSingleton.addCommand(accountModal, 'industrySelect');
 module.exports = AccountModal;

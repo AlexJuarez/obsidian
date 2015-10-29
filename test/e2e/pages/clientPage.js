@@ -12,7 +12,7 @@ function ClientPage (){
     this._editAccountBtn = '[ng-click=\"openEditClientModal()\"]';
 }
 
-ClientPage.prototype.validatePage = function(){
+ClientPage.prototype.validateClientPage = function(){
     console.log('validating ClientPage');
     return browser
         .isExisting(this._newClientBtn).then(function (exists){
@@ -55,8 +55,8 @@ ClientPage.prototype.createNewAccount = function(name) {
 };
 
 var clientPage = new ClientPage();
-browserSingleton.addCommand('validateClientPage', clientPage.validatePage);
-browserSingleton.addCommand('createInternalClient', clientPage.createInternalClient);
-browserSingleton.addCommand('createNewAccount', clientPage.createNewAccount);
+browserSingleton.addCommand(clientPage, 'validateClientPage');
+browserSingleton.addCommand(clientPage, 'createInternalClient');
+browserSingleton.addCommand(clientPage, 'createNewAccount');
 
 module.exports = ClientPage;
